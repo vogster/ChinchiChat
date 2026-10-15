@@ -1,0 +1,24 @@
+{
+  "name": "@chinchi/e2ee",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "lint": "eslint .",
+    "typecheck": "tsc",
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage"
+  },
+  "devDependencies": {
+    "@chinchi/config": "workspace:*"
+  },
+  "dependencies": {
+    "@noble/ciphers": "2.1.1",
+    "@noble/curves": "2.0.1",
+    "@noble/hashes": "2.4.0",
+    "ts-mls": "1.6.4"
+  }
+}

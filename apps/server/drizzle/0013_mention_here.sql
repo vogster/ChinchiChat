@@ -1,0 +1,3 @@
+DROP INDEX "messages_mentions_idx";--> statement-breakpoint
+ALTER TABLE "messages" ADD COLUMN "mention_here" boolean DEFAULT false NOT NULL;--> statement-breakpoint
+CREATE INDEX "messages_mentions_idx" ON "messages" USING btree ("channel_id","id") WHERE "messages"."mention_everyone" or "messages"."mention_here" or cardinality("messages"."mention_user_ids") > 0 or cardinality("messages"."mention_role_ids") > 0;

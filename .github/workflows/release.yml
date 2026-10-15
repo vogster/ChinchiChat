@@ -1,0 +1,68 @@
+# A version tag (v0.1.0) publishes the Docker images to GitHub Container Registry and a GitHub
+# release whose assets are all an install needs: docker-compose.yml and env.example.
+#
+#   1. Set the version in deploy/docker-compose.yml (the CHINCHI_VERSION default) and commit.
+#   2. git tag v0.1.0 && git push origin v0.1.0
+name: Release
+
+on:
+  push:
+    tags: ['v*.*.*']
+
+permissions:
+  contents: write
+  packages: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    env:
+      REGISTRY: ghcr.io/${{ github.repository_owner }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Read the version
+        id: version
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "minor=${version%.*}" >> "$GITHUB_OUTPUT"
+          # The compose file users download must run exactly this release.
+          for image in chinchi-server chinchi-web; do
+            grep -q "${image}:\${CHINCHI_VERSION:-${version}}" deploy/docker-compose.yml || {
+              echo "deploy/docker-compose.yml does not default $image to $version" >&2
+              exit 1
+            }
+          done
+
+      - name: Log in to GitHub Container Registry
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+
+      - name: Build and push images
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+          MINOR: ${{ steps.version.outputs.minor }}
+        run: |
+          registry="$(echo "$REGISTRY" | tr '[:upper:]' '[:lower:]')"
+          for target in server web; do
+            image="$registry/chinchi-$target"
+            docker build --target "$target" \
+              --label "org.opencontainers.image.source=https://github.com/${{ github.repository }}" \
+              --label "org.opencontainers.image.version=$VERSION" \
+              -t "$image:$VERSION" -t "$image:$MINOR" .
+            docker push "$image:$VERSION"
+            docker push "$image:$MINOR"
+          done
+
+      - name: Publish the release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          mkdir -p dist
+          cp deploy/docker-compose.yml dist/docker-compose.yml
+          cp deploy/.env.example dist/env.example
+          # Hand-written notes in docs/releases/<tag>.md win over generated ones.
+          notes="docs/releases/$GITHUB_REF_NAME.md"
+          if [ -f "$notes" ]; then set -- --notes-file "$notes"; else set -- --generate-notes; fi
+          gh release create "$GITHUB_REF_NAME" dist/docker-compose.yml dist/env.example \
+            --title "Chinchi $GITHUB_REF_NAME" "$@"

@@ -1,0 +1,4 @@
+{
+  "extends": "@chinchi/config/tsconfig/base.json",
+  "include": ["src", "vitest.config.ts"]
+}

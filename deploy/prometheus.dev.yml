@@ -1,0 +1,8 @@
+# Dev and load-test scraping: the API server on the host serves /metrics on METRICS_PORT.
+global:
+  scrape_interval: 5s
+
+scrape_configs:
+  - job_name: chinchi-server
+    static_configs:
+      - targets: ['host.docker.internal:9464']

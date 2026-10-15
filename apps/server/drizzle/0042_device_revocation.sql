@@ -1,0 +1,1 @@
+ALTER TABLE "e2ee_devices" ADD COLUMN "revoked_at" timestamp with time zone;

@@ -1,0 +1,13 @@
+packages:
+  - apps/*
+  - packages/*
+  - e2e
+
+allowBuilds:
+  esbuild: true
+  # Optional native extras of testcontainers (ssh/cpu detection); not needed for local sockets.
+  cpu-features: false
+  protobufjs: false
+  ssh2: false
+  # Prebuilt libvips binaries come from @img/sharp-* optional packages; no build step needed.
+  sharp: false

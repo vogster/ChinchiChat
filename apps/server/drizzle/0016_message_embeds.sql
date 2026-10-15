@@ -1,0 +1,1 @@
+ALTER TABLE "messages" ADD COLUMN "embeds" jsonb DEFAULT '[]'::jsonb NOT NULL;

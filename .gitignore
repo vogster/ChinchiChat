@@ -1,0 +1,46 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Build output
+dist/
+build/
+out/
+.turbo/
+*.tsbuildinfo
+
+# Env & secrets
+.env
+.env.*
+!.env.example
+
+# Logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+# Tests
+coverage/
+playwright-report/
+test-results/
+
+# Tauri
+apps/desktop/src-tauri/target/
+
+# Expo / React Native
+.expo/
+apps/mobile/ios/
+apps/mobile/android/
+
+# Local data (docker volumes)
+deploy/data/
+
+# OS / editors
+.DS_Store
+.idea/
+.vscode/*
+!.vscode/extensions.json
+
+# TanStack Router plugin scratch files
+.tanstack/
+load/.data/

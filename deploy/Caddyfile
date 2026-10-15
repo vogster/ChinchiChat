@@ -1,0 +1,60 @@
+# Three names, each with its own automatic HTTPS certificate:
+#   CHINCHI_DOMAIN  the web app and its API (same origin, so session cookies just work)
+#   FILES_DOMAIN  object storage for presigned uploads and downloads (kept off the app's origin)
+#   VOICE_DOMAIN  LiveKit signalling (wss://); media itself goes over UDP straight to LiveKit
+# Certificates come from Let's Encrypt (or a local CA for *.localhost) without further setup.
+
+(app_headers) {
+	header {
+		# The app ships no inline scripts; user files and voice live on their own domains.
+		Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' https://{$FILES_DOMAIN} data: blob:; media-src 'self' https://{$FILES_DOMAIN} blob:; connect-src 'self' https://{$FILES_DOMAIN} wss://{$VOICE_DOMAIN} https://{$VOICE_DOMAIN}; frame-ancestors 'none'; base-uri 'none'; form-action 'self'; object-src 'none'"
+		Strict-Transport-Security "max-age=31536000"
+		X-Content-Type-Options nosniff
+		X-Frame-Options DENY
+		Referrer-Policy strict-origin-when-cross-origin
+		Permissions-Policy "camera=(self), microphone=(self), display-capture=(self), geolocation=()"
+		-Server
+	}
+}
+
+{$CHINCHI_DOMAIN} {
+	encode zstd gzip
+	import app_headers
+
+	# API and the realtime gateway (WebSocket upgrades pass through reverse_proxy).
+	handle /api/* {
+		reverse_proxy server:3000
+	}
+	handle /health {
+		reverse_proxy server:3000
+	}
+
+	handle {
+		root * /srv/web
+		# Hashed assets never change; the app shell must always be fresh.
+		@assets path /assets/*
+		header @assets Cache-Control "public, max-age=31536000, immutable"
+		header /index.html Cache-Control "no-cache"
+		# The service worker must update as soon as a new version is deployed.
+		header /sw.js Cache-Control "no-cache"
+		header /manifest.webmanifest Content-Type "application/manifest+json"
+		try_files {path} /index.html
+		file_server
+	}
+}
+
+{$FILES_DOMAIN} {
+	# User content: never sniffed into HTML, never scripted, never framed.
+	header {
+		X-Content-Type-Options nosniff
+		Content-Security-Policy "default-src 'none'; img-src 'self'; media-src 'self'; style-src 'unsafe-inline'; sandbox"
+		Strict-Transport-Security "max-age=31536000"
+		Referrer-Policy no-referrer
+		-Server
+	}
+	reverse_proxy rustfs:9000
+}
+
+{$VOICE_DOMAIN} {
+	reverse_proxy livekit:7880
+}

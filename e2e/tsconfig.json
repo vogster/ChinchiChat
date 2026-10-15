@@ -1,0 +1,4 @@
+{
+  "extends": "@chinchi/config/tsconfig/node.json",
+  "include": ["tests", "support", "playwright.config.ts"]
+}

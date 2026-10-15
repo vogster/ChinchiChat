@@ -1,0 +1,7 @@
+{
+  "extends": "@chinchi/config/tsconfig/node.json",
+  "include": ["vite.config.ts", "vitest.config.ts"],
+  "compilerOptions": {
+    "allowImportingTsExtensions": true
+  }
+}

@@ -1,0 +1,2 @@
+# Windows runs tools through .cmd shims, and cmd.exe cuts command lines at 8191 characters.
+pnpm exec lint-staged --max-arg-length 6000

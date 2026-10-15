@@ -1,0 +1,18 @@
+# LiveKit config for local development. API keys come from LIVEKIT_KEYS (see docker-compose.dev.yml).
+port: 7880
+rtc:
+  tcp_port: 7881
+  # Single UDP port (muxed) so we don't have to publish a large port range from the container.
+  udp_port: 7882
+  use_external_ip: false
+  # Clients run on the host machine in development.
+  node_ip: 127.0.0.1
+logging:
+  level: info
+# Join/leave and track events go to the API server (dev :3000 and the e2e server :3100).
+# The key must be one of LIVEKIT_KEYS; the server checks the signature with the same secret.
+webhook:
+  api_key: devkey
+  urls:
+    - http://host.docker.internal:3000/api/v1/voice/webhook
+    - http://host.docker.internal:3100/api/v1/voice/webhook

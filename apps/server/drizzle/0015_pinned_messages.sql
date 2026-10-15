@@ -1,0 +1,2 @@
+ALTER TABLE "messages" ADD COLUMN "pinned_at" timestamp with time zone;--> statement-breakpoint
+CREATE INDEX "messages_pinned_idx" ON "messages" USING btree ("channel_id","pinned_at" DESC NULLS LAST) WHERE "messages"."pinned_at" is not null;

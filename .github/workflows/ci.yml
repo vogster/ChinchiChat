@@ -1,0 +1,108 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    name: Lint, typecheck, test, build
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+
+      # Version comes from "packageManager" in package.json.
+      - uses: pnpm/action-setup@v6
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - run: pnpm format:check
+      - run: pnpm lint
+      - run: pnpm typecheck
+
+      # Integration tests start Postgres via Testcontainers; Docker is preinstalled on the runner.
+      - run: pnpm test:coverage
+
+      - run: pnpm build
+
+      - name: Generated files are up to date
+        run: git diff --exit-code -- apps/web/src/routeTree.gen.ts apps/server/drizzle
+
+  e2e:
+    name: E2E (Playwright)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    # Same ports as `pnpm dev:up`, so the Playwright config defaults work unchanged.
+    services:
+      postgres:
+        image: postgres:18-alpine
+        env:
+          POSTGRES_USER: chinchi
+          POSTGRES_PASSWORD: chinchi
+          POSTGRES_DB: chinchi
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U chinchi" --health-interval 2s --health-timeout 3s --health-retries 30
+      valkey:
+        image: valkey/valkey:9.0-alpine
+        ports: ['6379:6379']
+        options: >-
+          --health-cmd "valkey-cli ping" --health-interval 2s --health-timeout 3s --health-retries 30
+      mailpit:
+        image: axllent/mailpit:v1.31
+        ports: ['2525:1025', '8025:8025']
+      rustfs:
+        image: rustfs/rustfs:1.0.1
+        env:
+          RUSTFS_ACCESS_KEY: chinchi-dev
+          RUSTFS_SECRET_KEY: chinchi-dev-secret
+        ports: ['9000:9000']
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter @chinchi/e2e e2e:install
+      # The server creates its bucket at start, so storage must be up first.
+      - name: Wait for object storage
+        run: timeout 60 sh -c 'until curl -fs http://localhost:9000/health; do sleep 1; done'
+      # Not a job service: LiveKit needs its config file from the repository and must reach the
+      # e2e server on the host with webhooks, so it runs on the host network.
+      - name: Start LiveKit
+        run: |
+          docker run -d --name livekit --network host             --add-host host.docker.internal:127.0.0.1             -e 'LIVEKIT_KEYS=devkey: chinchi-dev-livekit-secret-0123456789'             -v "$PWD/deploy/livekit.dev.yaml:/etc/livekit.yaml:ro"             livekit/livekit-server:v1.13.9 --config /etc/livekit.yaml
+          timeout 60 sh -c 'until curl -fs http://localhost:7880; do sleep 1; done'
+      - run: pnpm e2e
+
+      - uses: actions/upload-artifact@v7
+        if: failure()
+        with:
+          name: playwright-report
+          path: e2e/playwright-report/
+          retention-days: 7
+
+  # The production images (deploy/docker-compose.yml) must keep building.
+  docker:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - run: docker build --target server -t chinchi-server .
+      - run: docker build --target web -t chinchi-web .

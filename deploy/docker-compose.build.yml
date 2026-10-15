@@ -1,0 +1,19 @@
+# Builds the Chinchi images from this checkout instead of pulling published ones:
+#
+#   docker compose -f deploy/docker-compose.yml -f deploy/docker-compose.build.yml up -d --build
+#
+# The images are tagged like the published ones (CHINCHI_VERSION, local unless set), so the
+# main file works unchanged.
+
+services:
+  server:
+    image: ghcr.io/vogster/chinchi-server:${CHINCHI_VERSION:-local}
+    build:
+      context: ..
+      target: server
+
+  web:
+    image: ghcr.io/vogster/chinchi-web:${CHINCHI_VERSION:-local}
+    build:
+      context: ..
+      target: web

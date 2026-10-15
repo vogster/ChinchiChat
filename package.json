@@ -1,0 +1,61 @@
+{
+  "name": "chinchi-chat",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@11.22.0",
+  "engines": {
+    "node": ">=24.7"
+  },
+  "scripts": {
+    "build": "turbo run build",
+    "dev": "turbo run dev",
+    "lint": "turbo run lint",
+    "typecheck": "turbo run typecheck",
+    "test": "turbo run test",
+    "test:coverage": "turbo run test:coverage",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "dev:up": "docker compose -f deploy/docker-compose.dev.yml up -d --wait",
+    "dev:down": "docker compose -f deploy/docker-compose.dev.yml down",
+    "dev:reset": "docker compose -f deploy/docker-compose.dev.yml down -v",
+    "dev:logs": "docker compose -f deploy/docker-compose.dev.yml logs -f",
+    "prepare": "husky",
+    "e2e": "pnpm --filter @chinchi/e2e e2e",
+    "load:seed": "pnpm --filter @chinchi/server load:seed",
+    "load": "node load/run.mjs"
+  },
+  "prettier": "@chinchi/config/prettier",
+  "devDependencies": {
+    "@commitlint/cli": "21.2.3",
+    "@commitlint/config-conventional": "21.2.3",
+    "@eslint/js": "10.0.1",
+    "@types/node": "24.19.2",
+    "@vitest/coverage-v8": "5.0.4",
+    "@chinchi/config": "workspace:*",
+    "eslint": "10.12.0",
+    "eslint-config-prettier": "10.1.8",
+    "eslint-plugin-react-hooks": "7.1.1",
+    "eslint-plugin-react-refresh": "0.5.7",
+    "globals": "17.13.0",
+    "husky": "9.1.7",
+    "lint-staged": "17.6.0",
+    "prettier": "3.9.10",
+    "turbo": "2.11.7",
+    "typescript": "6.0.3",
+    "typescript-eslint": "8.71.2",
+    "vite": "8.3.4",
+    "vitest": "5.0.4"
+  },
+  "lint-staged": {
+    "*.{ts,tsx,js,mjs,cjs}": [
+      "eslint --fix --no-warn-ignored",
+      "prettier --write"
+    ],
+    "*.{json,md,yml,yaml,css,html}": "prettier --write --ignore-unknown"
+  },
+  "commitlint": {
+    "extends": [
+      "@commitlint/config-conventional"
+    ]
+  }
+}

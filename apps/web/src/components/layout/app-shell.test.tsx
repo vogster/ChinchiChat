@@ -1,0 +1,64 @@
+import { screen, within } from '@testing-library/react'
+import { describe, expect, it } from 'vitest'
+
+import { createFakeApi, testUser } from '../../test/fake-api'
+import { renderApp } from '../../test/render-app'
+
+describe('app shell', () => {
+  it('renders navigation, the sidebar and the main area', async () => {
+    renderApp('/', { user: testUser })
+
+    const rail = await screen.findByRole('navigation', { name: 'Серверы' })
+    expect(within(rail).getByRole('link', { name: 'Главная' })).toHaveAttribute(
+      'aria-current',
+      'page',
+    )
+    expect(within(rail).getByRole('button', { name: 'Добавить сервер' })).toBeInTheDocument()
+
+    const sidebar = screen.getByRole('complementary', { name: 'Личные сообщения' })
+    expect(within(sidebar).getByText('Пока нет личных сообщений')).toBeInTheDocument()
+  })
+
+  it('shows the display name, falling back to the username', async () => {
+    renderApp('/', { user: { ...testUser, displayName: 'Алиса' } })
+
+    const panel = await screen.findByRole('region', { name: 'Текущий пользователь' })
+    expect(within(panel).getByText('Алиса')).toBeVisible()
+  })
+
+  it('logs out and returns to the login page', async () => {
+    const api = createFakeApi({ user: testUser })
+    const { user, router } = renderApp('/', { api })
+
+    await user.click(await screen.findByRole('button', { name: 'Выйти' }))
+
+    expect(await screen.findByRole('heading', { name: 'С возвращением!' })).toBeVisible()
+    expect(api.auth.logout).toHaveBeenCalledTimes(1)
+    expect(router.state.location.pathname).toBe('/login')
+  })
+
+  it('opens and closes the navigation drawer on small screens', async () => {
+    const { user } = renderApp('/', { user: testUser })
+
+    const drawer = await screen.findByTestId('navigation-drawer')
+    expect(drawer).toHaveAttribute('data-open', 'false')
+
+    await user.click(screen.getByRole('button', { name: 'Открыть меню' }))
+    expect(drawer).toHaveAttribute('data-open', 'true')
+
+    await user.click(screen.getByRole('button', { name: 'Закрыть меню' }))
+    expect(drawer).toHaveAttribute('data-open', 'false')
+  })
+})
+
+describe('not found page', () => {
+  it('links back home', async () => {
+    const { user, router } = renderApp('/definitely/missing', { user: testUser })
+
+    expect(await screen.findByRole('heading', { name: 'Страница не найдена' })).toBeVisible()
+    await user.click(screen.getByRole('link', { name: 'На главную' }))
+
+    expect(await screen.findByRole('heading', { name: 'Друзья', level: 1 })).toBeVisible()
+    expect(router.state.location.pathname).toBe('/')
+  })
+})
