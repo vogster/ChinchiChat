@@ -12,6 +12,7 @@ import { relationshipsQueryOptions } from '../../friends/queries'
 import { userName } from '../dm-names'
 
 import type { Snowflake } from '@chinchi/shared'
+import type { ReactNode } from 'react'
 
 export interface PickFriendsDialogProps {
   readonly title: string
@@ -23,6 +24,8 @@ export interface PickFriendsDialogProps {
   readonly error: unknown
   readonly onSubmit: (userIds: Snowflake[]) => void
   readonly onOpenChange: (open: boolean) => void
+  /** More choices under the list (e.g. encryption of a new group). */
+  readonly extra?: ReactNode
 }
 
 /** Pick friends for a group DM, up to `max` of them. */
@@ -35,6 +38,7 @@ export const PickFriendsDialog = ({
   error,
   onSubmit,
   onOpenChange,
+  extra,
 }: PickFriendsDialogProps) => {
   const { t } = useTranslation()
   const { data: relationships = [] } = useQuery(relationshipsQueryOptions(useApi()))
@@ -93,6 +97,7 @@ export const PickFriendsDialog = ({
             })}
           </ul>
         )}
+        {extra}
         {error ? <Alert tone="error">{errorMessage(t, error)}</Alert> : null}
         <div className="flex gap-2">
           <Button variant="secondary" onClick={() => onOpenChange(false)}>

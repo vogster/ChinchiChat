@@ -406,6 +406,22 @@ export const createE2eeClient = ({ api, store, userId, deviceName }: E2eeClientO
     )
   }
 
+  /**
+   * The conversation caught up and matching the members right now: someone who just left must
+   * not get the next message, whether or not anyone has reopened the conversation since.
+   */
+  const inStep = async (channel: EncryptedChannel, keys: DeviceKeys): Promise<Conversation> => {
+    for (let attempt = 0; attempt < 5; attempt += 1) {
+      const { conversation } = await sync(channel.id, keys)
+      if (!conversation) break
+      if (await reconcile(channel, conversation, keys)) {
+        const current = await conversationOf(channel.id)
+        if (current) return current
+      }
+    }
+    throw new Error('This device is not in the conversation yet')
+  }
+
   /** Starts the conversation's group (the first commit claims epoch 0) or finds it taken. */
   const start = async (channel: EncryptedChannel, keys: DeviceKeys) => {
     const [own] = await createKeyPackages(keys, 1)
@@ -479,9 +495,7 @@ export const createE2eeClient = ({ api, store, userId, deviceName }: E2eeClientO
       { nonce, files = [], reply }: SendOptions = {},
     ): Promise<CipherMessage> =>
       serial(channel.id, async () => {
-        const keys = await ready()
-        const { conversation } = await sync(channel.id, keys)
-        if (!conversation) throw new Error('This device is not in the conversation yet')
+        const conversation = await inStep(channel, await ready())
         const payload: EncryptedPayload =
           files.length > 0 ? { v: 1, text, files: [...files] } : { v: 1, text }
         const result = await encryptMessage(conversation, encodePayload(payload))
@@ -537,9 +551,7 @@ export const createE2eeClient = ({ api, store, userId, deviceName }: E2eeClientO
     /** Replaces the text of my message; its files stay as they were. */
     edit: (channel: EncryptedChannel, messageId: string, text: string): Promise<CipherMessage> =>
       serial(channel.id, async () => {
-        const keys = await ready()
-        const { conversation } = await sync(channel.id, keys)
-        if (!conversation) throw new Error('This device is not in the conversation yet')
+        const conversation = await inStep(channel, await ready())
         // Unknown here, its files would be lost: edit it where it can be read.
         const before = await store.get<EncryptedPayload>(`plain:${messageId}`)
         if (!before) throw new Error('This message is not readable on this device')

@@ -1235,6 +1235,7 @@
     "failed": "Couldn't set up encryption. Reload the page or try again later.",
     "fileDecrypting": "Decrypting {{name}}…",
     "fileFailed": "Couldn't decrypt {{name}}",
-    "encryptedQuote": "Encrypted message"
+    "encryptedQuote": "Encrypted message",
+    "groupHint": "Messages, files and calls are encrypted on members' devices; the server can't see them. No search, link previews or bots here."
   }
 }

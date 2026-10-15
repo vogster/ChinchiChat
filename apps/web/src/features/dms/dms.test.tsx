@@ -118,6 +118,23 @@ describe('DM sidebar', () => {
     expect(api.dms.open).toHaveBeenCalledWith([testFriend.id, carol.id])
     await waitFor(() => expect(router.state.location.pathname).toBe(GROUP_URL))
   })
+
+  it('starts an encrypted group', async () => {
+    const api = withFriends([
+      { user: testFriend, type: 'friend', since },
+      { user: carol, type: 'friend', since },
+    ])
+    const { user } = renderApp('/', { api })
+
+    await user.click(await within(await sidebar()).findByRole('button', { name: 'Создать группу' }))
+    const dialog = await screen.findByRole('dialog', { name: 'Новая группа' })
+    await user.click(await within(dialog).findByLabelText('Боб'))
+    await user.click(within(dialog).getByLabelText('carol'))
+    await user.click(within(dialog).getByRole('switch', { name: 'Зашифрованная беседа' }))
+    await user.click(within(dialog).getByRole('button', { name: 'Создать группу' }))
+
+    expect(api.dms.open).toHaveBeenCalledWith([testFriend.id, carol.id], { encrypted: true })
+  })
 })
 
 describe('DM view', () => {

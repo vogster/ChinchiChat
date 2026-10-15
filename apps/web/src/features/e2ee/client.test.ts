@@ -142,6 +142,25 @@ describe('e2ee client', () => {
     expect(await bob.read(DM, sent)).toMatchObject({ text: 'Встреча в 5' })
   })
 
+  it('never encrypts for someone removed from a group, even before anyone reopens it', async () => {
+    const { client } = setup()
+    const CAROL = '3'
+    const group = { id: '600', memberIds: [ALICE, BOB, CAROL] }
+    const alice = client(ALICE).client
+    const bob = client(BOB).client
+    const carol = client(CAROL).client
+    await Promise.all([bob.ready(), carol.ready()])
+    await alice.open(group)
+    expect(await carol.read(group, await alice.send(group, 'Всем'))).toMatchObject({ text: 'Всем' })
+
+    // Carol leaves the group; Alice writes at once, without opening it again.
+    const withoutCarol = { ...group, memberIds: [ALICE, BOB] }
+    const sent = await alice.send(withoutCarol, 'Без Кэрол')
+
+    expect(await bob.read(withoutCarol, sent)).toMatchObject({ text: 'Без Кэрол' })
+    expect(await carol.read(group, sent)).toBeNull()
+  })
+
   it('gives every member the same call key, which changes with the conversation', async () => {
     const { client } = setup()
     const alice = client(ALICE).client
