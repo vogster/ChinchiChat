@@ -3,6 +3,7 @@ import { vi } from 'vitest'
 import { decodePayload, encodePayload, fromBase64, toBase64 } from '../features/e2ee/codec'
 
 import type { EncryptedFile } from '../features/e2ee/codec'
+import type { SafetyStatus } from '../features/e2ee/safety'
 import type {
   CallKey,
   CipherMessage,
@@ -12,6 +13,9 @@ import type {
 } from '../features/e2ee/client'
 import type { E2eeClientFactory } from '../features/e2ee/e2ee-context'
 import type { ApiClient } from '@chinchi/sdk'
+
+/** The signed-in user of `renderApp` (`testUser`). */
+const testUserId = '100'
 
 /** What the fake "encrypts" to: the payload in base64, so the fake can read it back. */
 export const fakeCiphertext = (text: string, files?: EncryptedFile[]) =>
@@ -50,6 +54,19 @@ export const createFakeE2ee = (status: ConversationStatus = 'ready') => {
       message.ciphertext ? decodePayload(fromBase64(message.ciphertext)) : null,
     ),
     devicesChanged: vi.fn(async (_userId: string) => undefined),
+    safety: {
+      codeWith: vi.fn(
+        async (_otherId: string) => '111112222233333444445555566666777778888899999000001234567890',
+      ),
+      status: vi.fn(async (memberIds: readonly string[]): Promise<SafetyStatus> => ({
+        people: memberIds
+          .filter((id) => id !== testUserId)
+          .map((userId) => ({ userId, verified: false, newDevices: [] })),
+        mine: [],
+      })),
+      verify: vi.fn(async (_userId: string) => undefined),
+      acknowledge: vi.fn(async (_userId: string) => undefined),
+    },
     callKey: vi.fn(async (_channel: EncryptedChannel): Promise<CallKey | null> =>
       status === 'ready' ? { epoch: 1, key: new Uint8Array(32).fill(1) } : null,
     ),

@@ -1236,6 +1236,19 @@
     "fileDecrypting": "Decrypting {{name}}…",
     "fileFailed": "Couldn't decrypt {{name}}",
     "encryptedQuote": "Encrypted message",
-    "groupHint": "Messages, files and calls are encrypted on members' devices; the server can't see them. No search, link previews or bots here."
+    "groupHint": "Messages, files and calls are encrypted on members' devices; the server can't see them. No search, link previews or bots here.",
+    "safety": {
+      "title": "Encryption check",
+      "hint": "Compare the code with the other person in person or over another channel (a call, another messenger). If it matches, messages are encrypted for their devices and not for impostors.",
+      "verified": "Verified",
+      "notVerified": "Not verified",
+      "codesMatch": "Codes match",
+      "newDevicesLabel": "New devices",
+      "newDevice": "{{name}} has a new device: {{devices}}. If you're not sure it's them, compare safety codes.",
+      "newOwnDevice": "A new device on your account: {{devices}}. If it wasn't you, remove it in settings and change your password.",
+      "check": "Check",
+      "gotIt": "Got it",
+      "codeLabel": "Safety code"
+    }
   }
 }

@@ -16,6 +16,7 @@ import {
 } from '@chinchi/e2ee'
 
 import { decodePayload, encodePayload, fromBase64, toBase64 } from './codec'
+import { createSafety } from './safety'
 
 import type { EncryptedFile, EncryptedPayload } from './codec'
 import type { E2eeStore } from './store'
@@ -577,6 +578,14 @@ export const createE2eeClient = ({ api, store, userId, deviceName }: E2eeClientO
           key: await exportSecret(conversation, CALL_KEY_LABEL),
         }
       }),
+
+    /** Safety codes and new-device warnings. */
+    safety: createSafety({
+      store,
+      userId,
+      devicesOf,
+      thisDevice: async () => (await ready()).identity.deviceId,
+    }),
 
     /** A member's devices changed: forget the cached list (the next open reconciles). */
     devicesChanged: async (changedUserId: string) => {

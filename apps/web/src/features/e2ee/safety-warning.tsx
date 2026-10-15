@@ -1,0 +1,67 @@
+import { ShieldAlert } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
+
+import { Button } from '../../components/ui/button'
+
+import type { SafetyControls } from './use-safety'
+
+/** A new device appeared for someone here (or on my account): say so until acknowledged. */
+export const SafetyWarning = ({
+  safety,
+  myId,
+  nameOf,
+  onCheck,
+}: {
+  safety: SafetyControls
+  myId: string
+  nameOf: (userId: string) => string
+  onCheck: () => void
+}) => {
+  const { t } = useTranslation()
+  const { status } = safety
+  if (!status) return null
+  const people = status.people.filter((person) => person.newDevices.length > 0)
+  if (people.length === 0 && status.mine.length === 0) return null
+  const names = (devices: readonly { name: string }[]) => devices.map((d) => d.name).join(', ')
+
+  return (
+    <div
+      role="alert"
+      aria-label={t('e2ee.safety.newDevicesLabel')}
+      className="mx-4 mt-2 flex items-start gap-3 rounded-md border border-border bg-elevated px-3 py-2 text-sm"
+    >
+      <ShieldAlert aria-hidden className="mt-0.5 size-4 shrink-0 text-danger" />
+      <div className="min-w-0 flex-1">
+        {people.map((person) => (
+          <p key={person.userId}>
+            {t('e2ee.safety.newDevice', {
+              name: nameOf(person.userId),
+              devices: names(person.newDevices),
+            })}
+          </p>
+        ))}
+        {status.mine.length > 0 ? (
+          <p>{t('e2ee.safety.newOwnDevice', { devices: names(status.mine) })}</p>
+        ) : null}
+      </div>
+      <div className="flex shrink-0 gap-2">
+        {people.length > 0 ? (
+          <Button variant="secondary" onClick={onCheck}>
+            {t('e2ee.safety.check')}
+          </Button>
+        ) : null}
+        <Button
+          variant="secondary"
+          onClick={() =>
+            void safety.acknowledge([
+              ...people.map((person) => person.userId),
+              ...(status.mine.length > 0 ? [myId] : []),
+            ])
+          }
+        >
+          {t('e2ee.safety.gotIt')}
+        </Button>
+      </div>
+    </div>
+  )
+}

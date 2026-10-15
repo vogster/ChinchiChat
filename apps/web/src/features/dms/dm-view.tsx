@@ -1,5 +1,15 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { AtSign, Bell, Lock, LogOut, Pencil, Phone, UserPlus, Users } from 'lucide-react'
+import {
+  AtSign,
+  Bell,
+  Lock,
+  LogOut,
+  Pencil,
+  Phone,
+  ShieldCheck,
+  UserPlus,
+  Users,
+} from 'lucide-react'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
@@ -37,6 +47,9 @@ import { GroupMembersPanel } from './group-members-panel'
 
 import { NotificationSettingsDialog } from '../notifications/notification-settings-dialog'
 import { EncryptionNotice, EncryptionStatus } from '../e2ee/encryption-notice'
+import { SafetyDialog } from '../e2ee/safety-dialog'
+import { SafetyWarning } from '../e2ee/safety-warning'
+import { useSafety } from '../e2ee/use-safety'
 import { useEncryptedChannel, useEncryptedConversation } from '../e2ee/use-encrypted-conversation'
 import type { MessageItem, MessagePages } from '../messages/queries'
 import type { PrivateChannel } from '@chinchi/shared'
@@ -56,6 +69,7 @@ export const DmView = ({ channel }: { channel: PrivateChannel }) => {
   const [dialog, setDialog] = useState<OpenDialog>(null)
   const [showMembers, setShowMembers] = useState(true)
   const [notifications, setNotifications] = useState(false)
+  const [checking, setChecking] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [confirmDelete, setConfirmDelete] = useState<MessageItem | null>(null)
   const [replyingTo, setReplyingTo] = useState<MessageItem | null>(null)
@@ -70,6 +84,7 @@ export const DmView = ({ channel }: { channel: PrivateChannel }) => {
   const pending = usePendingFiles()
   const encryption = useEncryptedChannel(channel, me?.id)
   const encrypted = useEncryptedConversation(encryption)
+  const safety = useSafety(encryption, encrypted.state === 'ready')
   const canAttach = pending.enabled
 
   const isGroup = channel.type === 'group_dm'
@@ -139,6 +154,17 @@ export const DmView = ({ channel }: { channel: PrivateChannel }) => {
           </span>
         ) : null}
         <span className="ml-auto flex gap-1">
+          {encryption ? (
+            <button
+              type="button"
+              aria-label={t('e2ee.safety.title')}
+              title={t('e2ee.safety.title')}
+              onClick={() => setChecking(true)}
+              className={headerButton}
+            >
+              <ShieldCheck aria-hidden className="size-5" />
+            </button>
+          ) : null}
           <button
             type="button"
             aria-label={t('notifications.dmButton')}
@@ -290,6 +316,14 @@ export const DmView = ({ channel }: { channel: PrivateChannel }) => {
               <Alert tone="error">{pending.error}</Alert>
             </div>
           ) : null}
+          {encryption && me ? (
+            <SafetyWarning
+              safety={safety}
+              myId={me.id}
+              nameOf={(userId) => callPerson(userId).name}
+              onCheck={() => setChecking(true)}
+            />
+          ) : null}
           {encryption && encrypted.state !== 'ready' ? (
             <EncryptionStatus state={encrypted.state} />
           ) : canTalk ? (
@@ -326,6 +360,13 @@ export const DmView = ({ channel }: { channel: PrivateChannel }) => {
         {isGroup && showMembers && me ? <GroupMembersPanel channel={channel} me={me} /> : null}
       </div>
 
+      {checking ? (
+        <SafetyDialog
+          safety={safety}
+          nameOf={(userId) => callPerson(userId).name}
+          onOpenChange={setChecking}
+        />
+      ) : null}
       {notifications ? (
         <NotificationSettingsDialog
           targetId={channel.id}

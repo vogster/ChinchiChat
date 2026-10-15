@@ -75,6 +75,23 @@ test('two people talk and call in an encrypted conversation the server cannot re
   expect(stored).not.toContain('4242')
   expect(stored).toContain('"ciphertext"')
 
+  // Both see the same safety code for each other: compared, it proves the devices are theirs.
+  const codeOf = async (page: typeof alice.page, name: string) => {
+    await page.getByRole('button', { name: 'Проверка шифрования' }).click()
+    const person = page
+      .getByRole('dialog', { name: 'Проверка шифрования' })
+      .getByRole('group', { name })
+    await expect(person).toContainText(/\d{5} \d{5} \d{5} \d{5}/)
+    const code = (
+      await person.getByRole('group', { name: 'Код безопасности' }).innerText()
+    ).replace(/\s+/g, '')
+    await page.keyboard.press('Escape')
+    return code
+  }
+  const aliceSees = await codeOf(alice.page, bobUser.username)
+  expect(aliceSees).toMatch(/^\d{60}$/)
+  expect(await codeOf(bob.page, aliceUser.username)).toBe(aliceSees)
+
   // Files are encrypted before upload: Bob sees the picture, the server only a generic blob.
   await alice.page
     .getByLabel('Прикрепить файлы', { exact: true })
