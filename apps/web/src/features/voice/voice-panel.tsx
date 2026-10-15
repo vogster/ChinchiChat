@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
-import { Monitor, MonitorOff, PhoneOff, Video, VideoOff } from 'lucide-react'
+import { Lock, Monitor, MonitorOff, PhoneOff, Video, VideoOff } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
 import { useApi } from '../../lib/api-context'
@@ -52,6 +52,12 @@ export const VoicePanel = () => {
             {connected ? t('voice.connected') : t('voice.connecting')}
           </div>
           <div className="truncate text-muted">{place.filter(Boolean).join(' / ')}</div>
+          {connected && voice.encrypted ? (
+            <div className="flex items-center gap-1 text-muted">
+              <Lock aria-hidden className="size-3 shrink-0" />
+              <span className="truncate">{t('voice.encrypted')}</span>
+            </div>
+          ) : null}
         </div>
         <button
           type="button"

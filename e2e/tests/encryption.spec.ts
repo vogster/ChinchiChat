@@ -7,11 +7,17 @@ import { newUser } from '../support/users'
 import type { Browser } from '@playwright/test'
 
 const openAs = async (browser: Browser) => {
-  const context = await browser.newContext({ viewport: { width: 1280, height: 800 } })
+  // Chromium's fake camera and microphone (see launch flags in the config) stand in for devices.
+  const context = await browser.newContext({
+    viewport: { width: 1280, height: 800 },
+    permissions: ['microphone', 'camera'],
+  })
   return { context, page: await context.newPage() }
 }
 
-test('two people talk in an encrypted conversation the server cannot read', async ({ browser }) => {
+test('two people talk and call in an encrypted conversation the server cannot read', async ({
+  browser,
+}) => {
   const alice = await openAs(browser)
   const bob = await openAs(browser)
   const aliceUser = newUser()
@@ -62,6 +68,40 @@ test('two people talk in an encrypted conversation the server cannot read', asyn
   }, channelId)
   expect(stored).not.toContain('4242')
   expect(stored).toContain('"ciphertext"')
+
+  // A call here is encrypted end to end with the conversation's key: Bob sees Alice's camera,
+  // which he could not decode with any other key.
+  await alice.page.getByRole('button', { name: 'Позвонить' }).click()
+  const alicePanel = alice.page.getByRole('region', { name: 'Голосовое подключение' })
+  await expect(alicePanel).toContainText('Звонок зашифрован')
+  await bob.page
+    .getByRole('alertdialog', { name: 'Входящий звонок' })
+    .getByRole('button', { name: 'Принять' })
+    .click()
+  await expect(bob.page.getByRole('region', { name: 'Голосовое подключение' })).toContainText(
+    'Звонок зашифрован',
+  )
+  await alice.page.getByRole('button', { name: 'Включить камеру' }).click()
+  const aliceVideo = bob.page
+    .getByRole('list', { name: 'Участники звонка' })
+    .getByRole('listitem', { name: new RegExp(`^${aliceUser.username}`) })
+    .locator('video')
+  await expect(aliceVideo).toBeVisible()
+  await expect
+    .poll(() => aliceVideo.evaluate((video) => (video as { videoWidth: number }).videoWidth), {
+      timeout: 15_000,
+    })
+    .toBeGreaterThan(0)
+  // The media went through LiveKit's encryption worker, not a plain connection.
+  for (const { page } of [alice, bob]) {
+    const workers = await page.evaluate(() =>
+      performance
+        .getEntriesByType('resource')
+        .map((entry) => entry.name)
+        .filter((name) => name.includes('e2ee.worker')),
+    )
+    expect(workers.length).toBeGreaterThan(0)
+  }
 
   await alice.context.close()
   await bob.context.close()

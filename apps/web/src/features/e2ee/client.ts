@@ -6,6 +6,7 @@ import {
   createKeyPackages,
   encryptMessage,
   epoch,
+  exportSecret,
   joinConversation,
   loadConversation,
   members,
@@ -60,6 +61,12 @@ export interface CipherMessage {
 /** ready: this device is in the conversation; waiting: another device has to let it in. */
 export type ConversationStatus = 'ready' | 'waiting'
 
+/** A call key and the epoch it belongs to (a later epoch replaces it). */
+export interface CallKey {
+  readonly epoch: number
+  readonly key: Uint8Array
+}
+
 export interface E2eeClientOptions {
   readonly api: E2eeApi
   readonly store: E2eeStore
@@ -89,6 +96,8 @@ interface StoredBundle {
 
 const KEY_PACKAGE_BATCH = 20
 const KEY_PACKAGE_LOW = 10
+/** Exporter label of call keys; every member derives the same key for an epoch. */
+const CALL_KEY_LABEL = 'chinchi call'
 
 const isStale = (error: unknown) => error instanceof ApiError && error.code === 'STALE_EPOCH'
 
@@ -487,6 +496,17 @@ export const createE2eeClient = ({ api, store, userId, deviceName }: E2eeClientO
         }
         if (payload) await store.set(`plain:${message.id}`, payload)
         return payload
+      }),
+
+    /** The key of a call in this conversation for its current epoch; null while waiting. */
+    callKey: (channel: EncryptedChannel): Promise<CallKey | null> =>
+      serial(channel.id, async () => {
+        const { conversation } = await sync(channel.id, await ready())
+        if (!conversation) return null
+        return {
+          epoch: Number(epoch(conversation)),
+          key: await exportSecret(conversation, CALL_KEY_LABEL),
+        }
       }),
 
     /** A member's devices changed: forget the cached list (the next open reconciles). */

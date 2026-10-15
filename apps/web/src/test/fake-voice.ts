@@ -1,5 +1,6 @@
 import { vi } from 'vitest'
 
+import type { CallKey } from '../features/e2ee/client'
 import type { VoicePreferences } from '../features/voice/voice-preferences'
 import type { VideoTile, VoiceRoomEvents, VoiceRoomFactory } from '../features/voice/voice-room'
 
@@ -11,7 +12,7 @@ export const createFakeVoice = () => {
       async (
         _url: string,
         _token: string,
-        options: { microphone: boolean; preferences: VoicePreferences },
+        options: { microphone: boolean; preferences: VoicePreferences; encryption?: CallKey },
       ) => ({ microphone: options.microphone }),
     ),
     disconnect: vi.fn(async () => {}),
@@ -20,6 +21,7 @@ export const createFakeVoice = () => {
     setScreenShare: vi.fn(async (_enabled: boolean) => {}),
     setDeafened: vi.fn((_deafened: boolean) => {}),
     setPreferences: vi.fn(async (_preferences: VoicePreferences) => {}),
+    setEncryptionKey: vi.fn(async (_key: CallKey) => {}),
   }
   const factory: VoiceRoomFactory = (next) => {
     events = next

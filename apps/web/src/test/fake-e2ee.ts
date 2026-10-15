@@ -2,7 +2,12 @@ import { vi } from 'vitest'
 
 import { decodePayload, encodePayload, fromBase64, toBase64 } from '../features/e2ee/codec'
 
-import type { CipherMessage, ConversationStatus, EncryptedChannel } from '../features/e2ee/client'
+import type {
+  CallKey,
+  CipherMessage,
+  ConversationStatus,
+  EncryptedChannel,
+} from '../features/e2ee/client'
 import type { E2eeClientFactory } from '../features/e2ee/e2ee-context'
 import type { ApiClient } from '@chinchi/sdk'
 
@@ -27,6 +32,9 @@ export const createFakeE2ee = (status: ConversationStatus = 'ready') => {
       message.ciphertext ? decodePayload(fromBase64(message.ciphertext)) : null,
     ),
     devicesChanged: vi.fn(async (_userId: string) => undefined),
+    callKey: vi.fn(async (_channel: EncryptedChannel): Promise<CallKey | null> =>
+      status === 'ready' ? { epoch: 1, key: new Uint8Array(32).fill(1) } : null,
+    ),
   }
   const factory: E2eeClientFactory = (_userId, givenApi) => {
     api = givenApi

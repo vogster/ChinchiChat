@@ -1,5 +1,15 @@
-import { Room, RoomEvent, Track } from 'livekit-client'
+import {
+  BaseKeyProvider,
+  createKeyMaterialFromBuffer,
+  isE2EESupported,
+  Room,
+  RoomEvent,
+  Track,
+} from 'livekit-client'
 
+import { CodedError } from '../../lib/errors'
+
+import type { CallKey } from '../e2ee/client'
 import type { VoicePreferences } from './voice-preferences'
 import type { AudioCaptureOptions, RemoteTrack } from 'livekit-client'
 
@@ -27,7 +37,12 @@ export interface VoiceRoom {
   connect(
     url: string,
     token: string,
-    options: { readonly microphone: boolean; readonly preferences: VoicePreferences },
+    options: {
+      readonly microphone: boolean
+      readonly preferences: VoicePreferences
+      /** End-to-end encryption of the media with this key (an encrypted conversation). */
+      readonly encryption?: CallKey
+    },
   ): Promise<{ readonly microphone: boolean }>
   disconnect(): Promise<void>
   setMicrophone(enabled: boolean): Promise<void>
@@ -37,6 +52,8 @@ export interface VoiceRoom {
   setDeafened(deafened: boolean): void
   /** New devices or processing apply to what is on right now, and to what comes on later. */
   setPreferences(preferences: VoicePreferences): Promise<void>
+  /** The conversation moved to a new epoch: encrypt with its key from now on. */
+  setEncryptionKey(key: CallKey): Promise<void>
 }
 
 export type VoiceRoomFactory = (events: VoiceRoomEvents) => VoiceRoom
@@ -52,6 +69,33 @@ const audioSink = () => {
   return sink
 }
 
+/** Slots for call keys: one per epoch, so the old key still decrypts while others switch. */
+const KEYRING_SIZE = 16
+
+class EpochKeyProvider extends BaseKeyProvider {
+  constructor() {
+    // Everyone shares the key of an epoch; a frame that fails to decrypt is not a reason to
+    // ratchet or drop the key (it may simply be from the epoch before).
+    super({
+      sharedKey: true,
+      ratchetWindowSize: 0,
+      failureTolerance: -1,
+      keyringSize: KEYRING_SIZE,
+    })
+  }
+
+  async setEpochKey({ epoch, key }: CallKey) {
+    const material = await createKeyMaterialFromBuffer(key.slice().buffer)
+    this.onSetEncryptionKey(material, undefined, epoch % KEYRING_SIZE)
+  }
+}
+
+const encryptedRoomOptions = async (keyProvider: EpochKeyProvider) => {
+  if (!isE2EESupported()) throw new CodedError('E2EE_CALLS_UNSUPPORTED')
+  const { default: E2eeWorker } = await import('livekit-client/e2ee-worker?worker')
+  return { e2ee: { keyProvider, worker: new E2eeWorker() } }
+}
+
 export const createLiveKitRoom: VoiceRoomFactory = (events) => {
   let deafened = false
   /** Whether the user wants to talk; a moderator's mute only takes the right away for a while. */
@@ -59,7 +103,8 @@ export const createLiveKitRoom: VoiceRoomFactory = (events) => {
   let preferences: VoicePreferences | null = null
   /** Tiles kept per track, so a video element is not re-attached on every unrelated event. */
   const tileCache = new Map<string, { trackSid: string; tile: VideoTile }>()
-  const room = new Room({ adaptiveStream: true, dynacast: true })
+  let keyProvider: EpochKeyProvider | null = null
+  let room = new Room({ adaptiveStream: true, dynacast: true })
 
   /** The browser's own processing; noise suppression can be turned off (music, ASMR). */
   const microphoneOptions = (): AudioCaptureOptions => ({
@@ -103,36 +148,51 @@ export const createLiveKitRoom: VoiceRoomFactory = (events) => {
     audioSink().append(element)
   }
 
-  room
-    .on(RoomEvent.ActiveSpeakersChanged, (speakers) =>
-      events.onSpeakingChange(speakers.map((speaker) => speaker.identity)),
-    )
-    .on(RoomEvent.TrackSubscribed, (track) => {
-      playAudio(track)
-      refreshVideo()
-    })
-    .on(RoomEvent.TrackUnsubscribed, (track) => {
-      track.detach().forEach((element) => element.remove())
-      refreshVideo()
-    })
-    .on(RoomEvent.LocalTrackPublished, refreshVideo)
-    .on(RoomEvent.LocalTrackUnpublished, refreshVideo)
-    .on(RoomEvent.TrackMuted, refreshVideo)
-    .on(RoomEvent.TrackUnmuted, refreshVideo)
-    .on(RoomEvent.ParticipantPermissionsChanged, (_previous, participant) => {
-      // Server unmute: the microphone right is back, so is the microphone (if wanted).
-      if (participant !== room.localParticipant || !wantMicrophone) return
-      if (room.localParticipant.isMicrophoneEnabled) return
-      room.localParticipant.setMicrophoneEnabled(true, microphoneOptions()).catch(() => undefined)
-    })
-    .on(RoomEvent.Disconnected, () => {
-      refreshVideo()
-      events.onDisconnected()
-    })
+  const listen = (target: Room) =>
+    target
+      .on(RoomEvent.ActiveSpeakersChanged, (speakers) =>
+        events.onSpeakingChange(speakers.map((speaker) => speaker.identity)),
+      )
+      .on(RoomEvent.TrackSubscribed, (track) => {
+        playAudio(track)
+        refreshVideo()
+      })
+      .on(RoomEvent.TrackUnsubscribed, (track) => {
+        track.detach().forEach((element) => element.remove())
+        refreshVideo()
+      })
+      .on(RoomEvent.LocalTrackPublished, refreshVideo)
+      .on(RoomEvent.LocalTrackUnpublished, refreshVideo)
+      .on(RoomEvent.TrackMuted, refreshVideo)
+      .on(RoomEvent.TrackUnmuted, refreshVideo)
+      .on(RoomEvent.ParticipantPermissionsChanged, (_previous, participant) => {
+        // Server unmute: the microphone right is back, so is the microphone (if wanted).
+        if (participant !== room.localParticipant || !wantMicrophone) return
+        if (room.localParticipant.isMicrophoneEnabled) return
+        room.localParticipant.setMicrophoneEnabled(true, microphoneOptions()).catch(() => undefined)
+      })
+      .on(RoomEvent.Disconnected, () => {
+        refreshVideo()
+        events.onDisconnected()
+      })
+  listen(room)
 
   return {
-    async connect(url, token, { microphone, preferences: chosen }) {
+    async connect(url, token, { microphone, preferences: chosen, encryption }) {
       preferences = chosen
+      if (encryption) {
+        // Encryption is set up when the room is made: this one replaces the unused plain room.
+        const provider = new EpochKeyProvider()
+        room = new Room({
+          adaptiveStream: true,
+          dynacast: true,
+          ...(await encryptedRoomOptions(provider)),
+        })
+        listen(room)
+        keyProvider = provider
+        await provider.setEpochKey(encryption)
+        await room.setE2EEEnabled(true)
+      }
       await room.connect(url, token)
       if (chosen.audioOutput) await room.switchActiveDevice('audiooutput', chosen.audioOutput)
       // Joining happens on a click, so the browser lets audio play.
@@ -169,6 +229,9 @@ export const createLiveKitRoom: VoiceRoomFactory = (events) => {
     setDeafened(value) {
       deafened = value
       for (const element of audioSink().querySelectorAll('audio')) element.muted = value
+    },
+    async setEncryptionKey(key) {
+      await keyProvider?.setEpochKey(key)
     },
     async setPreferences(next) {
       const previous = preferences

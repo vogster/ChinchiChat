@@ -101,6 +101,39 @@ describe('e2ee client', () => {
     expect(await bobOld.read(DM, secret)).toBeNull()
   })
 
+  it('gives every member the same call key, which changes with the conversation', async () => {
+    const { client } = setup()
+    const alice = client(ALICE).client
+    const bob = client(BOB).client
+    await bob.ready()
+    await alice.open(DM)
+    await bob.open(DM)
+
+    const first = await alice.callKey(DM)
+    expect(first?.key).toHaveLength(32)
+    expect(await bob.callKey(DM)).toEqual(first)
+
+    // A new device joins: a new epoch and a new key, which the old one can't follow.
+    const bobPhone = client(BOB, 'Телефон').client
+    await bobPhone.ready()
+    await alice.open(DM)
+    const second = await bob.callKey(DM)
+    expect(second?.epoch).toBeGreaterThan(first?.epoch ?? 0)
+    expect(second?.key).not.toEqual(first?.key)
+    expect(await alice.callKey(DM)).toEqual(second)
+    expect(await bobPhone.callKey(DM)).toEqual(second)
+  })
+
+  it('has no call key on a device that is still waiting to be let in', async () => {
+    const { client } = setup()
+    const bob = client(BOB).client
+    await bob.ready()
+    await bob.open(DM)
+    const alice = client(ALICE).client
+
+    expect(await alice.callKey(DM)).toBeNull()
+  })
+
   it('settles who starts the conversation when both open it at once', async () => {
     const { client } = setup()
     const alice = client(ALICE).client

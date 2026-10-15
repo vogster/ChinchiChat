@@ -223,7 +223,9 @@
     "MFA_CODE_REQUIRED": "Enter a code from your authenticator app.",
     "INVALID_MUTE_END": "The end time must be in the future.",
     "INVALID_STATUS_END": "A status can be set for a month at most.",
-    "RULES_NOT_ACCEPTED": "Accept the server rules first."
+    "RULES_NOT_ACCEPTED": "Accept the server rules first.",
+    "E2EE_CALL_NOT_READY": "You can't call yet: this device hasn't been let into the conversation. Open it on another of your devices or wait for the other person.",
+    "E2EE_CALLS_UNSUPPORTED": "This browser can't encrypt calls. Open the conversation in a recent Chrome, Edge, Firefox or Safari."
   },
   "settings": {
     "title": "User settings",
@@ -823,6 +825,7 @@
     "disabled": "Voice is not set up on this Chinchi server",
     "panelLabel": "Voice connection",
     "connected": "Voice connected",
+    "encrypted": "Call encrypted",
     "connecting": "Connecting…",
     "leave": "Disconnect",
     "mute": "Mute",

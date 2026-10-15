@@ -3,10 +3,12 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useRef, use
 
 import { useApi } from '../../lib/api-context'
 import { CodedError } from '../../lib/errors'
+import { useCallEncryption, useCallKeyRotation } from './call-encryption'
 import { declineCall } from './queries'
 import { getVoicePreferences, subscribeVoicePreferences } from './voice-preferences'
 import { createLiveKitRoom } from './voice-room'
 
+import type { CallKey } from '../e2ee/client'
 import type { VideoTile, VoiceRoom, VoiceRoomFactory } from './voice-room'
 import type { Snowflake } from '@chinchi/shared'
 import type { ReactNode } from 'react'
@@ -22,6 +24,8 @@ export interface VoiceSession {
   readonly screen: boolean
   readonly speaking: readonly Snowflake[]
   readonly videos: readonly VideoTile[]
+  /** The media is end-to-end encrypted (a call in an encrypted conversation). */
+  readonly encrypted: boolean
   readonly error: unknown
 }
 
@@ -45,6 +49,7 @@ const IDLE: VoiceSession = {
   screen: false,
   speaking: [],
   videos: [],
+  encrypted: false,
   error: null,
 }
 
@@ -63,6 +68,16 @@ export const VoiceProvider = ({ children }: { children: ReactNode }) => {
   const room = useRef<VoiceRoom | null>(null)
   /** Bumped by every join and leave: a slower, older attempt notices it lost and backs out. */
   const attempt = useRef(0)
+  const { conversationOf, keyFor } = useCallEncryption()
+  const encryptedCall = useMemo(
+    () =>
+      session.status === 'connected' && session.encrypted && session.channelId
+        ? conversationOf(null, session.channelId)
+        : null,
+    [session.status, session.encrypted, session.channelId, conversationOf],
+  )
+  const applyKey = useCallback(async (key: CallKey) => room.current?.setEncryptionKey(key), [])
+  const markKeyApplied = useCallKeyRotation(encryptedCall, applyKey)
 
   const update = useCallback((change: Partial<VoiceSession>) => {
     latest.current = { ...latest.current, ...change }
@@ -104,7 +119,11 @@ export const VoiceProvider = ({ children }: { children: ReactNode }) => {
       update({ ...IDLE, ...pick(latest.current), status: 'connecting', guildId, channelId })
       const { selfMute, selfDeaf } = latest.current
       let next: VoiceRoom | null = null
+      const conversation = conversationOf(guildId, channelId)
       try {
+        // No key, no call: this device is not in the encrypted conversation yet.
+        const callKey = conversation ? await keyFor(conversation) : undefined
+        if (!current()) return
         const { connection } = await api.voice.join(channelId, { selfMute, selfDeaf })
         // Left or moved on while the token was on its way: don't connect at all.
         if (!current()) return
@@ -127,13 +146,15 @@ export const VoiceProvider = ({ children }: { children: ReactNode }) => {
         const { microphone } = await created.connect(connection.url, connection.token, {
           microphone: wanted,
           preferences: getVoicePreferences(),
+          ...(callKey ? { encryption: callKey } : {}),
         })
         if (!current()) {
           void created.disconnect()
           return
         }
         created.setDeafened(selfDeaf)
-        update({ status: 'connected' })
+        markKeyApplied(callKey?.epoch ?? null)
+        update({ status: 'connected', encrypted: callKey !== undefined })
         if (wanted && !microphone) {
           // Listening only: show it as muted, to the user and to everyone else.
           update({ selfMute: true, error: new CodedError('MICROPHONE_UNAVAILABLE') })
@@ -147,7 +168,7 @@ export const VoiceProvider = ({ children }: { children: ReactNode }) => {
         reset(error)
       }
     },
-    [api, factory, update, reset],
+    [api, factory, update, reset, conversationOf, keyFor, markKeyApplied],
   )
 
   /** Applies mute/deafen to the room and tells the server (others see the icons). */

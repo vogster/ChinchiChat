@@ -12,7 +12,10 @@ import type { ApiClient } from '@chinchi/sdk'
 import type { ReactNode } from 'react'
 
 /** What the app uses of the client; tests put a fake behind it. */
-export type E2eeClientLike = Pick<E2eeClient, 'ready' | 'open' | 'send' | 'read' | 'devicesChanged'>
+export type E2eeClientLike = Pick<
+  E2eeClient,
+  'ready' | 'open' | 'send' | 'read' | 'devicesChanged' | 'callKey'
+>
 
 export type E2eeClientFactory = (userId: string, api: ApiClient) => E2eeClientLike
 
