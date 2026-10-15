@@ -6,7 +6,7 @@ import { guildEmojis } from '../../db/schema'
 import { guildTopic } from '../../events/event-bus'
 import { HttpError, badRequest, conflict } from '../../http/http-error'
 import { createLimiter } from '../../http/limiter'
-import { detectImageType } from '../../storage/sniff'
+import { detectImageType } from '@chinchi/shared'
 import { createEmojiImage } from '../../storage/thumbnail'
 
 import type { Database } from '../../db/client'

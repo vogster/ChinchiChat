@@ -1232,6 +1232,8 @@
     "undecryptable": "This message isn't available on this device",
     "opening": "Setting up encryption on this device…",
     "waiting": "Waiting for another of your devices or the other person to let this device in. Open the conversation there — it takes a second.",
-    "failed": "Couldn't set up encryption. Reload the page or try again later."
+    "failed": "Couldn't set up encryption. Reload the page or try again later.",
+    "fileDecrypting": "Decrypting {{name}}…",
+    "fileFailed": "Couldn't decrypt {{name}}"
   }
 }

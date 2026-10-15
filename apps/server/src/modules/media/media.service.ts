@@ -3,7 +3,7 @@ import { Permission } from '@chinchi/shared'
 import { guildTopic } from '../../events/event-bus'
 import { HttpError, badRequest } from '../../http/http-error'
 import { createLimiter } from '../../http/limiter'
-import { detectImageType } from '../../storage/sniff'
+import { detectImageType } from '@chinchi/shared'
 import {
   PROFILE_MAX_INPUT_PIXELS,
   createBannerImage,

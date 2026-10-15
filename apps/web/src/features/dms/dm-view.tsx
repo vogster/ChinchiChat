@@ -70,8 +70,7 @@ export const DmView = ({ channel }: { channel: PrivateChannel }) => {
   const pending = usePendingFiles()
   const encryption = useEncryptedChannel(channel, me?.id)
   const encrypted = useEncryptedConversation(encryption)
-  // Files and edits in encrypted conversations come later; replies need no plaintext but wait too.
-  const canAttach = pending.enabled && !encryption
+  const canAttach = pending.enabled
 
   const isGroup = channel.type === 'group_dm'
   const name = privateChannelName(t, channel)
@@ -95,7 +94,14 @@ export const DmView = ({ channel }: { channel: PrivateChannel }) => {
   const sendContent = (content: string) => {
     typing.sent()
     if (encryption) {
-      void encrypted.send(content, newNonce())
+      void encrypted
+        .send(
+          content,
+          newNonce(),
+          pending.files.map(({ file }) => file),
+        )
+        .catch(() => undefined)
+      pending.clear()
       return
     }
     send.mutate({

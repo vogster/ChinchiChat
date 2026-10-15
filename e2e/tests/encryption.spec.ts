@@ -6,6 +6,12 @@ import { newUser } from '../support/users'
 
 import type { Browser } from '@playwright/test'
 
+/** A valid 1×1 PNG. */
+const PIXEL = Buffer.from(
+  'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8DwHwAFBQIAX8jx0gAAAABJRU5ErkJggg==',
+  'base64',
+)
+
 const openAs = async (browser: Browser) => {
   // Chromium's fake camera and microphone (see launch flags in the config) stand in for devices.
   const context = await browser.newContext({
@@ -68,6 +74,27 @@ test('two people talk and call in an encrypted conversation the server cannot re
   }, channelId)
   expect(stored).not.toContain('4242')
   expect(stored).toContain('"ciphertext"')
+
+  // Files are encrypted before upload: Bob sees the picture, the server only a generic blob.
+  await alice.page
+    .getByLabel('Прикрепить файлы', { exact: true })
+    .setInputFiles({ name: 'карта.png', mimeType: 'image/png', buffer: PIXEL })
+  await aliceComposer.press('Enter')
+  const picture = bob.page.getByRole('img', { name: 'карта.png' })
+  await expect(picture).toBeVisible()
+  await expect
+    .poll(() => picture.evaluate((img) => (img as { naturalWidth: number }).naturalWidth))
+    .toBe(1)
+  const files = await alice.page.evaluate(async (id) => {
+    const response = await fetch(`/api/v1/channels/${id}/messages`)
+    const { data } = (await response.json()) as {
+      data: { messages: { attachments: { filename: string; contentType: string }[] }[] }
+    }
+    return data.messages.flatMap((message) => message.attachments)
+  }, channelId)
+  expect(files).toEqual([
+    expect.objectContaining({ filename: 'encrypted', contentType: 'application/octet-stream' }),
+  ])
 
   // A call here is encrypted end to end with the conversation's key: Bob sees Alice's camera,
   // which he could not decode with any other key.

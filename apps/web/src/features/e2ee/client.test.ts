@@ -101,6 +101,28 @@ describe('e2ee client', () => {
     expect(await bobOld.read(DM, secret)).toBeNull()
   })
 
+  it('sends the secrets of files inside the message and their attachments alongside', async () => {
+    const { client, delivery } = setup()
+    const alice = client(ALICE).client
+    const bob = client(BOB).client
+    await bob.ready()
+    await alice.open(DM)
+    const file = {
+      id: '900',
+      name: 'план.pdf',
+      type: 'application/pdf',
+      size: 10,
+      key: 'a2V5',
+      iv: 'aXY=',
+    }
+
+    const sent = await alice.send(DM, 'Вот план', undefined, [file])
+
+    expect(delivery.messages.at(-1)?.attachmentIds).toEqual(['900'])
+    expect(await bob.read(DM, sent)).toEqual({ v: 1, text: 'Вот план', files: [file] })
+    expect(await alice.read(DM, sent)).toMatchObject({ files: [file] })
+  })
+
   it('gives every member the same call key, which changes with the conversation', async () => {
     const { client } = setup()
     const alice = client(ALICE).client

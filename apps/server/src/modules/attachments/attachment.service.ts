@@ -6,7 +6,7 @@ import {
 } from '@chinchi/shared'
 
 import { HttpError, badRequest } from '../../http/http-error'
-import { SNIFF_BYTES, detectImageType } from '../../storage/sniff'
+import { SNIFF_BYTES, detectImageType } from '@chinchi/shared'
 import { attachmentKey, previewFilename, previewKey, uploadKey } from './attachment.mapper'
 import { isMessageChannel } from '../channels/channel.repository'
 

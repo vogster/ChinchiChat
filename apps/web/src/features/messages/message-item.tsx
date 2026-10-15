@@ -21,6 +21,7 @@ import { ProfileTrigger } from '../profile/profile-trigger'
 import { EmojiPicker } from '../emoji/emoji-picker'
 import { MessageContent } from '../markdown/message-content'
 import { QUICK_REACTIONS } from './reaction-cache'
+import { EncryptedAttachments } from '../e2ee/encrypted-attachments'
 import { AttachmentList } from './attachment-list'
 import { EmbedCard } from './embed-card'
 import { ReactionsBar } from './reactions-bar'
@@ -261,6 +262,7 @@ export const MessageItem = ({
         )}
         {content}
         <AttachmentList attachments={message.attachments} />
+        {message.encryptedFiles ? <EncryptedAttachments files={message.encryptedFiles} /> : null}
         {message.pending && message.files ? (
           <ul className="mt-1 flex flex-wrap gap-1.5">
             {message.files.map((file, index) => (

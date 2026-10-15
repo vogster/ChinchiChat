@@ -14,7 +14,13 @@ export const createFakeDelivery = () => {
   const keyPackages: { id: string; deviceId: string; package: string; lastResort: boolean }[] = []
   const epochs = new Map<string, number>()
   const handshakes: Handshake[] = []
-  const messages: { id: string; channelId: string; authorId: string; ciphertext: string }[] = []
+  const messages: {
+    id: string
+    channelId: string
+    authorId: string
+    ciphertext: string
+    attachmentIds: readonly string[]
+  }[] = []
 
   const apiFor = (userId: string): E2eeApi => ({
     e2ee: {
@@ -103,7 +109,13 @@ export const createFakeDelivery = () => {
     },
     messages: {
       create: async (channelId, body) => {
-        const message = { id: id(), channelId, authorId: userId, ciphertext: body.ciphertext ?? '' }
+        const message = {
+          id: id(),
+          channelId,
+          authorId: userId,
+          ciphertext: body.ciphertext ?? '',
+          attachmentIds: body.attachmentIds ?? [],
+        }
         messages.push(message)
         return { message: { id: message.id, ciphertext: message.ciphertext } }
       },

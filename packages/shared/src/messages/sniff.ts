@@ -1,4 +1,4 @@
-import type { InlineImageType } from '@chinchi/shared'
+import type { InlineImageType } from './attachment.schemas'
 
 /** How many leading bytes `detectImageType` needs. */
 export const SNIFF_BYTES = 16

@@ -76,6 +76,7 @@ describe('encrypted conversations', () => {
         expect.objectContaining({ id: encryptedDm.id }),
         'Только для нас',
         expect.any(String),
+        [],
       ),
     )
     const [, , nonce] = e2ee.send.mock.calls[0] as [unknown, string, string]

@@ -17,7 +17,7 @@ import {
 
 import { decodePayload, encodePayload, fromBase64, toBase64 } from './codec'
 
-import type { EncryptedPayload } from './codec'
+import type { EncryptedFile, EncryptedPayload } from './codec'
 import type { E2eeStore } from './store'
 import type { ApiClient } from '@chinchi/sdk'
 import type { Conversation, ConversationOptions, DeviceKeys, KeyPackageBundle } from '@chinchi/e2ee'
@@ -40,7 +40,7 @@ export interface E2eeApi {
   readonly messages: {
     create(
       channelId: string,
-      body: { ciphertext: string; nonce?: string },
+      body: { ciphertext: string; nonce?: string; attachmentIds?: string[] },
     ): Promise<{ message: { id: string; ciphertext: string | null } }>
   }
 }
@@ -443,13 +443,22 @@ export const createE2eeClient = ({ api, store, userId, deviceName }: E2eeClientO
 
     open,
 
-    /** Encrypts and sends; the plaintext is kept, since the sender can't decrypt its own. */
-    send: (channel: EncryptedChannel, text: string, nonce?: string): Promise<CipherMessage> =>
+    /**
+     * Encrypts and sends; the plaintext is kept, since the sender can't decrypt its own. Files
+     * are uploaded encrypted beforehand: their secrets ride inside, their attachments alongside.
+     */
+    send: (
+      channel: EncryptedChannel,
+      text: string,
+      nonce?: string,
+      files: readonly EncryptedFile[] = [],
+    ): Promise<CipherMessage> =>
       serial(channel.id, async () => {
         const keys = await ready()
         const { conversation } = await sync(channel.id, keys)
         if (!conversation) throw new Error('This device is not in the conversation yet')
-        const payload: EncryptedPayload = { v: 1, text }
+        const payload: EncryptedPayload =
+          files.length > 0 ? { v: 1, text, files: [...files] } : { v: 1, text }
         const result = await encryptMessage(conversation, encodePayload(payload))
         await persist(channel.id, result.conversation)
         // The gateway may echo the message before the request returns: find it by nonce then.
@@ -457,6 +466,7 @@ export const createE2eeClient = ({ api, store, userId, deviceName }: E2eeClientO
         const { message } = await api.messages.create(channel.id, {
           ciphertext: toBase64(result.ciphertext),
           ...(nonce ? { nonce } : {}),
+          ...(files.length > 0 ? { attachmentIds: files.map((file) => file.id) } : {}),
         })
         await store.set(`plain:${message.id}`, payload)
         return message

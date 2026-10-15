@@ -1,5 +1,6 @@
 import { infiniteQueryOptions, queryOptions } from '@tanstack/react-query'
 
+import type { SealedFile } from '../e2ee/codec'
 import type { ApiClient } from '@chinchi/sdk'
 import type { MentionCounts, Message, PresenceStatus, Snowflake } from '@chinchi/shared'
 import type { InfiniteData } from '@tanstack/react-query'
@@ -11,6 +12,8 @@ export type MessageItem = Message & {
   readonly pending?: 'sending' | 'failed'
   /** Files of a message still being sent (kept so a failed send can be retried with them). */
   readonly files?: readonly File[]
+  /** Files of an encrypted message: where the ciphertext is and what opens it. */
+  readonly encryptedFiles?: readonly SealedFile[]
 }
 
 /** Pages go newest → older; each page is oldest → newest. `undefined` cursor = latest page. */
