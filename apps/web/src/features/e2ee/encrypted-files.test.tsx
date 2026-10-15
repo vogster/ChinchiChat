@@ -63,11 +63,9 @@ describe('files in encrypted conversations', () => {
     expect(blob).not.toBe(plan)
     expect(blob.size).toBe(plan.size + 16)
     expect(options).toEqual({ filename: 'encrypted', contentType: 'application/octet-stream' })
-    expect(e2ee.send).toHaveBeenCalledWith(
-      expect.objectContaining({ id: encryptedDm.id }),
-      '',
-      expect.any(String),
-      [
+    expect(e2ee.send).toHaveBeenCalledWith(expect.objectContaining({ id: encryptedDm.id }), '', {
+      nonce: expect.any(String),
+      files: [
         expect.objectContaining({
           id: '900',
           name: 'план.txt',
@@ -75,7 +73,7 @@ describe('files in encrypted conversations', () => {
           size: plan.size,
         }),
       ],
-    )
+    })
     await waitFor(() =>
       expect(screen.queryByRole('list', { name: 'Файлы к отправке' })).not.toBeInTheDocument(),
     )

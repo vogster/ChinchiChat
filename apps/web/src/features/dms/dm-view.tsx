@@ -95,12 +95,13 @@ export const DmView = ({ channel }: { channel: PrivateChannel }) => {
     typing.sent()
     if (encryption) {
       void encrypted
-        .send(
-          content,
-          newNonce(),
-          pending.files.map(({ file }) => file),
-        )
+        .send(content, {
+          nonce: newNonce(),
+          files: pending.files.map(({ file }) => file),
+          ...(replyingTo ? { reply: { messageId: replyingTo.id, mention: replyMention } } : {}),
+        })
         .catch(() => undefined)
+      setReplyingTo(null)
       pending.clear()
       return
     }
@@ -242,11 +243,11 @@ export const DmView = ({ channel }: { channel: PrivateChannel }) => {
               )
             }
             encryption={encryption}
-            canEditOwn={!encryption}
+            canEditOwn
             myId={me?.id}
             myRoleIds={[]}
             canModerate={false}
-            canReply={canTalk && !encryption}
+            canReply={canTalk}
             onReply={(message) => {
               setReplyingTo(message)
               setReplyMention(true)
@@ -263,7 +264,8 @@ export const DmView = ({ channel }: { channel: PrivateChannel }) => {
             onCancelEdit={() => setEditingId(null)}
             onSaveEdit={(message, content) => {
               setEditingId(null)
-              edit.mutate({ messageId: message.id, content })
+              if (encryption) void encrypted.edit(message.id, content).catch(() => undefined)
+              else edit.mutate({ messageId: message.id, content })
             }}
             onDelete={(message, skipConfirm) =>
               skipConfirm ? remove.mutate(message.id) : setConfirmDelete(message)

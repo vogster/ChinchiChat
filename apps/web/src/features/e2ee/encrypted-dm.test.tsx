@@ -75,11 +75,14 @@ describe('encrypted conversations', () => {
       expect(e2ee.send).toHaveBeenCalledWith(
         expect.objectContaining({ id: encryptedDm.id }),
         'Только для нас',
-        expect.any(String),
-        [],
+        { nonce: expect.any(String), files: [] },
       ),
     )
-    const [, , nonce] = e2ee.send.mock.calls[0] as [unknown, string, string]
+    const [, , { nonce }] = e2ee.send.mock.calls[0] as unknown as [
+      unknown,
+      string,
+      { nonce: string },
+    ]
     act(() =>
       gateway.emit(
         'MESSAGE_CREATE',
@@ -119,5 +122,71 @@ describe('encrypted conversations', () => {
     expect(
       await within(list).findByRole('link', { name: /^Боб.*зашифрованная беседа/ }),
     ).toBeVisible()
+  })
+})
+
+describe('editing and replying in encrypted conversations', () => {
+  const ME = { id: testUser.id, username: 'alice', displayName: null, avatarUrl: null }
+  const withHistory = () => {
+    const api = createFakeApi({ user: testUser })
+    api.dms.list.mockResolvedValue({ channels: [encryptedDm] })
+    const base = { channelId: encryptedDm.id, guildId: null, content: '' }
+    api.messages.list.mockResolvedValue({
+      messages: [
+        testMessage('1301', { ...base, ciphertext: fakeCiphertext('Секретная встреча в пятницу') }),
+        testMessage('1302', { ...base, author: ME, ciphertext: fakeCiphertext('Мой текст') }),
+        testMessage('1303', {
+          ...base,
+          ciphertext: fakeCiphertext('Напоминаю'),
+          // The server keeps the link only: it has no text to quote.
+          reply: {
+            messageId: '1301',
+            mentionsAuthor: true,
+            message: { author: testFriend, content: '', attachmentCount: 0 },
+          },
+        }),
+      ],
+    })
+    return api
+  }
+  const messageRow = (text: string) => screen.getAllByText(text)[0]?.closest('li') as HTMLElement
+
+  it('edit through encryption', async () => {
+    const { user, e2ee } = renderApp(URL, { api: withHistory() })
+    await screen.findByText('Мой текст')
+
+    await user.click(screen.getByRole('textbox', { name: 'Написать @Боб' }))
+    await user.keyboard('{ArrowUp}')
+    const box = screen.getByRole('textbox', { name: 'Изменить сообщение' })
+    expect(box).toHaveValue('Мой текст')
+    await user.clear(box)
+    await user.type(box, 'Новый текст{Enter}')
+
+    await waitFor(() =>
+      expect(e2ee.edit).toHaveBeenCalledWith(
+        expect.objectContaining({ id: encryptedDm.id }),
+        '1302',
+        'Новый текст',
+      ),
+    )
+  })
+
+  it('reply through encryption and quote the decrypted text', async () => {
+    const { user, e2ee } = renderApp(URL, { api: withHistory() })
+    await screen.findByText('Напоминаю')
+    // The quote above the reply shows what the original says, decrypted here.
+    expect(screen.getAllByText('Секретная встреча в пятницу')).toHaveLength(2)
+
+    await user.hover(messageRow('Мой текст'))
+    await user.click(within(messageRow('Мой текст')).getByRole('button', { name: 'Ответить' }))
+    await user.type(screen.getByRole('textbox', { name: 'Написать @Боб' }), 'Ок{Enter}')
+
+    await waitFor(() =>
+      expect(e2ee.send).toHaveBeenCalledWith(
+        expect.objectContaining({ id: encryptedDm.id }),
+        'Ок',
+        expect.objectContaining({ reply: { messageId: '1302', mention: true } }),
+      ),
+    )
   })
 })

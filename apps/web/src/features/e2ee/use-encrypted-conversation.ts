@@ -4,7 +4,7 @@ import { useApi } from '../../lib/api-context'
 import { useE2ee } from './e2ee-context'
 import { encryptFile } from './file-crypto'
 
-import type { ConversationStatus, EncryptedChannel } from './client'
+import type { ConversationStatus, EncryptedChannel, SendOptions } from './client'
 import type { EncryptedFile } from './codec'
 import type { PrivateChannel } from '@chinchi/shared'
 
@@ -49,7 +49,14 @@ export const useEncryptedConversation = (channel: EncryptedChannel | undefined) 
   return {
     state,
     /** Files go up encrypted under a generic name; what opens them rides in the message. */
-    send: async (text: string, nonce: string, files: readonly File[] = []) => {
+    send: async (
+      text: string,
+      {
+        nonce,
+        files = [],
+        reply,
+      }: { nonce: string; files?: readonly File[]; reply?: SendOptions['reply'] },
+    ) => {
       if (!channel || !client) throw new Error('Not an encrypted conversation')
       const sealed: EncryptedFile[] = []
       for (const file of files) {
@@ -60,7 +67,11 @@ export const useEncryptedConversation = (channel: EncryptedChannel | undefined) 
         })
         sealed.push({ id, ...secret })
       }
-      return client.send(channel, text, nonce, sealed)
+      return client.send(channel, text, { nonce, files: sealed, reply })
+    },
+    edit: (messageId: string, text: string) => {
+      if (!channel || !client) throw new Error('Not an encrypted conversation')
+      return client.edit(channel, messageId, text)
     },
   }
 }

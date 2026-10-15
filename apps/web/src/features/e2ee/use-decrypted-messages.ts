@@ -1,3 +1,4 @@
+import { replySnippetText } from '@chinchi/shared'
 import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
@@ -30,7 +31,12 @@ export const useDecryptedMessages = (
       if (!message.ciphertext || message.pending || asked.current.has(key)) continue
       asked.current.add(key)
       void client
-        .read(channel, { id: message.id, ciphertext: message.ciphertext, nonce: message.nonce })
+        .read(channel, {
+          id: message.id,
+          ciphertext: message.ciphertext,
+          nonce: message.nonce,
+          editedAt: message.editedAt,
+        })
         .catch(() => null)
         .then((payload) => {
           setPayloads((known) => new Map(known).set(key, payload))
@@ -39,6 +45,16 @@ export const useDecryptedMessages = (
   }, [channel, client, messages])
 
   if (!channel) return messages
+  /** The server can't quote an encrypted message: the quote comes from what was decrypted here. */
+  const quoteOf = (reply: MessageItem['reply']): MessageItem['reply'] => {
+    if (!reply?.message) return reply
+    const original = messages.find((m) => m.id === reply.messageId)
+    const text = original ? payloads.get(keyOf(original))?.text : undefined
+    return {
+      ...reply,
+      message: { ...reply.message, content: replySnippetText(text ?? t('e2ee.encryptedQuote')) },
+    }
+  }
   return messages.map((message) => {
     if (!message.ciphertext || message.pending) return message
     const key = keyOf(message)
@@ -50,6 +66,12 @@ export const useDecryptedMessages = (
       const attachment = message.attachments.find((a) => a.id === file.id)
       return attachment ? [{ ...file, url: attachment.url }] : []
     })
-    return { ...message, content: payload.text, attachments: [], encryptedFiles }
+    return {
+      ...message,
+      content: payload.text,
+      attachments: [],
+      encryptedFiles,
+      reply: quoteOf(message.reply),
+    }
   })
 }

@@ -8,6 +8,7 @@ import type {
   CipherMessage,
   ConversationStatus,
   EncryptedChannel,
+  SendOptions,
 } from '../features/e2ee/client'
 import type { E2eeClientFactory } from '../features/e2ee/e2ee-context'
 import type { ApiClient } from '@chinchi/sdk'
@@ -26,18 +27,25 @@ export const createFakeE2ee = (status: ConversationStatus = 'ready') => {
       async (
         channel: EncryptedChannel,
         text: string,
-        nonce?: string,
-        files: readonly EncryptedFile[] = [],
+        { nonce, files = [], reply }: SendOptions = {},
       ) => {
         if (!api) throw new Error('The fake e2ee client has no API yet')
         const { message } = await api.messages.create(channel.id, {
           ciphertext: fakeCiphertext(text, files.length > 0 ? [...files] : undefined),
           ...(nonce ? { nonce } : {}),
           ...(files.length > 0 ? { attachmentIds: files.map((file) => file.id) } : {}),
+          ...(reply ? { replyTo: reply.messageId, replyMention: reply.mention } : {}),
         })
         return message
       },
     ),
+    edit: vi.fn(async (channel: EncryptedChannel, messageId: string, text: string) => {
+      if (!api) throw new Error('The fake e2ee client has no API yet')
+      const { message } = await api.messages.update(channel.id, messageId, {
+        ciphertext: fakeCiphertext(text),
+      })
+      return message
+    }),
     read: vi.fn(async (_channel: EncryptedChannel, message: CipherMessage) =>
       message.ciphertext ? decodePayload(fromBase64(message.ciphertext)) : null,
     ),

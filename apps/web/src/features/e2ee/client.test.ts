@@ -116,11 +116,30 @@ describe('e2ee client', () => {
       iv: 'aXY=',
     }
 
-    const sent = await alice.send(DM, 'Вот план', undefined, [file])
+    const sent = await alice.send(DM, 'Вот план', { files: [file] })
 
     expect(delivery.messages.at(-1)?.attachmentIds).toEqual(['900'])
     expect(await bob.read(DM, sent)).toEqual({ v: 1, text: 'Вот план', files: [file] })
     expect(await alice.read(DM, sent)).toMatchObject({ files: [file] })
+  })
+
+  it('edits a message: everyone reads the new text, files stay', async () => {
+    const { client } = setup()
+    const alice = client(ALICE).client
+    const bob = client(BOB).client
+    await bob.ready()
+    await alice.open(DM)
+    const file = { id: '900', name: 'a.txt', type: 'text/plain', size: 1, key: 'a2V5', iv: 'aXY=' }
+    const sent = await alice.send(DM, 'Встреча в 5', { files: [file] })
+    expect(await bob.read(DM, sent)).toMatchObject({ text: 'Встреча в 5' })
+
+    const edited = await alice.edit(DM, sent.id, 'Встреча в 6')
+
+    expect(edited.editedAt).toEqual(expect.any(String))
+    expect(await bob.read(DM, edited)).toEqual({ v: 1, text: 'Встреча в 6', files: [file] })
+    expect(await alice.read(DM, edited)).toMatchObject({ text: 'Встреча в 6' })
+    // The original stays readable by what it was (an older copy of the message).
+    expect(await bob.read(DM, sent)).toMatchObject({ text: 'Встреча в 5' })
   })
 
   it('gives every member the same call key, which changes with the conversation', async () => {

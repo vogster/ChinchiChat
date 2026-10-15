@@ -119,6 +119,14 @@ export const createFakeDelivery = () => {
         messages.push(message)
         return { message: { id: message.id, ciphertext: message.ciphertext } }
       },
+      update: async (_channelId, messageId, change) => {
+        const index = messages.findIndex((m) => m.id === messageId && m.authorId === userId)
+        const found = messages[index]
+        if (!found) throw new ApiError(404, 'UNKNOWN_MESSAGE', 'Unknown message')
+        const editedAt = new Date(Date.now() + index).toISOString()
+        messages[index] = { ...found, ciphertext: change.ciphertext }
+        return { message: { id: messageId, ciphertext: change.ciphertext, editedAt } }
+      },
     },
   })
 

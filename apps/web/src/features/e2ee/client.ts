@@ -40,8 +40,19 @@ export interface E2eeApi {
   readonly messages: {
     create(
       channelId: string,
-      body: { ciphertext: string; nonce?: string; attachmentIds?: string[] },
+      body: {
+        ciphertext: string
+        nonce?: string
+        attachmentIds?: string[]
+        replyTo?: string
+        replyMention?: boolean
+      },
     ): Promise<{ message: { id: string; ciphertext: string | null } }>
+    update(
+      channelId: string,
+      messageId: string,
+      change: { ciphertext: string },
+    ): Promise<{ message: { id: string; ciphertext: string | null; editedAt: string | null } }>
   }
 }
 
@@ -56,10 +67,21 @@ export interface CipherMessage {
   readonly id: string
   readonly ciphertext: string | null
   readonly nonce?: string | null
+  /** Set once edited: each edit is a new MLS message, decrypted (and kept) on its own. */
+  readonly editedAt?: string | null
 }
 
 /** ready: this device is in the conversation; waiting: another device has to let it in. */
 export type ConversationStatus = 'ready' | 'waiting'
+
+export interface SendOptions {
+  /** Echoed back by the gateway: the sender finds its own copy by it. */
+  readonly nonce?: string | undefined
+  /** Uploaded encrypted beforehand: their secrets ride inside, their attachments alongside. */
+  readonly files?: readonly EncryptedFile[] | undefined
+  /** The message this one answers (the server knows which, not what it says). */
+  readonly reply?: { readonly messageId: string; readonly mention: boolean } | undefined
+}
 
 /** A call key and the epoch it belongs to (a later epoch replaces it). */
 export interface CallKey {
@@ -118,6 +140,10 @@ const exclusively = <T>(name: string, task: () => Promise<T>): Promise<T> => {
   )
   return run
 }
+
+/** Where a message's plaintext is kept: per edit, since each edit is a new MLS message. */
+const plainKey = ({ id, editedAt }: Pick<CipherMessage, 'id' | 'editedAt'>) =>
+  editedAt ? `plain:${id}:${editedAt}` : `plain:${id}`
 
 export const createE2eeClient = ({ api, store, userId, deviceName }: E2eeClientOptions) => {
   let device: Promise<DeviceKeys> | null = null
@@ -450,8 +476,7 @@ export const createE2eeClient = ({ api, store, userId, deviceName }: E2eeClientO
     send: (
       channel: EncryptedChannel,
       text: string,
-      nonce?: string,
-      files: readonly EncryptedFile[] = [],
+      { nonce, files = [], reply }: SendOptions = {},
     ): Promise<CipherMessage> =>
       serial(channel.id, async () => {
         const keys = await ready()
@@ -467,6 +492,7 @@ export const createE2eeClient = ({ api, store, userId, deviceName }: E2eeClientO
           ciphertext: toBase64(result.ciphertext),
           ...(nonce ? { nonce } : {}),
           ...(files.length > 0 ? { attachmentIds: files.map((file) => file.id) } : {}),
+          ...(reply ? { replyTo: reply.messageId, replyMention: reply.mention } : {}),
         })
         await store.set(`plain:${message.id}`, payload)
         return message
@@ -476,8 +502,8 @@ export const createE2eeClient = ({ api, store, userId, deviceName }: E2eeClientO
     read: (channel: EncryptedChannel, message: CipherMessage): Promise<EncryptedPayload | null> =>
       serial(channel.id, async () => {
         const known =
-          (await store.get<EncryptedPayload>(`plain:${message.id}`)) ??
-          (message.nonce
+          (await store.get<EncryptedPayload>(plainKey(message))) ??
+          (message.nonce && !message.editedAt
             ? await store.get<EncryptedPayload>(`plain:nonce:${message.nonce}`)
             : undefined)
         if (known) return known
@@ -504,8 +530,29 @@ export const createE2eeClient = ({ api, store, userId, deviceName }: E2eeClientO
           await sync(channel.id, keys)
           payload = await attempt().catch(() => null)
         }
-        if (payload) await store.set(`plain:${message.id}`, payload)
+        if (payload) await store.set(plainKey(message), payload)
         return payload
+      }),
+
+    /** Replaces the text of my message; its files stay as they were. */
+    edit: (channel: EncryptedChannel, messageId: string, text: string): Promise<CipherMessage> =>
+      serial(channel.id, async () => {
+        const keys = await ready()
+        const { conversation } = await sync(channel.id, keys)
+        if (!conversation) throw new Error('This device is not in the conversation yet')
+        // Unknown here, its files would be lost: edit it where it can be read.
+        const before = await store.get<EncryptedPayload>(`plain:${messageId}`)
+        if (!before) throw new Error('This message is not readable on this device')
+        const payload: EncryptedPayload = before.files
+          ? { v: 1, text, files: before.files }
+          : { v: 1, text }
+        const result = await encryptMessage(conversation, encodePayload(payload))
+        await persist(channel.id, result.conversation)
+        const { message } = await api.messages.update(channel.id, messageId, {
+          ciphertext: toBase64(result.ciphertext),
+        })
+        await store.set(plainKey(message), payload)
+        return message
       }),
 
     /** The key of a call in this conversation for its current epoch; null while waiting. */

@@ -307,4 +307,21 @@ describe('encrypted conversations', () => {
     const wrong = await call(alice, 'POST', `/channels/${normal.id}/messages`, { ciphertext })
     expect(wrong.json().code).toBe('NOT_ENCRYPTED')
   })
+
+  it('take edits and replies as ciphertext, with nothing to quote', async () => {
+    const channel = await openEncrypted(alice, [bob.id])
+    const path = `/channels/${channel.id}/messages`
+    const original = (await call(alice, 'POST', path, { ciphertext: b64(80) })).json().data.message
+
+    const plainEdit = await call(alice, 'PATCH', `${path}/${original.id}`, { content: 'открыто' })
+    expect(plainEdit.json().code).toBe('ENCRYPTED_CHANNEL')
+    const edited = await call(alice, 'PATCH', `${path}/${original.id}`, { ciphertext: b64(90) })
+    expect(edited.json().data.message.editedAt).toEqual(expect.any(String))
+
+    const reply = await call(bob, 'POST', path, { ciphertext: b64(60), replyTo: original.id })
+    expect(reply.json().data.message.reply).toMatchObject({
+      messageId: original.id,
+      message: { content: '' },
+    })
+  })
 })
