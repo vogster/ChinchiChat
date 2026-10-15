@@ -204,32 +204,19 @@ export const createDmRepository = (db: DbExecutor) => ({
     return row ?? null
   },
 
-  /** A new encrypted 1:1 conversation: never shared with the pair's plain DM or another one. */
-  async createEncryptedDm(id: Snowflake, a: Snowflake, b: Snowflake): Promise<AnyChannelRow> {
-    return db.transaction(async (tx) => {
-      const [channel] = await tx
-        .insert(channels)
-        .values({ id, guildId: null, type: 'dm', name: '', encrypted: true })
-        .returning()
-      await tx.insert(channelRecipients).values([
-        { channelId: id, userId: a },
-        { channelId: id, userId: b },
-      ])
-      return channel as AnyChannelRow
-    })
-  },
-
   /** The pair's DM, created if missing; concurrent opens end up with the same channel. */
   async openDm(
     id: Snowflake,
     a: Snowflake,
     b: Snowflake,
+    { encrypted = false }: { encrypted?: boolean } = {},
   ): Promise<{ channel: AnyChannelRow; created: boolean }> {
-    const dmKey = dmKeyOf(a, b)
+    // The encrypted conversation is the pair's second channel, never shared with the plain one.
+    const dmKey = encrypted ? `e2ee:${dmKeyOf(a, b)}` : dmKeyOf(a, b)
     return db.transaction(async (tx) => {
       const [inserted] = await tx
         .insert(channels)
-        .values({ id, guildId: null, type: 'dm', name: '', dmKey })
+        .values({ id, guildId: null, type: 'dm', name: '', dmKey, encrypted })
         .onConflictDoNothing({ target: channels.dmKey })
         .returning()
       if (inserted) {

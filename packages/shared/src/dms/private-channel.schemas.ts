@@ -30,7 +30,7 @@ export const createPrivateChannelRequestSchema = z.strictObject({
     .min(1)
     .max(GROUP_DM_MAX_MEMBERS - 1)
     .refine((ids) => new Set(ids).size === ids.length, 'Duplicate recipient'),
-  /** Starts a new encrypted conversation (never reuses an existing DM). */
+  /** Opens the encrypted 1:1 conversation, started if missing (never the plain DM). */
   encrypted: z.boolean().optional(),
 })
 

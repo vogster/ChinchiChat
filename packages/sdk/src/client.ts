@@ -814,7 +814,7 @@ export const createApiClient = (options: HttpOptions) => {
           data: z.object({ channels: z.array(privateChannelSchema) }),
         }),
       /** One recipient opens (or finds) the 1:1 DM; several start a group with friends. */
-      /** `encrypted` starts a new encrypted conversation instead of opening the DM. */
+      /** `encrypted` opens the encrypted conversation with that person (started if missing). */
       open: (recipientIds: readonly Snowflake[], { encrypted = false } = {}) =>
         request({
           method: 'POST',

@@ -71,7 +71,8 @@ export const channels = pgTable(
     /** DMs and group DMs: an encrypted conversation (MLS); messages hold only ciphertext. */
     encrypted: boolean('encrypted').notNull().default(false),
     /** 1:1 DMs: the two user ids, lower first, so a pair has exactly one channel. */
-    dmKey: varchar('dm_key', { length: 41 }).unique(),
+    /** The pair of a 1:1 DM (`a:b`, lower id first); `e2ee:a:b` for their encrypted one. */
+    dmKey: varchar('dm_key', { length: 48 }).unique(),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   },
   (table) => [index('channels_guild_id_idx').on(table.guildId)],

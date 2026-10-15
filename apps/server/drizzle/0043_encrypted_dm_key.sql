@@ -1,0 +1,1 @@
+ALTER TABLE "channels" ALTER COLUMN "dm_key" SET DATA TYPE varchar(48);

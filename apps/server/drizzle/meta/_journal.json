@@ -302,6 +302,13 @@
       "when": 1792095377893,
       "tag": "0042_device_revocation",
       "breakpoints": true
+    },
+    {
+      "idx": 43,
+      "version": "7",
+      "when": 1792100211105,
+      "tag": "0043_encrypted_dm_key",
+      "breakpoints": true
     }
   ]
 }

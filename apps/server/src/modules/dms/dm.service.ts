@@ -133,14 +133,17 @@ export const createDmService = ({
       return view
     },
 
-    /** Starts a new encrypted conversation with one person (same rules as a DM). */
+    /** The encrypted conversation with one person, started if missing (same rules as a DM). */
     async openEncrypted(me: UserRow, targetId: Snowflake): Promise<PrivateChannel> {
       if (targetId === me.id) throw badRequest('INVALID_RECIPIENTS', "You can't message yourself")
       const target = await users.findById(targetId)
       if (!target) throw new HttpError(404, 'UNKNOWN_USER', 'Unknown user')
       if (!(await mayMessage(me, target))) throw cannotMessage()
-      const channel = await dms.createEncryptedDm(nextId(), me.id, target.id)
+      const { channel, created } = await dms.openDm(nextId(), me.id, target.id, {
+        encrypted: true,
+      })
       const { members, view } = await describeFor(channel, me.id)
+      if (!created) return view
       await Promise.all(
         members.map((member) =>
           events.publish({

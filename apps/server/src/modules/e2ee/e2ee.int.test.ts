@@ -166,7 +166,7 @@ describe('key packages', () => {
 })
 
 describe('encrypted conversations', () => {
-  it('are new channels, never the existing DM', async () => {
+  it('are a channel of their own, never the plain DM', async () => {
     const plain = (
       await call(alice, 'POST', '/users/@me/channels', { recipientIds: [bob.id] })
     ).json().data.channel
@@ -174,7 +174,17 @@ describe('encrypted conversations', () => {
 
     expect(encrypted).toMatchObject({ type: 'dm', encrypted: true })
     expect(encrypted.id).not.toBe(plain.id)
-    expect((await openEncrypted(alice, [bob.id])).id).not.toBe(encrypted.id)
+  })
+
+  it('are one per pair: opening again, from either side or at once, finds the same one', async () => {
+    const [first, second] = await Promise.all([
+      openEncrypted(alice, [bob.id]),
+      openEncrypted(alice, [bob.id]),
+    ])
+    expect(second.id).toBe(first.id)
+    expect((await openEncrypted(bob, [alice.id])).id).toBe(first.id)
+    const listed = (await call(bob, 'GET', '/users/@me/channels')).json().data.channels
+    expect(listed.filter((c: { encrypted: boolean }) => c.encrypted)).toHaveLength(1)
   })
 
   it('take commits in order: one per epoch, the rest are stale', async () => {
