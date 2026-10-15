@@ -21,7 +21,7 @@ test('a private channel appears for a member once they get the role', async ({ b
   // Owner creates a role.
   await owner.getByRole('button', { name: `Меню сервера ${serverName}` }).click()
   await owner.getByRole('menuitem', { name: 'Настройки сервера' }).click()
-  await owner.getByRole('link', { name: 'Роли' }).click()
+  await owner.getByRole('link', { name: 'Роли', exact: true }).click()
   await owner.getByRole('button', { name: 'Создать роль' }).click()
   const editor = owner.getByRole('form', { name: 'Редактировать роль new role' })
   await editor.getByLabel('Название роли').fill('Штаб')

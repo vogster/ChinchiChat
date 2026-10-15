@@ -65,6 +65,8 @@ export default defineConfig({
         S3_BUCKET: 'chinchi-e2e',
         S3_ACCESS_KEY: process.env.E2E_S3_ACCESS_KEY ?? 'chinchi-dev',
         S3_SECRET_KEY: process.env.E2E_S3_SECRET_KEY ?? 'chinchi-dev-secret',
+        // As in production: every upload is encrypted at rest by the storage.
+        S3_ENCRYPTION: 'on',
         // Never fetch the links tests send.
         LINK_PREVIEWS: 'off',
         // LiveKit from `pnpm dev:up`; its webhooks reach this server on :3100.

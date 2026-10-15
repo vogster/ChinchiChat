@@ -47,6 +47,12 @@ services:
       RUSTFS_ACCESS_KEY: ${S3_ACCESS_KEY:?set S3_ACCESS_KEY in .env}
       RUSTFS_SECRET_KEY: ${S3_SECRET_KEY:?set S3_SECRET_KEY in .env}
       RUSTFS_CONSOLE_ENABLE: 'false'
+      # Files are encrypted at rest: object keys are wrapped by this master key, which lives in
+      # .env, not in the data volume, so a copy of the volume alone reads as noise.
+      RUSTFS_KMS_ENABLE: 'true'
+      RUSTFS_KMS_BACKEND: local
+      RUSTFS_KMS_KEY_DIR: /data/.kms
+      RUSTFS_KMS_LOCAL_MASTER_KEY: ${S3_KMS_MASTER_KEY:?set S3_KMS_MASTER_KEY in .env}
     volumes:
       - rustfs-data:/data
 
@@ -100,6 +106,7 @@ services:
       S3_PUBLIC_URL: https://${FILES_DOMAIN:?set FILES_DOMAIN in .env}
       S3_ACCESS_KEY: ${S3_ACCESS_KEY}
       S3_SECRET_KEY: ${S3_SECRET_KEY}
+      S3_ENCRYPTION: 'on'
       LIVEKIT_URL: wss://${VOICE_DOMAIN:?set VOICE_DOMAIN in .env}
       LIVEKIT_API_URL: http://livekit:7880
       LIVEKIT_API_KEY: chinchi

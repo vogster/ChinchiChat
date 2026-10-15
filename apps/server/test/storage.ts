@@ -11,6 +11,7 @@ export const TEST_STORAGE = Object.freeze({
   accessKey: 'chinchi-test',
   secretKey: 'chinchi-test-secret',
   forcePathStyle: true,
+  encryption: false,
 })
 
 /** Storage config of the shared integration RustFS container. */

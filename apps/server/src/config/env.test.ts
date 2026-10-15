@@ -62,6 +62,7 @@ describe('loadConfig', () => {
         accessKey: 'key',
         secretKey: 'secret',
         forcePathStyle: true,
+        encryption: false,
       })
     })
 
@@ -73,6 +74,7 @@ describe('loadConfig', () => {
         S3_REGION: 'eu-central-1',
         S3_BUCKET: 'chat-files',
         S3_PATH_STYLE: 'off',
+        S3_ENCRYPTION: 'on',
         UPLOAD_MAX_BYTES: '1048576',
       })
       expect(config.storage).toMatchObject({
@@ -80,6 +82,7 @@ describe('loadConfig', () => {
         region: 'eu-central-1',
         bucket: 'chat-files',
         forcePathStyle: false,
+        encryption: true,
       })
       expect(config.uploadMaxBytes).toBe(1_048_576)
     })
@@ -89,6 +92,7 @@ describe('loadConfig', () => {
       [{ ...S3, S3_SECRET_KEY: undefined }, 'S3_SECRET_KEY'],
       [{ ...S3, S3_ENDPOINT: 'ftp://rustfs' }, 'S3_ENDPOINT'],
       [{ ...S3, S3_BUCKET: 'Bad_Bucket' }, 'S3_BUCKET'],
+      [{ ...S3, S3_ENCRYPTION: 'yes' }, 'S3_ENCRYPTION'],
       [{ ...S3, UPLOAD_MAX_BYTES: '0' }, 'UPLOAD_MAX_BYTES'],
       [{ ...S3, UPLOAD_MAX_BYTES: String(2 * 1024 ** 3) }, 'UPLOAD_MAX_BYTES'],
     ])('rejects %j naming %s', (env, variable) => {

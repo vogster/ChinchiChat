@@ -1,3 +1,4 @@
+import { HeadObjectCommand, S3Client } from '@aws-sdk/client-s3'
 import { describe, expect, it } from 'vitest'
 
 import { TEST_WEB_ORIGIN, testStorageConfig } from '../../test/storage'
@@ -123,5 +124,33 @@ describe('object storage (RustFS)', () => {
       },
     })
     expect(preflight.headers.get('access-control-allow-origin')).toBe(TEST_WEB_ORIGIN)
+  })
+})
+
+describe('encryption at rest (RustFS KMS)', () => {
+  const config = { ...testStorageConfig(), bucket: 'chinchi-test-sse', encryption: true }
+  const encrypted = createObjectStorage(config)
+  const raw = new S3Client({
+    endpoint: config.endpoint,
+    region: config.region,
+    forcePathStyle: true,
+    credentials: { accessKeyId: config.accessKey, secretAccessKey: config.secretKey },
+  })
+
+  it('encrypts what browsers upload, without them sending anything extra', async () => {
+    await encrypted.ensureBucket([TEST_WEB_ORIGIN])
+    // Again, as on every start: the key and the bucket default are already there.
+    await encrypted.ensureBucket([TEST_WEB_ORIGIN])
+    const key = `test/${crypto.randomUUID()}`
+    const { url, headers } = await encrypted.presignPut(key, {
+      contentType: 'image/png',
+      size: PNG.byteLength,
+      expiresIn: 60,
+    })
+
+    expect((await fetch(url, { method: 'PUT', headers, body: PNG })).ok).toBe(true)
+    const head = await raw.send(new HeadObjectCommand({ Bucket: config.bucket, Key: key }))
+    expect(head.ServerSideEncryption).toBe('AES256')
+    expect(await encrypted.readStart(key, PNG.byteLength)).toEqual(PNG)
   })
 })

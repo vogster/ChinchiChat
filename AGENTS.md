@@ -34,7 +34,7 @@ pnpm --filter @chinchi/server db:generate         # SQL-миграция из dr
 - `packages/markdown` — парсер markdown сообщений в AST (`parseMarkdown`), `collectMentions`, `isEmojiOnly`. Только данные, без HTML: клиенты рендерят AST своими компонентами.
 - `packages/shared` — zod-схемы и типы для сервера и клиентов (Snowflake ID и т.д.). Экспортирует TS-исходники.
 - `packages/config` — общие tsconfig, eslint, prettier, vitest.
-- `e2e/` — Playwright против production-сборок сервера (:3100) и web (:4173) на dev-стеке (`pnpm dev:up`); письма читаются из Mailpit (`support/mailpit.ts`), у каждого теста свой пользователь (`newUser()`). Первый раз: `pnpm --filter @chinchi/e2e e2e:install`. В `getByLabel` используй `exact: true`.
+- `e2e/` — Playwright против production-сборок сервера (:3100) и web (:4173) на dev-стеке (`pnpm dev:up`); письма читаются из Mailpit (`support/mailpit.ts`), у каждого теста свой пользователь (`newUser()`). Первый раз: `pnpm --filter @chinchi/e2e e2e:install`. В `getByLabel` и в ссылках разделов настроек (`getByRole('link', { name: 'Боты' })`) используй `exact: true`: названия серверов в тестах начинаются с тех же слов, и клик до отрисовки страницы попадает в сервер.
 - `deploy/` — docker compose и конфиги сервисов.
 
 ## Соглашения
@@ -82,6 +82,7 @@ pnpm --filter @chinchi/server db:generate         # SQL-миграция из dr
 - **Фоновые задачи** (превью): очередь — строки в Postgres с арендой (`claimPreviewJobs`, `FOR UPDATE SKIP LOCKED`), без отдельного брокера. Воркер стартует в `server.ts` после `listen`, в тестах — `app.previews.runOnce()`; останавливается хуком `onClose`.
 - **Пользователь наружу** — только через `toPublicUser` (`users/user.mapper.ts`): там `avatarUrl`. Не собирай `{ id, username, displayName }` руками.
 - **sharp**: только для форматов, прошедших `detectImageType`; всегда `limitInputPixels` и `pages: 1`. Бинарники — из `@img/sharp-*` (в `allowBuilds` стоит `sharp: false`).
+- **Шифрование хранилища** (`S3_ENCRYPTION=on`): ключ KMS `default` RustFS сам не создаёт — его создаёт `ensureKmsKey` (`src/storage/storage-kms.ts`) через admin API при `ensureBucket`. У RustFS (dev, CI, Testcontainers) включён локальный KMS (`RUSTFS_KMS_*`). В Git Bash передавай пути в `docker run -e` с `MSYS_NO_PATHCONV=1`, иначе `/data/...` превратится в путь Windows.
 - **AWS SDK**: клиенты S3 создаются с `requestChecksumCalculation: 'WHEN_REQUIRED'`, иначе в presigned URL попадают checksum-заголовки, которых браузер не пришлёт. Версии SDK выходят ежедневно — бери ту, что старше суток (`minimumReleaseAge`).
 - **SMTP Mailpit в dev — порт 2525**, не 1025: на macOS 1025 может быть занят (FinderSync), и письма молча уходят в никуда (`Greeting never received`).
 - **Сырые параметры в `sql\`...\``** не проходят маппинг Drizzle: `Date`передавай как`${date.toISOString()}::timestamptz`.

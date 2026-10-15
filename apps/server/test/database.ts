@@ -35,6 +35,11 @@ export default async function setup(project: TestProject) {
       .withEnvironment({
         RUSTFS_ACCESS_KEY: TEST_STORAGE.accessKey,
         RUSTFS_SECRET_KEY: TEST_STORAGE.secretKey,
+        // KMS as in the bundled deployment, for the encryption-at-rest tests.
+        RUSTFS_KMS_ENABLE: 'true',
+        RUSTFS_KMS_BACKEND: 'local',
+        RUSTFS_KMS_KEY_DIR: '/data/.kms',
+        RUSTFS_KMS_LOCAL_MASTER_KEY: 'chinchi-test-kms-master-key-0123456789',
       })
       .withExposedPorts(9000)
       .withWaitStrategy(Wait.forHttp('/health', 9000).forStatusCode(200))

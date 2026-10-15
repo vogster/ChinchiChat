@@ -75,7 +75,7 @@ test('a ban removes the member and keeps them out until unbanned', async ({ brow
   await expect(ownerPage.getByText('Никто не забанен')).toBeVisible()
 
   // Still in the server settings: the journal is next door.
-  await ownerPage.getByRole('link', { name: 'Журнал действий' }).click()
+  await ownerPage.getByRole('link', { name: 'Журнал действий', exact: true }).click()
   const log = ownerPage.getByRole('list', { name: 'Журнал действий' })
   await expect(log).toContainText(`забанил(а) ${member.username}`)
 })

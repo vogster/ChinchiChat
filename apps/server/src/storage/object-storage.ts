@@ -7,12 +7,14 @@ import {
   HeadObjectCommand,
   ListObjectsV2Command,
   PutBucketCorsCommand,
+  PutBucketEncryptionCommand,
   PutObjectCommand,
   S3Client,
 } from '@aws-sdk/client-s3'
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner'
 
 import { contentDisposition } from './content-disposition'
+import { ensureKmsKey } from './storage-kms'
 
 import type { StorageConfig } from '../config/env'
 
@@ -70,7 +72,10 @@ export const createObjectStorage = (config: StorageConfig) => {
   const Bucket = config.bucket
 
   return {
-    /** Creates the bucket if needed and allows browser uploads from the web app's origins. */
+    /**
+     * Creates the bucket if needed and allows browser uploads from the web app's origins; with
+     * encryption on, every object (presigned uploads included) is encrypted by the storage.
+     */
     async ensureBucket(corsOrigins: readonly string[]): Promise<void> {
       try {
         await client.send(new HeadBucketCommand({ Bucket }))
@@ -91,6 +96,16 @@ export const createObjectStorage = (config: StorageConfig) => {
                 MaxAgeSeconds: 3600,
               },
             ],
+          },
+        }),
+      )
+      if (!config.encryption) return
+      await ensureKmsKey(config)
+      await client.send(
+        new PutBucketEncryptionCommand({
+          Bucket,
+          ServerSideEncryptionConfiguration: {
+            Rules: [{ ApplyServerSideEncryptionByDefault: { SSEAlgorithm: 'AES256' } }],
           },
         }),
       )

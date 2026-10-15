@@ -8,6 +8,9 @@ importers:
 
   .:
     devDependencies:
+      '@chinchi/config':
+        specifier: workspace:*
+        version: link:packages/config
       '@commitlint/cli':
         specifier: 21.2.3
         version: 21.2.3(@types/node@24.19.2)(conventional-commits-parser@7.1.3)(typescript@6.0.3)
@@ -23,9 +26,6 @@ importers:
       '@vitest/coverage-v8':
         specifier: 5.0.4
         version: 5.0.4(vitest@5.0.4)
-      '@chinchi/config':
-        specifier: workspace:*
-        version: link:packages/config
       eslint:
         specifier: 10.12.0
         version: 10.12.0(jiti@2.7.0)
@@ -74,6 +74,12 @@ importers:
       '@aws-sdk/s3-request-presigner':
         specifier: 3.1149.0
         version: 3.1149.0
+      '@chinchi/markdown':
+        specifier: workspace:*
+        version: link:../../packages/markdown
+      '@chinchi/shared':
+        specifier: workspace:*
+        version: link:../../packages/shared
       '@fastify/cookie':
         specifier: 11.1.3
         version: 11.1.3
@@ -86,12 +92,9 @@ importers:
       '@prometheus-io/client':
         specifier: 0.16.1
         version: 0.16.1
-      '@chinchi/markdown':
-        specifier: workspace:*
-        version: link:../../packages/markdown
-      '@chinchi/shared':
-        specifier: workspace:*
-        version: link:../../packages/shared
+      '@smithy/signature-v4':
+        specifier: 5.7.4
+        version: 5.7.4
       archiver:
         specifier: 7.0.1
         version: 7.0.1
@@ -138,6 +141,9 @@ importers:
         specifier: 4.6.7
         version: 4.6.7
     devDependencies:
+      '@chinchi/config':
+        specifier: workspace:*
+        version: link:../../packages/config
       '@testcontainers/postgresql':
         specifier: 12.2.1
         version: 12.2.1
@@ -147,9 +153,6 @@ importers:
       '@types/ws':
         specifier: 8.18.2
         version: 8.18.2
-      '@chinchi/config':
-        specifier: workspace:*
-        version: link:../../packages/config
       drizzle-kit:
         specifier: 0.31.11
         version: 0.31.11
@@ -171,6 +174,18 @@ importers:
 
   apps/web:
     dependencies:
+      '@chinchi/e2ee':
+        specifier: workspace:*
+        version: link:../../packages/e2ee
+      '@chinchi/markdown':
+        specifier: workspace:*
+        version: link:../../packages/markdown
+      '@chinchi/sdk':
+        specifier: workspace:*
+        version: link:../../packages/sdk
+      '@chinchi/shared':
+        specifier: workspace:*
+        version: link:../../packages/shared
       '@dicebear/core':
         specifier: 10.7.0
         version: 10.7.0
@@ -195,18 +210,6 @@ importers:
       '@tanstack/react-router':
         specifier: 1.170.42
         version: 1.170.42(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
-      '@chinchi/e2ee':
-        specifier: workspace:*
-        version: link:../../packages/e2ee
-      '@chinchi/markdown':
-        specifier: workspace:*
-        version: link:../../packages/markdown
-      '@chinchi/sdk':
-        specifier: workspace:*
-        version: link:../../packages/sdk
-      '@chinchi/shared':
-        specifier: workspace:*
-        version: link:../../packages/shared
       emojibase-data:
         specifier: 17.0.0
         version: 17.0.0(emojibase@17.0.0)
@@ -241,6 +244,9 @@ importers:
         specifier: 4.6.7
         version: 4.6.7
     devDependencies:
+      '@chinchi/config':
+        specifier: workspace:*
+        version: link:../../packages/config
       '@tailwindcss/vite':
         specifier: 4.3.3
         version: 4.3.3(vite@8.3.4(@types/node@24.19.2)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.15)(yaml@2.9.1))
@@ -265,9 +271,6 @@ importers:
       '@vitejs/plugin-react':
         specifier: 6.1.2
         version: 6.1.2(vite@8.3.4(@types/node@24.19.2)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.15)(yaml@2.9.1))
-      '@chinchi/config':
-        specifier: workspace:*
-        version: link:../../packages/config
       axe-core:
         specifier: 4.14.0
         version: 4.14.0
@@ -280,12 +283,12 @@ importers:
 
   e2e:
     devDependencies:
-      '@playwright/test':
-        specifier: 1.64.0
-        version: 1.64.0
       '@chinchi/config':
         specifier: workspace:*
         version: link:../packages/config
+      '@playwright/test':
+        specifier: 1.64.0
+        version: 1.64.0
 
   packages/config: {}
 

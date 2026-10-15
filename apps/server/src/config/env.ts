@@ -116,6 +116,11 @@ const envSchema = z.object({
   S3_SECRET_KEY: z.string().min(1).optional(),
   /** `on` for RustFS/MinIO-style path URLs, `off` for virtual-hosted buckets. */
   S3_PATH_STYLE: z.enum(['on', 'off']).default('on'),
+  /**
+   * Encryption at rest: the bucket encrypts every object with a key from the storage's KMS
+   * (RustFS: the server creates the default key on start). Off where the disk is trusted.
+   */
+  S3_ENCRYPTION: z.enum(['on', 'off']).default('off'),
   /** LiveKit as browsers reach it (ws:// or wss://); without it voice is off. */
   LIVEKIT_URL: wsUrl.optional(),
   /** LiveKit as the server reaches it; defaults to LIVEKIT_URL over http(s). */
@@ -154,6 +159,8 @@ export interface StorageConfig {
   readonly accessKey: string
   readonly secretKey: string
   readonly forcePathStyle: boolean
+  /** Objects are encrypted at rest by the storage (bucket default SSE-S3). */
+  readonly encryption: boolean
 }
 
 export interface VoiceConfig {
@@ -187,6 +194,7 @@ const toStorageConfig = (env: ParsedEnv): StorageConfig | undefined => {
     accessKey: env.S3_ACCESS_KEY,
     secretKey: env.S3_SECRET_KEY,
     forcePathStyle: env.S3_PATH_STYLE === 'on',
+    encryption: env.S3_ENCRYPTION === 'on',
   })
 }
 

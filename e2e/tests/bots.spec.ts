@@ -22,7 +22,7 @@ test('a bot joins a server, takes a slash command and answers it', async ({ brow
 
   // The owner creates a bot; its token is shown once.
   await page.getByRole('link', { name: 'Настройки пользователя' }).click()
-  await page.getByRole('link', { name: 'Боты' }).click()
+  await page.getByRole('link', { name: 'Боты', exact: true }).click()
   await page.getByLabel('Имя бота', { exact: true }).fill(botName)
   await page.getByRole('button', { name: 'Создать бота' }).click()
   const tokenField = page.getByLabel('Токен бота', { exact: true })

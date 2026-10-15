@@ -87,7 +87,7 @@ test('a server emoji is uploaded and shows up in messages', async ({ browser }) 
 
   await page.getByRole('button', { name: `Меню сервера ${serverName}` }).click()
   await page.getByRole('menuitem', { name: 'Настройки сервера' }).click()
-  await page.getByRole('link', { name: 'Эмодзи' }).click()
+  await page.getByRole('link', { name: 'Эмодзи', exact: true }).click()
   await page.getByLabel('Название', { exact: true }).fill(emojiName)
   await page
     .getByLabel('Загрузить эмодзи', { exact: true })

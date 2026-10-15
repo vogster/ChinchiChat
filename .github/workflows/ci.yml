@@ -70,6 +70,11 @@ jobs:
         env:
           RUSTFS_ACCESS_KEY: chinchi-dev
           RUSTFS_SECRET_KEY: chinchi-dev-secret
+          # KMS as in deploy/docker-compose.dev.yml: the e2e server encrypts uploads at rest.
+          RUSTFS_KMS_ENABLE: 'true'
+          RUSTFS_KMS_BACKEND: local
+          RUSTFS_KMS_KEY_DIR: /data/.kms
+          RUSTFS_KMS_LOCAL_MASTER_KEY: chinchi-dev-kms-master-key-0123456789
         ports: ['9000:9000']
     steps:
       - uses: actions/checkout@v7
