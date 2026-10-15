@@ -1,6 +1,7 @@
 import { expect, test } from '@playwright/test'
 
 import { registerAndOpenHome } from '../support/auth'
+import { befriend } from '../support/friends'
 import { acceptInvite, createServerWithInvite } from '../support/guild'
 import { newUser } from '../support/users'
 
@@ -149,4 +150,99 @@ test('two people talk and call in an encrypted conversation the server cannot re
 
   await alice.context.close()
   await bob.context.close()
+})
+
+test('three people talk in an encrypted group, and one who leaves is left out', async ({
+  browser,
+}) => {
+  const [alice, bob, carol] = await Promise.all([openAs(browser), openAs(browser), openAs(browser)])
+  const [aliceUser, bobUser, carolUser] = [newUser(), newUser(), newUser()]
+  await registerAndOpenHome(alice.page, aliceUser)
+  await registerAndOpenHome(bob.page, bobUser)
+  await registerAndOpenHome(carol.page, carolUser)
+  await befriend(alice.page, bob.page, aliceUser.username, bobUser.username)
+  await befriend(alice.page, carol.page, aliceUser.username, carolUser.username)
+
+  // Alice starts an encrypted group with both of them.
+  await alice.page.reload()
+  await alice.page
+    .getByRole('complementary', { name: 'Личные сообщения' })
+    .getByRole('button', { name: 'Создать группу' })
+    .click()
+  const dialog = alice.page.getByRole('dialog', { name: 'Новая группа' })
+  await dialog.getByLabel(bobUser.username, { exact: true }).check()
+  await dialog.getByLabel(carolUser.username, { exact: true }).check()
+  await dialog.getByRole('switch', { name: 'Зашифрованная беседа' }).click()
+  await dialog.getByRole('button', { name: 'Создать группу' }).click()
+  await expect(alice.page.getByText('Сквозное шифрование')).toBeVisible()
+  const channelId = alice.page.url().split('/').at(-1) as string
+
+  const composer = (page: typeof alice.page) => page.getByRole('textbox', { name: /^Написать/ })
+  const say = async (page: typeof alice.page, text: string) => {
+    await composer(page).fill(text)
+    await composer(page).press('Enter')
+  }
+  const openGroup = async (page: typeof alice.page) => {
+    await page.goto('/')
+    await page
+      .getByRole('complementary', { name: 'Личные сообщения' })
+      .getByRole('link', { name: /зашифрованная беседа/ })
+      .click()
+  }
+
+  await say(alice.page, 'Всем привет')
+  for (const person of [bob, carol]) {
+    await openGroup(person.page)
+    await expect(person.page.getByText('Всем привет')).toBeVisible()
+  }
+  await say(carol.page, 'Привет от Кэрол')
+  await expect(alice.page.getByText('Привет от Кэрол')).toBeVisible()
+  await expect(bob.page.getByText('Привет от Кэрол')).toBeVisible()
+
+  /** The group's epoch, as the commits the server ordered say (each commit moves it on). */
+  const epochOf = (page: typeof alice.page) =>
+    page.evaluate(async (id) => {
+      const devices = (await (await fetch('/api/v1/users/@me/devices')).json()) as {
+        data: { devices: { id: string }[] }
+      }
+      const deviceId = devices.data.devices[0]?.id ?? ''
+      const response = await fetch(`/api/v1/channels/${id}/e2ee/handshakes?deviceId=${deviceId}`)
+      const { data } = (await response.json()) as {
+        data: { handshakes: { kind: string; epoch: number }[] }
+      }
+      return Math.max(-1, ...data.handshakes.filter((h) => h.kind === 'commit').map((h) => h.epoch))
+    }, channelId)
+  const epochWithCarol = await epochOf(alice.page)
+
+  // Carol leaves; the next message is encrypted for Alice's and Bob's devices only.
+  await carol.page.getByRole('button', { name: 'Покинуть группу' }).click()
+  await carol.page
+    .getByRole('dialog', { name: 'Покинуть группу' })
+    .getByRole('button', { name: 'Покинуть группу' })
+    .click()
+  await expect(carol.page).not.toHaveURL(new RegExp(channelId))
+  await expect(alice.page.getByText(`${carolUser.username} покинул(а) группу`)).toBeVisible()
+
+  await say(alice.page, 'Уже без Кэрол')
+  await expect(bob.page.getByText('Уже без Кэрол')).toBeVisible()
+  // Sending first took Carol's device out of the group: a commit, new keys she never got.
+  expect(await epochOf(alice.page)).toBeGreaterThan(epochWithCarol)
+  await say(bob.page, 'Согласен')
+  await expect(alice.page.getByText('Согласен')).toBeVisible()
+
+  // Carol can't reach the conversation any more, and the server only ever had ciphertext.
+  const carolStatus = await carol.page.evaluate(
+    async (id) => (await fetch(`/api/v1/channels/${id}/messages`)).status,
+    channelId,
+  )
+  expect(carolStatus).toBe(404)
+  const stored = await alice.page.evaluate(async (id) => {
+    const response = await fetch(`/api/v1/channels/${id}/messages`)
+    return JSON.stringify(await response.json())
+  }, channelId)
+  for (const text of ['Всем привет', 'Привет от Кэрол', 'Уже без Кэрол', 'Согласен']) {
+    expect(stored).not.toContain(text)
+  }
+
+  await Promise.all([alice.context.close(), bob.context.close(), carol.context.close()])
 })
