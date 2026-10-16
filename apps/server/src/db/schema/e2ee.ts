@@ -28,12 +28,24 @@ export const e2eeDevices = pgTable(
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
     /** Removed: kept so members still recognise its leaves, but never added again. */
     revokedAt: timestamp('revoked_at', { withTimezone: true }),
+    /** The owner's user key vouching for the device, base64; cleared when that key changes. */
+    userSignature: varchar('user_signature', { length: 88 }),
   },
   (table) => [
     index('e2ee_devices_user_id_idx').on(table.userId),
     uniqueIndex('e2ee_devices_signature_key_idx').on(table.signaturePublicKey),
   ],
 )
+
+/** A user's own key (cross-signing): signs the user's devices. One per user, replaced on reset. */
+export const e2eeUserKeys = pgTable('e2ee_user_keys', {
+  userId: snowflake('user_id')
+    .primaryKey()
+    .references(() => users.id, { onDelete: 'cascade' }),
+  /** Ed25519 public key, base64. */
+  publicKey: varchar('public_key', { length: 44 }).notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+})
 
 /** One-time MLS key packages; a claimed one is deleted, except the device's last resort. */
 export const e2eeKeyPackages = pgTable(

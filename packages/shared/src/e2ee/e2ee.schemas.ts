@@ -34,12 +34,47 @@ export const deviceSchema = z.object({
    * conversation history, but it is never added again and its key packages are gone.
    */
   revokedAt: z.iso.datetime().nullable(),
+  /** The owner's user key vouching for this device (see `deviceStatement`); null if unsigned. */
+  userSignature: z.string().nullable(),
 })
+
+/** 32 bytes of Ed25519 public key, base64. */
+const ed25519PublicKeySchema = base64Schema(44).refine(
+  (key) => key.length === 44,
+  'Expected 32 bytes',
+)
+
+/**
+ * A user's own key (cross-signing): it signs the user's devices, so whoever checked the user
+ * once trusts every device the user approved, and a device the server slipped in stands out.
+ */
+export const userKeySchema = z.object({
+  userId: snowflakeSchema,
+  publicKey: z.string(),
+  createdAt: z.iso.datetime(),
+})
+
+export const setUserKeyRequestSchema = z.strictObject({
+  publicKey: ed25519PublicKeySchema,
+  /** Replaces an existing key (all devices lost): every device signature is dropped. */
+  replace: z.boolean().optional(),
+})
+
+export const signDeviceRequestSchema = z.strictObject({
+  /** 64-byte Ed25519 signature of `deviceStatement`, base64. */
+  signature: base64Schema(88).refine((value) => value.length === 88, 'Expected 64 bytes'),
+})
+
+/** What a user key signs to vouch for a device: who, which device, and its identity key. */
+export const deviceStatement = (userId: string, deviceId: string, signaturePublicKey: string) =>
+  `chinchi-device-v1
+${userId}
+${deviceId}
+${signaturePublicKey}`
 
 export const registerDeviceRequestSchema = z.strictObject({
   name: z.string().trim().min(1).max(64),
-  /** 32 bytes of Ed25519 public key. */
-  signaturePublicKey: base64Schema(44).refine((key) => key.length === 44, 'Expected 32 bytes'),
+  signaturePublicKey: ed25519PublicKeySchema,
 })
 
 export const uploadKeyPackagesRequestSchema = z.strictObject({
@@ -103,3 +138,6 @@ export type ClaimedKeyPackage = z.infer<typeof claimedKeyPackageSchema>
 export type Handshake = z.infer<typeof handshakeSchema>
 export type PostCommitRequest = z.infer<typeof postCommitRequestSchema>
 export type ListHandshakesQuery = z.infer<typeof listHandshakesQuerySchema>
+export type UserKey = z.infer<typeof userKeySchema>
+export type SetUserKeyRequest = z.infer<typeof setUserKeyRequestSchema>
+export type SignDeviceRequest = z.infer<typeof signDeviceRequestSchema>

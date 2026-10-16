@@ -5,8 +5,11 @@ import {
   listHandshakesQuerySchema,
   postCommitRequestSchema,
   registerDeviceRequestSchema,
+  setUserKeyRequestSchema,
+  signDeviceRequestSchema,
   snowflakeSchema,
   uploadKeyPackagesRequestSchema,
+  userKeySchema,
 } from '@chinchi/shared'
 import { z } from 'zod'
 
@@ -78,6 +81,69 @@ export const e2eeRoutes: FastifyPluginAsyncZod<E2eeRoutesOptions> = async (
         device: await e2eeService.registerDevice(requireHuman(request).user.id, request.body),
       },
     }),
+  )
+
+  const userKeyResponse = ok(z.object({ userKey: userKeySchema.nullable() }))
+
+  app.get(
+    '/users/@me/e2ee/user-key',
+    { schema: { response: { 200: userKeyResponse } } },
+    async (request) => {
+      const { user } = requireHuman(request)
+      return {
+        success: true as const,
+        data: { userKey: await e2eeService.getUserKey(user.id, user.id) },
+      }
+    },
+  )
+
+  app.get(
+    '/users/:userId/e2ee/user-key',
+    {
+      schema: {
+        params: z.object({ userId: snowflakeSchema }),
+        response: { 200: userKeyResponse },
+      },
+    },
+    async (request) => ({
+      success: true as const,
+      data: {
+        userKey: await e2eeService.getUserKey(requireHuman(request).user.id, request.params.userId),
+      },
+    }),
+  )
+
+  app.put(
+    '/users/@me/e2ee/user-key',
+    {
+      schema: {
+        body: setUserKeyRequestSchema,
+        response: { 200: ok(z.object({ userKey: userKeySchema })) },
+      },
+      config: { rateLimit: perUser(10) },
+    },
+    async (request) => ({
+      success: true as const,
+      data: {
+        userKey: await e2eeService.setUserKey(requireHuman(request).user.id, request.body),
+      },
+    }),
+  )
+
+  app.put(
+    '/users/@me/devices/:deviceId/signature',
+    {
+      schema: { params: z.object({ deviceId: snowflakeSchema }), body: signDeviceRequestSchema },
+      config: { rateLimit: perUser(30) },
+    },
+    async (request, reply) => {
+      await e2eeService.signDevice(
+        requireHuman(request).user.id,
+        request.params.deviceId,
+        request.body.signature,
+      )
+      return reply.status(204).send()
+    },
   )
 
   app.delete(

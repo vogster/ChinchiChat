@@ -7,6 +7,7 @@ import {
   e2eeGroups,
   e2eeHandshakes,
   e2eeKeyPackages,
+  e2eeUserKeys,
 } from '../../db/schema'
 
 import type { DbExecutor } from '../../db/client'
@@ -14,6 +15,7 @@ import type { Snowflake } from '@chinchi/shared'
 
 export type DeviceRow = typeof e2eeDevices.$inferSelect
 export type HandshakeRow = typeof e2eeHandshakes.$inferSelect
+export type UserKeyRow = typeof e2eeUserKeys.$inferSelect
 
 const HANDSHAKE_PAGE = 500
 
@@ -59,8 +61,48 @@ export const createE2eeRepository = (db: DbExecutor) => ({
     return row ?? null
   },
 
+  async findUserKey(userId: Snowflake): Promise<UserKeyRow | null> {
+    const [row] = await db.select().from(e2eeUserKeys).where(eq(e2eeUserKeys.userId, userId))
+    return row ?? null
+  },
+
+  /** Null when the user already has a key. */
+  async insertUserKey(userId: Snowflake, publicKey: string): Promise<UserKeyRow | null> {
+    const [row] = await db
+      .insert(e2eeUserKeys)
+      .values({ userId, publicKey })
+      .onConflictDoNothing({ target: e2eeUserKeys.userId })
+      .returning()
+    return row ?? null
+  },
+
+  /** A new key after a reset: the old one's signatures vouch for nothing any more. */
+  async replaceUserKey(userId: Snowflake, publicKey: string): Promise<UserKeyRow> {
+    return db.transaction(async (tx) => {
+      const [row] = await tx
+        .insert(e2eeUserKeys)
+        .values({ userId, publicKey })
+        .onConflictDoUpdate({
+          target: e2eeUserKeys.userId,
+          set: { publicKey, createdAt: new Date() },
+        })
+        .returning()
+      await tx
+        .update(e2eeDevices)
+        .set({ userSignature: null })
+        .where(eq(e2eeDevices.userId, userId))
+      return row as UserKeyRow
+    })
+  },
+
+  async setDeviceSignature(deviceId: Snowflake, userSignature: string): Promise<void> {
+    await db.update(e2eeDevices).set({ userSignature }).where(eq(e2eeDevices.id, deviceId))
+  },
+
   /** Null when the key is already registered (to anyone). */
-  async insertDevice(row: Omit<DeviceRow, 'createdAt' | 'revokedAt'>): Promise<DeviceRow | null> {
+  async insertDevice(
+    row: Omit<DeviceRow, 'createdAt' | 'revokedAt' | 'userSignature'>,
+  ): Promise<DeviceRow | null> {
     const [inserted] = await db
       .insert(e2eeDevices)
       .values(row)

@@ -13,6 +13,7 @@ const device = (id: string, name: string, revokedAt: string | null = null): Devi
   signaturePublicKey: 'a2V5',
   createdAt: '2026-10-01T10:00:00.000Z',
   revokedAt,
+  userSignature: null,
 })
 
 describe('encryption devices in settings', () => {

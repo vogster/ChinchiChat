@@ -1,7 +1,8 @@
-import { DEVICES_MAX_PER_USER, KEY_PACKAGES_MAX_PER_DEVICE } from '@chinchi/shared'
+import { DEVICES_MAX_PER_USER, KEY_PACKAGES_MAX_PER_DEVICE, deviceStatement } from '@chinchi/shared'
 
 import { userTopic } from '../../events/event-bus'
 import { HttpError, badRequest, conflict } from '../../http/http-error'
+import { verifyEd25519 } from './ed25519'
 
 import type { EventBus } from '../../events/event-bus'
 import type { ChannelEvents } from '../channels/channel-events'
@@ -9,15 +10,17 @@ import type { ChannelService } from '../channels/channel.service'
 import type { DmRepository } from '../dms/dm.repository'
 import type { GuildRepository } from '../guilds/guild.repository'
 import type { RelationshipRepository } from '../relationships/relationship.repository'
-import type { DeviceRow, E2eeRepository, HandshakeRow } from './e2ee.repository'
+import type { DeviceRow, E2eeRepository, HandshakeRow, UserKeyRow } from './e2ee.repository'
 import type {
   ClaimedKeyPackage,
   Device,
   Handshake,
   PostCommitRequest,
   RegisterDeviceRequest,
+  SetUserKeyRequest,
   Snowflake,
   UploadKeyPackagesRequest,
+  UserKey,
 } from '@chinchi/shared'
 
 export interface E2eeServiceDeps {
@@ -41,6 +44,13 @@ const toDevice = (row: DeviceRow): Device => ({
   signaturePublicKey: row.signaturePublicKey,
   createdAt: row.createdAt.toISOString(),
   revokedAt: row.revokedAt?.toISOString() ?? null,
+  userSignature: row.userSignature,
+})
+
+const toUserKey = (row: UserKeyRow): UserKey => ({
+  userId: row.userId,
+  publicKey: row.publicKey,
+  createdAt: row.createdAt.toISOString(),
 })
 
 export const toHandshake = (row: HandshakeRow): Handshake => ({
@@ -126,6 +136,38 @@ export const createE2eeService = ({
       if (!row) throw conflict('DEVICE_EXISTS', 'This device is already registered')
       await announceDevices(userId)
       return toDevice(row)
+    },
+
+    async getUserKey(viewerId: Snowflake, userId: Snowflake): Promise<UserKey | null> {
+      await assertMaySee(viewerId, userId)
+      const row = await e2ee.findUserKey(userId)
+      return row ? toUserKey(row) : null
+    },
+
+    /** Creates the user's key; replacing it (a reset) drops every device signature. */
+    async setUserKey(
+      userId: Snowflake,
+      { publicKey, replace = false }: SetUserKeyRequest,
+    ): Promise<UserKey> {
+      const row = replace
+        ? await e2ee.replaceUserKey(userId, publicKey)
+        : await e2ee.insertUserKey(userId, publicKey)
+      if (!row) throw conflict('USER_KEY_EXISTS', 'This user already has a key')
+      await announceDevices(userId)
+      return toUserKey(row)
+    },
+
+    /** Keeps a device's signature only if the user's current key really made it. */
+    async signDevice(userId: Snowflake, deviceId: Snowflake, signature: string): Promise<void> {
+      const device = await ownDevice(userId, deviceId)
+      const userKey = await e2ee.findUserKey(userId)
+      if (!userKey) throw conflict('NO_USER_KEY', 'Set a user key first')
+      const statement = deviceStatement(userId, device.id, device.signaturePublicKey)
+      if (!verifyEd25519(userKey.publicKey, statement, signature)) {
+        throw badRequest('INVALID_SIGNATURE', 'The signature does not match the user key')
+      }
+      await e2ee.setDeviceSignature(device.id, signature)
+      await announceDevices(userId)
     },
 
     async deleteDevice(userId: Snowflake, deviceId: Snowflake): Promise<void> {

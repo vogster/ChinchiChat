@@ -35,6 +35,7 @@ import type {
   UserProfile,
   ClaimedKeyPackage,
   Device,
+  UserKey,
   Handshake,
 } from '@chinchi/shared'
 
@@ -596,6 +597,15 @@ export const createFakeApi = ({ user = null, registrationMode = 'open' }: FakeAp
         } as Device,
       })),
       deleteDevice: vi.fn(async (_deviceId: string) => undefined),
+      userKey: vi.fn(async (_userId: string) => ({ userKey: null as UserKey | null })),
+      setUserKey: vi.fn(async (body: { publicKey: string }) => ({
+        userKey: {
+          userId: '100',
+          publicKey: body.publicKey,
+          createdAt: '2026-10-16T10:00:00.000Z',
+        },
+      })),
+      signDevice: vi.fn(async (_deviceId: string, _signature: string) => undefined),
       uploadKeyPackages: vi.fn(async () => undefined),
       countKeyPackages: vi.fn(async () => ({ count: 0 })),
       claimKeyPackages: vi.fn(async (_userId: string) => ({

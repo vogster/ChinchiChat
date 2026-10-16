@@ -18,6 +18,7 @@ import {
   claimedKeyPackageSchema,
   customStatusSchema,
   deviceSchema,
+  userKeySchema,
   handshakeSchema,
   notificationSettingSchema,
   readStateSchema,
@@ -88,6 +89,7 @@ import type {
   ListHandshakesQuery,
   PostCommitRequest,
   RegisterDeviceRequest,
+  SetUserKeyRequest,
   UploadKeyPackagesRequest,
 } from '@chinchi/shared'
 
@@ -668,6 +670,27 @@ export const createApiClient = (options: HttpOptions) => {
         }),
       deleteDevice: (deviceId: Snowflake) =>
         request({ method: 'DELETE', path: `/users/@me/devices/${id(deviceId)}` }),
+      /** A user's own key (cross-signing), or null before their first device sets one. */
+      userKey: (userId: Snowflake | '@me') =>
+        request({
+          method: 'GET',
+          path: `/users/${userId === '@me' ? '@me' : id(userId)}/e2ee/user-key`,
+          data: z.object({ userKey: userKeySchema.nullable() }),
+        }),
+      setUserKey: (body: SetUserKeyRequest) =>
+        request({
+          method: 'PUT',
+          path: '/users/@me/e2ee/user-key',
+          body,
+          data: z.object({ userKey: userKeySchema }),
+        }),
+      /** Vouches for one of my devices with my user key. */
+      signDevice: (deviceId: Snowflake, signature: string) =>
+        request({
+          method: 'PUT',
+          path: `/users/@me/devices/${id(deviceId)}/signature`,
+          body: { signature },
+        }),
       uploadKeyPackages: (deviceId: Snowflake, body: UploadKeyPackagesRequest) =>
         request({ method: 'POST', path: `/users/@me/devices/${id(deviceId)}/key-packages`, body }),
       countKeyPackages: (deviceId: Snowflake) =>

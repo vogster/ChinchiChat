@@ -1,4 +1,8 @@
+import { verifyStatement } from '@chinchi/e2ee'
 import { ApiError } from '@chinchi/sdk'
+import { deviceStatement } from '@chinchi/shared'
+
+import { fromBase64 } from './codec'
 
 import type { E2eeApi } from './client'
 import type { ClaimedKeyPackage, Device, Handshake } from '@chinchi/shared'
@@ -11,6 +15,8 @@ export const createFakeDelivery = () => {
   let next = 1000
   const id = () => String((next += 1))
   const devices: Device[] = []
+  /** Public user keys (base64) by user id. */
+  const userKeys = new Map<string, string>()
   const keyPackages: { id: string; deviceId: string; package: string; lastResort: boolean }[] = []
   const epochs = new Map<string, number>()
   const handshakes: Handshake[] = []
@@ -37,9 +43,43 @@ export const createFakeDelivery = () => {
           ...body,
           createdAt: new Date().toISOString(),
           revokedAt: null,
+          userSignature: null,
         }
         devices.push(device)
         return { device }
+      },
+      userKey: async (id) => {
+        const owner = id === '@me' ? userId : id
+        const publicKey = userKeys.get(owner)
+        return {
+          userKey: publicKey
+            ? { userId: owner, publicKey, createdAt: new Date().toISOString() }
+            : null,
+        }
+      },
+      setUserKey: async ({ publicKey, replace }) => {
+        if (userKeys.has(userId) && !replace) {
+          throw new ApiError(409, 'USER_KEY_EXISTS', 'This user already has a key')
+        }
+        userKeys.set(userId, publicKey)
+        if (replace) {
+          for (const [i, d] of devices.entries()) {
+            if (d.userId === userId) devices[i] = { ...d, userSignature: null }
+          }
+        }
+        return { userKey: { userId, publicKey, createdAt: new Date().toISOString() } }
+      },
+      signDevice: async (deviceId, signature) => {
+        const index = devices.findIndex((d) => d.id === deviceId && d.userId === userId)
+        const device = devices[index]
+        const publicKey = userKeys.get(userId)
+        if (!device) throw new ApiError(404, 'UNKNOWN_DEVICE', 'Unknown device')
+        if (!publicKey) throw new ApiError(409, 'NO_USER_KEY', 'Set a user key first')
+        const statement = deviceStatement(userId, deviceId, device.signaturePublicKey)
+        if (!(await verifyStatement(fromBase64(publicKey), statement, fromBase64(signature)))) {
+          throw new ApiError(400, 'INVALID_SIGNATURE', 'Bad signature')
+        }
+        devices[index] = { ...device, userSignature: signature }
       },
       deleteDevice: async (deviceId) => {
         const index = devices.findIndex((d) => d.id === deviceId && d.userId === userId)
@@ -130,5 +170,5 @@ export const createFakeDelivery = () => {
     },
   })
 
-  return { apiFor, messages, devices, handshakes }
+  return { apiFor, messages, devices, handshakes, userKeys }
 }

@@ -34,15 +34,19 @@ test('two people talk and call in an encrypted conversation the server cannot re
   const invite = await createServerWithInvite(alice.page, `Шифр ${aliceUser.username}`)
   await registerAndOpenHome(bob.page, bobUser)
   await acceptInvite(bob.page, invite)
-  // Bob's browser became an encryption device when it opened the app.
+  // Bob's browser became an encryption device when it opened the app, vouched for by his
+  // user key (the first device creates it; the server checked the signature).
   await expect
     .poll(() =>
       bob.page.evaluate(async () => {
         const response = await fetch('/api/v1/users/@me/devices')
-        return ((await response.json()) as { data: { devices: unknown[] } }).data.devices.length
+        const { data } = (await response.json()) as {
+          data: { devices: { userSignature: string | null }[] }
+        }
+        return data.devices.map((device) => Boolean(device.userSignature))
       }),
     )
-    .toBe(1)
+    .toEqual([true])
 
   // Alice starts an encrypted conversation from Bob's card.
   const members = alice.page.getByRole('complementary', { name: /Участники/ })

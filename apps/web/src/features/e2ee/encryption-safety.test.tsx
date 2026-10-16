@@ -23,6 +23,7 @@ const device = (id: string, userId: string, name: string): Device => ({
   signaturePublicKey: 'a2V5',
   createdAt: '2026-10-16T10:00:00.000Z',
   revokedAt: null,
+  userSignature: null,
 })
 const withEncryptedDm = () => {
   const api = createFakeApi({ user: testUser })

@@ -16,6 +16,7 @@ import {
 } from '@chinchi/e2ee'
 
 import { decodePayload, encodePayload, fromBase64, toBase64 } from './codec'
+import { createCrossSigning } from './cross-signing'
 import { createSafety } from './safety'
 
 import type { EncryptedFile, EncryptedPayload } from './codec'
@@ -37,6 +38,9 @@ export interface E2eeApi {
     | 'claimKeyPackages'
     | 'postCommit'
     | 'handshakes'
+    | 'userKey'
+    | 'setUserKey'
+    | 'signDevice'
   >
   readonly messages: {
     create(
@@ -254,8 +258,23 @@ export const createE2eeClient = ({ api, store, userId, deviceName }: E2eeClientO
     return keys
   }
 
+  const crossSigning = createCrossSigning({ api, store, userId })
+
+  /** The device, registered and (where this browser can) vouched for by the user key. */
+  const setUp = async (): Promise<DeviceKeys> => {
+    const keys = await registerDevice()
+    const listed = (await devicesOf(userId)).find((d) => d.id === keys.identity.deviceId)
+    try {
+      await crossSigning.ensure(keys, Boolean(listed?.userSignature))
+    } catch {
+      // Not fatal: the device works unsigned and is approved later.
+    }
+    devicesByUser.delete(userId)
+    return keys
+  }
+
   const ready = async (): Promise<DeviceKeys> => {
-    device ??= exclusively(`chinchi-e2ee-device:${userId}`, registerDevice)
+    device ??= exclusively(`chinchi-e2ee-device:${userId}`, setUp)
     device.catch(() => {
       device = null
     })
