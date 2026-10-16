@@ -5,13 +5,13 @@
 # Multi-arch, as releases do: docker buildx build --platform linux/amd64,linux/arm64 ...
 # deploy/docker-compose.yml builds both.
 
-FROM node:24-slim@sha256:a5f4366e834695d5f363b920c104953a535d3a9864d1bdf74566a0ebe01daee5 AS base
+FROM node:25-slim@sha256:81db02c4b671288a03915da9534dbd54f96d0e7c24d80ccc54f5b36b2e684370 AS base
 ENV PNPM_HOME=/pnpm PATH=/pnpm:$PATH
 RUN corepack enable
 WORKDIR /repo
 
 # The web app is the same files on every architecture: build it once, natively (no emulation).
-FROM --platform=$BUILDPLATFORM node:24-slim@sha256:a5f4366e834695d5f363b920c104953a535d3a9864d1bdf74566a0ebe01daee5 AS web-build
+FROM --platform=$BUILDPLATFORM node:25-slim@sha256:81db02c4b671288a03915da9534dbd54f96d0e7c24d80ccc54f5b36b2e684370 AS web-build
 ENV PNPM_HOME=/pnpm PATH=/pnpm:$PATH
 RUN corepack enable
 WORKDIR /repo
@@ -29,7 +29,7 @@ RUN pnpm --filter @chinchi/server deploy --prod --legacy /out/server \
   && cp -r apps/server/dist apps/server/drizzle /out/server/
 
 # The API and realtime gateway. Runs migrations at start.
-FROM node:24-slim@sha256:a5f4366e834695d5f363b920c104953a535d3a9864d1bdf74566a0ebe01daee5 AS server
+FROM node:25-slim@sha256:81db02c4b671288a03915da9534dbd54f96d0e7c24d80ccc54f5b36b2e684370 AS server
 ENV NODE_ENV=production HOST=0.0.0.0 PORT=3000
 # Security fixes Debian published after the base image was built, and no package managers at
 # runtime: the server only needs `node`, while npm and corepack vendor their own (older) copies
