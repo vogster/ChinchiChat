@@ -22,6 +22,8 @@ pnpm lint | typecheck | test | test:coverage | build | format
 pnpm e2e                                        # Playwright по production-сборке web
 pnpm --filter @chinchi/server test:unit           # быстрые тесты без Docker
 pnpm --filter @chinchi/server db:generate         # SQL-миграция из drizzle-схемы
+node scripts/demo-data.mjs [--hold]               # демо-сервер на dev-стеке (лимиты: RATE_LIMIT=off)
+node scripts/demo-screenshots.mjs <суффикс>       # скриншоты README в docs/screenshots
 ```
 
 Релиз: поднять версию по умолчанию (`CHINCHI_VERSION`) в `deploy/docker-compose.yml`, закоммитить, затем `git tag vX.Y.Z && git push origin vX.Y.Z` — workflow `release.yml` публикует образы в GHCR и релиз с файлами установки (и падает, если версия в compose не совпадает с тегом).
