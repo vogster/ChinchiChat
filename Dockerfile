@@ -2,6 +2,7 @@
 # Production images, built from the repository root:
 #   docker build --target server -t chinchi-server .
 #   docker build --target web -t chinchi-web .
+# Multi-arch, as releases do: docker buildx build --platform linux/amd64,linux/arm64 ...
 # deploy/docker-compose.yml builds both.
 
 FROM node:24-slim AS base
@@ -9,10 +10,20 @@ ENV PNPM_HOME=/pnpm PATH=/pnpm:$PATH
 RUN corepack enable
 WORKDIR /repo
 
+# The web app is the same files on every architecture: build it once, natively (no emulation).
+FROM --platform=$BUILDPLATFORM node:24-slim AS web-build
+ENV PNPM_HOME=/pnpm PATH=/pnpm:$PATH
+RUN corepack enable
+WORKDIR /repo
+COPY . .
+RUN pnpm install --frozen-lockfile --filter "@chinchi/web..."
+RUN pnpm --filter @chinchi/web build
+
+# The server for the target architecture (amd64 or arm64): sharp's native binary must match it.
 FROM base AS build
 COPY . .
-RUN pnpm install --frozen-lockfile
-RUN pnpm --filter @chinchi/server build && pnpm --filter @chinchi/web build
+RUN pnpm install --frozen-lockfile --filter "@chinchi/server..."
+RUN pnpm --filter @chinchi/server build
 # A self-contained server directory: production dependencies only, plus the bundle and migrations.
 RUN pnpm --filter @chinchi/server deploy --prod --legacy /out/server \
   && cp -r apps/server/dist apps/server/drizzle /out/server/
@@ -30,7 +41,7 @@ CMD ["node", "dist/server.mjs"]
 
 # The web app, served by Caddy, which also terminates TLS and proxies the API, files and voice.
 FROM caddy:2.10-alpine AS web
-COPY --from=build /repo/apps/web/dist /srv/web
+COPY --from=web-build /repo/apps/web/dist /srv/web
 COPY deploy/Caddyfile /etc/caddy/Caddyfile
 COPY --chmod=755 deploy/caddy-entrypoint.sh /usr/local/bin/caddy-entrypoint.sh
 # Writes where files and voice live (one domain or their own) before Caddy reads its config.

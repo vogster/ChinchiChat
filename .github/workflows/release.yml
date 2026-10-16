@@ -1,6 +1,6 @@
 # A version tag (v0.1.0) publishes the Docker images to GitHub Container Registry and a GitHub
-# release whose assets are all an install needs: docker-compose.yml, env.example and the
-# backup and restore scripts.
+# release whose assets are all an install needs: docker-compose.yml, env.example, the backup
+# and restore scripts and the monitoring add-on. Images are multi-arch (amd64 and arm64).
 #
 #   1. Set the version in deploy/docker-compose.yml (the CHINCHI_VERSION default) and commit.
 #   2. git tag v0.1.0 && git push origin v0.1.0
@@ -39,6 +39,10 @@ jobs:
       - name: Log in to GitHub Container Registry
         run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
 
+      # x86-64 and ARM (Raspberry Pi, Ampere, Graviton, Apple silicon) in one multi-arch image.
+      - uses: docker/setup-qemu-action@v3
+      - uses: docker/setup-buildx-action@v3
+
       - name: Build and push images
         env:
           VERSION: ${{ steps.version.outputs.version }}
@@ -47,12 +51,10 @@ jobs:
           registry="$(echo "$REGISTRY" | tr '[:upper:]' '[:lower:]')"
           for target in server web; do
             image="$registry/chinchi-$target"
-            docker build --target "$target" \
+            docker buildx build --platform linux/amd64,linux/arm64 --target "$target" \
               --label "org.opencontainers.image.source=https://github.com/${{ github.repository }}" \
               --label "org.opencontainers.image.version=$VERSION" \
-              -t "$image:$VERSION" -t "$image:$MINOR" .
-            docker push "$image:$VERSION"
-            docker push "$image:$MINOR"
+              -t "$image:$VERSION" -t "$image:$MINOR" --push .
           done
 
       - name: Publish the release
@@ -63,9 +65,11 @@ jobs:
           cp deploy/docker-compose.yml dist/docker-compose.yml
           cp deploy/.env.example dist/env.example
           cp deploy/backup.sh deploy/restore.sh dist/
+          cp deploy/docker-compose.monitoring.yml deploy/chinchi-dashboard.json dist/
           # Hand-written notes in docs/releases/<tag>.md win over generated ones.
           notes="docs/releases/$GITHUB_REF_NAME.md"
           if [ -f "$notes" ]; then set -- --notes-file "$notes"; else set -- --generate-notes; fi
           gh release create "$GITHUB_REF_NAME" dist/docker-compose.yml dist/env.example \
             dist/backup.sh dist/restore.sh \
+            dist/docker-compose.monitoring.yml dist/chinchi-dashboard.json \
             --title "Chinchi $GITHUB_REF_NAME" "$@"
