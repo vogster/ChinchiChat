@@ -55,7 +55,8 @@ describe('database schema', () => {
       await fresh.close()
       await db.execute(sql`drop database migrate_race`)
     }
-  })
+    // Fifty-odd migrations on a fresh database, three times over: slow under coverage.
+  }, 120_000)
 
   it('stores snowflake ids as bigint and returns them as strings', async () => {
     const [created] = await db.insert(users).values(newUser()).returning()
