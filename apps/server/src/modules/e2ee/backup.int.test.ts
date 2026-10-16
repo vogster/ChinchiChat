@@ -1,5 +1,4 @@
 import { randomBytes } from 'node:crypto'
-
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 
 import { addMember, createGuild, signUp } from '../../../test/guild-helpers'

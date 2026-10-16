@@ -1,17 +1,17 @@
 import {
   ATTACHMENTS_PER_MESSAGE_MAX,
   DEFAULT_CONTENT_TYPE,
-  Permission,
   isInlineImage,
+  Permission,
 } from '@chinchi/shared'
+import { detectImageType, SNIFF_BYTES } from '@chinchi/shared'
+import { stripMetadata, UnreadableImage } from '@chinchi/shared'
 
-import { HttpError, badRequest } from '../../http/http-error'
-import { SNIFF_BYTES, detectImageType } from '@chinchi/shared'
-import { attachmentKey, previewFilename, previewKey, uploadKey } from './attachment.mapper'
-import { isMessageChannel } from '../channels/channel.repository'
-
+import { badRequest, HttpError } from '../../http/http-error'
 import { createLimiter } from '../../http/limiter'
-import { UnreadableImage, stripMetadata } from '@chinchi/shared'
+import { isMessageChannel } from '../channels/channel.repository'
+import { attachmentKey, previewFilename, previewKey, uploadKey } from './attachment.mapper'
+
 import type { ObjectStorage } from '../../storage/object-storage'
 import type { ChannelService } from '../channels/channel.service'
 import type { AttachmentRepository, AttachmentRow } from './attachment.repository'

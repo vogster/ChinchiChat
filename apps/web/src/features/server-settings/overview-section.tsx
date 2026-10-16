@@ -1,9 +1,9 @@
-import { useQuery } from '@tanstack/react-query'
 import {
   GUILD_NAME_MAX_LENGTH,
   GUILD_NAME_MIN_LENGTH,
   GUILD_RULES_MAX_LENGTH,
 } from '@chinchi/shared'
+import { useQuery } from '@tanstack/react-query'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
@@ -13,8 +13,8 @@ import { TextField } from '../../components/ui/text-field'
 import { useApi } from '../../lib/api-context'
 import { errorMessage } from '../../lib/errors'
 import { useCurrentUser } from '../auth/use-auth-actions'
-import { membersQueryOptions } from '../guilds/queries'
 import { GuildIcon } from '../guilds/guild-icon'
+import { membersQueryOptions } from '../guilds/queries'
 import {
   useDeleteGuild,
   useGuildIcon,

@@ -3,8 +3,8 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { useCurrentUser } from '../auth/use-auth-actions'
 import { useE2ee } from './e2ee-context'
 
-import type { EncryptedChannel } from './client'
 import type { MessageItem } from '../messages/queries'
+import type { EncryptedChannel } from './client'
 import type { EncryptedReaction, Reaction } from '@chinchi/shared'
 
 const keyOf = (reaction: EncryptedReaction) => `${reaction.userId}:${reaction.version}`

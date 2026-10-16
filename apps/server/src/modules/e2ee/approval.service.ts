@@ -1,9 +1,8 @@
 import { createHash } from 'node:crypto'
-
 import { APPROVAL_SECONDS } from '@chinchi/shared'
 
 import { userTopic } from '../../events/event-bus'
-import { HttpError, conflict } from '../../http/http-error'
+import { conflict, HttpError } from '../../http/http-error'
 
 import type { EventBus } from '../../events/event-bus'
 import type { ApprovalStore, StoredApproval } from './approval.store'

@@ -1,35 +1,34 @@
 import {
   CloseCode,
+  dispatchSchemas,
   GATEWAY_VERSION,
   Opcode,
-  dispatchSchemas,
   parseClientMessage,
 } from '@chinchi/shared'
 
 import { guildTopic, userTopic } from '../events/event-bus'
 import { SESSIONS_REVOKED } from '../events/internal-events'
+import { applyGuildEvent } from './visibility'
 
 import type { EventBus, SequencedEvent } from '../events/event-bus'
 import type { RevokedSessions } from '../events/internal-events'
 import type { AuthContext } from '../modules/auth/auth.service'
-import { applyGuildEvent } from './visibility'
-
 import type { Dispatcher, Subscriber } from './dispatcher'
-import type { GuildPermissionState } from './visibility'
 import type { PresenceService } from './presence'
 import type { GatewaySessionStore } from './session-store'
+import type { GuildPermissionState } from './visibility'
 import type {
   ClientMessage,
   CurrentUser,
-  GuildDetail,
-  PrivateChannel,
-  VoiceState,
-  MentionCounts,
-  Presence,
   CustomStatus,
+  GuildDetail,
+  MentionCounts,
   NotificationSetting,
+  Presence,
+  PrivateChannel,
   ReadState,
   ServerMessage,
+  VoiceState,
 } from '@chinchi/shared'
 
 export interface GatewaySocket {

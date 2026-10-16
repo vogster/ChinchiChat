@@ -1,7 +1,7 @@
 import { Permission } from '@chinchi/shared'
 import { describe, expect, it } from 'vitest'
 
-import { EMPTY_DRAFT, draftOf, sameDraft, stateOf, withState } from './overwrite-draft'
+import { draftOf, EMPTY_DRAFT, sameDraft, stateOf, withState } from './overwrite-draft'
 
 const VIEW = Permission.ViewChannel
 const SEND = Permission.SendMessages

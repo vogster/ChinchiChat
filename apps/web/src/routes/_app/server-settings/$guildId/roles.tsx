@@ -1,12 +1,12 @@
+import { Permission } from '@chinchi/shared'
 import { useSuspenseQuery } from '@tanstack/react-query'
 import { createFileRoute } from '@tanstack/react-router'
-import { Permission } from '@chinchi/shared'
 
 import { guildQueryOptions } from '../../../../features/guilds/queries'
 import { can } from '../../../../features/permissions/permissions'
 import { useGuildPermissions } from '../../../../features/permissions/use-guild-permissions'
-import { RolesSection } from '../../../../features/server-settings/roles-section'
 import { NoAccess } from '../../../../features/server-settings/no-access'
+import { RolesSection } from '../../../../features/server-settings/roles-section'
 import { useApi } from '../../../../lib/api-context'
 
 const RolesPage = () => {

@@ -4,7 +4,7 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import { identify } from '../../../test/gateway-client'
 import { addMember, createGuild, signUp } from '../../../test/guild-helpers'
 import { createTestApp, resetState } from '../../../test/test-app'
-import { VOICE_ENV, createFakeRooms, readVoiceToken, signedWebhook } from '../../../test/voice'
+import { createFakeRooms, readVoiceToken, signedWebhook, VOICE_ENV } from '../../../test/voice'
 
 import type { TestActor } from '../../../test/guild-helpers'
 

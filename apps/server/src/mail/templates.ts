@@ -1,5 +1,5 @@
-import type { Locale } from '@chinchi/shared'
 import type { MailMessage } from './mailer'
+import type { Locale } from '@chinchi/shared'
 
 const escapeHtml = (value: string): string =>
   value

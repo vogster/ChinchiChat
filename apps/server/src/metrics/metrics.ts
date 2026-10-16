@@ -1,4 +1,4 @@
-import { Counter, Gauge, Histogram, Registry, collectDefaultMetrics } from '@prometheus-io/client'
+import { collectDefaultMetrics, Counter, Gauge, Histogram, Registry } from '@prometheus-io/client'
 
 import type { EventBus } from '../events/event-bus'
 

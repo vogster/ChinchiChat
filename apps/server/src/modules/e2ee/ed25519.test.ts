@@ -1,5 +1,4 @@
 import { generateKeyPairSync, sign } from 'node:crypto'
-
 import { describe, expect, it } from 'vitest'
 
 import { verifyEd25519 } from './ed25519'

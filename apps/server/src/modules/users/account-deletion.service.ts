@@ -3,7 +3,7 @@ import { eq, inArray } from 'drizzle-orm'
 import { guildMembers, guilds, users } from '../../db/schema'
 import { guildTopic } from '../../events/event-bus'
 import { publishRevokedSessions } from '../../events/internal-events'
-import { HttpError, badRequest } from '../../http/http-error'
+import { badRequest, HttpError } from '../../http/http-error'
 import { confirmPassword } from '../auth/reauth'
 import { profileImageKey } from '../media/media-paths'
 

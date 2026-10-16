@@ -1,5 +1,4 @@
 import { createHash, createHmac } from 'node:crypto'
-
 import { SignatureV4 } from '@smithy/signature-v4'
 
 import type { StorageConfig } from '../config/env'

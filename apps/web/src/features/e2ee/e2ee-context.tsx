@@ -10,8 +10,8 @@ import type { E2eeClientLike } from './e2ee-factory'
 import type { DeviceApproval } from '@chinchi/shared'
 import type { ReactNode } from 'react'
 
-export { E2eeFactoryProvider } from './e2ee-factory'
 export type { E2eeClientFactory, E2eeClientLike } from './e2ee-factory'
+export { E2eeFactoryProvider } from './e2ee-factory'
 
 /** The signed-in user from the cache (the auth actions module imports this one, not the reverse). */
 const useMe = () => useQuery(meQueryOptions(useApi())).data ?? null

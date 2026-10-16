@@ -1,15 +1,15 @@
 import { describe, expect, it } from 'vitest'
 
 import {
-  PASSWORD_MAX_LENGTH,
-  PASSWORD_MIN_LENGTH,
-  USERNAME_MAX_LENGTH,
   displayNameSchema,
   emailSchema,
   loginRequestSchema,
-  resetPasswordRequestSchema,
+  PASSWORD_MAX_LENGTH,
+  PASSWORD_MIN_LENGTH,
   passwordSchema,
   registerRequestSchema,
+  resetPasswordRequestSchema,
+  USERNAME_MAX_LENGTH,
   usernameSchema,
 } from './auth.schemas'
 

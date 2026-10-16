@@ -2,11 +2,6 @@ import { vi } from 'vitest'
 
 import { decodePayload, encodePayload, fromBase64, toBase64 } from '../features/e2ee/codec'
 
-import type { EncryptedFile } from '../features/e2ee/codec'
-import type { ApprovalView } from '../features/e2ee/device-approval'
-import type { UseKeyResult } from '../features/e2ee/history-backup'
-import type { IndexedMessage } from '../features/e2ee/local-search'
-import type { SafetyStatus } from '../features/e2ee/safety'
 import type {
   CallKey,
   CipherMessage,
@@ -15,7 +10,12 @@ import type {
   ReadMessage,
   SendOptions,
 } from '../features/e2ee/client'
+import type { EncryptedFile } from '../features/e2ee/codec'
+import type { ApprovalView } from '../features/e2ee/device-approval'
 import type { E2eeClientFactory } from '../features/e2ee/e2ee-context'
+import type { UseKeyResult } from '../features/e2ee/history-backup'
+import type { IndexedMessage } from '../features/e2ee/local-search'
+import type { SafetyStatus } from '../features/e2ee/safety'
 import type { ApiClient } from '@chinchi/sdk'
 import type { DeviceApproval, EncryptedReaction } from '@chinchi/shared'
 

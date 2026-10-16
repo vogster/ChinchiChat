@@ -2,10 +2,10 @@ import sharp from 'sharp'
 import { describe, expect, it } from 'vitest'
 
 import {
-  PREVIEW_MAX_SIDE,
-  PROFILE_IMAGE_SIDE,
   createPreview,
   createProfileImage,
+  PREVIEW_MAX_SIDE,
+  PROFILE_IMAGE_SIDE,
 } from './thumbnail'
 
 import type { Sharp } from 'sharp'

@@ -1,9 +1,8 @@
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
-
+import { sql } from 'drizzle-orm'
 import { afterAll, beforeEach, describe, expect, inject, it } from 'vitest'
 
-import { sql } from 'drizzle-orm'
 import { MIGRATIONS_FOLDER } from '../../test/database'
 import { createDatabase } from './client'
 import { runMigrations } from './migrate'

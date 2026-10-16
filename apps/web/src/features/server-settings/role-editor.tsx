@@ -1,4 +1,4 @@
-import { ROLE_NAME_MAX_LENGTH, parsePermissions, serializePermissions } from '@chinchi/shared'
+import { parsePermissions, ROLE_NAME_MAX_LENGTH, serializePermissions } from '@chinchi/shared'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 

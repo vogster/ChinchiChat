@@ -1,13 +1,13 @@
-import { has, Permission, snowflakeFromTimestamp, CHINCHI_EPOCH } from '@chinchi/shared'
+import { CHINCHI_EPOCH, has, Permission, snowflakeFromTimestamp } from '@chinchi/shared'
 
 import { badRequest, forbidden } from '../../http/http-error'
 import { cannotMessage } from '../dms/dm.service'
 import { previewLinks } from '../embeds/link-previews'
 import { encryptedForward } from './forwarding'
 import {
-  NO_MENTIONS,
   assertEncryption,
   createMessageContext,
+  NO_MENTIONS,
   resolveMessageDeps,
   sameLinks,
   unknownMessage,
@@ -15,9 +15,9 @@ import {
 import { createMessagePosting } from './message-posting'
 import { createMessageReading } from './message-reading'
 
-import type { CreateMessageInput, MessageChange, MessageServiceDeps } from './message-context'
-import type { PageQuery } from './message.repository'
 import type { UserRow } from '../users/user.repository'
+import type { PageQuery } from './message.repository'
+import type { CreateMessageInput, MessageChange, MessageServiceDeps } from './message-context'
 import type { Message, Snowflake } from '@chinchi/shared'
 
 export type { CreateMessageInput, MessageChange, MessageServiceDeps } from './message-context'

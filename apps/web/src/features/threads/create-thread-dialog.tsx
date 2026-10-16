@@ -1,6 +1,6 @@
+import { THREAD_NAME_MAX_LENGTH } from '@chinchi/shared'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from '@tanstack/react-router'
-import { THREAD_NAME_MAX_LENGTH } from '@chinchi/shared'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 

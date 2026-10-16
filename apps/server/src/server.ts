@@ -1,14 +1,13 @@
 import { fileURLToPath } from 'node:url'
-
 import closeWithGrace from 'close-with-grace'
 
 import { buildApp } from './app'
 import { ConfigError, loadConfig } from './config/env'
 import { createDatabase } from './db/client'
 import { runMigrations } from './db/migrate'
+import { createRedisEventBus } from './events/redis-event-bus'
 import { createSmtpMailer } from './mail/mailer'
 import { startMetricsServer } from './metrics/metrics-server'
-import { createRedisEventBus } from './events/redis-event-bus'
 import { createRedis } from './redis/client'
 import { createObjectStorage } from './storage/object-storage'
 

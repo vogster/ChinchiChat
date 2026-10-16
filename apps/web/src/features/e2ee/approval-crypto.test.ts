@@ -5,8 +5,8 @@ import {
   commitmentOf,
   createEphemeral,
   openSecrets,
-  sealSecrets,
   SAS_EMOJI,
+  sealSecrets,
 } from './approval-crypto'
 
 const transcript = {

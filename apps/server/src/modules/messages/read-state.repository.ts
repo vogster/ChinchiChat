@@ -1,10 +1,9 @@
+import { CHINCHI_EPOCH } from '@chinchi/shared'
 import { eq, sql } from 'drizzle-orm'
 
 import { readStates } from '../../db/schema'
 
 import type { DbExecutor } from '../../db/client'
-import { CHINCHI_EPOCH } from '@chinchi/shared'
-
 import type { MentionCounts, ReadState, Snowflake } from '@chinchi/shared'
 
 const bigintArray = (ids: readonly Snowflake[]) => sql`${`{${ids.join(',')}}`}::bigint[]`

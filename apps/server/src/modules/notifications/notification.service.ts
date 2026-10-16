@@ -3,8 +3,8 @@ import { badRequest } from '../../http/http-error'
 
 import type { EventBus } from '../../events/event-bus'
 import type { ChannelService } from '../channels/channel.service'
-import type { GuildAccessChecks } from '../guilds/guild-access'
 import type { GuildRepository } from '../guilds/guild.repository'
+import type { GuildAccessChecks } from '../guilds/guild-access'
 import type { NotificationRepository } from './notification.repository'
 import type {
   NotificationSetting,

@@ -1,6 +1,6 @@
 import { afterAll, beforeEach, describe, expect, it } from 'vitest'
 
-import { WEB_ORIGIN, registerUser } from '../../../test/auth-helpers'
+import { registerUser, WEB_ORIGIN } from '../../../test/auth-helpers'
 import { addMember, createGuild, signUp } from '../../../test/guild-helpers'
 import { createTestApp, resetState } from '../../../test/test-app'
 

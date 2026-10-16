@@ -1,7 +1,7 @@
 import { sql } from 'drizzle-orm'
 import { afterAll, beforeEach, describe, expect, it } from 'vitest'
 
-import { SESSION_COOKIE, WEB_ORIGIN, registerUser } from '../../../test/auth-helpers'
+import { registerUser, SESSION_COOKIE, WEB_ORIGIN } from '../../../test/auth-helpers'
 import { createOutbox } from '../../../test/outbox'
 import { createTestApp, resetState } from '../../../test/test-app'
 import { emailTokens } from '../../db/schema'

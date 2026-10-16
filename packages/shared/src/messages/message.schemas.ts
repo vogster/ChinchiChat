@@ -1,6 +1,6 @@
 import { z } from 'zod'
 
-import { CIPHERTEXT_MAX_BASE64, base64Schema } from '../e2ee/e2ee.schemas'
+import { base64Schema, CIPHERTEXT_MAX_BASE64 } from '../e2ee/e2ee.schemas'
 import { snowflakeSchema } from '../snowflake/snowflake'
 import { publicUserSchema } from '../users/user.schemas'
 import { ATTACHMENTS_PER_MESSAGE_MAX, attachmentSchema } from './attachment.schemas'

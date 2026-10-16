@@ -7,7 +7,6 @@ import { VoiceModerationMenu } from './voice-moderation-menu'
 import { voiceStateWords } from './voice-words'
 
 import type { VoiceModerationRights } from './voice-moderation-menu'
-
 import type { PublicUser, VoiceState } from '@chinchi/shared'
 
 /** One person in a voice channel in the sidebar. */

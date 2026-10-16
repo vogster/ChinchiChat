@@ -1,4 +1,4 @@
-import { Permission, computeBasePermissions, has } from '@chinchi/shared'
+import { computeBasePermissions, has, Permission } from '@chinchi/shared'
 
 import { toPublicUser } from '../users/user.mapper'
 

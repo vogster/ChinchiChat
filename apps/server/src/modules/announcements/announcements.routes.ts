@@ -1,5 +1,3 @@
-import { ok } from '../../http/responses'
-import { addressBucket } from '../../http/address-bucket'
 import {
   followChannelRequestSchema,
   messageSchema,
@@ -8,6 +6,8 @@ import {
 } from '@chinchi/shared'
 import { z } from 'zod'
 
+import { addressBucket } from '../../http/address-bucket'
+import { ok } from '../../http/responses'
 import { requireAuth, requireHuman } from '../auth/auth.plugin'
 
 import type { AnnouncementService } from './announcement.service'

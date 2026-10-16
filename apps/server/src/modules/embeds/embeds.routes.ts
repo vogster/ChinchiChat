@@ -1,6 +1,6 @@
 import { z } from 'zod'
 
-import { HttpError, badRequest } from '../../http/http-error'
+import { badRequest, HttpError } from '../../http/http-error'
 import { embedImageKey } from './link-unfurler'
 
 import type { ObjectStorage } from '../../storage/object-storage'

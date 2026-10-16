@@ -1,8 +1,8 @@
 import { authKeys } from '../auth/queries'
 import { guildKeys } from './queries'
 
-import type { QueryClient } from '@tanstack/react-query'
 import type { Channel, CurrentUser, GuildDetail, Member, Role } from '@chinchi/shared'
+import type { QueryClient } from '@tanstack/react-query'
 
 /** Cache updates shared by gateway dispatches and the client's own mutations. */
 

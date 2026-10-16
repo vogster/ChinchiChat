@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useState } from 'react'
 
 import { useApi } from '../../lib/api-context'
-import { useE2ee } from './e2ee-context'
 import { withoutMetadata } from './clean-photo'
+import { useE2ee } from './e2ee-context'
 import { encryptFile } from './file-crypto'
 
 import type { ConversationStatus, EncryptedChannel, SendOptions } from './client'

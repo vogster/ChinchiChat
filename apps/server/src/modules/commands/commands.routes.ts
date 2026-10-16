@@ -1,5 +1,3 @@
-import { ok } from '../../http/responses'
-import { addressBucket } from '../../http/address-bucket'
 import {
   commandSchema,
   interactionResponseRequestSchema,
@@ -10,7 +8,9 @@ import {
 } from '@chinchi/shared'
 import { z } from 'zod'
 
+import { addressBucket } from '../../http/address-bucket'
 import { forbidden } from '../../http/http-error'
+import { ok } from '../../http/responses'
 import { requireAuth, requireHuman } from '../auth/auth.plugin'
 
 import type { CommandService } from './command.service'

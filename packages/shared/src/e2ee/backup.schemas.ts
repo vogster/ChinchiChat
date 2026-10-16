@@ -1,7 +1,7 @@
 import { z } from 'zod'
 
 import { snowflakeSchema } from '../snowflake/snowflake'
-import { CIPHERTEXT_MAX_BASE64, base64Schema } from './e2ee.schemas'
+import { base64Schema, CIPHERTEXT_MAX_BASE64 } from './e2ee.schemas'
 
 /** Entries one upload may carry. */
 export const BACKUP_ENTRIES_PER_UPLOAD = 100

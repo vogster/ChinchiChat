@@ -3,6 +3,7 @@ import { Link } from '@tanstack/react-router'
 import { useState } from 'react'
 
 import { CustomEmoji } from '../emoji/custom-emoji'
+
 import type { MentionResolver } from './mention-context'
 import type { BlockNode, InlineNode, MarkdownDocument } from '@chinchi/markdown'
 import type { ReactNode } from 'react'

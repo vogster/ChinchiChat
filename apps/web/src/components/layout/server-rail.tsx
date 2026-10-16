@@ -4,10 +4,10 @@ import { MessageCircle, Plus } from 'lucide-react'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
+import { dmsQueryOptions } from '../../features/dms/queries'
 import { CreateGuildDialog } from '../../features/guilds/create-guild-dialog'
 import { GuildIcon } from '../../features/guilds/guild-icon'
 import { guildQueryOptions, guildsQueryOptions } from '../../features/guilds/queries'
-import { dmsQueryOptions } from '../../features/dms/queries'
 import { formatMentionCount, useMentionCounts } from '../../features/messages/mentions'
 import { isUnread, useReadStates } from '../../features/messages/use-messages'
 import {

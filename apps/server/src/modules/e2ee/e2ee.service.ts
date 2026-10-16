@@ -1,12 +1,12 @@
-import { DEVICES_MAX_PER_USER, KEY_PACKAGES_MAX_PER_DEVICE, deviceStatement } from '@chinchi/shared'
+import { DEVICES_MAX_PER_USER, deviceStatement, KEY_PACKAGES_MAX_PER_DEVICE } from '@chinchi/shared'
 
 import { userTopic } from '../../events/event-bus'
-import { HttpError, badRequest, conflict } from '../../http/http-error'
+import { badRequest, conflict, HttpError } from '../../http/http-error'
 import { verifyEd25519 } from './ed25519'
 
 import type { EventBus } from '../../events/event-bus'
-import type { ChannelEvents } from '../channels/channel-events'
 import type { ChannelService } from '../channels/channel.service'
+import type { ChannelEvents } from '../channels/channel-events'
 import type { DmRepository } from '../dms/dm.repository'
 import type { GuildRepository } from '../guilds/guild.repository'
 import type { RelationshipRepository } from '../relationships/relationship.repository'

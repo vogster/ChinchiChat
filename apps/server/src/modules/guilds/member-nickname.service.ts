@@ -1,7 +1,7 @@
 import { Permission } from '@chinchi/shared'
 
 import { guildTopic } from '../../events/event-bus'
-import { HttpError, forbidden } from '../../http/http-error'
+import { forbidden, HttpError } from '../../http/http-error'
 import { activeTimeout, toMember } from './guild.mapper'
 import { outranks } from './outranks'
 
@@ -9,8 +9,8 @@ import type { EventBus } from '../../events/event-bus'
 import type { AuditLogService } from '../moderation/audit-log.service'
 import type { RoleRepository } from '../roles/role.repository'
 import type { UserRepository } from '../users/user.repository'
-import type { GuildAccessChecks } from './guild-access'
 import type { GuildRepository } from './guild.repository'
+import type { GuildAccessChecks } from './guild-access'
 import type { Member, Snowflake } from '@chinchi/shared'
 
 export interface MemberNicknameServiceDeps {

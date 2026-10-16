@@ -3,10 +3,10 @@ import { sql } from 'drizzle-orm'
 import { afterAll, beforeEach, describe, expect, it } from 'vitest'
 
 import { addMember, createGuild, signUp } from '../../../test/guild-helpers'
-import { createTestApp, resetState } from '../../../test/test-app'
-import { MAX_PENDING_UPLOADS } from './attachment.service'
-import { createObjectStorage } from '../../storage/object-storage'
 import { testStorageConfig } from '../../../test/storage'
+import { createTestApp, resetState } from '../../../test/test-app'
+import { createObjectStorage } from '../../storage/object-storage'
+import { MAX_PENDING_UPLOADS } from './attachment.service'
 
 import type { TestActor } from '../../../test/guild-helpers'
 

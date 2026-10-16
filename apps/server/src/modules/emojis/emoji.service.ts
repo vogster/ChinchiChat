@@ -1,12 +1,12 @@
-import { MAX_GUILD_EMOJIS, Permission, customEmojiUrl } from '@chinchi/shared'
+import { customEmojiUrl, MAX_GUILD_EMOJIS, Permission } from '@chinchi/shared'
+import { detectImageType } from '@chinchi/shared'
 import { and, asc, count, eq, sql } from 'drizzle-orm'
 
 import { uniqueViolationConstraint } from '../../db/errors'
 import { guildEmojis } from '../../db/schema'
 import { guildTopic } from '../../events/event-bus'
-import { HttpError, badRequest, conflict } from '../../http/http-error'
+import { badRequest, conflict, HttpError } from '../../http/http-error'
 import { createLimiter } from '../../http/limiter'
-import { detectImageType } from '@chinchi/shared'
 import { createEmojiImage } from '../../storage/thumbnail'
 
 import type { Database } from '../../db/client'

@@ -1,5 +1,4 @@
 import { createPublicKey, verify } from 'node:crypto'
-
 import { describe, expect, it } from 'vitest'
 
 import { createUserKey, signStatement, verifyStatement } from './user-key'

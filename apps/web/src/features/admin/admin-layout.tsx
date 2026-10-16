@@ -1,7 +1,7 @@
 import { Link } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
 
-import { SettingsShell, settingsNavItemClass } from '../../components/layout/settings-shell'
+import { settingsNavItemClass, SettingsShell } from '../../components/layout/settings-shell'
 import { useCurrentUser } from '../auth/use-auth-actions'
 
 import type { ReactNode } from 'react'

@@ -6,8 +6,8 @@ import { mentionsMe } from '../messages/mentions'
 import { flattenPages, messageKeys } from '../messages/queries'
 
 import type { MessagePages, ReadStates } from '../messages/queries'
-import type { QueryClient } from '@tanstack/react-query'
 import type { CurrentUser, GuildDetail, MentionCounts, Message } from '@chinchi/shared'
+import type { QueryClient } from '@tanstack/react-query'
 
 /** Sets a channel's count; channels without mentions are left out of the map. */
 export const setMentionCount = (

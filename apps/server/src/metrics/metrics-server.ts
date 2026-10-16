@@ -1,7 +1,7 @@
 import { createServer } from 'node:http'
 
-import type { AddressInfo } from 'node:net'
 import type { Registry } from '@prometheus-io/client'
+import type { AddressInfo } from 'node:net'
 
 export interface MetricsServer {
   readonly port: number

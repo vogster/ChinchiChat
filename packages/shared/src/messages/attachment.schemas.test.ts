@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest'
 
 import {
-  FILENAME_MAX_LENGTH,
   attachmentFilenameSchema,
   contentTypeSchema,
   createAttachmentRequestSchema,
+  FILENAME_MAX_LENGTH,
   isInlineImage,
 } from './attachment.schemas'
 

@@ -1,7 +1,7 @@
 import { queryOptions, useQuery } from '@tanstack/react-query'
 
-import type { QueryClient } from '@tanstack/react-query'
 import type { Snowflake, VoiceState } from '@chinchi/shared'
+import type { QueryClient } from '@tanstack/react-query'
 
 /** userId → where they are in voice; users not in voice are absent. */
 export type VoiceStates = Readonly<Record<Snowflake, VoiceState>>

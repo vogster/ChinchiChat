@@ -1,5 +1,3 @@
-import { ok } from '../../http/responses'
-import { addressBucket } from '../../http/address-bucket'
 import {
   addBotRequestSchema,
   botSchema,
@@ -9,6 +7,8 @@ import {
 } from '@chinchi/shared'
 import { z } from 'zod'
 
+import { addressBucket } from '../../http/address-bucket'
+import { ok } from '../../http/responses'
 import { requireHuman } from '../auth/auth.plugin'
 
 import type { BotService } from './bot.service'

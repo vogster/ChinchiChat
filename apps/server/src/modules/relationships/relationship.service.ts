@@ -1,11 +1,11 @@
 import { userTopic } from '../../events/event-bus'
-import { HttpError, badRequest } from '../../http/http-error'
+import { badRequest, HttpError } from '../../http/http-error'
 import { toPublicUser } from '../users/user.mapper'
 import { createRelationshipRepository } from './relationship.repository'
 
 import type { Database } from '../../db/client'
-import type { PresenceLookup } from '../invites/invite.service'
 import type { EventBus } from '../../events/event-bus'
+import type { PresenceLookup } from '../invites/invite.service'
 import type { UserRepository, UserRow } from '../users/user.repository'
 import type { RelationshipRepository, RelationshipRow } from './relationship.repository'
 import type { Relationship, Snowflake } from '@chinchi/shared'

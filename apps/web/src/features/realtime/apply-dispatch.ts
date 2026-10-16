@@ -1,6 +1,9 @@
 import { replySnippetText } from '@chinchi/shared'
 
 import { authKeys } from '../auth/queries'
+import { bumpPrivateChannel, removePrivateChannel, upsertPrivateChannel } from '../dms/dm-cache'
+import { dmKeys } from '../dms/queries'
+import { removeRelationship, upsertRelationship } from '../friends/queries'
 import {
   bumpThreadCount,
   removeRole,
@@ -12,24 +15,20 @@ import {
   upsertChannel,
   upsertRoles,
 } from '../guilds/guild-cache'
-import { bumpPrivateChannel, removePrivateChannel, upsertPrivateChannel } from '../dms/dm-cache'
-import { dmKeys } from '../dms/queries'
-import { removeRelationship, upsertRelationship } from '../friends/queries'
 import { guildKeys } from '../guilds/queries'
 import { flattenPages, messageKeys } from '../messages/queries'
 import { withReaction } from '../messages/reaction-cache'
-import { countDeletion, countEdit, countNewMessage, setMentionCount } from './mention-counts'
-import { applyUserUpdate } from './user-update'
-import { profileKeys } from '../profile/queries'
-import { applyVoiceState, dropVoiceChannel, seedVoiceStates } from '../voice/queries'
-
+import { applyPoll } from '../messages/use-polls'
 import { notificationKeys, setNotificationSetting } from '../notifications/queries'
 import { customStatusKeys, setCustomStatusOf } from '../presence/queries'
-import { applyPoll } from '../messages/use-polls'
-import type { CustomStatuses } from '../presence/queries'
+import { profileKeys } from '../profile/queries'
+import { applyVoiceState, dropVoiceChannel, seedVoiceStates } from '../voice/queries'
+import { countDeletion, countEdit, countNewMessage, setMentionCount } from './mention-counts'
+import { applyUserUpdate } from './user-update'
+
 import type { MessageItem, MessagePages, Presences, ReadStates } from '../messages/queries'
+import type { CustomStatuses } from '../presence/queries'
 import type { TypingStore } from './typing-store'
-import type { QueryClient } from '@tanstack/react-query'
 import type {
   Channel,
   CurrentUser,
@@ -40,10 +39,11 @@ import type {
   Member,
   MentionCounts,
   Message,
+  NotificationSetting,
   PrivateChannel,
   ReplySnippet,
-  NotificationSetting,
 } from '@chinchi/shared'
+import type { QueryClient } from '@tanstack/react-query'
 
 /** Replaces each loaded page through `change`; untouched when the channel was never opened. */
 const updatePages = (

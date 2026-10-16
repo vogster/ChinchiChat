@@ -1,7 +1,7 @@
 import { eq } from 'drizzle-orm'
 import { afterAll, beforeEach, describe, expect, it } from 'vitest'
 
-import { SESSION_COOKIE, WEB_ORIGIN, registerUser } from '../../../test/auth-helpers'
+import { registerUser, SESSION_COOKIE, WEB_ORIGIN } from '../../../test/auth-helpers'
 import { createTestApp, resetState } from '../../../test/test-app'
 import { users } from '../../db/schema'
 import { totpCode } from './totp'

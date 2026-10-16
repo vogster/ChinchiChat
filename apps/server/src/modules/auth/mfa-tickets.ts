@@ -1,7 +1,7 @@
+import { generateSessionToken, hashSessionToken } from './session-token'
+
 import type { Snowflake } from '@chinchi/shared'
 import type { Redis } from 'ioredis'
-
-import { generateSessionToken, hashSessionToken } from './session-token'
 
 /** How long the second step of a sign-in may take. */
 export const MFA_TICKET_SECONDS = 5 * 60

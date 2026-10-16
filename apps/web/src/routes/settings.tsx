@@ -1,4 +1,4 @@
-import { Outlet, createFileRoute } from '@tanstack/react-router'
+import { createFileRoute, Outlet } from '@tanstack/react-router'
 
 import { requireUser } from '../features/auth/require-user'
 import { SettingsLayout } from '../features/settings/settings-layout'

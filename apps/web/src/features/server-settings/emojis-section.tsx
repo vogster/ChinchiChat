@@ -1,5 +1,5 @@
+import { EMOJI_IMAGE_MAX_BYTES, emojiNameSchema, MAX_GUILD_EMOJIS } from '@chinchi/shared'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { EMOJI_IMAGE_MAX_BYTES, MAX_GUILD_EMOJIS, emojiNameSchema } from '@chinchi/shared'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 

@@ -7,8 +7,8 @@ import {
 } from '@chinchi/shared'
 import { z } from 'zod'
 
-import { ok } from '../../http/responses'
 import { LOGIN_RATE_LIMIT } from '../../http/rate-limit'
+import { ok } from '../../http/responses'
 import { requireHuman } from './auth.plugin'
 
 import type { MfaService } from './mfa.service'

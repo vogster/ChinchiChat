@@ -3,7 +3,7 @@ import { afterAll, beforeEach, describe, expect, it } from 'vitest'
 
 import { addMember, createGuild, signUp } from '../../../test/guild-helpers'
 import { createTestApp, resetState } from '../../../test/test-app'
-import { VOICE_ENV, createFakeRooms, signedWebhook } from '../../../test/voice'
+import { createFakeRooms, signedWebhook, VOICE_ENV } from '../../../test/voice'
 
 import type { TestActor } from '../../../test/guild-helpers'
 

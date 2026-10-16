@@ -1,8 +1,8 @@
 import { and, inArray, isNull, lt } from 'drizzle-orm'
 
 import { attachments, interactions, pendingTimeouts } from '../db/schema'
-import { PENDING_TTL_MS } from '../modules/attachments/attachment.service'
 import { uploadKey } from '../modules/attachments/attachment.mapper'
+import { PENDING_TTL_MS } from '../modules/attachments/attachment.service'
 
 import type { Database } from '../db/client'
 import type { ListedObject, ObjectStorage } from '../storage/object-storage'

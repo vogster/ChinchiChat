@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { UnreadableImage, readJpegOrientation, stripMetadata } from './strip-metadata'
+import { readJpegOrientation, stripMetadata, UnreadableImage } from './strip-metadata'
 
 const bytes = (...parts: (number[] | string | Uint8Array)[]) =>
   Uint8Array.from(

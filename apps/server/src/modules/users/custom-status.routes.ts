@@ -5,8 +5,8 @@ import {
 } from '@chinchi/shared'
 import { z } from 'zod'
 
-import { ok } from '../../http/responses'
 import { badRequest } from '../../http/http-error'
+import { ok } from '../../http/responses'
 import { requireHuman } from '../auth/auth.plugin'
 
 import type { PresenceService } from '../../gateway/presence'

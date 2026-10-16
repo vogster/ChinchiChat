@@ -1,3 +1,4 @@
+import { GUILD_NAME_MAX_LENGTH, GUILD_NAME_MIN_LENGTH } from '@chinchi/shared'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
@@ -9,8 +10,6 @@ import { errorMessage } from '../../lib/errors'
 import { useCurrentUser } from '../auth/use-auth-actions'
 import { parseInviteCode } from './invite-link'
 import { useAcceptInvite, useCreateGuild } from './use-guild-actions'
-
-import { GUILD_NAME_MAX_LENGTH, GUILD_NAME_MIN_LENGTH } from '@chinchi/shared'
 
 export interface CreateGuildDialogProps {
   readonly open: boolean

@@ -1,4 +1,4 @@
-import { Link, Outlet, createFileRoute } from '@tanstack/react-router'
+import { createFileRoute, Link, Outlet } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
 
 import { PageHeader } from '../../../../components/layout/page-header'

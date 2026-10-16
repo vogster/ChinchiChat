@@ -1,5 +1,5 @@
 import { collectMentions, parseMarkdown } from '@chinchi/markdown'
-import { Permission, has } from '@chinchi/shared'
+import { has, Permission } from '@chinchi/shared'
 
 import { HttpError } from '../../http/http-error'
 

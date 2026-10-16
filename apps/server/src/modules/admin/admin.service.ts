@@ -1,7 +1,7 @@
 import { randomBytes } from 'node:crypto'
 
 import { publishRevokedSessions } from '../../events/internal-events'
-import { HttpError, badRequest } from '../../http/http-error'
+import { badRequest, HttpError } from '../../http/http-error'
 import { profileImageUrl } from '../media/media-paths'
 import { toPublicUser } from '../users/user.mapper'
 

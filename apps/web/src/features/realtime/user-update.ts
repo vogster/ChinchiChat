@@ -5,8 +5,8 @@ import { guildKeys } from '../guilds/queries'
 import { profileKeys } from '../profile/queries'
 
 import type { MessageItem, MessagePages } from '../messages/queries'
-import type { QueryClient } from '@tanstack/react-query'
 import type { CurrentUser, Member, PrivateChannel, PublicUser, Relationship } from '@chinchi/shared'
+import type { QueryClient } from '@tanstack/react-query'
 
 const swap = (user: PublicUser) => (other: PublicUser) => (other.id === user.id ? user : other)
 

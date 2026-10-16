@@ -2,15 +2,15 @@ import { describe, expect, it } from 'vitest'
 
 import {
   ALL_PERMISSIONS,
-  CHANNEL_PERMISSIONS,
-  DEFAULT_EVERYONE_PERMISSIONS,
-  Permission,
   canManageRole,
+  CHANNEL_PERMISSIONS,
   computeBasePermissions,
   computeChannelPermissions,
+  DEFAULT_EVERYONE_PERMISSIONS,
   has,
   highestPosition,
   parsePermissions,
+  Permission,
   serializePermissions,
 } from './permissions'
 

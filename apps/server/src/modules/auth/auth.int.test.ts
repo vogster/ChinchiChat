@@ -1,13 +1,12 @@
 import { argon2Sync, randomBytes } from 'node:crypto'
-
 import { eq, sql } from 'drizzle-orm'
 import { afterAll, beforeEach, describe, expect, it } from 'vitest'
 
 import {
-  SESSION_COOKIE,
-  WEB_ORIGIN,
   registerUser,
+  SESSION_COOKIE,
   sessionCookieOf,
+  WEB_ORIGIN,
 } from '../../../test/auth-helpers'
 import { createTestApp, resetState } from '../../../test/test-app'
 import { sessions, users } from '../../db/schema'

@@ -1,21 +1,21 @@
 import { Permission } from '@chinchi/shared'
+import { detectImageType } from '@chinchi/shared'
 
 import { guildTopic } from '../../events/event-bus'
-import { HttpError, badRequest } from '../../http/http-error'
+import { badRequest, HttpError } from '../../http/http-error'
 import { createLimiter } from '../../http/limiter'
-import { detectImageType } from '@chinchi/shared'
 import {
-  PROFILE_MAX_INPUT_PIXELS,
   createBannerImage,
   createProfileImage,
+  PROFILE_MAX_INPUT_PIXELS,
 } from '../../storage/thumbnail'
 import { toGuild } from '../guilds/guild.mapper'
 import { profileImageKey } from './media-paths'
 
 import type { EventBus } from '../../events/event-bus'
 import type { ObjectStorage } from '../../storage/object-storage'
-import type { GuildAccessChecks } from '../guilds/guild-access'
 import type { GuildRepository, GuildRow } from '../guilds/guild.repository'
+import type { GuildAccessChecks } from '../guilds/guild-access'
 import type { UserRepository, UserRow } from '../users/user.repository'
 import type { ProfileImageKind } from './media-paths'
 import type { Snowflake } from '@chinchi/shared'

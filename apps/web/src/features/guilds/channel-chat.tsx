@@ -1,5 +1,5 @@
-import { useQueryClient } from '@tanstack/react-query'
 import { Permission } from '@chinchi/shared'
+import { useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
@@ -9,6 +9,7 @@ import { errorMessage } from '../../lib/errors'
 import { useCurrentUser } from '../auth/use-auth-actions'
 import { useGuildCommands } from '../commands/use-guild-commands'
 import { expandCustomEmoji } from '../emoji/expand-custom-emoji'
+import { useGuildMentions } from '../mentions/mention-candidates'
 import { Composer } from '../messages/composer'
 import { DeleteMessageDialog } from '../messages/delete-message-dialog'
 import { MessageList } from '../messages/message-list'
@@ -30,9 +31,8 @@ import { useSlowmode } from '../messages/use-slowmode'
 import { can } from '../permissions/permissions'
 import { useGuildPermissions } from '../permissions/use-guild-permissions'
 import { useMemberColors } from '../permissions/use-member-colors'
-import { useGuildMentions } from '../mentions/mention-candidates'
-
 import { RulesDialog } from './rules-dialog'
+
 import type { MessageItem, MessagePages } from '../messages/queries'
 import type { Channel, GuildDetail } from '@chinchi/shared'
 

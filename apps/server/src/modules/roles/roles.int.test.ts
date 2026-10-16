@@ -1,5 +1,4 @@
 import { readFileSync } from 'node:fs'
-
 import { DEFAULT_EVERYONE_PERMISSIONS, Permission } from '@chinchi/shared'
 import { afterAll, beforeEach, describe, expect, it } from 'vitest'
 

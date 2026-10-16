@@ -1,6 +1,6 @@
+import { Permission } from '@chinchi/shared'
 import { useSuspenseQuery } from '@tanstack/react-query'
 import { createFileRoute } from '@tanstack/react-router'
-import { Permission } from '@chinchi/shared'
 
 import { guildQueryOptions } from '../../../../features/guilds/queries'
 import { can } from '../../../../features/permissions/permissions'

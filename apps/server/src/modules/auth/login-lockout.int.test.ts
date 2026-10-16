@@ -1,6 +1,6 @@
 import { afterAll, beforeEach, describe, expect, it } from 'vitest'
 
-import { WEB_ORIGIN, registerUser } from '../../../test/auth-helpers'
+import { registerUser, WEB_ORIGIN } from '../../../test/auth-helpers'
 import { createOutbox } from '../../../test/outbox'
 import { createTestApp, resetState } from '../../../test/test-app'
 import { MAX_FAILED_LOGINS, MAX_FAILED_LOGINS_PER_ACCOUNT } from './login-throttle'

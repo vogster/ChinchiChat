@@ -1,4 +1,3 @@
-import type { SystemMessageKind } from '@chinchi/shared'
 import { sql } from 'drizzle-orm'
 import {
   boolean,
@@ -15,6 +14,7 @@ import { snowflake, snowflakeArray } from '../columns'
 import { channels } from './guilds'
 import { users } from './users'
 
+import type { SystemMessageKind } from '@chinchi/shared'
 import type { Embed } from '@chinchi/shared'
 
 /** The creation time is encoded in the snowflake id, so there is no created_at column. */

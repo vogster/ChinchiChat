@@ -1,5 +1,4 @@
 import { randomBytes } from 'node:crypto'
-
 import { describe, expect, it } from 'vitest'
 
 import { createSecretBox, isSealed } from './secret-box'

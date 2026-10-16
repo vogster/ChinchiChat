@@ -1,14 +1,14 @@
-import { addressBucket } from '../../http/address-bucket'
 import {
-  EMOJI_IMAGE_MAX_BYTES,
-  PROFILE_IMAGE_TYPES,
   createEmojiQuerySchema,
+  EMOJI_IMAGE_MAX_BYTES,
   guildEmojiSchema,
+  PROFILE_IMAGE_TYPES,
   snowflakeSchema,
   updateEmojiRequestSchema,
 } from '@chinchi/shared'
 import { z } from 'zod'
 
+import { addressBucket } from '../../http/address-bucket'
 import { requireAuth } from '../auth/auth.plugin'
 
 import type { EmojiService } from './emoji.service'

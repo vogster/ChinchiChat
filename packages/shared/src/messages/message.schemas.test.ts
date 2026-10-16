@@ -2,11 +2,11 @@ import { describe, expect, it } from 'vitest'
 
 import { ATTACHMENTS_PER_MESSAGE_MAX } from './attachment.schemas'
 import {
+  createMessageRequestSchema,
+  listMessagesQuerySchema,
   MESSAGE_MAX_LENGTH,
   REPLY_SNIPPET_LENGTH,
   replySnippetText,
-  createMessageRequestSchema,
-  listMessagesQuerySchema,
   updateMessageRequestSchema,
 } from './message.schemas'
 

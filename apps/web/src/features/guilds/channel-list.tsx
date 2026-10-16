@@ -3,14 +3,13 @@ import { ChevronDown, Hash, Megaphone, MessagesSquare, Plus, Settings } from 'lu
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
+import { dropTargetClass, useDragSort } from '../../lib/use-drag-sort'
 import { formatMentionCount } from '../messages/mentions'
 import { VoiceChannelRow } from '../voice/voice-channel-row'
-import { dropTargetClass, useDragSort } from '../../lib/use-drag-sort'
 import { buildChannelTree, threadsOf } from './channel-tree'
 
 import type { DragItemProps } from '../../lib/use-drag-sort'
 import type { ChannelDrop } from './channel-order'
-
 import type { Channel } from '@chinchi/shared'
 
 export interface ChannelListProps {

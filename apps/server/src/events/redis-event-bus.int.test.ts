@@ -3,8 +3,8 @@ import { afterEach, describe, expect, inject, it } from 'vitest'
 import { createRedis } from '../redis/client'
 import { createRedisEventBus } from './redis-event-bus'
 
-import type { SequencedEvent } from './event-bus'
 import type { RedisHandle } from '../redis/client'
+import type { SequencedEvent } from './event-bus'
 
 const handles: RedisHandle[] = []
 const buses: { close(): Promise<void> }[] = []

@@ -1,13 +1,12 @@
 import { resolveNotifications, shouldNotify } from '@chinchi/shared'
 
 import { authKeys } from '../auth/queries'
-import { dmKeys } from '../dms/queries'
 import { userName } from '../dms/dm-names'
+import { dmKeys } from '../dms/queries'
 import { guildKeys } from '../guilds/queries'
 import { mentionsMe } from '../messages/mentions'
 import { notificationKeys } from './queries'
 
-import type { QueryClient } from '@tanstack/react-query'
 import type {
   Channel,
   CurrentUser,
@@ -16,6 +15,7 @@ import type {
   NotificationSetting,
   PrivateChannel,
 } from '@chinchi/shared'
+import type { QueryClient } from '@tanstack/react-query'
 import type { TFunction } from 'i18next'
 
 export interface DesktopNotification {

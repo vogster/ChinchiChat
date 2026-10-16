@@ -1,6 +1,6 @@
 import {
-  deleteAccountRequestSchema,
   currentUserSchema,
+  deleteAccountRequestSchema,
   snowflakeSchema,
   updateProfileRequestSchema,
   userProfileSchema,
@@ -8,12 +8,12 @@ import {
 import { z } from 'zod'
 
 import { LOGIN_RATE_LIMIT } from '../../http/rate-limit'
-import { SESSION_COOKIE, requireAuth, requireHuman } from '../auth/auth.plugin'
+import { requireAuth, requireHuman, SESSION_COOKIE } from '../auth/auth.plugin'
 import { toCurrentUser } from './user.mapper'
 
 import type { AccountDeletion } from './account-deletion.service'
-import type { ProfileEvents } from './profile-events'
 import type { ProfileService } from './profile.service'
+import type { ProfileEvents } from './profile-events'
 import type { UserRepository } from './user.repository'
 import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod'
 

@@ -1,5 +1,4 @@
 import { generateKeyPairSync, randomBytes, sign } from 'node:crypto'
-
 import { deviceStatement } from '@chinchi/shared'
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 

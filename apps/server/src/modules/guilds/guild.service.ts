@@ -1,24 +1,23 @@
 import { DEFAULT_EVERYONE_PERMISSIONS, Permission } from '@chinchi/shared'
-
-import { guildTopic, userTopic } from '../../events/event-bus'
 import { count, eq, sql } from 'drizzle-orm'
 
 import { guilds as guildsTable, users } from '../../db/schema'
-import { HttpError, badRequest, forbidden } from '../../http/http-error'
+import { guildTopic, userTopic } from '../../events/event-bus'
+import { badRequest, forbidden, HttpError } from '../../http/http-error'
 import { createChannelRepository } from '../channels/channel.repository'
 import { createRoleRepository } from '../roles/role.repository'
-import { createGuildRepository } from './guild.repository'
 import { defaultChannels } from './default-channels'
 import { activeTimeout, toGuild, toMember } from './guild.mapper'
+import { createGuildRepository } from './guild.repository'
 
-import type { AuditLogService } from '../moderation/audit-log.service'
 import type { Database } from '../../db/client'
 import type { EventBus } from '../../events/event-bus'
+import type { AuditLogService } from '../moderation/audit-log.service'
 import type { RoleRepository } from '../roles/role.repository'
+import type { GuildRepository, GuildRow } from './guild.repository'
 import type { GuildAccessChecks } from './guild-access'
 import type { GuildViews } from './guild-views'
-import type { GuildRepository, GuildRow } from './guild.repository'
-import type { GuildDetail, Member, Snowflake, createGuildRequestSchema } from '@chinchi/shared'
+import type { createGuildRequestSchema, GuildDetail, Member, Snowflake } from '@chinchi/shared'
 import type { z } from 'zod'
 
 /** Parsed request: the schema has already filled in the default locale. */

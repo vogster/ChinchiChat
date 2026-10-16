@@ -1,6 +1,6 @@
+import { Permission } from '@chinchi/shared'
 import { useQuery } from '@tanstack/react-query'
 import { useNavigate } from '@tanstack/react-router'
-import { Permission } from '@chinchi/shared'
 import { Volume2 } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
@@ -10,12 +10,12 @@ import { guildQueryOptions } from '../guilds/queries'
 import { can } from '../permissions/permissions'
 import { useGuildPermissions } from '../permissions/use-guild-permissions'
 import { statesInChannel, useVoiceStates } from './queries'
-import { useVoicePeople, useVoiceEnabled } from './use-voice-people'
+import { useVoiceEnabled, useVoicePeople } from './use-voice-people'
 import { useVoice } from './voice-context'
 import { VoiceMemberRow } from './voice-member-row'
 
-import type { Channel } from '@chinchi/shared'
 import type { DragItemProps } from '../../lib/use-drag-sort'
+import type { Channel } from '@chinchi/shared'
 import type { ReactNode } from 'react'
 
 const rowClass =

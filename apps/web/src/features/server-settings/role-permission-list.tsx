@@ -1,4 +1,4 @@
-import { Permission, has } from '@chinchi/shared'
+import { has, Permission } from '@chinchi/shared'
 import { useTranslation } from 'react-i18next'
 
 import { Switch } from '../../components/ui/switch'

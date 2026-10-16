@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { SNIFF_BYTES, detectImageType } from './sniff'
+import { detectImageType, SNIFF_BYTES } from './sniff'
 
 const bytes = (...values: (number | string)[]) =>
   Uint8Array.from(

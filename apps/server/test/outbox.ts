@@ -1,6 +1,6 @@
 import { vi } from 'vitest'
 
-import type { MailMessage, Mailer } from '../src/mail/mailer'
+import type { Mailer, MailMessage } from '../src/mail/mailer'
 
 /** Mailer that keeps messages in memory so tests can read links out of them. */
 export const createOutbox = () => {

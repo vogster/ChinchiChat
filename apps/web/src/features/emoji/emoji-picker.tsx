@@ -1,13 +1,12 @@
+import { CUSTOM_EMOJI_PATTERN, customEmojiText } from '@chinchi/shared'
 import * as Popover from '@radix-ui/react-popover'
 import { useQuery } from '@tanstack/react-query'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
-import { CUSTOM_EMOJI_PATTERN, customEmojiText } from '@chinchi/shared'
-
 import { CustomEmoji, EmojiGlyph } from './custom-emoji'
-import { readRecentEmoji, rememberEmoji } from './recent-emoji'
 import { EMOJI_GROUPS, emojiQueryOptions, searchEmoji } from './emoji-data'
+import { readRecentEmoji, rememberEmoji } from './recent-emoji'
 
 import type { GuildEmoji } from '@chinchi/shared'
 import type { ReactNode } from 'react'

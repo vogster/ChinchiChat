@@ -1,7 +1,7 @@
 import { queryOptions } from '@tanstack/react-query'
 
-import type { QueryClient } from '@tanstack/react-query'
 import type { CustomStatus, Snowflake } from '@chinchi/shared'
+import type { QueryClient } from '@tanstack/react-query'
 
 /** userId → custom status; filled by the gateway (READY, PRESENCE_UPDATE). */
 export type CustomStatuses = Readonly<Record<Snowflake, CustomStatus>>

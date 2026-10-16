@@ -1,10 +1,10 @@
 import { HttpError } from '../../http/http-error'
+import { profileImageUrl } from '../media/media-paths'
 import { toPublicUser } from './user.mapper'
 
-import { profileImageUrl } from '../media/media-paths'
 import type { DmRepository } from '../dms/dm.repository'
-import type { GuildAccessChecks } from '../guilds/guild-access'
 import type { GuildRepository } from '../guilds/guild.repository'
+import type { GuildAccessChecks } from '../guilds/guild-access'
 import type { RelationshipRepository } from '../relationships/relationship.repository'
 import type { UserRepository, UserRow } from './user.repository'
 import type { Snowflake, UserProfile } from '@chinchi/shared'

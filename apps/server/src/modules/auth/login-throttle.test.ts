@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { LOCKOUT_SECONDS, MAX_FAILED_LOGINS, createMemoryLoginThrottle } from './login-throttle'
+import { createMemoryLoginThrottle, LOCKOUT_SECONDS, MAX_FAILED_LOGINS } from './login-throttle'
 
 describe('in-memory login throttle', () => {
   it('lets the allowed attempts through, then locks until the window passes', async () => {

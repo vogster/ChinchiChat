@@ -1,27 +1,26 @@
 import { z } from 'zod'
 
+import { privateChannelSchema } from '../dms/private-channel.schemas'
+import { deviceApprovalSchema } from '../e2ee/approval.schemas'
+import { handshakeSchema } from '../e2ee/e2ee.schemas'
 import { guildEmojiSchema } from '../guilds/emoji.schemas'
-import { interactionSchema } from '../messages/command.schemas'
-
 import {
   channelSchema,
   guildDetailSchema,
   guildSchema,
   memberSchema,
 } from '../guilds/guild.schemas'
+import { interactionSchema } from '../messages/command.schemas'
 import { mentionCountsSchema, messageSchema, readStateSchema } from '../messages/message.schemas'
-import { privateChannelSchema } from '../dms/private-channel.schemas'
 import { pollUpdateEventSchema } from '../messages/poll.schemas'
 import { encryptedReactionEventSchema, reactionEventSchema } from '../messages/reaction.schemas'
-import { relationshipRemoveSchema, relationshipSchema } from '../users/relationship.schemas'
 import { roleSchema } from '../permissions/role.schemas'
 import { snowflakeSchema } from '../snowflake/snowflake'
-import { voiceMoveEventSchema, voiceStateSchema } from '../voice/voice.schemas'
-import { currentUserSchema, publicUserSchema } from '../users/user.schemas'
-import { notificationSettingSchema } from '../users/notification.schemas'
 import { customStatusSchema } from '../users/custom-status.schemas'
-import { deviceApprovalSchema } from '../e2ee/approval.schemas'
-import { handshakeSchema } from '../e2ee/e2ee.schemas'
+import { notificationSettingSchema } from '../users/notification.schemas'
+import { relationshipRemoveSchema, relationshipSchema } from '../users/relationship.schemas'
+import { currentUserSchema, publicUserSchema } from '../users/user.schemas'
+import { voiceMoveEventSchema, voiceStateSchema } from '../voice/voice.schemas'
 
 export const GATEWAY_VERSION = 1
 /** Client frames above this size are rejected before parsing. */

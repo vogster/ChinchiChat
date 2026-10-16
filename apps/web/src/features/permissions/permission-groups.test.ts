@@ -1,7 +1,7 @@
 import { Permission } from '@chinchi/shared'
 import { describe, expect, it } from 'vitest'
 
-import { PERMISSION_GROUPS, channelPermissionGroups } from './permission-groups'
+import { channelPermissionGroups, PERMISSION_GROUPS } from './permission-groups'
 
 describe('permission groups', () => {
   it('list every permission exactly once', () => {

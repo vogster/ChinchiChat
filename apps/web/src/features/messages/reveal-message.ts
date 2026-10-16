@@ -1,10 +1,10 @@
 import { jumpToMessage } from './jump-to-message'
-import { PAGE_SIZE, messageKeys, messagesQueryOptions } from './queries'
+import { messageKeys, messagesQueryOptions, PAGE_SIZE } from './queries'
 
 import type { MessageItem, MessagePages } from './queries'
-import type { QueryClient } from '@tanstack/react-query'
 import type { ApiClient } from '@chinchi/sdk'
 import type { Snowflake } from '@chinchi/shared'
+import type { QueryClient } from '@tanstack/react-query'
 
 /** How far back to page for a message before giving up (50 messages a page). */
 const MAX_PAGES = 40

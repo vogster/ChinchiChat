@@ -1,8 +1,7 @@
 import { and, count, desc, eq, ilike, isNull, lt, ne, or, sql } from 'drizzle-orm'
 
-import { badRequest } from '../../http/http-error'
-
 import { guildMembers, guilds, users } from '../../db/schema'
+import { badRequest } from '../../http/http-error'
 
 import type { Database } from '../../db/client'
 import type { GuildRow } from '../guilds/guild.repository'

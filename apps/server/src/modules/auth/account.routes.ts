@@ -6,8 +6,8 @@ import {
 } from '@chinchi/shared'
 import { z } from 'zod'
 
-import { toCurrentUser } from '../users/user.mapper'
 import { FAIL_CLOSED } from '../../http/rate-limit'
+import { toCurrentUser } from '../users/user.mapper'
 import { requireAuth } from './auth.plugin'
 
 import type { AccountEmailService } from './account-email.service'

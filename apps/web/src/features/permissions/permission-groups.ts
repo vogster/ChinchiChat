@@ -1,4 +1,4 @@
-import { CHANNEL_PERMISSIONS, Permission, has } from '@chinchi/shared'
+import { CHANNEL_PERMISSIONS, has, Permission } from '@chinchi/shared'
 
 import type { ChannelType, PermissionName } from '@chinchi/shared'
 

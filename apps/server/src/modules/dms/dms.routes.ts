@@ -1,5 +1,3 @@
-import { ok } from '../../http/responses'
-import { addressBucket } from '../../http/address-bucket'
 import {
   createPrivateChannelRequestSchema,
   privateChannelSchema,
@@ -8,6 +6,8 @@ import {
 } from '@chinchi/shared'
 import { z } from 'zod'
 
+import { addressBucket } from '../../http/address-bucket'
+import { ok } from '../../http/responses'
 import { requireHuman, requireVerifiedHuman } from '../auth/auth.plugin'
 
 import type { DmService } from './dm.service'

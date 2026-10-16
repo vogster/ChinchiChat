@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest'
 
 import {
-  MAX_TIMEOUT_MS,
   auditLogQuerySchema,
   banRequestSchema,
   kickRequestSchema,
+  MAX_TIMEOUT_MS,
   timeoutRequestSchema,
 } from './moderation.schemas'
 

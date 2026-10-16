@@ -9,9 +9,9 @@ import { EmojiPicker } from '../emoji/emoji-picker'
 import { MentionSuggestions } from '../mentions/mention-suggestions'
 import { useMentionSuggestions } from '../mentions/use-mention-suggestions'
 import { CreatePollDialog } from './create-poll-dialog'
+
 import type { EmojiPickerProps } from '../emoji/emoji-picker'
 import type { MentionCandidate } from '../mentions/mention-query'
-
 import type { Command, Snowflake } from '@chinchi/shared'
 import type { KeyboardEvent } from 'react'
 

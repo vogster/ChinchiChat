@@ -1,4 +1,4 @@
-import { SNIFF_BYTES, detectImageType, stripMetadata } from '@chinchi/shared'
+import { detectImageType, SNIFF_BYTES, stripMetadata } from '@chinchi/shared'
 
 /**
  * A photo without its metadata (camera, location, comments), cut out without re-encoding — as

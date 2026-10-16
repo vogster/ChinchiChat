@@ -1,25 +1,24 @@
 import {
-  MAX_CHANNELS_PER_GUILD,
   CHANNEL_NAME_MAX_LENGTH,
-  Permission,
   has,
+  MAX_CHANNELS_PER_GUILD,
   normalizeTextChannelName,
+  Permission,
 } from '@chinchi/shared'
-
 import { and, count, eq, ne, sql } from 'drizzle-orm'
 
 import { channels as channelsTable } from '../../db/schema'
 import { guildTopic } from '../../events/event-bus'
-import { HttpError, badRequest, forbidden } from '../../http/http-error'
-import { createOverwriteOperations, invalidThreadTarget } from './channel-overwrites'
+import { badRequest, forbidden, HttpError } from '../../http/http-error'
 import { createChannelRepository, isGuildChannel } from './channel.repository'
+import { createOverwriteOperations, invalidThreadTarget } from './channel-overwrites'
 
-import type { AuditLogService } from '../moderation/audit-log.service'
 import type { Database } from '../../db/client'
 import type { EventBus } from '../../events/event-bus'
-import type { AnyChannelAccess, ChannelAccess, GuildAccessChecks } from '../guilds/guild-access'
 import type { GuildRepository } from '../guilds/guild.repository'
+import type { AnyChannelAccess, ChannelAccess, GuildAccessChecks } from '../guilds/guild-access'
 import type { GuildViews } from '../guilds/guild-views'
+import type { AuditLogService } from '../moderation/audit-log.service'
 import type { OverwriteRepository } from '../roles/overwrite.repository'
 import type { RoleRepository } from '../roles/role.repository'
 import type { AnyChannelRow, ChannelRepository, ChannelRow } from './channel.repository'

@@ -1,8 +1,8 @@
 import { isMessageChannel } from '../channels/channel.repository'
 import { unknownMessage } from './message-context'
 
-import type { MessageContext, ResolvedMessageDeps } from './message-context'
 import type { MessageRow } from './message.repository'
+import type { MessageContext, ResolvedMessageDeps } from './message-context'
 import type { Message, Snowflake } from '@chinchi/shared'
 
 /** Messages nobody typed into a channel: webhooks, bot answers and group-DM notes. */

@@ -1,10 +1,10 @@
 import { CornerUpLeft } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
-import type { MessageReply } from '@chinchi/shared'
-
 import { useMemberNames } from '../guilds/use-member-names'
 import { jumpWhenRendered } from './reveal-message'
+
+import type { MessageReply } from '@chinchi/shared'
 
 /** The line above a reply: who it answers and the start of what they said. */
 export const ReplyHeader = ({

@@ -4,9 +4,9 @@ import { describe, expect, it } from 'vitest'
 import {
   createFakeApi,
   testDm,
-  testGuild,
   testFriend,
   testGroupDm,
+  testGuild,
   testMessage,
   testUser,
 } from '../../test/fake-api'

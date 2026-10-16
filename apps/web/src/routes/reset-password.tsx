@@ -3,8 +3,8 @@ import { useTranslation } from 'react-i18next'
 import { z } from 'zod'
 
 import { AuthCard } from '../features/auth/auth-card'
-import { useLinkToken } from '../features/auth/use-link-token'
 import { ResetPasswordForm } from '../features/auth/reset-password-form'
+import { useLinkToken } from '../features/auth/use-link-token'
 
 const ResetPasswordPage = () => {
   const { t } = useTranslation()

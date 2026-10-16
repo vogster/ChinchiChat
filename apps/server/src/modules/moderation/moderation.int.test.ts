@@ -2,9 +2,9 @@ import { Permission } from '@chinchi/shared'
 import { and, eq } from 'drizzle-orm'
 import { afterAll, beforeEach, describe, expect, it } from 'vitest'
 
-import { guildMembers } from '../../db/schema'
 import { addMember, createGuild, signUp } from '../../../test/guild-helpers'
 import { createTestApp, resetState } from '../../../test/test-app'
+import { guildMembers } from '../../db/schema'
 
 import type { TestActor } from '../../../test/guild-helpers'
 

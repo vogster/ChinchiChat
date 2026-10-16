@@ -1,6 +1,6 @@
 import { afterAll, beforeEach, describe, expect, it } from 'vitest'
 
-import { SESSION_COOKIE, WEB_ORIGIN, registerUser } from '../../test/auth-helpers'
+import { registerUser, SESSION_COOKIE, WEB_ORIGIN } from '../../test/auth-helpers'
 import { createTestApp, resetState } from '../../test/test-app'
 
 const behindProxy = createTestApp({ env: { TRUST_PROXY: '127.0.0.1' } })

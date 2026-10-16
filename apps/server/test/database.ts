@@ -1,5 +1,4 @@
 import { fileURLToPath } from 'node:url'
-
 import { PostgreSqlContainer } from '@testcontainers/postgresql'
 import { GenericContainer, Wait } from 'testcontainers'
 

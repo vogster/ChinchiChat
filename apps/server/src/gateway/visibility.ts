@@ -1,4 +1,4 @@
-import { Permission, computeChannelPermissions, has, parsePermissions } from '@chinchi/shared'
+import { computeChannelPermissions, has, parsePermissions, Permission } from '@chinchi/shared'
 
 import type { Channel, DispatchType, Guild, Role } from '@chinchi/shared'
 

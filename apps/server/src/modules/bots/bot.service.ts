@@ -1,5 +1,4 @@
 import { randomBytes } from 'node:crypto'
-
 import { MAX_BOTS_PER_OWNER, Permission } from '@chinchi/shared'
 import { and, asc, count, eq, sql } from 'drizzle-orm'
 
@@ -7,7 +6,7 @@ import { uniqueViolationConstraint } from '../../db/errors'
 import { sessions, users } from '../../db/schema'
 import { guildTopic, userTopic } from '../../events/event-bus'
 import { publishRevokedSessions } from '../../events/internal-events'
-import { HttpError, badRequest, conflict, forbidden } from '../../http/http-error'
+import { badRequest, conflict, forbidden, HttpError } from '../../http/http-error'
 import { hashPassword } from '../auth/password'
 import { generateSessionToken } from '../auth/session-token'
 import { toMember } from '../guilds/guild.mapper'
@@ -17,9 +16,9 @@ import { toPublicUser } from '../users/user.mapper'
 
 import type { Database } from '../../db/client'
 import type { EventBus } from '../../events/event-bus'
+import type { GuildRepository } from '../guilds/guild.repository'
 import type { GuildAccessChecks } from '../guilds/guild-access'
 import type { GuildViews } from '../guilds/guild-views'
-import type { GuildRepository } from '../guilds/guild.repository'
 import type { UserRow } from '../users/user.repository'
 import type { Bot, Snowflake, UpdateBotRequest } from '@chinchi/shared'
 

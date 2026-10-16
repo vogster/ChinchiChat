@@ -1,8 +1,8 @@
 import { queryOptions } from '@tanstack/react-query'
 
-import type { QueryClient } from '@tanstack/react-query'
 import type { ApiClient } from '@chinchi/sdk'
 import type { Relationship } from '@chinchi/shared'
+import type { QueryClient } from '@tanstack/react-query'
 
 export const relationshipKeys = {
   all: ['relationships'] as const,

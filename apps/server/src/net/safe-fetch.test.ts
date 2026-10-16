@@ -1,10 +1,9 @@
 import { createServer } from 'node:http'
-
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 
 import { createSafeFetcher } from './safe-fetch'
 
-import type { ServerResponse, Server } from 'node:http'
+import type { Server, ServerResponse } from 'node:http'
 import type { AddressInfo } from 'node:net'
 
 let server: Server

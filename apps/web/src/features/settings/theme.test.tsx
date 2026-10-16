@@ -1,9 +1,9 @@
 import { screen } from '@testing-library/react'
 import { afterEach, describe, expect, it } from 'vitest'
 
+import { applyStoredTheme } from '../../lib/theme'
 import { createFakeApi, testUser } from '../../test/fake-api'
 import { renderApp } from '../../test/render-app'
-import { applyStoredTheme } from '../../lib/theme'
 
 afterEach(() => {
   localStorage.clear()

@@ -2,9 +2,9 @@ import { describe, expect, it } from 'vitest'
 
 import {
   CloseCode,
+  dispatchSchemas,
   GATEWAY_VERSION,
   Opcode,
-  dispatchSchemas,
   parseClientMessage,
   presenceStatusSchema,
 } from './gateway'

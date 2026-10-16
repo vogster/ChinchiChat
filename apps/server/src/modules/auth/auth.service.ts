@@ -1,15 +1,15 @@
 import { publishRevokedSessions } from '../../events/internal-events'
-import { HttpError, conflict, forbidden, unauthorized } from '../../http/http-error'
+import { addressBucket } from '../../http/address-bucket'
+import { conflict, forbidden, HttpError, unauthorized } from '../../http/http-error'
 import {
-  MAX_FAILED_LOGINS_PER_ACCOUNT,
   createMemoryLoginThrottle,
   loginThrottleKey,
+  MAX_FAILED_LOGINS_PER_ACCOUNT,
 } from './login-throttle'
-import { addressBucket } from '../../http/address-bucket'
 import { hashPassword, needsRehash, verifyPassword } from './password'
+import { confirmPassword } from './reauth'
 import { generateSessionToken, hashSessionToken } from './session-token'
 
-import { confirmPassword } from './reauth'
 import type { EventBus } from '../../events/event-bus'
 import type { UserRepository, UserRow } from '../users/user.repository'
 import type { LoginThrottle } from './login-throttle'

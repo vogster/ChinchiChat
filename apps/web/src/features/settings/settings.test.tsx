@@ -2,9 +2,9 @@ import { fireEvent, screen, waitFor, within } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { initI18n } from '../../lib/i18n'
-import { getVoicePreferences, resetVoicePreferences } from '../voice/voice-preferences'
 import { apiError, createFakeApi, testSessions, testUser } from '../../test/fake-api'
 import { renderApp } from '../../test/render-app'
+import { getVoicePreferences, resetVoicePreferences } from '../voice/voice-preferences'
 
 afterEach(() => {
   initI18n('ru')

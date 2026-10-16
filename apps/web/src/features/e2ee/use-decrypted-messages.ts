@@ -5,8 +5,8 @@ import { useTranslation } from 'react-i18next'
 import { useE2ee } from './e2ee-context'
 import { useDecryptedReactions } from './use-decrypted-reactions'
 
-import type { EncryptedChannel, ReadMessage } from './client'
 import type { MessageItem } from '../messages/queries'
+import type { EncryptedChannel, ReadMessage } from './client'
 import type { PublicUser } from '@chinchi/shared'
 
 const keyOf = (message: MessageItem) => `${message.id}:${message.editedAt ?? ''}`

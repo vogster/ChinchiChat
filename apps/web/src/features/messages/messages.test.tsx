@@ -1,5 +1,5 @@
-import { act, screen, waitFor, within } from '@testing-library/react'
 import { Permission } from '@chinchi/shared'
+import { act, screen, waitFor, within } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 
 import { apiError, createFakeApi, testGuild, testMessage, testUser } from '../../test/fake-api'

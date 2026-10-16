@@ -1,13 +1,12 @@
 import { timingSafeEqual } from 'node:crypto'
-
 import { Permission } from '@chinchi/shared'
 import { and, asc, eq, gt, inArray, isNull } from 'drizzle-orm'
 
 import { botCommands, guildMembers, interactions, users } from '../../db/schema'
 import { userTopic } from '../../events/event-bus'
-import { HttpError, badRequest, forbidden } from '../../http/http-error'
-import { isMessageChannel } from '../channels/channel.repository'
+import { badRequest, forbidden, HttpError } from '../../http/http-error'
 import { generateSessionToken, hashSessionToken } from '../auth/session-token'
+import { isMessageChannel } from '../channels/channel.repository'
 import { toPublicUser } from '../users/user.mapper'
 
 import type { Database } from '../../db/client'

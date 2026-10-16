@@ -1,6 +1,5 @@
 import { lookup as dnsLookup } from 'node:dns'
 import { isIP } from 'node:net'
-
 import { Agent, request } from 'undici'
 
 import { isPublicAddress } from './ip-policy'

@@ -1,12 +1,12 @@
 import { describe, expect, it } from 'vitest'
 
 import {
-  MAX_SEQUENCE,
-  MAX_WORKER_ID,
   CHINCHI_EPOCH,
   compareSnowflakes,
   createSnowflakeGenerator,
   decodeSnowflake,
+  MAX_SEQUENCE,
+  MAX_WORKER_ID,
   snowflakeFromTimestamp,
   snowflakeSchema,
 } from './snowflake'

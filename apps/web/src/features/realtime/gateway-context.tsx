@@ -11,8 +11,8 @@ import { createTypingStore } from './typing-store'
 
 import type { GatewayConnection, GatewayFactory } from './gateway-factory'
 import type { TypingStore } from './typing-store'
-import type { CurrentUser, DispatchType, SelectableStatus } from '@chinchi/shared'
 import type { GatewayState } from '@chinchi/sdk'
+import type { CurrentUser, DispatchType, SelectableStatus } from '@chinchi/shared'
 import type { ReactNode } from 'react'
 
 export type DispatchListener = (type: DispatchType, data: unknown) => void

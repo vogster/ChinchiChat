@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { INVITE_CODE_LENGTH, generateInviteCode } from './invite-code'
+import { generateInviteCode, INVITE_CODE_LENGTH } from './invite-code'
 
 describe('generateInviteCode', () => {
   it('produces base62 codes of the configured length', () => {

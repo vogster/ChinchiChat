@@ -1,7 +1,7 @@
-import { addressBucket } from '../../http/address-bucket'
 import { searchMessagesQuerySchema, searchResultSchema, snowflakeSchema } from '@chinchi/shared'
 import { z } from 'zod'
 
+import { addressBucket } from '../../http/address-bucket'
 import { requireAuth } from '../auth/auth.plugin'
 
 import type { SearchService } from './search.service'

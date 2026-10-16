@@ -1,6 +1,6 @@
 import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { WEB_ORIGIN, createTestApp, resetState } from '../../test/test-app'
+import { createTestApp, resetState, WEB_ORIGIN } from '../../test/test-app'
 import { LOGIN_RATE_LIMIT, REGISTER_RATE_LIMIT } from './rate-limit'
 
 const first = createTestApp()

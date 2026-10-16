@@ -1,9 +1,9 @@
-import { deviceStatement } from '@chinchi/shared'
 import { verifyStatement } from '@chinchi/e2ee'
+import { deviceStatement } from '@chinchi/shared'
 import { describe, expect, it } from 'vitest'
 
-import { fromBase64 } from './codec'
 import { createE2eeClient } from './client'
+import { fromBase64 } from './codec'
 import { createFakeDelivery } from './fake-delivery'
 import { createMemoryStore } from './store'
 

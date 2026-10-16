@@ -1,5 +1,5 @@
 import { guildMembers } from '../src/db/schema'
-import { SESSION_COOKIE, WEB_ORIGIN, registerUser } from './auth-helpers'
+import { registerUser, SESSION_COOKIE, WEB_ORIGIN } from './auth-helpers'
 
 import type { Database } from '../src/db/client'
 import type { TestUserInput } from './auth-helpers'

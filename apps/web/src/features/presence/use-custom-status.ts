@@ -1,5 +1,5 @@
-import { useQuery } from '@tanstack/react-query'
 import { isCustomStatusActive } from '@chinchi/shared'
+import { useQuery } from '@tanstack/react-query'
 
 import { useMinuteClock } from '../../lib/use-minute-clock'
 import { customStatusesQueryOptions } from './queries'

@@ -1,18 +1,18 @@
 import { publishRevokedSessions } from '../../events/internal-events'
-import { HttpError, badRequest, conflict, unauthorized } from '../../http/http-error'
+import { badRequest, conflict, HttpError, unauthorized } from '../../http/http-error'
 import { loginThrottleKey } from './login-throttle'
+import { confirmPassword } from './reauth'
 import { generateRecoveryCodes, hashRecoveryCode } from './recovery-codes'
 import { createSecretBox, isSealed } from './secret-box'
 import { generateTotpSecret, totpUri, verifyTotp } from './totp'
 
-import { confirmPassword } from './reauth'
 import type { EventBus } from '../../events/event-bus'
 import type { UserRepository, UserRow } from '../users/user.repository'
-import type { SessionRepository } from './session.repository'
 import type { LoginThrottle } from './login-throttle'
-import type { MfaTickets } from './mfa-tickets'
 import type { MfaRepository } from './mfa.repository'
+import type { MfaTickets } from './mfa-tickets'
 import type { SecretBox } from './secret-box'
+import type { SessionRepository } from './session.repository'
 import type { Snowflake, TotpSetup } from '@chinchi/shared'
 
 export interface MfaServiceDeps {

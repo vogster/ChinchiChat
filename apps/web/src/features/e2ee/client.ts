@@ -1,4 +1,3 @@
-import { ApiError } from '@chinchi/sdk'
 import {
   addMembers,
   createConversation,
@@ -14,6 +13,7 @@ import {
   removeMembers,
   saveConversation,
 } from '@chinchi/e2ee'
+import { ApiError } from '@chinchi/sdk'
 
 import { decodePayload, encodePayload, fromBase64, toBase64 } from './codec'
 import { createCrossSigning } from './cross-signing'
@@ -25,7 +25,6 @@ import { createSafety } from './safety'
 
 import type { EncryptedFile, EncryptedPayload } from './codec'
 import type { E2eeStore } from './store'
-import type { ApiClient } from '@chinchi/sdk'
 import type {
   Conversation,
   ConversationOptions,
@@ -33,6 +32,7 @@ import type {
   DeviceKeys,
   KeyPackageBundle,
 } from '@chinchi/e2ee'
+import type { ApiClient } from '@chinchi/sdk'
 import type { Device, Handshake } from '@chinchi/shared'
 
 /** The part of the API the client needs (the SDK client satisfies it). */

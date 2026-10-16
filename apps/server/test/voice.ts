@@ -1,5 +1,4 @@
 import { createHash } from 'node:crypto'
-
 import { AccessToken, TokenVerifier } from 'livekit-server-sdk'
 
 import type { VoiceRooms } from '../src/modules/voice/livekit'

@@ -1,4 +1,4 @@
-import { Permission, has } from '@chinchi/shared'
+import { has, Permission } from '@chinchi/shared'
 
 import { isMessageChannel } from '../channels/channel.repository'
 import { permissionsIn } from '../guilds/guild-access'
@@ -7,8 +7,8 @@ import type { ChannelRepository } from '../channels/channel.repository'
 import type { ChannelService } from '../channels/channel.service'
 import type { GuildAccessChecks } from '../guilds/guild-access'
 import type { OverwriteRepository } from '../roles/overwrite.repository'
-import type { MessageViews } from './message-views'
 import type { MessageRepository, MessageWithAuthor } from './message.repository'
+import type { MessageViews } from './message-views'
 import type { Message, SearchHas, SearchResult, Snowflake } from '@chinchi/shared'
 
 export interface SearchServiceDeps {

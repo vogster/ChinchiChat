@@ -1,6 +1,6 @@
 import { afterAll, beforeEach, describe, expect, it } from 'vitest'
 
-import { WEB_ORIGIN, registerUser } from '../../../test/auth-helpers'
+import { registerUser, WEB_ORIGIN } from '../../../test/auth-helpers'
 import { createTestApp, resetState } from '../../../test/test-app'
 
 const open = createTestApp({ env: { INSTANCE_NAME: 'My Chat' } })

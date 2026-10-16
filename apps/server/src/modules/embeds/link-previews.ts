@@ -1,10 +1,10 @@
 import { parseMarkdown } from '@chinchi/markdown'
 import { LINK_PREVIEWS_PER_MESSAGE } from '@chinchi/shared'
 
-import type { ChannelEvents } from '../channels/channel-events'
 import type { ChannelRepository } from '../channels/channel.repository'
-import type { MessageViews } from '../messages/message-views'
+import type { ChannelEvents } from '../channels/channel-events'
 import type { MessageRepository } from '../messages/message.repository'
+import type { MessageViews } from '../messages/message-views'
 import type { LinkUnfurler } from './link-unfurler'
 import type { InlineNode, MarkdownDocument } from '@chinchi/markdown'
 import type { Embed as MessageEmbed, Snowflake } from '@chinchi/shared'

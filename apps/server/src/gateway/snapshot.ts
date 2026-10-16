@@ -1,12 +1,12 @@
-import type { GuildAccessChecks } from '../modules/guilds/guild-access'
+import type { DmService } from '../modules/dms/dm.service'
 import type { GuildRepository } from '../modules/guilds/guild.repository'
+import type { GuildAccessChecks } from '../modules/guilds/guild-access'
 import type { GuildViews } from '../modules/guilds/guild-views'
 import type { MentionCounter } from '../modules/messages/mention-counter'
 import type { ReadStateRepository } from '../modules/messages/read-state.repository'
 import type { NotificationRepository } from '../modules/notifications/notification.repository'
-import type { PresenceService } from './presence'
-import type { DmService } from '../modules/dms/dm.service'
 import type { VoiceService } from '../modules/voice/voice.service'
+import type { PresenceService } from './presence'
 import type {
   CustomStatus,
   GuildDetail,

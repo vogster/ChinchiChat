@@ -1,3 +1,3 @@
 export * from './client'
-export type { FetchLike, HttpOptions } from './http'
 export * from './gateway'
+export type { FetchLike, HttpOptions } from './http'

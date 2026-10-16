@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { TYPING_TTL_MS, createTypingStore } from './typing-store'
+import { createTypingStore, TYPING_TTL_MS } from './typing-store'
 
 beforeEach(() => vi.useFakeTimers())
 afterEach(() => vi.useRealTimers())

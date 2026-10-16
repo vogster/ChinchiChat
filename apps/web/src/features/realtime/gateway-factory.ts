@@ -1,7 +1,7 @@
 import { createGatewayClient } from '@chinchi/sdk'
 
-import type { DispatchType, SelectableStatus } from '@chinchi/shared'
 import type { GatewayState } from '@chinchi/sdk'
+import type { DispatchType, SelectableStatus } from '@chinchi/shared'
 
 export interface GatewayHandlers {
   readonly onDispatch: (type: DispatchType, data: unknown) => void

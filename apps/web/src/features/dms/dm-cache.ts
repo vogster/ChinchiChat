@@ -2,8 +2,8 @@ import { compareSnowflakes } from '@chinchi/shared'
 
 import { dmKeys } from './queries'
 
-import type { QueryClient } from '@tanstack/react-query'
 import type { PrivateChannel } from '@chinchi/shared'
+import type { QueryClient } from '@tanstack/react-query'
 
 /** Latest activity first; a DM without messages counts from when it was created. */
 const byActivity = (a: PrivateChannel, b: PrivateChannel) =>

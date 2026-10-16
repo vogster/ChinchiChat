@@ -7,12 +7,12 @@ import { App } from '../app'
 import { initI18n } from '../lib/i18n'
 import { createAppRouter } from '../router'
 import { createFakeApi } from './fake-api'
-import { createFakeGateway } from './fake-gateway'
 import { createFakeE2ee } from './fake-e2ee'
+import { createFakeGateway } from './fake-gateway'
 import { createFakeVoice } from './fake-voice'
 
-import type { FakeApi, FakeApiOptions } from './fake-api'
 import type { ConversationStatus } from '../features/e2ee/client'
+import type { FakeApi, FakeApiOptions } from './fake-api'
 
 export interface RenderAppOptions extends FakeApiOptions {
   readonly api?: FakeApi

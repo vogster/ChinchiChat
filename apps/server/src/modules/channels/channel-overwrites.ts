@@ -1,9 +1,9 @@
 import {
   CHANNEL_PERMISSIONS,
-  Permission,
   has,
   highestPosition,
   parsePermissions,
+  Permission,
 } from '@chinchi/shared'
 
 import { badRequest, forbidden } from '../../http/http-error'
@@ -12,8 +12,8 @@ import { createOverwriteRepository } from '../roles/overwrite.repository'
 import { createChannelRepository, lockChannel } from './channel.repository'
 
 import type { Database } from '../../db/client'
-import type { ChannelAccess, GuildAccess, GuildAccessChecks } from '../guilds/guild-access'
 import type { GuildRepository } from '../guilds/guild.repository'
+import type { ChannelAccess, GuildAccess, GuildAccessChecks } from '../guilds/guild-access'
 import type { GuildViews } from '../guilds/guild-views'
 import type { OverwriteRepository } from '../roles/overwrite.repository'
 import type { RoleRepository } from '../roles/role.repository'

@@ -14,5 +14,8 @@
       "default": "./vitest.js"
     },
     "./tsconfig/*": "./tsconfig/*"
+  },
+  "devDependencies": {
+    "eslint-plugin-simple-import-sort": "14.0.0"
   }
 }

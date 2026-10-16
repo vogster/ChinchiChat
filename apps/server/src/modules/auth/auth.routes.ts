@@ -9,7 +9,7 @@ import { z } from 'zod'
 
 import { LOGIN_RATE_LIMIT, REGISTER_RATE_LIMIT } from '../../http/rate-limit'
 import { toCurrentUser } from '../users/user.mapper'
-import { SESSION_COOKIE, requireAuth, requireHuman } from './auth.plugin'
+import { requireAuth, requireHuman, SESSION_COOKIE } from './auth.plugin'
 
 import type { AccountEmailService } from './account-email.service'
 import type { AuthResult, AuthService, ClientInfo } from './auth.service'

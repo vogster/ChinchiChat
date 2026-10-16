@@ -3,9 +3,9 @@ import { createAccountEmailService } from '../modules/auth/account-email.service
 import { createAuthService } from '../modules/auth/auth.service'
 import { createEmailTokenRepository } from '../modules/auth/email-token.repository'
 import { createMemoryLoginThrottle, createRedisLoginThrottle } from '../modules/auth/login-throttle'
-import { createMemoryMfaTickets, createRedisMfaTickets } from '../modules/auth/mfa-tickets'
 import { createMfaRepository } from '../modules/auth/mfa.repository'
 import { createMfaService } from '../modules/auth/mfa.service'
+import { createMemoryMfaTickets, createRedisMfaTickets } from '../modules/auth/mfa-tickets'
 import { createSecretBox } from '../modules/auth/secret-box'
 
 import type { Config } from '../config/env'

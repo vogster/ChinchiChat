@@ -1,10 +1,10 @@
 import { afterAll, beforeEach, describe, expect, it } from 'vitest'
 
 import {
-  SESSION_COOKIE,
-  WEB_ORIGIN,
   registerUser,
+  SESSION_COOKIE,
   sessionCookieOf,
+  WEB_ORIGIN,
 } from '../../../test/auth-helpers'
 import { createTestApp, resetState } from '../../../test/test-app'
 import { MAX_FAILED_LOGINS } from './login-throttle'

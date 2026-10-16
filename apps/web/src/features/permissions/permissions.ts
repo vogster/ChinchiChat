@@ -1,11 +1,11 @@
 import {
   ALL_PERMISSIONS,
-  Permission,
   canManageRole,
   computeBasePermissions,
   computeChannelPermissions,
   has,
   parsePermissions,
+  Permission,
 } from '@chinchi/shared'
 
 import type { Channel, GuildDetail, PermissionContext, Role } from '@chinchi/shared'

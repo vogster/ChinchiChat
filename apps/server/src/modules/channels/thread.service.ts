@@ -2,7 +2,7 @@ import { Permission } from '@chinchi/shared'
 
 import { uniqueViolationConstraint } from '../../db/errors'
 import { guildTopic } from '../../events/event-bus'
-import { HttpError, badRequest, conflict } from '../../http/http-error'
+import { badRequest, conflict, HttpError } from '../../http/http-error'
 import { createOverwriteRepository } from '../roles/overwrite.repository'
 import { createChannelRepository, lockChannel } from './channel.repository'
 

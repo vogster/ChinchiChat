@@ -11,8 +11,8 @@ import { createSocialApi } from './social'
 
 import type { HttpOptions } from './http'
 
-export { ApiError, isApiError } from './errors'
 export type { ApiErrorDetail } from './errors'
+export { ApiError, isApiError } from './errors'
 export type { UploadOptions } from './upload'
 
 /**

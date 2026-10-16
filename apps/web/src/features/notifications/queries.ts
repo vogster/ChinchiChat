@@ -1,8 +1,8 @@
 import { queryOptions } from '@tanstack/react-query'
 
-import type { QueryClient } from '@tanstack/react-query'
 import type { ApiClient } from '@chinchi/sdk'
 import type { NotificationSetting, Snowflake } from '@chinchi/shared'
+import type { QueryClient } from '@tanstack/react-query'
 
 export const notificationKeys = {
   all: ['notificationSettings'] as const,

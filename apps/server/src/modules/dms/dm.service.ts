@@ -1,7 +1,7 @@
 import { Permission } from '@chinchi/shared'
 
 import { userTopic } from '../../events/event-bus'
-import { HttpError, badRequest, forbidden } from '../../http/http-error'
+import { badRequest, forbidden, HttpError } from '../../http/http-error'
 import { toPrivateChannel } from './dm.mapper'
 
 import type { EventBus } from '../../events/event-bus'

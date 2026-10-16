@@ -1,5 +1,4 @@
 import { createHash, randomBytes } from 'node:crypto'
-
 import { RECOVERY_CODE_COUNT } from '@chinchi/shared'
 
 import { base32Encode } from './totp'

@@ -1,6 +1,6 @@
+import { Permission } from '@chinchi/shared'
 import { useQuery } from '@tanstack/react-query'
 import { useNavigate } from '@tanstack/react-router'
-import { Permission } from '@chinchi/shared'
 import {
   Bell,
   CheckCheck,
@@ -17,7 +17,10 @@ import { useTranslation } from 'react-i18next'
 import { UserPanel } from '../../components/layout/user-panel'
 import { Menu, MenuContent, MenuItem, MenuSeparator, MenuTrigger } from '../../components/ui/menu'
 import { useApi } from '../../lib/api-context'
+import { useMentionCounts } from '../messages/mentions'
 import { isUnread, useReadStates } from '../messages/use-messages'
+import { NotificationSettingsDialog } from '../notifications/notification-settings-dialog'
+import { useNotificationResolver } from '../notifications/use-notifications'
 import { can } from '../permissions/permissions'
 import { useGuildPermissions } from '../permissions/use-guild-permissions'
 import { allowedSections } from '../server-settings/sections'
@@ -30,9 +33,6 @@ import { LeaveGuildDialog } from './dialogs/leave-guild-dialog'
 import { guildQueryOptions } from './queries'
 import { useAckGuild } from './use-ack-guild'
 import { useChannelReorder } from './use-channel-reorder'
-import { NotificationSettingsDialog } from '../notifications/notification-settings-dialog'
-import { useNotificationResolver } from '../notifications/use-notifications'
-import { useMentionCounts } from '../messages/mentions'
 
 import type { Channel, Snowflake } from '@chinchi/shared'
 

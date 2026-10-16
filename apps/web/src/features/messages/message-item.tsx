@@ -3,8 +3,8 @@ import {
   Flag,
   Forward,
   Megaphone,
-  Paperclip,
   MessagesSquare,
+  Paperclip,
   Pencil,
   Pin,
   PinOff,
@@ -15,25 +15,25 @@ import {
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
-import { Button } from '../../components/ui/button'
-import { formatMessageTime, formatShortTime } from './format-time'
 import { Avatar } from '../../components/ui/avatar'
-import { ProfileTrigger } from '../profile/profile-trigger'
+import { Button } from '../../components/ui/button'
+import { InteractionHeader } from '../commands/interaction-header'
+import { EncryptedAttachments } from '../e2ee/encrypted-attachments'
 import { EmojiPicker } from '../emoji/emoji-picker'
 import { MessageContent } from '../markdown/message-content'
-import { QUICK_REACTIONS } from './reaction-cache'
-import { EncryptedAttachments } from '../e2ee/encrypted-attachments'
+import { ProfileTrigger } from '../profile/profile-trigger'
 import { AttachmentList } from './attachment-list'
+import { EmbedCard } from './embed-card'
+import { formatMessageTime, formatShortTime } from './format-time'
 import { ForwardDialog } from './forward-dialog'
 import { ForwardedBlock } from './forwarded-block'
 import { PollCard } from './poll-card'
-import { EmbedCard } from './embed-card'
+import { QUICK_REACTIONS } from './reaction-cache'
 import { ReactionsBar } from './reactions-bar'
-import { InteractionHeader } from '../commands/interaction-header'
 import { ReplyHeader } from './reply-header'
 
-import type { MessageItem as Item } from './queries'
 import type { EmojiPickerProps } from '../emoji/emoji-picker'
+import type { MessageItem as Item } from './queries'
 import type { Channel } from '@chinchi/shared'
 import type { KeyboardEvent, MouseEvent } from 'react'
 

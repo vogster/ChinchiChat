@@ -1,16 +1,16 @@
 import { GROUP_DM_MAX_MEMBERS } from '@chinchi/shared'
 
 import { userTopic } from '../../events/event-bus'
-import { HttpError, badRequest, forbidden } from '../../http/http-error'
+import { badRequest, forbidden, HttpError } from '../../http/http-error'
 import { toPrivateChannel } from './dm.mapper'
 import { cannotMessage } from './dm.service'
 
-import type { SystemMessageKind } from '@chinchi/shared'
 import type { EventBus } from '../../events/event-bus'
 import type { AnyChannelRow } from '../channels/channel.repository'
 import type { RelationshipRepository } from '../relationships/relationship.repository'
 import type { UserRepository, UserRow } from '../users/user.repository'
 import type { DmRepository } from './dm.repository'
+import type { SystemMessageKind } from '@chinchi/shared'
 import type { PrivateChannel, Snowflake } from '@chinchi/shared'
 
 export interface GroupDmServiceDeps {

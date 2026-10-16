@@ -1,8 +1,8 @@
 import { useSuspenseQuery } from '@tanstack/react-query'
-import { Link, Outlet, createFileRoute } from '@tanstack/react-router'
+import { createFileRoute, Link, Outlet } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
 
-import { SettingsShell, settingsNavItemClass } from '../../../components/layout/settings-shell'
+import { settingsNavItemClass, SettingsShell } from '../../../components/layout/settings-shell'
 import { firstTextChannel } from '../../../features/guilds/channel-tree'
 import { guildQueryOptions } from '../../../features/guilds/queries'
 import { useGuildPermissions } from '../../../features/permissions/use-guild-permissions'
