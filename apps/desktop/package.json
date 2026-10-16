@@ -5,8 +5,8 @@
   "type": "module",
   "description": "Chinchi for the desktop: the web app in a Tauri 2 shell",
   "scripts": {
-    "dev": "tauri dev",
-    "build": "tauri build",
+    "app:dev": "tauri dev",
+    "app:build": "tauri build",
     "tauri": "tauri"
   },
   "devDependencies": {

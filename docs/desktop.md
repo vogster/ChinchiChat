@@ -35,8 +35,8 @@
 ```bash
 pnpm install
 # Rust и зависимости Tauri: https://v2.tauri.app/start/prerequisites/
-pnpm --filter @chinchi/desktop dev          # Vite на :5174 + окно приложения
-pnpm --filter @chinchi/desktop build        # установщики в apps/desktop/src-tauri/target/release/bundle
+pnpm --filter @chinchi/desktop app:dev          # Vite на :5174 + окно приложения
+pnpm --filter @chinchi/desktop app:build        # установщики в apps/desktop/src-tauri/target/release/bundle
 ```
 
 - Вход приложения — `apps/web/desktop.html` → `src/desktop/main.tsx`; сборка `pnpm --filter @chinchi/web build:desktop` кладёт её в `apps/web/dist-desktop/index.html`, откуда её берёт Tauri. Маршруты — hash-history (`#/channels/...`): оболочка отдаёт один HTML-файл.

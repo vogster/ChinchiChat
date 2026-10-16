@@ -34,7 +34,7 @@ node scripts/demo-screenshots.mjs <суффикс>       # скриншоты RE
 
 - `apps/server` — Fastify + zod type provider, Drizzle + postgres.js. Модули по доменам в `src/modules/<domain>/`; сборка зависимостей — `src/services.ts` плюс `src/services/{account,e2ee,link-previews,conversations,integrations}.ts` по областям.
 - `apps/web` — React 19 + Vite + Tailwind 4 + TanStack Router (file-based, `src/routes/`) и Query. `src/routeTree.gen.ts` генерируется плагином и коммитится. Второй вход — `desktop.html` → `src/desktop/` (сборка `build:desktop` в `dist-desktop`, конфиг `vite.desktop.config.ts`).
-- `apps/desktop` — оболочка Tauri 2 (`src-tauri`: Rust, `tauri.conf.json`, `capabilities/`), фронтенд берёт из `apps/web/dist-desktop`. `pnpm --filter @chinchi/desktop dev|build`; нужен Rust. Подробности — `docs/desktop.md`.
+- `apps/desktop` — оболочка Tauri 2 (`src-tauri`: Rust, `tauri.conf.json`, `capabilities/`), фронтенд берёт из `apps/web/dist-desktop`. `pnpm --filter @chinchi/desktop app:dev|app:build` (не в `pnpm dev`/`pnpm build`: нужен Rust и системные библиотеки). Подробности — `docs/desktop.md`.
 - `packages/sdk` — REST-клиент (`createApiClient`), общий для всех клиентов: `client.ts` только собирает группы из доменных модулей (`auth.ts`, `admin.ts`, `guilds.ts`, `messages.ts`, `e2ee.ts`, `social.ts`, `bots.ts`, …); `id()` и `queryString()` — в `url.ts`. Ошибки — `ApiError` с `code`.
 - `packages/markdown` — парсер markdown сообщений в AST (`parseMarkdown`), `collectMentions`, `isEmojiOnly`. Только данные, без HTML: клиенты рендерят AST своими компонентами.
 - `packages/shared` — zod-схемы и типы для сервера и клиентов (Snowflake ID и т.д.). Экспортирует TS-исходники.
