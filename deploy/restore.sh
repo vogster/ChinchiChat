@@ -4,6 +4,8 @@
 #
 #   ./restore.sh backups/chinchi-backup-2026-10-16-120000.tar [--yes]
 #
+# An encrypted backup (.tar.enc) needs BACKUP_PASSPHRASE set to the passphrase it was made with.
+#
 # The running Chinchi must be the backup's version or newer: migrations only go forward.
 set -eu
 
@@ -16,7 +18,19 @@ project=chinchi
 
 work=$(mktemp -d)
 trap 'rm -rf "$work"' EXIT INT TERM
-tar xf "$archive" -C "$work" 2>/dev/null || { echo "Not a Chinchi backup: $archive" >&2; exit 1; }
+case $archive in
+  *.enc)
+    [ -n "${BACKUP_PASSPHRASE:-}" ] || { echo "The backup is encrypted: set BACKUP_PASSPHRASE to the passphrase it was made with" >&2; exit 1; }
+    openssl enc -d -aes-256-cbc -pbkdf2 -iter 600000 -pass env:BACKUP_PASSPHRASE \
+      -in "$archive" -out "$work/backup.tar" 2>/dev/null ||
+      { echo "Could not decrypt $archive: wrong passphrase, or not a Chinchi backup" >&2; exit 1; }
+    tar xf "$work/backup.tar" -C "$work" 2>/dev/null || { echo "Not a Chinchi backup: $archive" >&2; exit 1; }
+    rm "$work/backup.tar"
+    ;;
+  *)
+    tar xf "$archive" -C "$work" 2>/dev/null || { echo "Not a Chinchi backup: $archive" >&2; exit 1; }
+    ;;
+esac
 for part in backup.info database.dump files.tar.gz; do
   [ -f "$work/$part" ] || { echo "Not a Chinchi backup: $part is missing" >&2; exit 1; }
 done

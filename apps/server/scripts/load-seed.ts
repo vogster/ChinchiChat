@@ -52,7 +52,7 @@ const recreateDatabase = async () => {
 const main = async () => {
   await recreateDatabase()
   const database = createDatabase(databaseUrl)
-  await runMigrations(database.db, MIGRATIONS)
+  await runMigrations(databaseUrl, MIGRATIONS)
   const nextId = createSnowflakeGenerator({ workerId: 1 })
   const now = new Date()
 

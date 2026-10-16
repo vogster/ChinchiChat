@@ -44,7 +44,7 @@ const start = async (): Promise<void> => {
     await Promise.all([database.close(), cache.close()])
   })
 
-  await runMigrations(database.db, MIGRATIONS_FOLDER)
+  await runMigrations(config.databaseUrl, MIGRATIONS_FOLDER)
   app.log.info('Database migrations applied')
 
   if (storage) {

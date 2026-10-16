@@ -3,7 +3,6 @@ import { fileURLToPath } from 'node:url'
 import { PostgreSqlContainer } from '@testcontainers/postgresql'
 import { GenericContainer, Wait } from 'testcontainers'
 
-import { createDatabase } from '../src/db/client'
 import { runMigrations } from '../src/db/migrate'
 import { createObjectStorage } from '../src/storage/object-storage'
 import { TEST_STORAGE, TEST_WEB_ORIGIN } from './storage'
@@ -54,12 +53,7 @@ export default async function setup(project: TestProject) {
   }).ensureBucket([TEST_WEB_ORIGIN])
 
   const databaseUrl = postgres.getConnectionUri()
-  const { db, close } = createDatabase(databaseUrl, { max: 1 })
-  try {
-    await runMigrations(db, MIGRATIONS_FOLDER)
-  } finally {
-    await close()
-  }
+  await runMigrations(databaseUrl, MIGRATIONS_FOLDER)
 
   project.provide('databaseUrl', databaseUrl)
   project.provide('redisUrl', `redis://${valkey.getHost()}:${valkey.getMappedPort(6379)}`)

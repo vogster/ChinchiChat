@@ -325,15 +325,15 @@
 
 ## 👉 Фаза 21 — Ревью: аккаунты, эксплуатация и качество кода (v0.14)
 
-- [ ] Секреты TOTP (`totp_secret`, `totp_pending_secret`) шифруются ключом сервера (`SECRETS_KEY`, AES-GCM) с ленивой перешифровкой; `backup.sh` предупреждает о незашифрованном архиве или шифрует его (`age`)
+- [x] Секреты TOTP (`totp_secret`, `totp_pending_secret`) шифруются ключом сервера (`SECRETS_KEY`, AES-GCM, `secret-box.ts`) с ленивой перешифровкой; `backup.sh` предупреждает о незашифрованном архиве или шифрует его при `BACKUP_PASSPHRASE` (`openssl enc`, а не `age`: openssl есть на любом хосте с Docker), `restore.sh` расшифровывает `.tar.enc`
 - [x] Настройка инстанса «требовать подтверждённый email для серверов, инвайтов и ЛС», включена по умолчанию при открытой регистрации (`REQUIRE_VERIFIED_EMAIL`, в compose `on`; `requireVerifiedHuman` на создании сервера, приёме приглашения, открытии ЛС, добавлении в группу и заявке в друзья; `EMAIL_NOT_VERIFIED` → 403)
-- [ ] При блокировке входа по аккаунту (100 неудач) — письмо владельцу с одноразовой ссылкой входа
-- [ ] Токен сброса пароля во фрагменте URL (`#token=`), а не в query-string
+- [x] При блокировке входа по аккаунту (100 неудач) — письмо владельцу со ссылкой сброса пароля (сброс снимает блокировку), не чаще раза за окно блокировки; о логинах без аккаунта — никому
+- [x] Токены сброса пароля и подтверждения почты во фрагменте URL (`#token=`), а не в query-string (`useLinkToken` в вебе читает фрагмент и, для старых писем, query)
 - [x] Rate limit: метрика ошибок Valkey (`chinchi_rate_limit_store_errors_total`), панель «Valkey в лимитах» и правила тревог Prometheus в `docker-compose.monitoring.yml`; вход, регистрация, сброс пароля и смена почты — fail-closed (`FAIL_CLOSED`, `503 RATE_LIMIT_UNAVAILABLE`), остальное fail-open
-- [ ] Advisory lock в `runMigrations` перед запуском нескольких процессов сервера; расписание и ротация бэкапов в документации
+- [x] Advisory lock в `runMigrations` (`pg_advisory_lock` на отдельном соединении, тест на три параллельных запуска на чистой базе); расписание, ротация и шифрование бэкапов — в `docs/self-hosting.md`
 - [ ] Качество: разбить `packages/sdk/src/client.ts` (1016 строк) по доменам, `message.service.ts`, `services.ts`, `channel.service.ts`; общие `perUserRateLimit` и `ok()` в `http/`; правило сортировки импортов в eslint
 - [ ] Тесты: табличный тест «каждый `/admin/*` отвечает 403 не админу» по `app.printRoutes()`; property-тесты (`fast-check`) для парсера markdown и `strip-metadata`; часть ручного `docs/security-checklist.md` (заголовки, cookie-флаги, 404 для чужих id) — в e2e
-- [ ] CSP: цвета ролей через CSS-переменные, убрать `'unsafe-inline'` из `style-src`
+- [x] CSP: убрано `'unsafe-inline'` из `style-src` (React задаёт стили через CSSOM, который CSP не ограничивает, так что цвета ролей менять не пришлось); та же политика в `vite preview` для e2e и проверка заголовка в smoke-тесте CI
 - [ ] **Релиз v0.14**
 
 ---

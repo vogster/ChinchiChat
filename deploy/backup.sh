@@ -5,6 +5,10 @@
 # The server is stopped while the copy is made (usually seconds), so the database and the files
 # match. Not included, keep them apart from the backups: .env, above all S3_KMS_MASTER_KEY,
 # without which the stored files can't be read back.
+#
+# With BACKUP_PASSPHRASE set, the archive is encrypted (openssl, AES-256-CBC, PBKDF2) and gets
+# the .enc suffix; restore.sh needs the same passphrase. Without it the database dump inside
+# is plain for anyone who gets hold of the archive.
 set -eu
 
 out_dir=${1:-./backups}
@@ -20,6 +24,11 @@ cleanup() {
 trap cleanup EXIT INT TERM
 
 [ -f docker-compose.yml ] || { echo "Run this next to docker-compose.yml" >&2; exit 1; }
+encrypt=0
+if [ -n "${BACKUP_PASSPHRASE:-}" ]; then
+  command -v openssl >/dev/null 2>&1 || { echo "BACKUP_PASSPHRASE is set but openssl is not installed" >&2; exit 1; }
+  encrypt=1
+fi
 container=$(docker compose ps -q server)
 [ -n "$container" ] || { echo "Chinchi is not running (docker compose up -d)" >&2; exit 1; }
 image=$(docker inspect --format '{{.Config.Image}}' "$container")
@@ -46,8 +55,21 @@ docker compose start server >/dev/null
 server_stopped=0
 
 printf 'version=%s\ncreated=%s\n' "$version" "$(date -u +%Y-%m-%dT%H:%M:%SZ)" >"$work/backup.info"
-archive="$out_dir/chinchi-backup-$stamp.tar"
-tar cf "$archive" -C "$work" backup.info database.dump files.tar.gz
+tar cf "$work/backup.tar" -C "$work" backup.info database.dump files.tar.gz
+if [ "$encrypt" = 1 ]; then
+  archive="$out_dir/chinchi-backup-$stamp.tar.enc"
+  openssl enc -aes-256-cbc -pbkdf2 -iter 600000 -salt -pass env:BACKUP_PASSPHRASE \
+    -in "$work/backup.tar" -out "$archive"
+else
+  archive="$out_dir/chinchi-backup-$stamp.tar"
+  mv "$work/backup.tar" "$archive"
+fi
 
 echo "Done: $archive ($(du -h "$archive" | cut -f1))"
+if [ "$encrypt" = 1 ]; then
+  echo "Encrypted: restore.sh needs the same BACKUP_PASSPHRASE."
+else
+  echo "Warning: the archive is not encrypted; the database dump inside it is readable by anyone who gets it."
+  echo "Set BACKUP_PASSPHRASE to encrypt backups."
+fi
 echo "Keep .env (with S3_KMS_MASTER_KEY) safe and apart from this archive."

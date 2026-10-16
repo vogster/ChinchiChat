@@ -14,8 +14,9 @@ import /etc/caddy/generated/global.caddy
 
 (app_headers) {
 	header {
-		# The app ships no inline scripts.
-		Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' {$FILES_ORIGIN} data: blob:; media-src 'self' {$FILES_ORIGIN} blob:; connect-src 'self' {$FILES_ORIGIN} {$VOICE_ORIGIN}; frame-ancestors 'none'; base-uri 'none'; form-action 'self'; object-src 'none'"
+		# The app ships no inline scripts or styles: React sets styles through the CSSOM, which CSP
+		# does not govern. apps/web/vite.config.ts repeats this policy for e2e; keep them in step.
+		Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' {$FILES_ORIGIN} data: blob:; media-src 'self' {$FILES_ORIGIN} blob:; connect-src 'self' {$FILES_ORIGIN} {$VOICE_ORIGIN}; frame-ancestors 'none'; base-uri 'none'; form-action 'self'; object-src 'none'"
 		Strict-Transport-Security "max-age=31536000"
 		X-Content-Type-Options nosniff
 		X-Frame-Options DENY

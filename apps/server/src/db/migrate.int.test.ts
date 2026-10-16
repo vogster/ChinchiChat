@@ -1,3 +1,6 @@
+import { readFileSync } from 'node:fs'
+import { join } from 'node:path'
+
 import { afterAll, beforeEach, describe, expect, inject, it } from 'vitest'
 
 import { sql } from 'drizzle-orm'
@@ -28,7 +31,31 @@ describe('database schema', () => {
   })
 
   it('is idempotent when migrations run again', async () => {
-    await expect(runMigrations(db, MIGRATIONS_FOLDER)).resolves.toBeUndefined()
+    await expect(runMigrations(inject('databaseUrl'), MIGRATIONS_FOLDER)).resolves.toBeUndefined()
+  })
+
+  it('lets several server processes start at once: one applies the migrations, the rest wait', async () => {
+    const url = new URL(inject('databaseUrl'))
+    url.pathname = '/migrate_race'
+    await db.execute(sql`drop database if exists migrate_race`)
+    await db.execute(sql`create database migrate_race`)
+    const fresh = createDatabase(url.toString(), { max: 1 })
+    try {
+      await Promise.all(
+        Array.from({ length: 3 }, () => runMigrations(url.toString(), MIGRATIONS_FOLDER)),
+      )
+
+      const journal = JSON.parse(
+        readFileSync(join(MIGRATIONS_FOLDER, 'meta', '_journal.json'), 'utf8'),
+      ) as { entries: unknown[] }
+      const applied = await fresh.db.execute<{ count: number }>(
+        sql`select count(*)::int as count from drizzle.__drizzle_migrations`,
+      )
+      expect(applied[0]?.count).toBe(journal.entries.length)
+    } finally {
+      await fresh.close()
+      await db.execute(sql`drop database migrate_race`)
+    }
   })
 
   it('stores snowflake ids as bigint and returns them as strings', async () => {

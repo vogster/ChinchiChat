@@ -9,6 +9,22 @@ import type { UserConfig } from 'vite'
 const API_PROXY_TARGET = process.env.CHINCHI_API_URL ?? 'http://localhost:3000'
 // `ws` also forwards the realtime gateway (/api/v1/gateway) WebSocket upgrades.
 const API_PROXY = { '/api': { target: API_PROXY_TARGET, ws: true } }
+/**
+ * The production policy from deploy/Caddyfile, with the dev stack's file store and LiveKit as
+ * the other origins, so e2e runs the app under the same CSP users get. Keep the two in step.
+ */
+const PREVIEW_CSP = [
+  "default-src 'self'",
+  "script-src 'self'",
+  "style-src 'self'",
+  "img-src 'self' http://localhost:9000 data: blob:",
+  "media-src 'self' http://localhost:9000 blob:",
+  "connect-src 'self' http://localhost:9000 ws://localhost:7880",
+  "frame-ancestors 'none'",
+  "base-uri 'none'",
+  "form-action 'self'",
+  "object-src 'none'",
+].join('; ')
 
 export interface WebViteOptions {
   /** Lazy-load route components. Disabled in tests so coverage maps to the real source. */
@@ -30,6 +46,7 @@ export const createViteConfig = ({ codeSplitting }: WebViteOptions): UserConfig 
   // `vite preview` (used by e2e) proxies the API the same way.
   preview: {
     proxy: API_PROXY,
+    headers: { 'Content-Security-Policy': PREVIEW_CSP },
   },
 })
 
