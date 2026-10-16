@@ -1,187 +1,57 @@
 import { has, Permission, snowflakeFromTimestamp, CHINCHI_EPOCH } from '@chinchi/shared'
 
-import { userTopic } from '../../events/event-bus'
-import { HttpError, badRequest, forbidden } from '../../http/http-error'
-import { isMessageChannel } from '../channels/channel.repository'
+import { badRequest, forbidden } from '../../http/http-error'
 import { cannotMessage } from '../dms/dm.service'
 import { previewLinks } from '../embeds/link-previews'
-import { createForwarding, encryptedForward } from './forwarding'
-import { createMessageViews } from './message-views'
+import { encryptedForward } from './forwarding'
+import {
+  NO_MENTIONS,
+  assertEncryption,
+  createMessageContext,
+  resolveMessageDeps,
+  sameLinks,
+  unknownMessage,
+} from './message-context'
+import { createMessagePosting } from './message-posting'
+import { createMessageReading } from './message-reading'
 
-const sameLinks = (a: readonly string[], b: readonly string[]) =>
-  a.length === b.length && a.every((link, index) => link === b[index])
+import type { CreateMessageInput, MessageChange, MessageServiceDeps } from './message-context'
+import type { PageQuery } from './message.repository'
+import type { UserRow } from '../users/user.repository'
+import type { Message, Snowflake } from '@chinchi/shared'
 
-import { createMessageGuards } from './message-guards'
-import { createMemorySlowmode } from './slowmode'
-import type { AutomodService } from '../automod/automod.service'
-import type { Slowmode } from './slowmode'
-import type { AuditLogService } from '../moderation/audit-log.service'
-import type { EventBus } from '../../events/event-bus'
-import type { AttachmentRepository } from '../attachments/attachment.repository'
-import type { AttachmentService } from '../attachments/attachment.service'
-import type { ChannelEvents } from '../channels/channel-events'
-import type { ChannelRepository } from '../channels/channel.repository'
-import type { MentionResolver } from './mention-resolver'
-import type { PollRepository } from './poll.repository'
-import type { ReactionRepository } from './reaction.repository'
-import type { LinkPreviews } from '../embeds/link-previews'
-import type { ChannelService } from '../channels/channel.service'
-import type { UserRepository, UserRow } from '../users/user.repository'
-import type { MessageRepository, MessageRow, PageQuery } from './message.repository'
-import type { ReadStateRepository } from './read-state.repository'
-import type { Channel, Message, Snowflake, createPollSchema } from '@chinchi/shared'
-import type { z } from 'zod'
-
-const NO_AUDIT: Pick<AuditLogService, 'record'> = { record: async () => undefined }
+export type { CreateMessageInput, MessageChange, MessageServiceDeps } from './message-context'
 
 const PURGE_BATCH = 100
 
-export interface MessageServiceDeps {
-  readonly messages: MessageRepository
-  readonly readStates: ReadStateRepository
-  readonly channels: ChannelService
-  readonly channelRows: ChannelRepository
-  readonly attachments: AttachmentService
-  readonly attachmentRows: AttachmentRepository
-  readonly resolveMentions: MentionResolver
-  readonly reactions: ReactionRepository
-  readonly polls?: Pick<PollRepository, 'summaries'> | undefined
-  /** People who ran the commands bot messages answer. */
-  readonly users: Pick<UserRepository, 'findByIds'>
-  /** Link previews for new and edited messages; absent when the instance has them off. */
-  readonly linkPreviews?: LinkPreviews | null
-  readonly events: EventBus
-  /** Publishes channel events to the server or, for DMs, to each member. */
-  readonly channelEvents: ChannelEvents
-  /** Sent messages with files: lets the preview worker start right away. */
-  readonly onAttachmentsSent?: () => void
-  readonly nextId: () => Snowflake
-  readonly now?: () => Date
-  /** Writes moderation and settings changes to the server's audit log. */
-  readonly audit?: Pick<AuditLogService, 'record'>
-  /** Slowmode turns; in memory by default (one process). */
-  readonly slowmode?: Slowmode
-  /** Automatic moderation of server messages; off by default. */
-  readonly automod?: Pick<AutomodService, 'check'>
-  /** A thread's message count changed (threads show how many replies they hold). */
-  readonly onThreadMessages?: (threadId: Snowflake, delta: number) => Promise<void>
-  /** Messages went away (threads started from them lose their anchor). */
-  readonly onMessagesDeleted?: (messageIds: readonly Snowflake[]) => Promise<void>
-  /** The server's channels the user can see (404 for non-members); for marking it read. */
-  readonly visibleChannels?: (guildId: Snowflake, userId: Snowflake) => Promise<readonly Channel[]>
-}
-
-export interface CreateMessageInput {
-  readonly content: string
-  readonly attachmentIds?: readonly Snowflake[] | undefined
-  readonly replyTo?: Snowflake | undefined
-  readonly replyMention?: boolean | undefined
-  readonly nonce?: string | undefined
-  /** Encrypted conversations: the MLS message (base64); content stays empty. */
-  readonly ciphertext?: string | undefined
-  readonly poll?: z.output<typeof createPollSchema> | undefined
-  readonly forward?: { readonly channelId: Snowflake; readonly messageId: Snowflake } | undefined
-}
-
-/** What an edit changes: the text, or in encrypted conversations the MLS message. */
-export interface MessageChange {
-  readonly content?: string | undefined
-  readonly ciphertext?: string | undefined
-}
-
-const NO_MENTIONS = {
-  mentionUserIds: [],
-  mentionRoleIds: [],
-  mentionEveryone: false,
-  mentionHere: false,
-}
-
-/** Encrypted conversations take only ciphertext; the others never do. */
-const assertEncryption = (channel: { encrypted: boolean }, ciphertext: string | undefined) => {
-  if (channel.encrypted && ciphertext === undefined) {
-    throw badRequest('ENCRYPTED_CHANNEL', 'This conversation takes only encrypted messages')
-  }
-  if (!channel.encrypted && ciphertext !== undefined) {
-    throw badRequest('NOT_ENCRYPTED', 'This conversation is not encrypted')
-  }
-}
-
-const unknownMessage = () => new HttpError(404, 'UNKNOWN_MESSAGE', 'Unknown message')
-
-export const createMessageService = ({
-  messages,
-  readStates,
-  channels,
-  channelRows,
-  attachments,
-  attachmentRows,
-  resolveMentions,
-  reactions,
-  polls,
-  users,
-  linkPreviews = null,
-  events,
-  channelEvents,
-  onAttachmentsSent = () => undefined,
-  nextId,
-  now = () => new Date(),
-  audit = NO_AUDIT,
-  slowmode = createMemorySlowmode(),
-  automod,
-  onThreadMessages = async () => undefined,
-  onMessagesDeleted = async () => undefined,
-  visibleChannels,
-}: MessageServiceDeps) => {
-  const views = createMessageViews({ messages, attachmentRows, reactions, polls, users })
-  const forwarding = createForwarding({ channels, messages, attachmentRows })
-
-  /**
-   * A text channel or DM the user can see (404 otherwise) with the given permission in it
-   * (403). In a 1:1 DM a missing send right means a block: that gets its own code.
-   */
-  const textChannel = async (channelId: Snowflake, userId: Snowflake, flag?: bigint) => {
-    const resolved = await channels.resolve(channelId, userId)
-    if (!isMessageChannel(resolved.channel.type)) {
-      throw badRequest('INVALID_CHANNEL', 'Messages can only be sent to text channels')
-    }
-    if (flag !== undefined && !has(resolved.permissions, flag)) {
-      if (resolved.channel.type === 'dm') throw cannotMessage()
-      if (resolved.access?.context.pending) {
-        throw forbidden('RULES_NOT_ACCEPTED', 'Accept the server rules first')
-      }
-      throw forbidden('MISSING_PERMISSIONS', 'Missing permissions')
-    }
-    return resolved
-  }
-
-  const { screen, takeSlowmodeTurn } = createMessageGuards({ slowmode, automod })
-
-  /** Mentions as stored columns. */
-  const mentionColumns = async (input: Parameters<MentionResolver>[0]) => {
-    const { users, roles, everyone, here } = await resolveMentions(input)
-    return {
-      mentionUserIds: users,
-      mentionRoleIds: roles,
-      mentionEveryone: everyone,
-      mentionHere: here,
-    }
-  }
-
-  /** The author a reply notifies, if it does and the original is still there. */
-  const repliedAuthor = async (
-    channelId: Snowflake,
-    replyToId: Snowflake | null,
-    notify: boolean,
-  ) => {
-    if (!replyToId || !notify) return null
-    return (await messages.findInChannel(channelId, replyToId))?.message.authorId ?? null
-  }
-
-  const findIn = async (channelId: Snowflake, messageId: Snowflake) => {
-    const found = await messages.findInChannel(channelId, messageId)
-    if (!found) throw unknownMessage()
-    return found
-  }
+export const createMessageService = (input: MessageServiceDeps) => {
+  const deps = resolveMessageDeps(input)
+  const {
+    messages,
+    readStates,
+    attachments,
+    attachmentRows,
+    linkPreviews,
+    channelRows,
+    channelEvents,
+    onAttachmentsSent,
+    nextId,
+    now,
+    audit,
+    onThreadMessages,
+    onMessagesDeleted,
+  } = deps
+  const context = createMessageContext(deps)
+  const {
+    views,
+    forwarding,
+    textChannel,
+    screen,
+    takeSlowmodeTurn,
+    mentionColumns,
+    repliedAuthor,
+    findIn,
+  } = context
 
   return {
     async create(
@@ -291,124 +161,7 @@ export const createMessageService = ({
       return message
     },
 
-    /**
-     * A message posted through an incoming webhook: no author, no reply, no files. It may
-     * mention people (and mentionable roles) but never @everyone, and skips slowmode and
-     * automod, which the server's moderators set up the webhook to bypass.
-     */
-    async createFromWebhook(
-      channelId: Snowflake,
-      webhook: { id: Snowflake; name: string },
-      content: string,
-    ): Promise<Message> {
-      const channel = await channelRows.findById(channelId)
-      if (!channel || !isMessageChannel(channel.type)) throw unknownMessage()
-      const mentions = await mentionColumns({
-        content,
-        channelId: channel.id,
-        guildId: channel.guildId,
-        authorId: webhook.id,
-        permissions: 0n,
-      })
-      const row = await messages.insert({
-        id: nextId(),
-        channelId: channel.id,
-        authorId: null,
-        content,
-        replyToId: null,
-        replyMention: false,
-        webhookId: webhook.id,
-        webhookName: webhook.name,
-        ...mentions,
-      })
-      const message = await views.one(channel.id, channel.guildId, { message: row, author: null })
-      linkPreviews?.schedule(channel.id, row.id, row.content)
-      await channelEvents.publish(channel, 'MESSAGE_CREATE', message)
-      if (channel.type === 'thread') await onThreadMessages(channel.id, 1)
-      return message
-    },
-
-    /** A bot's answer to a slash command: posted as the bot, noting who ran the command. */
-    async createAsInteraction(
-      channelId: Snowflake,
-      input: {
-        botId: Snowflake
-        commandName: string
-        userId: Snowflake | null
-        content: string
-        /** The bot's permissions in the channel (automod skips moderators). */
-        permissions: bigint
-      },
-    ): Promise<Message> {
-      const channel = await channelRows.findById(channelId)
-      if (!channel || !isMessageChannel(channel.type)) throw unknownMessage()
-      // Bots often echo what they were given: automod must not be bypassed through them.
-      await screen(channel, input.botId, input.content, input.permissions, true)
-      const mentions = await mentionColumns({
-        content: input.content,
-        channelId: channel.id,
-        guildId: channel.guildId,
-        authorId: input.botId,
-        permissions: 0n,
-      })
-      const row = await messages.insert({
-        id: nextId(),
-        channelId: channel.id,
-        authorId: input.botId,
-        content: input.content,
-        replyToId: null,
-        replyMention: false,
-        interactionName: input.commandName,
-        interactionUserId: input.userId,
-        ...mentions,
-      })
-      const found = await messages.findInChannel(channel.id, row.id)
-      const message = await views.one(
-        channel.id,
-        channel.guildId,
-        found ?? { message: row, author: null },
-      )
-      linkPreviews?.schedule(channel.id, row.id, row.content)
-      await channelEvents.publish(channel, 'MESSAGE_CREATE', message)
-      if (channel.type === 'thread') await onThreadMessages(channel.id, 1)
-      return message
-    },
-
-    /**
-     * A note in a group DM about what someone did there (added or removed a person, left,
-     * renamed it). It has no text and can't be edited.
-     */
-    async createSystem(
-      channelId: Snowflake,
-      actorId: Snowflake,
-      system: NonNullable<MessageRow['system']>,
-    ): Promise<void> {
-      const channel = await channelRows.findById(channelId)
-      if (!channel) return
-      const row = await messages.insert({
-        id: nextId(),
-        channelId: channel.id,
-        authorId: actorId,
-        content: '',
-        replyToId: null,
-        replyMention: false,
-        system,
-        mentionUserIds: [],
-        mentionRoleIds: [],
-        mentionEveryone: false,
-        mentionHere: false,
-      })
-      const found = await messages.findInChannel(channel.id, row.id)
-      const message = await views.one(
-        channel.id,
-        channel.guildId,
-        found ?? { message: row, author: null },
-      )
-      // Neither who did it nor whom it is about learns anything new from it.
-      await readStates.advance(actorId, channel.id, row.id)
-      if (system.targetId) await readStates.advance(system.targetId, channel.id, row.id)
-      await channelEvents.publish(channel, 'MESSAGE_CREATE', message)
-    },
+    ...createMessagePosting(deps, context),
 
     /** A command run counts as a message for slowmode: each one makes the bot post. */
     takeSlowmodeTurn,
@@ -566,54 +319,7 @@ export const createMessageService = ({
       )
     },
 
-    /** Marks the channel read up to `messageId` and syncs the user's other devices. */
-    async ack(channelId: Snowflake, messageId: Snowflake, userId: Snowflake): Promise<void> {
-      const { channel, access } = await textChannel(channelId, userId)
-      await findIn(channel.id, messageId)
-      const lastReadMessageId = await readStates.advance(userId, channel.id, messageId)
-      // In DMs every unread message counts, like a mention.
-      const counts = access
-        ? await readStates.mentionCounts(userId, [channel.id], access.memberRoleIds)
-        : await readStates.unreadCounts(userId, [channel.id])
-      await events.publish({
-        topic: userTopic(userId),
-        type: 'CHANNEL_ACK',
-        data: { channelId: channel.id, lastReadMessageId, mentionCount: counts[channel.id] ?? 0 },
-      })
-    },
-
-    /** Marks every channel of a server the user can see read up to its newest message. */
-    async ackGuild(guildId: Snowflake, userId: Snowflake): Promise<void> {
-      if (!visibleChannels) return
-      const unread = (await visibleChannels(guildId, userId)).filter(
-        (channel) =>
-          (channel.type === 'text' || channel.type === 'thread') && channel.lastMessageId !== null,
-      )
-      for (const channel of unread) {
-        const lastReadMessageId = await readStates.advance(
-          userId,
-          channel.id,
-          channel.lastMessageId as Snowflake,
-        )
-        await events.publish({
-          topic: userTopic(userId),
-          type: 'CHANNEL_ACK',
-          data: { channelId: channel.id, lastReadMessageId, mentionCount: 0 },
-        })
-      }
-    },
-
-    listReadStates: (userId: Snowflake) => readStates.listForUser(userId),
-
-    async typing(channelId: Snowflake, userId: Snowflake): Promise<void> {
-      const { channel } = await textChannel(channelId, userId, Permission.SendMessages)
-      await channelEvents.publish(channel, 'TYPING_START', {
-        channelId: channel.id,
-        guildId: channel.guildId,
-        userId,
-        timestamp: now().toISOString(),
-      })
-    },
+    ...createMessageReading(deps, context),
   }
 }
 
