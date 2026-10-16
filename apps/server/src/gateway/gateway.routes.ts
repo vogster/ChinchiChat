@@ -19,16 +19,15 @@ export interface GatewayOptions {
 
 /**
  * Browsers attach cookies to WebSocket upgrades from any site, so a cookie-authenticated
- * upgrade must come from an allowed origin (cross-site WebSocket hijacking).
+ * upgrade must come from an allowed origin (cross-site WebSocket hijacking). Without a cookie
+ * the origin does not matter: desktop shells connect from an origin of their own
+ * (tauri://localhost) and must still put a token into IDENTIFY.
  */
 const checkOrigin =
   (webOrigins: readonly string[]) => async (request: FastifyRequest, reply: FastifyReply) => {
     const origin = request.headers.origin
     const hasCookie = Boolean(request.cookies[SESSION_COOKIE])
-    if (
-      (origin !== undefined && !webOrigins.includes(origin)) ||
-      (origin === undefined && hasCookie)
-    ) {
+    if (hasCookie && (origin === undefined || !webOrigins.includes(origin))) {
       return reply
         .status(403)
         .send({ success: false, code: 'CSRF_ORIGIN_MISMATCH', error: 'Origin not allowed' })
