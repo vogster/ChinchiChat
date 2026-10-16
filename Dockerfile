@@ -32,3 +32,7 @@ CMD ["node", "dist/server.mjs"]
 FROM caddy:2.10-alpine AS web
 COPY --from=build /repo/apps/web/dist /srv/web
 COPY deploy/Caddyfile /etc/caddy/Caddyfile
+COPY --chmod=755 deploy/caddy-entrypoint.sh /usr/local/bin/caddy-entrypoint.sh
+# Writes where files and voice live (one domain or their own) before Caddy reads its config.
+ENTRYPOINT ["caddy-entrypoint.sh"]
+CMD ["caddy", "run", "--config", "/etc/caddy/Caddyfile", "--adapter", "caddyfile"]

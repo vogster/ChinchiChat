@@ -78,13 +78,13 @@
 
 ## Установка
 
-Нужен сервер с Docker и три DNS-имени: для чата, голоса и файлов.
+Нужен сервер с Docker и одно DNS-имя: приложение, файлы и голос живут на нём (отдельные домены для файлов и голоса — по желанию).
 
 ```bash
 mkdir chinchi && cd chinchi
 curl -fsSLO https://github.com/vogster/ChinchiChat/releases/latest/download/docker-compose.yml
 curl -fsSL -o .env https://github.com/vogster/ChinchiChat/releases/latest/download/env.example
-# заполните .env: домены и секреты
+# заполните .env: домен и секреты
 docker compose up -d
 ```
 
