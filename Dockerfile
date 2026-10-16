@@ -40,7 +40,7 @@ HEALTHCHECK --interval=10s --timeout=3s --start-period=20s --retries=5 \
 CMD ["node", "dist/server.mjs"]
 
 # The web app, served by Caddy, which also terminates TLS and proxies the API, files and voice.
-FROM caddy:2.10-alpine@sha256:4c6e91c6ed0e2fa03efd5b44747b625fec79bc9cd06ac5235a779726618e530d AS web
+FROM caddy:2.11-alpine@sha256:d8542f48d34a9cf4e4c11a478865229840e87e4c96ea3f439101f31a5d35f75f AS web
 COPY --from=web-build /repo/apps/web/dist /srv/web
 COPY deploy/Caddyfile /etc/caddy/Caddyfile
 COPY --chmod=755 deploy/caddy-entrypoint.sh /usr/local/bin/caddy-entrypoint.sh
