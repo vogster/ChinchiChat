@@ -19,7 +19,7 @@ export const approvalStateSchema = z.enum([
 
 /**
  * A new device asking one of the user's approved devices to vouch for it. The server only
- * relays: the new device commits to its key first, so the four emoji both screens show can't be
+ * relays: the new device commits to its key first, so the six emoji both screens show can't be
  * steered by whoever passes the keys along.
  */
 export const deviceApprovalSchema = z.object({

@@ -175,6 +175,29 @@ describe('encrypted conversations', () => {
     await expect(receive(bob, tampered)).rejects.toThrow()
   })
 
+  it('open a message once: a replay of it is refused (fast path, current epoch)', async () => {
+    const { alicePhone, bob } = await startGroup()
+    const bytes = await send(alicePhone, 'Один раз')
+
+    expect(await receive(bob, bytes)).toMatchObject({
+      kind: 'message',
+      sender: { userId: '1', deviceId: '11' },
+    })
+    await expect(receive(bob, bytes)).rejects.toThrow()
+  })
+
+  it('keep their state after refusing a tampered message and read the next one', async () => {
+    const { alicePhone, bob } = await startGroup()
+    const bad = (await send(alicePhone, 'Подделка')).slice()
+    bad[bad.length - 1] = (bad[bad.length - 1] ?? 0) ^ 0x01
+    await expect(receive(bob, bad)).rejects.toThrow()
+
+    const good = await send(alicePhone, 'Настоящее')
+    const incoming = await receive(bob, good)
+    expect(incoming).toMatchObject({ kind: 'message', sender: { userId: '1', deviceId: '11' } })
+    if (incoming.kind === 'message') expect(td.decode(incoming.plaintext)).toBe('Настоящее')
+  })
+
   it('still read a message sent just before a commit, without vouching for its sender', async () => {
     const { alicePhone, bob, carol } = await startGroup()
     const late = await send(bob, 'Отправлено до коммита')

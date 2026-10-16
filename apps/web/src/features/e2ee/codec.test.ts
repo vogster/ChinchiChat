@@ -23,6 +23,21 @@ describe('encrypted payload', () => {
     })
   })
 
+  it('pads every payload to a multiple of 256 bytes, so the ciphertext hides the length', () => {
+    const sizes = ['', 'Да', 'x'.repeat(200), 'ы'.repeat(300), 'z'.repeat(5000)].map(
+      (text) => encodePayload({ v: 1, text }).byteLength,
+    )
+
+    for (const size of sizes) expect(size % 256).toBe(0)
+    // Short messages all look the same size; a long one grows only in whole blocks.
+    expect(new Set(sizes.slice(0, 2)).size).toBe(1)
+    expect(sizes[4]).toBeGreaterThanOrEqual(5000)
+    const padded = { v: 1 as const, text: 'Смотри', files: [file] }
+    expect(decodePayload(encodePayload(padded))).toEqual(padded)
+    // What was written before padding existed still reads.
+    expect(decodePayload(encode({ v: 1, text: 'старое' }))).toEqual({ v: 1, text: 'старое' })
+  })
+
   it('reads nothing it does not understand', () => {
     expect(decodePayload(encode({ v: 2, text: 'из будущего' }))).toBeNull()
     expect(decodePayload(new TextEncoder().encode('не json'))).toBeNull()

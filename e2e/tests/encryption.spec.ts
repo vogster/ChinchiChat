@@ -410,7 +410,7 @@ test('a new browser is approved from an old one by comparing emoji', async ({ br
   const banner = phone.page.getByRole('status', { name: 'Старые сообщения недоступны' })
   await banner.getByRole('button', { name: 'Подтвердить с другого устройства' }).click()
 
-  // Both screens show the same four emoji; Alice says yes on the laptop.
+  // Both screens show the same six emoji; Alice says yes on the laptop.
   const dialog = laptop.page.getByRole('dialog', { name: 'Новый вход' })
   await expect(dialog).toContainText('Это вы?')
   const onLaptop = dialog.getByRole('group', { name: 'Эмодзи для сравнения' })

@@ -16,7 +16,7 @@ const transcript = {
 }
 
 describe('approval crypto', () => {
-  it('shows the same four emoji on both devices, and secrets cross between them', async () => {
+  it('shows the same six emoji on both devices, and secrets cross between them', async () => {
     const fresh = await createEphemeral()
     const old = await createEphemeral()
     const keys = { newKey: fresh.publicKey, approverKey: old.publicKey }
@@ -24,7 +24,8 @@ describe('approval crypto', () => {
     const onNew = await agree(fresh.privateKey, old.publicKey, { ...transcript, ...keys })
     const onOld = await agree(old.privateKey, fresh.publicKey, { ...transcript, ...keys })
 
-    expect(onNew.emoji).toHaveLength(4)
+    // Six of 64: 36 bits, so a relay guessing keys has one chance in 68 billion.
+    expect(onNew.emoji).toHaveLength(6)
     expect(onNew.emoji).toEqual(onOld.emoji)
     for (const emoji of onNew.emoji) expect(SAS_EMOJI).toContain(emoji)
     const sealed = await sealSecrets(onOld.secretKey, { recoveryKey: 'ABCD-EFGH' })
@@ -51,6 +52,21 @@ describe('approval crypto', () => {
     expect(onNew.emoji).not.toEqual(onOld.emoji)
     const sealed = await sealSecrets(onOld.secretKey, { recoveryKey: 'ABCD' })
     expect(await openSecrets(onNew.secretKey, sealed)).toBeNull()
+  })
+
+  it('uses every emoji position: the sixth differs between agreements too', async () => {
+    const seen = new Set<string>()
+    for (let i = 0; i < 12; i += 1) {
+      const fresh = await createEphemeral()
+      const old = await createEphemeral()
+      const { emoji } = await agree(fresh.privateKey, old.publicKey, {
+        ...transcript,
+        newKey: fresh.publicKey,
+        approverKey: old.publicKey,
+      })
+      seen.add(emoji[5] as string)
+    }
+    expect(seen.size).toBeGreaterThan(1)
   })
 
   it('commits to a key without showing it', async () => {

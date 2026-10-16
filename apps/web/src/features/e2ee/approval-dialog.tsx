@@ -5,7 +5,7 @@ import { Button } from '../../components/ui/button'
 import { Dialog } from '../../components/ui/dialog'
 import { useApprovals } from './use-approvals'
 
-/** The four emoji both devices show, large enough to compare at a glance. */
+/** The six emoji both devices show, large enough to compare at a glance. */
 export const ApprovalEmoji = ({ emoji }: { emoji: readonly string[] }) => {
   const { t } = useTranslation()
   return (

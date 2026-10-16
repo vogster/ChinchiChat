@@ -50,7 +50,7 @@ describe('approving a new device from an old one', () => {
     const [onPhone] = phone.approvals.views()
     expect(onLaptop).toMatchObject({ role: 'approver', deviceName: 'Телефон', state: 'compare' })
     expect(onPhone).toMatchObject({ role: 'new', state: 'compare' })
-    expect(onLaptop?.emoji).toHaveLength(4)
+    expect(onLaptop?.emoji).toHaveLength(6)
     expect(onLaptop?.emoji).toEqual(onPhone?.emoji)
 
     await laptop.approvals.confirm(onLaptop?.approvalId as string)

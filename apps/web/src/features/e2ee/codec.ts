@@ -50,8 +50,19 @@ export type EncryptedPayload = z.infer<typeof payloadSchema>
 const encoder = new TextEncoder()
 const decoder = new TextDecoder()
 
-export const encodePayload = (payload: EncryptedPayload): Uint8Array =>
-  encoder.encode(JSON.stringify(payload))
+/** Ciphertext lengths are rounded up to this, so the server learns little from a message's size. */
+export const PAYLOAD_BLOCK_BYTES = 256
+/** The padding travels as a JSON member the schema ignores: `,"p":"<spaces>"`. */
+const PADDING_OVERHEAD = ',"p":""'.length
+
+/** JSON of the payload, padded with a spaces-only member to a whole number of blocks. */
+export const encodePayload = (payload: EncryptedPayload): Uint8Array => {
+  const json = JSON.stringify(payload)
+  const bare = encoder.encode(json).byteLength + PADDING_OVERHEAD
+  const target = Math.ceil(bare / PAYLOAD_BLOCK_BYTES) * PAYLOAD_BLOCK_BYTES
+  const padding = ' '.repeat(target - bare)
+  return encoder.encode(`${json.slice(0, -1)},"p":"${padding}"}`)
+}
 
 /** Null for anything that is not a payload this version understands. */
 export const decodePayload = (bytes: Uint8Array): EncryptedPayload | null => {
