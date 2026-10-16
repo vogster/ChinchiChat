@@ -1,0 +1,75 @@
+# Monitoring add-on: Prometheus scrapes the server, Grafana shows the Chinchi dashboard.
+# Next to docker-compose.yml and chinchi-dashboard.json, with GRAFANA_ADMIN_PASSWORD in .env:
+#
+#   docker compose -f docker-compose.yml -f docker-compose.monitoring.yml up -d
+#
+# Grafana listens on the server's localhost only. Open it through an SSH tunnel:
+#   ssh -L 3001:localhost:3001 you@your-server   then   http://localhost:3001 (user admin)
+
+services:
+  prometheus:
+    image: prom/prometheus:v3.5.0
+    restart: unless-stopped
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.retention.time=${PROMETHEUS_RETENTION:-30d}
+    configs:
+      - source: prometheus
+        target: /etc/prometheus/prometheus.yml
+    volumes:
+      - prometheus-data:/prometheus
+    depends_on:
+      - server
+
+  grafana:
+    image: grafana/grafana:12.0.2
+    restart: unless-stopped
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:?set GRAFANA_ADMIN_PASSWORD in .env}
+      GF_USERS_ALLOW_SIGN_UP: 'false'
+      GF_ANALYTICS_REPORTING_ENABLED: 'false'
+      GF_ANALYTICS_CHECK_FOR_UPDATES: 'false'
+      GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH: /var/lib/grafana/dashboards/chinchi.json
+    ports:
+      - 127.0.0.1:${GRAFANA_PORT:-3001}:3000
+    configs:
+      - source: grafana-datasource
+        target: /etc/grafana/provisioning/datasources/chinchi.yml
+      - source: grafana-dashboards
+        target: /etc/grafana/provisioning/dashboards/chinchi.yml
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./chinchi-dashboard.json:/var/lib/grafana/dashboards/chinchi.json:ro
+    depends_on:
+      - prometheus
+
+configs:
+  prometheus:
+    content: |
+      global:
+        scrape_interval: 15s
+      scrape_configs:
+        - job_name: chinchi-server
+          static_configs:
+            - targets: ['server:9464']
+  grafana-datasource:
+    content: |
+      apiVersion: 1
+      datasources:
+        - name: Prometheus
+          type: prometheus
+          uid: prometheus
+          url: http://prometheus:9090
+          isDefault: true
+  grafana-dashboards:
+    content: |
+      apiVersion: 1
+      providers:
+        - name: chinchi
+          type: file
+          options:
+            path: /var/lib/grafana/dashboards
+
+volumes:
+  prometheus-data:
+  grafana-data:

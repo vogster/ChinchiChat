@@ -4,7 +4,7 @@ Chinchi разворачивается одним `docker compose` на одно
 
 ## Что нужно
 
-- Linux-сервер (x86-64) с Docker Engine 24+ и плагином Compose v2. Для небольшого сообщества хватит 2 vCPU и 4 ГБ памяти; голос и видео нагружают прежде всего сеть и процессор LiveKit.
+- Linux-сервер (x86-64 или ARM64 — например, Raspberry Pi 4/5, Ampere, Graviton) с Docker Engine 24+ и плагином Compose v2. Для небольшого сообщества хватит 2 vCPU и 4 ГБ памяти; голос и видео нагружают прежде всего сеть и процессор LiveKit.
 - Одно DNS-имя, указывающее на сервер (запись A и/или AAAA), например `chat.example.com`. На нём всё: приложение и API, файлы (по пути `/chinchi/`) и сигнальный канал LiveKit (`/livekit/`), с одним HTTPS-сертификатом.
 - По желанию — отдельные имена для файлов (`FILES_DOMAIN`, например `files.chat.example.com`) и голоса (`VOICE_DOMAIN`). Отдельный домен файлов полностью убирает загруженное пользователями с домена приложения; на основном домене файлы и так отдаются в «песочнице» (CSP `sandbox`, `nosniff`), где они не могут выполниться как приложение.
 - Открытые порты: TCP 80 и 443 (Caddy), TCP 7881 и UDP 7882, 3478 (медиа LiveKit и встроенный TURN).
@@ -99,7 +99,18 @@ docker compose up -d   # на чистой машине: сначала обыч
 
 ## Мониторинг
 
-Сервер отдаёт метрики Prometheus на отдельном порту `9464` (`/metrics`): время ответа API по маршрутам, открытые соединения шлюза, отправленные и опубликованные события, фоновые задачи, а также стандартные метрики Node.js (память, CPU, задержка цикла событий). Порт открыт только внутри сети Docker и наружу не публикуется — добавьте свой Prometheus в ту же сеть и укажите цель `server:9464`. Вне Docker метрики включаются переменной `METRICS_PORT` и по умолчанию слушают только `127.0.0.1` (`METRICS_HOST`).
+Сервер отдаёт метрики Prometheus на отдельном порту `9464` (`/metrics`): время ответа API по маршрутам, открытые соединения шлюза, время входа (READY), отправленные и опубликованные события, фоновые задачи, а также стандартные метрики Node.js (память, CPU, задержка цикла событий). Порт открыт только внутри сети Docker и наружу не публикуется.
+
+**Готовый дашборд.** Рядом с установкой положите два файла из релиза и задайте пароль Grafana:
+
+```bash
+curl -fsSLO https://github.com/vogster/ChinchiChat/releases/latest/download/docker-compose.monitoring.yml
+curl -fsSLO https://github.com/vogster/ChinchiChat/releases/latest/download/chinchi-dashboard.json
+echo "GRAFANA_ADMIN_PASSWORD=$(openssl rand -base64 18)" >> .env
+docker compose -f docker-compose.yml -f docker-compose.monitoring.yml up -d
+```
+
+Поднимутся Prometheus (хранит 30 дней, `PROMETHEUS_RETENTION`) и Grafana с дашбордом Chinchi на главной. Grafana слушает только `127.0.0.1:3001` сервера — откройте её через SSH-туннель: `ssh -L 3001:localhost:3001 you@your-server`, затем `http://localhost:3001` (пользователь `admin`). Свой Prometheus можно подключить к сети Docker с целью `server:9464`, а дашборд импортировать из `chinchi-dashboard.json`. Вне Docker метрики включаются переменной `METRICS_PORT` и по умолчанию слушают только `127.0.0.1` (`METRICS_HOST`).
 
 ## Если что-то не работает
 

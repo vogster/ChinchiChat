@@ -92,6 +92,45 @@ services:
     extra_hosts:
       - host.docker.internal:host-gateway
 
+  # The Chinchi dashboard (chinchi-dashboard.json) on Prometheus. UI on :3001, no login.
+  grafana:
+    image: grafana/grafana:12.0.2
+    profiles: [monitoring]
+    ports:
+      - 127.0.0.1:${GRAFANA_PORT:-3001}:3000
+    environment:
+      GF_AUTH_ANONYMOUS_ENABLED: 'true'
+      GF_AUTH_ANONYMOUS_ORG_ROLE: Admin
+      GF_AUTH_DISABLE_LOGIN_FORM: 'true'
+      GF_ANALYTICS_REPORTING_ENABLED: 'false'
+      GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH: /var/lib/grafana/dashboards/chinchi.json
+    configs:
+      - source: grafana-datasource
+        target: /etc/grafana/provisioning/datasources/chinchi.yml
+      - source: grafana-dashboards
+        target: /etc/grafana/provisioning/dashboards/chinchi.yml
+    volumes:
+      - ./chinchi-dashboard.json:/var/lib/grafana/dashboards/chinchi.json:ro
+
+configs:
+  grafana-datasource:
+    content: |
+      apiVersion: 1
+      datasources:
+        - name: Prometheus
+          type: prometheus
+          uid: prometheus
+          url: http://prometheus:9090
+          isDefault: true
+  grafana-dashboards:
+    content: |
+      apiVersion: 1
+      providers:
+        - name: chinchi
+          type: file
+          options:
+            path: /var/lib/grafana/dashboards
+
 volumes:
   postgres-data:
   valkey-data:
