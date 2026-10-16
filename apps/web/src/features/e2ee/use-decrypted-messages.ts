@@ -38,6 +38,7 @@ export const useDecryptedMessages = (
           ciphertext: message.ciphertext,
           nonce: message.nonce,
           editedAt: message.editedAt,
+          authorId: message.author?.id ?? null,
         })
         .catch(() => null)
         .then((payload) => {

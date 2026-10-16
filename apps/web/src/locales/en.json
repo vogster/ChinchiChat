@@ -1299,6 +1299,9 @@
       "declined": "The sign-in wasn't approved. Try again or enter your recovery key."
     },
     "unreadable_one": "{{count}} message was sent before this device joined and isn't available on it",
-    "unreadable_other": "{{count}} messages were sent before this device joined and aren't available on it"
+    "unreadable_other": "{{count}} messages were sent before this device joined and aren't available on it",
+    "search": {
+      "localOnly": "Searched on this device only, among the messages it decrypted: the server can't see the text."
+    }
   }
 }

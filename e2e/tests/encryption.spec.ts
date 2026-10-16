@@ -74,6 +74,13 @@ test('two people talk and call in an encrypted conversation the server cannot re
   await bobComposer.press('Enter')
   await expect(alice.page.getByText('Принято, сожгу после прочтения')).toBeVisible()
 
+  // Search works on the device, over what it decrypted.
+  await alice.page.getByRole('searchbox', { name: 'Поиск' }).fill('сейф')
+  await alice.page.getByRole('searchbox', { name: 'Поиск' }).press('Enter')
+  const results = alice.page.getByRole('complementary', { name: 'Результаты поиска' })
+  await expect(results).toContainText('Пароль от сейфа: 4242')
+  await results.getByRole('button', { name: 'Закрыть поиск' }).click()
+
   // Bob reacts; Alice sees it, the server only holds an encrypted set.
   const bobRow = bob.page.getByText('Пароль от сейфа: 4242').locator('xpath=ancestor::li[1]')
   await bobRow.hover()

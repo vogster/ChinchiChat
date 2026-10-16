@@ -180,6 +180,28 @@ describe('e2ee client', () => {
     expect(delivery.encryptedReactions.has(`${message.id}:${ALICE}`)).toBe(false)
   })
 
+  it('searches what this device decrypted, here only, newest first', async () => {
+    const { client } = setup()
+    const alice = client(ALICE).client
+    const bob = client(BOB).client
+    await bob.ready()
+    await alice.open(DM)
+    const first = await alice.send(DM, 'Встреча в пятницу')
+    const second = await bob.send(DM, 'Встреча переносится')
+    await alice.send(DM, 'Купи хлеба')
+    await alice.read(DM, { ...second, authorId: BOB })
+    await alice.edit(DM, first.id, 'Встреча в субботу')
+
+    const found = await alice.search(DM, 'встреча')
+
+    expect(found).toEqual([
+      { id: second.id, authorId: BOB, text: 'Встреча переносится' },
+      { id: first.id, authorId: ALICE, text: 'Встреча в субботу' },
+    ])
+    expect(await alice.search({ ...DM, id: '501' }, 'встреча')).toEqual([])
+    expect(await alice.search(DM, '  ')).toEqual([])
+  })
+
   it('gives every member the same call key, which changes with the conversation', async () => {
     const { client } = setup()
     const alice = client(ALICE).client

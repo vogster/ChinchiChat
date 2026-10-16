@@ -5,6 +5,7 @@ import { decodePayload, encodePayload, fromBase64, toBase64 } from '../features/
 import type { EncryptedFile } from '../features/e2ee/codec'
 import type { ApprovalView } from '../features/e2ee/device-approval'
 import type { UseKeyResult } from '../features/e2ee/history-backup'
+import type { IndexedMessage } from '../features/e2ee/local-search'
 import type { SafetyStatus } from '../features/e2ee/safety'
 import type {
   CallKey,
@@ -88,6 +89,9 @@ export const createFakeE2ee = (status: ConversationStatus = 'ready') => {
       message.ciphertext ? decodePayload(fromBase64(message.ciphertext)) : null,
     ),
     devicesChanged: vi.fn(async (_userId: string) => undefined),
+    search: vi.fn(
+      async (_channel: EncryptedChannel, _query: string): Promise<IndexedMessage[]> => [],
+    ),
     react: vi.fn(
       async (channel: EncryptedChannel, messageId: string, emojis: readonly string[]) => {
         if (!api) throw new Error('The fake e2ee client has no API yet')

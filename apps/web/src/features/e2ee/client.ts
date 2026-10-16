@@ -20,6 +20,7 @@ import { createCrossSigning } from './cross-signing'
 import { createDeviceApproval } from './device-approval'
 import { createEncryptedReactions } from './encrypted-reactions'
 import { createHistoryBackup } from './history-backup'
+import { createLocalSearch } from './local-search'
 import { createSafety } from './safety'
 
 import type { EncryptedFile, EncryptedPayload } from './codec'
@@ -83,6 +84,8 @@ export interface CipherMessage {
   readonly nonce?: string | null
   /** Set once edited: each edit is a new MLS message, decrypted (and kept) on its own. */
   readonly editedAt?: string | null
+  /** Who wrote it (for the local search index). */
+  readonly authorId?: string | null
 }
 
 /** ready: this device is in the conversation; waiting: another device has to let it in. */
@@ -303,6 +306,7 @@ export const createE2eeClient = ({ api, store, userId, deviceName }: E2eeClientO
     return toBase64(result.ciphertext)
   }
   const backup = createHistoryBackup({ api, store, crossSigning })
+  const index = createLocalSearch(store)
   /** Backs a message up, sending soon (several messages read together go in one upload). */
   const keep = (messageId: string, payload: EncryptedPayload) => {
     backup.add(messageId, payload)
@@ -580,6 +584,7 @@ export const createE2eeClient = ({ api, store, userId, deviceName }: E2eeClientO
         })
         await store.set(`plain:${message.id}`, payload)
         keep(message.id, payload)
+        await index.record(channel.id, { id: message.id, authorId: userId, text })
         return message
       }),
 
@@ -597,7 +602,14 @@ export const createE2eeClient = ({ api, store, userId, deviceName }: E2eeClientO
         if (payload) keep(message.id, payload)
         // Sent before this device joined (or lost with it): the history backup may have it.
         payload ??= await backup.restore(channel.id, message.id).catch(() => null)
-        if (payload) await store.set(plainKey(message), payload)
+        if (payload) {
+          await store.set(plainKey(message), payload)
+          await index.record(channel.id, {
+            id: message.id,
+            authorId: message.authorId ?? null,
+            text: payload.text,
+          })
+        }
         return payload
       }),
 
@@ -618,6 +630,7 @@ export const createE2eeClient = ({ api, store, userId, deviceName }: E2eeClientO
         })
         await store.set(plainKey(message), payload)
         keep(messageId, payload)
+        await index.record(channel.id, { id: messageId, authorId: userId, text })
         return message
       }),
 
@@ -651,6 +664,9 @@ export const createE2eeClient = ({ api, store, userId, deviceName }: E2eeClientO
     },
 
     ...createEncryptedReactions({ api, store, userId, serial, ready, inStep, encrypt, decrypt }),
+
+    /** Search in a conversation, over what this device decrypted (the server can't). */
+    search: (channel: EncryptedChannel, query: string) => index.search(channel.id, query),
 
     /** Approving this device from another of the user's, or another device from this one. */
     approvals: createDeviceApproval({ api, ready, crossSigning, backup }),

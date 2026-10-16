@@ -6,6 +6,7 @@ import {
   LogOut,
   Pencil,
   Phone,
+  Search,
   ShieldCheck,
   UserPlus,
   Users,
@@ -47,7 +48,9 @@ import { GroupMembersPanel } from './group-members-panel'
 
 import { NotificationSettingsDialog } from '../notifications/notification-settings-dialog'
 import { EncryptionNotice, EncryptionStatus } from '../e2ee/encryption-notice'
+import { LocalSearchPanel } from '../e2ee/local-search-panel'
 import { RecoveryPrompt } from '../e2ee/recovery-prompt'
+import { SearchBox } from '../search/search-box'
 import { SafetyDialog } from '../e2ee/safety-dialog'
 import { SafetyWarning } from '../e2ee/safety-warning'
 import { useSafety } from '../e2ee/use-safety'
@@ -71,6 +74,8 @@ export const DmView = ({ channel }: { channel: PrivateChannel }) => {
   const [showMembers, setShowMembers] = useState(true)
   const [notifications, setNotifications] = useState(false)
   const [checking, setChecking] = useState(false)
+  const [search, setSearch] = useState<string | null>(null)
+  const [searchOpen, setSearchOpen] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [confirmDelete, setConfirmDelete] = useState<MessageItem | null>(null)
   const [replyingTo, setReplyingTo] = useState<MessageItem | null>(null)
@@ -154,7 +159,22 @@ export const DmView = ({ channel }: { channel: PrivateChannel }) => {
             {t('e2ee.badge')}
           </span>
         ) : null}
-        <span className="ml-auto flex gap-1">
+        {encryption ? (
+          <>
+            {/* Narrow screens: the field opens from this button, as in server channels. */}
+            <button
+              type="button"
+              aria-label={t('search.open')}
+              aria-pressed={searchOpen}
+              onClick={() => setSearchOpen((value) => !value)}
+              className="ml-auto rounded p-1.5 text-muted hover:text-text aria-pressed:text-text lg:hidden"
+            >
+              <Search aria-hidden className="size-5" />
+            </button>
+            <SearchBox className="lg:ml-auto" onSearch={setSearch} open={searchOpen} />
+          </>
+        ) : null}
+        <span className={`${encryption ? '' : 'ml-auto '}flex gap-1`}>
           {encryption ? (
             <button
               type="button"
@@ -368,7 +388,16 @@ export const DmView = ({ channel }: { channel: PrivateChannel }) => {
           )}
           <TypingIndicator guildId={null} channelId={channel.id} people={channel.recipients} />
         </section>
-        {isGroup && showMembers && me ? <GroupMembersPanel channel={channel} me={me} /> : null}
+        {encryption && search ? (
+          <LocalSearchPanel
+            channel={encryption}
+            query={search}
+            nameOf={(userId) => callPerson(userId).name}
+            onClose={() => setSearch(null)}
+          />
+        ) : isGroup && showMembers && me ? (
+          <GroupMembersPanel channel={channel} me={me} />
+        ) : null}
       </div>
 
       {checking ? (
