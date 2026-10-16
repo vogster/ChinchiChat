@@ -18,6 +18,7 @@ import {
   claimedKeyPackageSchema,
   customStatusSchema,
   backupEntrySchema,
+  deviceApprovalSchema,
   deviceSchema,
   keyBackupSchema,
   userKeySchema,
@@ -113,6 +114,7 @@ const id = (value: string) => encodeURIComponent(value)
 const messageResult = z.object({ message: messageSchema })
 const relationshipResult = z.object({ relationship: relationshipSchema })
 const privateChannelResult = z.object({ channel: privateChannelSchema })
+const approvalResult = z.object({ approval: deviceApprovalSchema })
 const reactionPath = (channelId: Snowflake, messageId: Snowflake, emoji: string) =>
   `/channels/${id(channelId)}/messages/${id(messageId)}/reactions/${id(emoji)}`
 const roleResult = z.object({ role: roleSchema })
@@ -715,6 +717,45 @@ export const createApiClient = (options: HttpOptions) => {
           }).toString()}`,
           data: z.object({ entries: z.array(backupEntrySchema) }),
         }),
+      /** Approving a new device from an approved one (see `DeviceApproval`). */
+      approvals: {
+        request: (body: { deviceId: Snowflake; commitment: string }) =>
+          request({
+            method: 'POST',
+            path: '/users/@me/e2ee/approvals',
+            body,
+            data: approvalResult,
+          }),
+        get: (approvalId: Snowflake) =>
+          request({
+            method: 'GET',
+            path: `/users/@me/e2ee/approvals/${id(approvalId)}`,
+            data: approvalResult,
+          }),
+        accept: (approvalId: Snowflake, body: { deviceId: Snowflake; publicKey: string }) =>
+          request({
+            method: 'POST',
+            path: `/users/@me/e2ee/approvals/${id(approvalId)}/accept`,
+            body,
+            data: approvalResult,
+          }),
+        reveal: (approvalId: Snowflake, publicKey: string) =>
+          request({
+            method: 'POST',
+            path: `/users/@me/e2ee/approvals/${id(approvalId)}/reveal`,
+            body: { publicKey },
+            data: approvalResult,
+          }),
+        complete: (approvalId: Snowflake, secrets: string) =>
+          request({
+            method: 'POST',
+            path: `/users/@me/e2ee/approvals/${id(approvalId)}/complete`,
+            body: { secrets },
+            data: approvalResult,
+          }),
+        decline: (approvalId: Snowflake) =>
+          request({ method: 'DELETE', path: `/users/@me/e2ee/approvals/${id(approvalId)}` }),
+      },
       /** Vouches for one of my devices with my user key. */
       signDevice: (deviceId: Snowflake, signature: string) =>
         request({

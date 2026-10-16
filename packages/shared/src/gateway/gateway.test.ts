@@ -75,6 +75,7 @@ describe('dispatchSchemas', () => {
         'CHANNEL_CREATE',
         'CHANNEL_DELETE',
         'CHANNEL_UPDATE',
+        'E2EE_APPROVAL_UPDATE',
         'E2EE_DEVICES_UPDATE',
         'E2EE_HANDSHAKE',
         'GUILD_CREATE',

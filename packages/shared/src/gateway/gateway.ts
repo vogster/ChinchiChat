@@ -19,6 +19,7 @@ import { voiceStateSchema } from '../voice/voice.schemas'
 import { currentUserSchema, publicUserSchema } from '../users/user.schemas'
 import { notificationSettingSchema } from '../users/notification.schemas'
 import { customStatusSchema } from '../users/custom-status.schemas'
+import { deviceApprovalSchema } from '../e2ee/approval.schemas'
 import { handshakeSchema } from '../e2ee/e2ee.schemas'
 
 export const GATEWAY_VERSION = 1
@@ -178,6 +179,8 @@ export const dispatchSchemas = {
   E2EE_HANDSHAKE: handshakeSchema,
   /** Someone in a shared encrypted conversation added or removed a device. */
   E2EE_DEVICES_UPDATE: z.object({ userId: snowflakeSchema }),
+  /** A device approval moved on (to all of the user's sessions). */
+  E2EE_APPROVAL_UPDATE: deviceApprovalSchema,
   /** Another device of the same user changed notification settings (null: back to defaults). */
   NOTIFICATION_SETTINGS_UPDATE: z.object({
     targetId: snowflakeSchema,

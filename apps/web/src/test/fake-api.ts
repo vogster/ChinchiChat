@@ -36,6 +36,7 @@ import type {
   ClaimedKeyPackage,
   BackupEntry,
   Device,
+  DeviceApproval,
   KeyBackup,
   UserKey,
   Handshake,
@@ -182,6 +183,18 @@ export const testInvite: Invite = {
 }
 
 const { channels: _channels, ...guildSummary } = testGuild
+
+export const testApproval: DeviceApproval = {
+  id: '950',
+  newDeviceId: '701',
+  commitment: 'AAAA',
+  newKey: null,
+  approverDeviceId: null,
+  approverKey: null,
+  secrets: null,
+  state: 'requested',
+  expiresAt: '2026-10-16T10:10:00.000Z',
+}
 
 export const testUpload: AttachmentUpload = {
   id: '900',
@@ -614,6 +627,24 @@ export const createFakeApi = ({ user = null, registrationMode = 'open' }: FakeAp
       })),
       putBackupEntries: vi.fn(async () => undefined),
       backupEntries: vi.fn(async () => ({ entries: [] as BackupEntry[] })),
+      approvals: {
+        request: vi.fn(async (_body: { deviceId: string; commitment: string }) => ({
+          approval: testApproval,
+        })),
+        get: vi.fn(async (_approvalId: string) => ({ approval: testApproval })),
+        accept: vi.fn(
+          async (_approvalId: string, _body: { deviceId: string; publicKey: string }) => ({
+            approval: testApproval,
+          }),
+        ),
+        reveal: vi.fn(async (_approvalId: string, _publicKey: string) => ({
+          approval: testApproval,
+        })),
+        complete: vi.fn(async (_approvalId: string, _secrets: string) => ({
+          approval: testApproval,
+        })),
+        decline: vi.fn(async (_approvalId: string) => undefined),
+      },
       uploadKeyPackages: vi.fn(async () => undefined),
       countKeyPackages: vi.fn(async () => ({ count: 0 })),
       claimKeyPackages: vi.fn(async (_userId: string) => ({

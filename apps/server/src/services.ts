@@ -57,6 +57,8 @@ import { createMessageService } from './modules/messages/message.service'
 import { createNotificationRepository } from './modules/notifications/notification.repository'
 import { createNotificationService } from './modules/notifications/notification.service'
 import { createE2eeRepository } from './modules/e2ee/e2ee.repository'
+import { createApprovalService } from './modules/e2ee/approval.service'
+import { createMemoryApprovalStore, createRedisApprovalStore } from './modules/e2ee/approval.store'
 import { createBackupRepository } from './modules/e2ee/backup.repository'
 import { createBackupService } from './modules/e2ee/backup.service'
 import { createE2eeService } from './modules/e2ee/e2ee.service'
@@ -545,6 +547,12 @@ export const createServices = (
       nextId,
     }),
     backup: createBackupService({ backups: createBackupRepository(db), nextId }),
+    approval: createApprovalService({
+      approvals: redis ? createRedisApprovalStore(redis) : createMemoryApprovalStore(),
+      e2ee: createE2eeRepository(db),
+      events,
+      nextId,
+    }),
     notification: createNotificationService({
       settings: notificationSettings,
       guilds,
