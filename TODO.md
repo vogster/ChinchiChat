@@ -338,7 +338,7 @@
 
 ---
 
-## 👉 Фаза 22 — Desktop (Tauri, v0.15)
+## Фаза 22 — Desktop (Tauri, v0.15) ✅
 
 - [x] Tauri 2 оборачивает web-сборку: `apps/desktop` (Rust-оболочка, capabilities, CSP) + вход `apps/web/desktop.html` → `src/desktop/main.tsx` (hash-history, bearer-режим, запросы через HTTP-плагин); сервер пускает bearer-клиентов без проверки Origin (HTTP и шлюз) — проверено живьём на Windows: регистрация, главная, настройки
 - [x] Spike: LiveKit и захват экрана в webview — микрофон/камера работают на Windows (проверено) и macOS (с entitlements); демонстрация экрана — _отложено: WebView2 и WKWebView требуют обработчик выбора экрана/разрешения на стороне оболочки (wry «permission request»), сделаем отдельной задачей_; голос на Linux — _отложено: WebKitGTK в Ubuntu 24.04/26.04 собран без WebRTC (`RTCPeerConnection` нет); вариант — `tauri-plugin-webrtc` от CrabNebula, экспериментальный_. Таблица — в `docs/desktop.md`
@@ -348,11 +348,11 @@
 - [x] Автообновление (`tauri-plugin-updater`, `latest.json` в релизе, подпись minisign-ключом, секреты `TAURI_SIGNING_PRIVATE_KEY*`), сборка на трёх ОС в `release.yml` (`tauri-action`), `cargo check` в CI. Подпись сборок сертификатами Windows/Apple — _отложено: нужны платные сертификаты Microsoft Authenticode и Apple Developer ID; без них ОС предупреждают при первом запуске, обновления при этом подписаны и проверяются_
 - [x] Выбор адреса инстанса при первом запуске (`InstancePicker`: нормализация адреса, проверка `/api/v1/instance`), смена сервера в настройках
 - [ ] Хранить токен сессии в системной связке ключей, а не в `settings.json` — _отложено: нужен сторонний плагин (keyring); файл лежит в каталоге данных пользователя с правами как у профиля браузера_
-- [ ] **Релиз v0.15**
+- [x] **Релиз v0.15** — опубликован 17 октября 2026: образы сервера (скан, аттестация) и установщики для Windows, macOS (universal) и Linux; обновления не подписаны (секрет `TAURI_SIGNING_PRIVATE_KEY` ещё не добавлен)
 
 ---
 
-## Фаза 23 — Mobile (Expo, v0.16)
+## 👉 Фаза 23 — Mobile (Expo, v0.16)
 
 - [ ] Expo-приложение, переиспользование `sdk`, `state`, `markdown`
 - [ ] Spike: `@livekit/react-native` на iOS и Android
