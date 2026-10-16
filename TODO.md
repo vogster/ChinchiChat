@@ -305,6 +305,7 @@
 - [x] Базовые образы в Dockerfile, compose и скриптах бэкапа — по digest; релиз публикует build provenance (`actions/attest-build-provenance`), проверка — `gh attestation verify oci://ghcr.io/vogster/chinchi-server:<версия> --owner vogster`
 - [x] Обновлены `undici` 8.12.1 и `archiver` 8 (ESM, `new ZipArchive`); `engine-strict=true` в `.npmrc` — `@noble/curves` и `@noble/ciphers` не трогаем: ts-mls фиксирует их точными peer-версиями, обновляются вместе с ним (исключены в Dependabot)
 - [x] Smoke-тест установки в CI (`docker` job): образы собираются из исходников, стек поднимается из `.env.example` с сгенерированными секретами на `localhost`, через Caddy проверяются `/health`, `/api/v1/instance` и страница приложения
+- [x] Образ сервера проходит Trivy чисто: финальный слой ставит исправления Debian (`apt-get upgrade`) и удаляет npm/corepack с их вендорными копиями undici и minimatch. Web-образ переведён на Caddy 2.11; у самого бинарника Caddy остаются HIGH-уязвимости стандартной библиотеки Go (DoS в net/http, crypto/tls), которые исправит только сборка Caddy на Go ≥ 1.26.9 — скан бинарника в релизе информационный, обновление образа придёт через Dependabot
 - [ ] **Релиз v0.12.1**
 
 ---
