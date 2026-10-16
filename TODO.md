@@ -323,7 +323,7 @@
 
 ---
 
-## 👉 Фаза 21 — Ревью: аккаунты, эксплуатация и качество кода (v0.14)
+## Фаза 21 — Ревью: аккаунты, эксплуатация и качество кода (v0.14) ✅
 
 - [x] Секреты TOTP (`totp_secret`, `totp_pending_secret`) шифруются ключом сервера (`SECRETS_KEY`, AES-GCM, `secret-box.ts`) с ленивой перешифровкой; `backup.sh` предупреждает о незашифрованном архиве или шифрует его при `BACKUP_PASSPHRASE` (`openssl enc`, а не `age`: openssl есть на любом хосте с Docker), `restore.sh` расшифровывает `.tar.enc`
 - [x] Настройка инстанса «требовать подтверждённый email для серверов, инвайтов и ЛС», включена по умолчанию при открытой регистрации (`REQUIRE_VERIFIED_EMAIL`, в compose `on`; `requireVerifiedHuman` на создании сервера, приёме приглашения, открытии ЛС, добавлении в группу и заявке в друзья; `EMAIL_NOT_VERIFIED` → 403)
@@ -334,11 +334,11 @@
 - [x] Качество: `packages/sdk/src/client.ts` разбит по доменам (`auth`/`admin`/`guilds`/`messages`/`e2ee`/`social`/`bots` + `url.ts`), `message.service.ts` → `message-context`/`message-posting`/`message-reading`, `channel.service.ts` → `channel-overwrites.ts`, `services.ts` → `services/{account,e2ee,link-previews,conversations,integrations}.ts` (сам файл остался ~460 строк: это точка сборки, половина — импорты); общие `ok()` (`http/responses.ts`) и `perUserRateLimit` (`http/rate-limit.ts`); `eslint-plugin-simple-import-sort` в общем конфиге
 - [x] Тесты: табличный тест «каждый `/admin/*` отвечает 403 не админу и 401 анониму» (маршруты собирает хук `onRoute`; тест нашёл проверку в `preHandler` после валидации — перенесена в `onRequest`); property-тесты `fast-check` для `parseMarkdown`/`collectMentions` и `stripMetadata`; `e2e/tests/security.spec.ts`: CSP, флаги cookie, CSRF, 404 для чужих id, ошибки без внутренностей
 - [x] CSP: убрано `'unsafe-inline'` из `style-src` (React задаёт стили через CSSOM, который CSP не ограничивает, так что цвета ролей менять не пришлось); та же политика в `vite preview` для e2e и проверка заголовка в smoke-тесте CI
-- [ ] **Релиз v0.14**
+- [x] **Релиз v0.14** — опубликован 16 октября 2026 (образы прошли скан и аттестацию)
 
 ---
 
-## Фаза 22 — Desktop (Tauri, v0.15)
+## 👉 Фаза 22 — Desktop (Tauri, v0.15)
 
 - [ ] Tauri 2 оборачивает web-сборку
 - [ ] Spike: LiveKit и захват экрана в webview (macOS / Windows / Linux)
