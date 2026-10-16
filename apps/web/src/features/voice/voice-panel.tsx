@@ -6,6 +6,7 @@ import { useApi } from '../../lib/api-context'
 import { errorMessage } from '../../lib/errors'
 import { privateChannelName } from '../dms/dm-names'
 import { dmsQueryOptions } from '../dms/queries'
+import { BetaBadge } from '../e2ee/beta-badge'
 import { guildQueryOptions } from '../guilds/queries'
 import { useVoice } from './voice-context'
 
@@ -56,6 +57,7 @@ export const VoicePanel = () => {
             <div className="flex items-center gap-1 text-secure">
               <Lock aria-hidden className="size-3 shrink-0" />
               <span className="truncate">{t('voice.encrypted')}</span>
+              <BetaBadge />
             </div>
           ) : null}
         </div>

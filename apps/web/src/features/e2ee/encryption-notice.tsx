@@ -1,6 +1,8 @@
 import { Lock } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
+import { BetaBadge } from './beta-badge'
+
 import type { EncryptedState } from './use-encrypted-conversation'
 
 /** The start of an encrypted conversation: what encryption means here, and what is off. */
@@ -11,8 +13,12 @@ export const EncryptionNotice = () => {
       <div className="mb-2 flex size-12 items-center justify-center rounded-full bg-secure/15 text-secure">
         <Lock aria-hidden className="size-6" />
       </div>
-      <h2 className="text-lg font-bold">{t('e2ee.noticeTitle')}</h2>
+      <h2 className="flex items-center gap-2 text-lg font-bold">
+        {t('e2ee.noticeTitle')}
+        <BetaBadge />
+      </h2>
       <p className="max-w-prose text-sm text-muted">{t('e2ee.notice')}</p>
+      <p className="mt-2 max-w-prose text-sm text-muted">{t('e2ee.betaNotice')}</p>
     </div>
   )
 }

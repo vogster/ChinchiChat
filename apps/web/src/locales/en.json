@@ -1245,7 +1245,7 @@
     "fileDecrypting": "Decrypting {{name}}…",
     "fileFailed": "Couldn't decrypt {{name}}",
     "encryptedQuote": "Encrypted message",
-    "groupHint": "Messages, files and calls are encrypted on members' devices; the server can't see them. No search, link previews or bots here.",
+    "groupHint": "Messages, files and calls are encrypted on members' devices; the server can't see them. No search, link previews or bots here. Encryption is in beta.",
     "safety": {
       "title": "Encryption check",
       "hint": "Compare the code with the other person in person or over another channel (a call, another messenger). If it matches, messages are encrypted for their devices and not for impostors.",
@@ -1306,7 +1306,10 @@
     "unreadable_other": "{{count}} messages were sent before this device joined and aren't available on it",
     "search": {
       "localOnly": "Searched on this device only, among the messages it decrypted: the server can't see the text."
-    }
+    },
+    "beta": "beta",
+    "betaHint": "Encryption has not been independently reviewed yet",
+    "betaNotice": "Encryption is in beta: it has not been independently reviewed yet. Rely on it with care for truly sensitive secrets."
   },
   "polls": {
     "label": "Poll: {{question}}",

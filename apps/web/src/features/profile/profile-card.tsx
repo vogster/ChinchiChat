@@ -7,6 +7,7 @@ import { useTranslation } from 'react-i18next'
 import { Avatar } from '../../components/ui/avatar'
 import { Button } from '../../components/ui/button'
 import { PresenceDot } from '../../components/ui/presence-dot'
+import { BetaBadge } from '../e2ee/beta-badge'
 import { useApi } from '../../lib/api-context'
 import { useCurrentUser } from '../auth/use-auth-actions'
 import { useOpenDm } from '../dms/use-dm-actions'
@@ -97,6 +98,7 @@ const ProfileActions = ({
           <span className="inline-flex items-center gap-2">
             <Lock aria-hidden className="size-4" />
             {t('e2ee.start')}
+            <BetaBadge />
           </span>
         </Button>
       ) : null}

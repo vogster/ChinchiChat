@@ -49,7 +49,7 @@ describe('encrypted conversations', () => {
     const members = await screen.findByRole('complementary', { name: /Участники/ })
     await user.click(await within(members).findByRole('button', { name: /^Боб,/ }))
     const card = await screen.findByRole('dialog', { name: 'Профиль: Боб' })
-    await user.click(within(card).getByRole('button', { name: 'Зашифрованная беседа' }))
+    await user.click(within(card).getByRole('button', { name: /^Зашифрованная беседа/ }))
 
     expect(api.dms.open).toHaveBeenCalledWith(['200'], { encrypted: true })
     await waitFor(() => expect(router.state.location.pathname).toBe(URL))
@@ -66,6 +66,15 @@ describe('encrypted conversations', () => {
     ).toBeVisible()
     expect(screen.getByText(/Сервер не видит сообщений/)).toBeVisible()
     expect(e2ee.open).toHaveBeenCalledWith({ id: encryptedDm.id, memberIds: [testUser.id, '200'] })
+  })
+
+  it('are marked beta: in the header and where the conversation starts', async () => {
+    renderApp(URL, { api: withEncryptedDm() })
+
+    const title = await screen.findByRole('heading', { level: 1, name: 'Боб' })
+    const header = title.closest('header') as HTMLElement
+    expect(within(header).getByText('бета')).toBeVisible()
+    expect(await screen.findByText(/Шифрование пока в бета-версии/)).toBeVisible()
   })
 
   it('fold messages this device can not read into one line', async () => {
