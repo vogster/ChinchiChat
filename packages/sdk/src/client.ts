@@ -21,6 +21,7 @@ import {
   deviceApprovalSchema,
   deviceSchema,
   keyBackupSchema,
+  pollSchema,
   userKeySchema,
   handshakeSchema,
   notificationSettingSchema,
@@ -942,6 +943,23 @@ export const createApiClient = (options: HttpOptions) => {
         request({ method: 'PUT', path: `/channels/${id(channelId)}/pins/${id(messageId)}` }),
       unpin: (channelId: Snowflake, messageId: Snowflake) =>
         request({ method: 'DELETE', path: `/channels/${id(channelId)}/pins/${id(messageId)}` }),
+    },
+    polls: {
+      /** My answers, replacing earlier ones (none takes my vote back). */
+      vote: (channelId: Snowflake, messageId: Snowflake, answerIds: readonly number[]) =>
+        request({
+          method: 'PUT',
+          path: `/channels/${id(channelId)}/polls/${id(messageId)}/answers/@me`,
+          body: { answerIds: [...answerIds] },
+          data: z.object({ poll: pollSchema }),
+        }),
+      /** Its author ends a poll early. */
+      end: (channelId: Snowflake, messageId: Snowflake) =>
+        request({
+          method: 'POST',
+          path: `/channels/${id(channelId)}/polls/${id(messageId)}/expire`,
+          data: z.object({ poll: pollSchema }),
+        }),
     },
     reactions: {
       /** Encrypted conversations: my whole set, encrypted (null takes them all back). */

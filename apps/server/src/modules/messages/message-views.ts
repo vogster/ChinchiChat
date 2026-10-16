@@ -7,13 +7,16 @@ import { toMessage } from './message.mapper'
 import type { UserRepository } from '../users/user.repository'
 import type { AttachmentRepository } from '../attachments/attachment.repository'
 import type { MessageRepository, MessageWithAuthor } from './message.repository'
+import type { PollRepository } from './poll.repository'
 import type { ReactionRepository } from './reaction.repository'
-import type { Message, MessageReply, Snowflake } from '@chinchi/shared'
+import type { Message, MessageReply, Poll, Snowflake } from '@chinchi/shared'
 
 export interface MessageViewsDeps {
   readonly messages: MessageRepository
   readonly attachmentRows: AttachmentRepository
   readonly reactions: ReactionRepository
+  /** Polls sent with messages; absent where nothing can carry one. */
+  readonly polls?: Pick<PollRepository, 'summaries'> | undefined
   /** People who ran the commands bot messages answer. */
   readonly users: Pick<UserRepository, 'findByIds'>
 }
@@ -29,6 +32,7 @@ export const createMessageViews = ({
   messages,
   attachmentRows,
   reactions,
+  polls,
   users,
 }: MessageViewsDeps) => {
   const repliesFor = async (channelId: Snowflake, rows: readonly MessageWithAuthor[]) => {
@@ -84,6 +88,7 @@ export const createMessageViews = ({
         interactionUserIds.length > 0 ? users.findByIds(interactionUserIds) : [],
         reactions.encryptedFor(encryptedIds),
       ])
+    const pollsByMessage = polls ? await polls.summaries(ids, viewerId) : new Map<Snowflake, Poll>()
     const usersById = new Map(interactionUsers.map((user) => [user.id, user]))
     const filesByMessage = groupByMessage(files)
     return rows.map(({ message, author }) =>
@@ -100,6 +105,7 @@ export const createMessageViews = ({
           : null,
         reactions: reactionsByMessage.get(message.id),
         encryptedReactions: encryptedByMessage.get(message.id),
+        poll: pollsByMessage.get(message.id) ?? null,
         nonce,
         interactionUser: message.interactionUserId
           ? (usersById.get(message.interactionUserId) ?? null)

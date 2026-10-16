@@ -212,6 +212,7 @@ export const ChannelChat = ({
               guild.emojis.length > 0 ? { title: guild.name, emojis: guild.emojis } : null
             }
             attach={canAttach ? { count: pending.files.length, onAdd: pending.add } : null}
+            pollChannelId={channel.id}
             reply={
               replyingTo
                 ? {

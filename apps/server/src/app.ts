@@ -34,6 +34,7 @@ import { moderationRoutes } from './modules/moderation/moderation.routes'
 import { voiceWebhookRoutes } from './modules/voice/voice-webhook.routes'
 import { createVoiceGuard } from './modules/voice/voice-guard'
 import { reactionsRoutes } from './modules/messages/reactions.routes'
+import { pollsRoutes } from './modules/messages/polls.routes'
 import { accountRoutes } from './modules/auth/account.routes'
 import { mfaRoutes } from './modules/auth/mfa.routes'
 import { adminRoutes } from './modules/admin/admin.routes'
@@ -318,6 +319,7 @@ export const buildApp = (
       })
       api.register(attachmentsRoutes, { attachmentService: services.attachment })
       api.register(reactionsRoutes, { reactionService: services.reaction })
+      api.register(pollsRoutes, { pollService: services.poll })
       api.register(pinsRoutes, { pinService: services.pin })
       api.register(embedsRoutes, { storage })
       api.register(relationshipsRoutes, { relationshipService: services.relationship })

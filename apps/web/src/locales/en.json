@@ -1304,5 +1304,42 @@
     "search": {
       "localOnly": "Searched on this device only, among the messages it decrypted: the server can't see the text."
     }
+  },
+  "polls": {
+    "label": "Poll: {{question}}",
+    "pickOne": "Pick one answer",
+    "pickSeveral": "You can pick several answers",
+    "votes_one": "{{count}} vote",
+    "votes_other": "{{count}} votes",
+    "yours": "your answer",
+    "ended": "Poll ended",
+    "leftMinutes_one": "{{count}} min left",
+    "leftMinutes_other": "{{count}} min left",
+    "leftHours_one": "{{count}} h left",
+    "leftHours_other": "{{count}} h left",
+    "leftDays_one": "{{count}} day left",
+    "leftDays_other": "{{count}} days left",
+    "vote": "Vote",
+    "change": "Change vote",
+    "unvote": "Remove vote",
+    "end": "End poll",
+    "create": "Create poll",
+    "createTitle": "New poll",
+    "question": "Question",
+    "answer": "Answer {{number}}",
+    "addAnswer": "Add answer",
+    "removeAnswer": "Remove answer {{number}}",
+    "multiple": "Several answers",
+    "multipleHint": "Everyone can pick more than one option.",
+    "duration": "Duration",
+    "send": "Send poll",
+    "durations": {
+      "1": "1 hour",
+      "4": "4 hours",
+      "8": "8 hours",
+      "24": "1 day",
+      "72": "3 days",
+      "168": "1 week"
+    }
   }
 }

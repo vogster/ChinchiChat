@@ -1332,5 +1332,50 @@
     "search": {
       "localOnly": "Поиск идёт только на этом устройстве, по сообщениям, которые оно расшифровало: сервер не видит текста."
     }
+  },
+  "polls": {
+    "label": "Опрос: {{question}}",
+    "pickOne": "Выберите один ответ",
+    "pickSeveral": "Можно выбрать несколько ответов",
+    "votes_one": "{{count}} голос",
+    "votes_few": "{{count}} голоса",
+    "votes_many": "{{count}} голосов",
+    "votes_other": "{{count}} голоса",
+    "yours": "ваш ответ",
+    "ended": "Опрос завершён",
+    "leftMinutes_one": "осталась {{count}} мин",
+    "leftMinutes_few": "осталось {{count}} мин",
+    "leftMinutes_many": "осталось {{count}} мин",
+    "leftMinutes_other": "осталось {{count}} мин",
+    "leftHours_one": "остался {{count}} ч",
+    "leftHours_few": "осталось {{count}} ч",
+    "leftHours_many": "осталось {{count}} ч",
+    "leftHours_other": "осталось {{count}} ч",
+    "leftDays_one": "остался {{count}} день",
+    "leftDays_few": "осталось {{count}} дня",
+    "leftDays_many": "осталось {{count}} дней",
+    "leftDays_other": "осталось {{count}} дня",
+    "vote": "Проголосовать",
+    "change": "Изменить голос",
+    "unvote": "Убрать голос",
+    "end": "Завершить опрос",
+    "create": "Создать опрос",
+    "createTitle": "Новый опрос",
+    "question": "Вопрос",
+    "answer": "Ответ {{number}}",
+    "addAnswer": "Добавить ответ",
+    "removeAnswer": "Убрать ответ {{number}}",
+    "multiple": "Несколько ответов",
+    "multipleHint": "Каждый сможет выбрать больше одного варианта.",
+    "duration": "Длительность",
+    "send": "Отправить опрос",
+    "durations": {
+      "1": "1 час",
+      "4": "4 часа",
+      "8": "8 часов",
+      "24": "1 день",
+      "72": "3 дня",
+      "168": "1 неделя"
+    }
   }
 }

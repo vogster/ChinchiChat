@@ -9,6 +9,7 @@ import type {
   EncryptedReaction,
   Message,
   MessageReply,
+  Poll,
   Reaction,
   Snowflake,
 } from '@chinchi/shared'
@@ -22,6 +23,7 @@ export interface MessageContext {
   readonly reactions?: readonly Reaction[] | undefined
   /** Encrypted messages: each person's encrypted set (an encrypted message always has the list). */
   readonly encryptedReactions?: readonly EncryptedReaction[] | undefined
+  readonly poll?: Poll | null | undefined
   readonly nonce?: string | undefined
   /** Who ran the command a bot's message answers. */
   readonly interactionUser?: UserRow | null
@@ -38,6 +40,7 @@ export const toMessage = (
     reply = null,
     reactions = [],
     encryptedReactions = [],
+    poll = null,
     nonce,
     interactionUser = null,
     systemTarget = null,
@@ -82,5 +85,6 @@ export const toMessage = (
   embeds: message.embeds,
   reactions: [...reactions],
   ...(message.ciphertext ? { encryptedReactions: [...encryptedReactions] } : {}),
+  poll,
   nonce: nonce ?? null,
 })

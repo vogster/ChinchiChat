@@ -38,6 +38,7 @@ import type {
   Device,
   DeviceApproval,
   KeyBackup,
+  Poll,
   UserKey,
   Handshake,
 } from '@chinchi/shared'
@@ -183,6 +184,18 @@ export const testInvite: Invite = {
 }
 
 const { channels: _channels, ...guildSummary } = testGuild
+
+export const testPoll: Poll = {
+  question: 'Опрос',
+  answers: [
+    { id: 1, text: 'Да', count: 0, me: false },
+    { id: 2, text: 'Нет', count: 0, me: false },
+  ],
+  multiple: false,
+  expiresAt: '2026-10-17T12:00:00.000Z',
+  ended: false,
+  voters: 0,
+}
 
 export const testApproval: DeviceApproval = {
   id: '950',
@@ -720,6 +733,14 @@ export const createFakeApi = ({ user = null, registrationMode = 'open' }: FakeAp
       list: vi.fn(async () => ({ messages: [] as Message[] })),
       pin: vi.fn(async () => undefined),
       unpin: vi.fn(async () => undefined),
+    },
+    polls: {
+      vote: vi.fn(
+        async (_channelId: string, _messageId: string, _answerIds: readonly number[]) => ({
+          poll: testPoll,
+        }),
+      ),
+      end: vi.fn(async (_channelId: string, _messageId: string) => ({ poll: testPoll })),
     },
     reactions: {
       setEncrypted: vi.fn(

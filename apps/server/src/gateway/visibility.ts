@@ -104,6 +104,7 @@ export const applyGuildEvent = (
     case 'MESSAGE_REACTION_ADD':
     case 'MESSAGE_REACTION_REMOVE':
     case 'E2EE_REACTION_UPDATE':
+    case 'POLL_UPDATE':
     case 'TYPING_START': {
       const channel = state.channels.get((data as { channelId: string }).channelId)
       return forward(channel && canView(state, userId, channel) ? undefined : [])

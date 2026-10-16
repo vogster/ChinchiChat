@@ -330,6 +330,13 @@
       "when": 1792118437128,
       "tag": "0046_encrypted_reactions",
       "breakpoints": true
+    },
+    {
+      "idx": 47,
+      "version": "7",
+      "when": 1792123258277,
+      "tag": "0047_polls",
+      "breakpoints": true
     }
   ]
 }

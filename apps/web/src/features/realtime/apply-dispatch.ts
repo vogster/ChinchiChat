@@ -25,6 +25,7 @@ import { applyVoiceState, dropVoiceChannel, seedVoiceStates } from '../voice/que
 
 import { notificationKeys, setNotificationSetting } from '../notifications/queries'
 import { customStatusKeys, setCustomStatusOf } from '../presence/queries'
+import { applyPoll } from '../messages/use-polls'
 import type { CustomStatuses } from '../presence/queries'
 import type { MessageItem, MessagePages, Presences, ReadStates } from '../messages/queries'
 import type { TypingStore } from './typing-store'
@@ -195,6 +196,12 @@ export const applyDispatch = (
           m.id === event.messageId ? { ...m, reactions: withReaction(m.reactions, change) } : m,
         ),
       )
+      return
+    }
+
+    case 'POLL_UPDATE': {
+      const { channelId, messageId, poll } = data as DispatchPayload<'POLL_UPDATE'>
+      applyPoll(queryClient, channelId, messageId, poll, { keepMine: true })
       return
     }
 

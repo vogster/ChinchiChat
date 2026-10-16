@@ -96,6 +96,7 @@ describe('dispatchSchemas', () => {
         'MESSAGE_REACTION_REMOVE',
         'MESSAGE_UPDATE',
         'NOTIFICATION_SETTINGS_UPDATE',
+        'POLL_UPDATE',
         'PRESENCE_UPDATE',
         'PRIVATE_CHANNEL_CREATE',
         'PRIVATE_CHANNEL_DELETE',

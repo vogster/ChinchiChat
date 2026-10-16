@@ -1,14 +1,15 @@
 import { MESSAGE_MAX_LENGTH } from '@chinchi/shared'
-import { AtSign, Paperclip, Smile, X } from 'lucide-react'
+import { AtSign, BarChart3, Paperclip, Smile, X } from 'lucide-react'
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { CommandSuggestions } from '../commands/command-suggestions'
 import { parseCommand, suggestCommands } from '../commands/parse-command'
 import { EmojiPicker } from '../emoji/emoji-picker'
+import { CreatePollDialog } from './create-poll-dialog'
 import type { EmojiPickerProps } from '../emoji/emoji-picker'
 
-import type { Command } from '@chinchi/shared'
+import type { Command, Snowflake } from '@chinchi/shared'
 import type { KeyboardEvent } from 'react'
 
 export interface ComposerProps {
@@ -29,6 +30,8 @@ export interface ComposerProps {
   readonly slowmode?: { readonly seconds: number; readonly wait: number } | null
   /** Slash commands of the server's bots: `/name` runs one instead of sending text. */
   readonly commands?: ComposerCommands | null
+  /** Where a poll from the composer goes; absent where polls don't work (encrypted). */
+  readonly pollChannelId?: Snowflake | null
 }
 
 export interface ComposerCommands {
@@ -95,8 +98,10 @@ export const Composer = ({
   customEmojis = null,
   slowmode = null,
   commands = null,
+  pollChannelId = null,
 }: ComposerProps) => {
   const { t } = useTranslation()
+  const [creatingPoll, setCreatingPoll] = useState(false)
   const [value, setValue] = useState('')
   const [missing, setMissing] = useState<readonly string[]>([])
   const [active, setActive] = useState(0)
@@ -225,6 +230,17 @@ export const Composer = ({
             />
           </label>
         ) : null}
+        {pollChannelId ? (
+          <button
+            type="button"
+            aria-label={t('polls.create')}
+            title={t('polls.create')}
+            onClick={() => setCreatingPoll(true)}
+            className="mr-3 self-center rounded p-0.5 text-muted hover:text-text"
+          >
+            <BarChart3 aria-hidden className="size-5" />
+          </button>
+        ) : null}
         <textarea
           ref={ref}
           onPaste={(event) => {
@@ -271,6 +287,9 @@ export const Composer = ({
             ? t('messages.slowmodeWait', { seconds: slowmode.wait })
             : t('messages.slowmode', { seconds: slowmode.seconds })}
         </p>
+      ) : null}
+      {creatingPoll && pollChannelId ? (
+        <CreatePollDialog channelId={pollChannelId} onOpenChange={setCreatingPoll} />
       ) : null}
     </div>
   )

@@ -183,6 +183,16 @@ const DATA: Record<string, unknown> = {
   devices: { devices: [] },
   userKey: { userKey: { userId: '2', publicKey: 'AAAA', createdAt: '2026-10-14T12:00:00.000Z' } },
   noUserKey: { userKey: null },
+  poll: {
+    poll: {
+      question: 'Куда?',
+      answers: [{ id: 1, text: 'Кино', count: 1, me: true }],
+      multiple: false,
+      expiresAt: '2026-10-15T12:00:00.000Z',
+      ended: false,
+      voters: 1,
+    },
+  },
   approval: {
     approval: {
       id: '11',
@@ -259,6 +269,14 @@ const cases: Case[] = [
     'userKey',
   ],
   ['e2ee.backup', (api) => api.e2ee.backup(), 'GET', '/users/@me/e2ee/backup', 'backup'],
+  [
+    'polls.vote',
+    (api) => api.polls.vote('1', '2', [1]),
+    'PUT',
+    '/channels/1/polls/2/answers/@me',
+    'poll',
+  ],
+  ['polls.end', (api) => api.polls.end('1', '2'), 'POST', '/channels/1/polls/2/expire', 'poll'],
   [
     'reactions.setEncrypted',
     (api) => api.reactions.setEncrypted('1', '2', 'AAAA'),

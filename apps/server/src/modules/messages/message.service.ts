@@ -21,13 +21,15 @@ import type { AttachmentService } from '../attachments/attachment.service'
 import type { ChannelEvents } from '../channels/channel-events'
 import type { ChannelRepository } from '../channels/channel.repository'
 import type { MentionResolver } from './mention-resolver'
+import type { PollRepository } from './poll.repository'
 import type { ReactionRepository } from './reaction.repository'
 import type { LinkPreviews } from '../embeds/link-previews'
 import type { ChannelService } from '../channels/channel.service'
 import type { UserRepository, UserRow } from '../users/user.repository'
 import type { MessageRepository, MessageRow, PageQuery } from './message.repository'
 import type { ReadStateRepository } from './read-state.repository'
-import type { Channel, Message, Snowflake } from '@chinchi/shared'
+import type { Channel, Message, Snowflake, createPollSchema } from '@chinchi/shared'
+import type { z } from 'zod'
 
 const NO_AUDIT: Pick<AuditLogService, 'record'> = { record: async () => undefined }
 
@@ -42,6 +44,7 @@ export interface MessageServiceDeps {
   readonly attachmentRows: AttachmentRepository
   readonly resolveMentions: MentionResolver
   readonly reactions: ReactionRepository
+  readonly polls?: Pick<PollRepository, 'summaries'> | undefined
   /** People who ran the commands bot messages answer. */
   readonly users: Pick<UserRepository, 'findByIds'>
   /** Link previews for new and edited messages; absent when the instance has them off. */
@@ -75,6 +78,7 @@ export interface CreateMessageInput {
   readonly nonce?: string | undefined
   /** Encrypted conversations: the MLS message (base64); content stays empty. */
   readonly ciphertext?: string | undefined
+  readonly poll?: z.output<typeof createPollSchema> | undefined
 }
 
 /** What an edit changes: the text, or in encrypted conversations the MLS message. */
@@ -111,6 +115,7 @@ export const createMessageService = ({
   attachmentRows,
   resolveMentions,
   reactions,
+  polls,
   users,
   linkPreviews = null,
   events,
@@ -125,7 +130,7 @@ export const createMessageService = ({
   onMessagesDeleted = async () => undefined,
   visibleChannels,
 }: MessageServiceDeps) => {
-  const views = createMessageViews({ messages, attachmentRows, reactions, users })
+  const views = createMessageViews({ messages, attachmentRows, reactions, polls, users })
 
   /**
    * A text channel or DM the user can see (404 otherwise) with the given permission in it
@@ -186,6 +191,7 @@ export const createMessageService = ({
         replyMention = true,
         nonce,
         ciphertext,
+        poll,
       }: CreateMessageInput,
     ): Promise<Message> {
       const flag =
@@ -194,6 +200,10 @@ export const createMessageService = ({
           : Permission.SendMessages
       const { channel, permissions } = await textChannel(channelId, author.id, flag)
       assertEncryption(channel, ciphertext)
+      // Votes are counted by the server, which can't read an encrypted conversation.
+      if (poll && channel.encrypted) {
+        throw badRequest('ENCRYPTED_CHANNEL', 'Encrypted conversations have no polls')
+      }
       const original = replyTo ? await messages.findInChannel(channel.id, replyTo) : null
       if (replyTo && !original) {
         throw badRequest('INVALID_REPLY', 'Can only reply to a message in this channel')
@@ -233,6 +243,12 @@ export const createMessageService = ({
             ...(ciphertext ? { ciphertext } : {}),
           },
           files.map((file) => file.id),
+          poll && {
+            question: poll.question,
+            answers: poll.answers,
+            multiple: poll.multiple,
+            expiresAt: new Date(now().getTime() + poll.durationHours * 3_600_000),
+          },
         )
       } catch (error) {
         await attachments.discard(files, id)

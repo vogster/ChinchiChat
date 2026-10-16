@@ -368,6 +368,7 @@ export const DmView = ({ channel }: { channel: PrivateChannel }) => {
               onTyping={typing.typed}
               onEditLast={editLast}
               attach={canAttach ? { count: pending.files.length, onAdd: pending.add } : null}
+              pollChannelId={encryption ? null : channel.id}
               reply={
                 replyingTo
                   ? {

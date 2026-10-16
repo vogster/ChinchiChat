@@ -4,6 +4,7 @@ import { CIPHERTEXT_MAX_BASE64, base64Schema } from '../e2ee/e2ee.schemas'
 import { snowflakeSchema } from '../snowflake/snowflake'
 import { publicUserSchema } from '../users/user.schemas'
 import { ATTACHMENTS_PER_MESSAGE_MAX, attachmentSchema } from './attachment.schemas'
+import { createPollSchema, pollSchema } from './poll.schemas'
 import { encryptedReactionSchema, reactionSchema } from './reaction.schemas'
 
 export const MESSAGE_MAX_LENGTH = 2000
@@ -40,12 +41,15 @@ export const createMessageRequestSchema = z
     nonce: z.string().min(1).max(64).optional(),
     /** Encrypted conversations: the MLS message, base64; then `content` stays empty. */
     ciphertext: base64Schema(CIPHERTEXT_MAX_BASE64).optional(),
+    /** A poll with the message (it can be the whole message). */
+    poll: createPollSchema.optional(),
   })
   .refine(
     (body) =>
       body.content.length > 0 ||
       (body.attachmentIds?.length ?? 0) > 0 ||
-      body.ciphertext !== undefined,
+      body.ciphertext !== undefined ||
+      body.poll !== undefined,
     { message: 'Message is empty', path: ['content'] },
   )
   .refine((body) => body.ciphertext === undefined || body.content.length === 0, {
@@ -159,6 +163,8 @@ export const messageSchema = z.object({
   reactions: z.array(reactionSchema),
   /** Encrypted conversations: each person's set of reactions, encrypted (`reactions` stays empty). */
   encryptedReactions: z.array(encryptedReactionSchema).optional(),
+  /** A poll sent with the message; null or absent if none. */
+  poll: pollSchema.nullable().optional(),
   nonce: z.string().nullable(),
 })
 

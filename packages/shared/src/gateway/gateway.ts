@@ -11,6 +11,7 @@ import {
 } from '../guilds/guild.schemas'
 import { mentionCountsSchema, messageSchema, readStateSchema } from '../messages/message.schemas'
 import { privateChannelSchema } from '../dms/private-channel.schemas'
+import { pollUpdateEventSchema } from '../messages/poll.schemas'
 import { encryptedReactionEventSchema, reactionEventSchema } from '../messages/reaction.schemas'
 import { relationshipRemoveSchema, relationshipSchema } from '../users/relationship.schemas'
 import { roleSchema } from '../permissions/role.schemas'
@@ -131,6 +132,8 @@ export const dispatchSchemas = {
   MESSAGE_REACTION_ADD: reactionEventSchema,
   MESSAGE_REACTION_REMOVE: reactionEventSchema,
   E2EE_REACTION_UPDATE: encryptedReactionEventSchema,
+  /** A poll's counts changed, or it ended. */
+  POLL_UPDATE: pollUpdateEventSchema,
   TYPING_START: z.object({
     channelId: snowflakeSchema,
     guildId: snowflakeSchema.nullable(),

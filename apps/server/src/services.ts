@@ -64,6 +64,8 @@ import { createBackupService } from './modules/e2ee/backup.service'
 import { createE2eeService } from './modules/e2ee/e2ee.service'
 import { createReactionRepository } from './modules/messages/reaction.repository'
 import { createReactionService } from './modules/messages/reaction.service'
+import { createPollRepository } from './modules/messages/poll.repository'
+import { createPollService } from './modules/messages/poll.service'
 import { createMessageViews } from './modules/messages/message-views'
 import { createPinService } from './modules/messages/pin.service'
 import { createLinkPreviews } from './modules/embeds/link-previews'
@@ -263,10 +265,12 @@ export const createServices = (
   const attachmentRows = createAttachmentRepository(db)
   const messageRows = createMessageRepository(db)
   const reactionRows = createReactionRepository(db)
+  const pollRows = createPollRepository(db)
   const messageViews = createMessageViews({
     messages: messageRows,
     attachmentRows,
     reactions: reactionRows,
+    polls: pollRows,
     users,
   })
   const linkPreviews = config.linkPreviews
@@ -330,6 +334,7 @@ export const createServices = (
     messages: messageRows,
     readStates,
     reactions: reactionRows,
+    polls: pollRows,
     users,
     linkPreviews,
     resolveMentions: createMentionResolver({ guilds, roles, recipientIds: dmRows.recipientIds }),
@@ -521,6 +526,12 @@ export const createServices = (
       messages: messageRows,
       channels: channel,
       views: messageViews,
+      channelEvents,
+    }),
+    poll: createPollService({
+      polls: pollRows,
+      messages: messageRows,
+      channels: channel,
       channelEvents,
     }),
     reaction: createReactionService({

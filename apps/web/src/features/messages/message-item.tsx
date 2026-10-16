@@ -23,6 +23,7 @@ import { MessageContent } from '../markdown/message-content'
 import { QUICK_REACTIONS } from './reaction-cache'
 import { EncryptedAttachments } from '../e2ee/encrypted-attachments'
 import { AttachmentList } from './attachment-list'
+import { PollCard } from './poll-card'
 import { EmbedCard } from './embed-card'
 import { ReactionsBar } from './reactions-bar'
 import { InteractionHeader } from '../commands/interaction-header'
@@ -263,6 +264,14 @@ export const MessageItem = ({
         {content}
         <AttachmentList attachments={message.attachments} />
         {message.encryptedFiles ? <EncryptedAttachments files={message.encryptedFiles} /> : null}
+        {message.poll && !message.pending ? (
+          <PollCard
+            poll={message.poll}
+            channelId={message.channelId}
+            messageId={message.id}
+            authorId={message.author?.id ?? null}
+          />
+        ) : null}
         {message.pending && message.files ? (
           <ul className="mt-1 flex flex-wrap gap-1.5">
             {message.files.map((file, index) => (
