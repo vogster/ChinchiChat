@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 
 import { useApi } from '../../lib/api-context'
 import { useE2ee } from './e2ee-context'
+import { withoutMetadata } from './clean-photo'
 import { encryptFile } from './file-crypto'
 
 import type { ConversationStatus, EncryptedChannel, SendOptions } from './client'
@@ -60,7 +61,8 @@ export const useEncryptedConversation = (channel: EncryptedChannel | undefined) 
       if (!channel || !client) throw new Error('Not an encrypted conversation')
       const sealed: EncryptedFile[] = []
       for (const file of files) {
-        const { blob, file: secret } = await encryptFile(file)
+        // Photos lose their location and camera details first: the server can't strip them later.
+        const { blob, file: secret } = await encryptFile(await withoutMetadata(file))
         const id = await api.attachments.upload(channel.id, blob, {
           filename: 'encrypted',
           contentType: 'application/octet-stream',

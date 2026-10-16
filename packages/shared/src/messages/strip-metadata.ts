@@ -8,7 +8,10 @@ const EXIF_HEADER = 'Exif\0\0'
 const ORIENTATION_TAG = 0x0112
 
 const latin1 = (data: Uint8Array, start: number, length: number) =>
-  Buffer.from(data.buffer, data.byteOffset + start, length).toString('latin1')
+  String.fromCharCode(...data.subarray(start, start + length))
+
+/** The bytes of a latin-1 string (format markers like `Exif` and `RIFF`). */
+const latin1Bytes = (text: string) => Uint8Array.from(text, (char) => char.charCodeAt(0))
 
 const concat = (parts: readonly Uint8Array[]) => {
   const out = new Uint8Array(parts.reduce((sum, part) => sum + part.length, 0))
@@ -71,7 +74,7 @@ const orientationSegment = (orientation: number) => {
     0,
     0, // no next IFD
   ])
-  const payload = concat([Buffer.from(EXIF_HEADER, 'latin1'), tiff])
+  const payload = concat([latin1Bytes(EXIF_HEADER), tiff])
   const length = payload.length + 2
   return concat([Uint8Array.from([0xff, 0xe1, length >> 8, length & 0xff]), payload])
 }
@@ -215,9 +218,9 @@ const stripWebp = (data: Uint8Array): Uint8Array | null => {
     offset = end
   }
   if (!dropped) return null
-  const body = concat([Buffer.from('WEBP', 'latin1'), ...chunks])
+  const body = concat([latin1Bytes('WEBP'), ...chunks])
   const header = new Uint8Array(8)
-  header.set(Buffer.from('RIFF', 'latin1'))
+  header.set(latin1Bytes('RIFF'))
   new DataView(header.buffer).setUint32(4, body.length, true)
   return concat([header, body])
 }

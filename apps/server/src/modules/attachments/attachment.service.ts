@@ -11,7 +11,7 @@ import { attachmentKey, previewFilename, previewKey, uploadKey } from './attachm
 import { isMessageChannel } from '../channels/channel.repository'
 
 import { createLimiter } from '../../http/limiter'
-import { UnreadableImage, stripMetadata } from '../../storage/strip-metadata'
+import { UnreadableImage, stripMetadata } from '@chinchi/shared'
 import type { ObjectStorage } from '../../storage/object-storage'
 import type { ChannelService } from '../channels/channel.service'
 import type { AttachmentRepository, AttachmentRow } from './attachment.repository'
