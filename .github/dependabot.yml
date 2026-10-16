@@ -23,6 +23,9 @@ updates:
       # typescript-eslint does not support TypeScript 7 yet (see AGENTS.md).
       - dependency-name: typescript
         update-types: [version-update:semver-major]
+      # Follows the Node.js major the project runs on (24), not the newest one.
+      - dependency-name: '@types/node'
+        update-types: [version-update:semver-major]
 
   - package-ecosystem: github-actions
     directory: /
@@ -41,3 +44,8 @@ updates:
       day: monday
     cooldown:
       default-days: 3
+    ignore:
+      # The server runs on the Node.js LTS line (package.json "engines"); a new major is a
+      # deliberate move (Node 25 images also ship without corepack, which the build needs).
+      - dependency-name: node
+        update-types: [version-update:semver-major]
