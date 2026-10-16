@@ -8,6 +8,18 @@ dir=/etc/caddy/generated
 mkdir -p "$dir"
 : >"$dir/app.caddy"
 : >"$dir/sites.caddy"
+: >"$dir/global.caddy"
+
+# A proxy in front of Caddy (CDN, load balancer): only its X-Forwarded-For is believed, read
+# right to left so the client cannot prepend an address of its own.
+if [ -n "${TRUSTED_PROXIES:-}" ]; then
+  case "$TRUSTED_PROXIES" in
+    *[![:xdigit:].:/[:space:]]*) echo "TRUSTED_PROXIES must be space-separated IPs/CIDRs" >&2; exit 1 ;;
+  esac
+  # shellcheck disable=SC2086 -- the ranges are meant to be split on spaces
+  printf '{\n\tservers {\n\t\ttrusted_proxies static %s\n\t\ttrusted_proxies_strict\n\t}\n}\n' \
+    "$TRUSTED_PROXIES" >"$dir/global.caddy"
+fi
 
 if [ -n "${FILES_DOMAIN:-}" ]; then
   printf '%s {\n\timport files\n}\n' "$FILES_DOMAIN" >>"$dir/sites.caddy"

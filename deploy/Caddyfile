@@ -5,6 +5,12 @@
 # FILES_DOMAIN and VOICE_DOMAIN, when set, move files or voice to names of their own instead.
 # caddy-entrypoint.sh writes /etc/caddy/generated/*.caddy and FILES_ORIGIN / VOICE_ORIGIN from
 # them before Caddy starts. Certificates come from Let's Encrypt (or a local CA for *.localhost).
+#
+# X-Forwarded-For from clients is ignored (Caddy's default), so the server may trust the one
+# hop Caddy adds (TRUST_PROXY=1). With a proxy in front of Caddy, TRUSTED_PROXIES names it and
+# global.caddy below turns on `trusted_proxies` with strict (right-to-left) parsing.
+
+import /etc/caddy/generated/global.caddy
 
 (app_headers) {
 	header {
