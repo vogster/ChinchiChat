@@ -63,12 +63,35 @@ docker compose -f deploy/docker-compose.yml -f deploy/docker-compose.build.yml u
 
 ## Резервные копии
 
-Достаточно копировать базу и хранилище файлов; Valkey хранит только временное состояние (онлайн-статусы, голос, лимиты). Файлы в копии хранилища зашифрованы: для восстановления нужен ещё `S3_KMS_MASTER_KEY` (храните его не вместе с копиями).
+Копировать нужно базу и хранилище файлов; Valkey хранит только временное состояние (онлайн-статусы, голос, лимиты). Для этого рядом с `docker-compose.yml` лежат два скрипта — `backup.sh` и `restore.sh` (файлы релиза начиная с v0.11; для более ранних версий возьмите их из `deploy/` в репозитории):
 
 ```bash
-docker compose exec -T postgres pg_dump -U chinchi chinchi | gzip > chinchi-$(date +%F).sql.gz
-docker run --rm -v chinchi_rustfs-data:/data -v "$PWD":/backup alpine tar czf /backup/chinchi-files-$(date +%F).tar.gz -C /data .
+curl -fsSLO https://github.com/vogster/ChinchiChat/releases/latest/download/backup.sh
+curl -fsSLO https://github.com/vogster/ChinchiChat/releases/latest/download/restore.sh
+chmod +x backup.sh restore.sh
 ```
+
+**Бэкап:**
+
+```bash
+./backup.sh            # архив в ./backups/chinchi-backup-<дата>.tar
+./backup.sh /mnt/backup
+```
+
+Скрипт на время копирования останавливает сервер (обычно на секунды), чтобы база и файлы совпадали, и складывает в один архив дамп базы, файлы хранилища и версию Chinchi. Удобно запускать по расписанию, например из cron: `0 4 * * * cd /opt/chinchi && ./backup.sh`.
+
+**Восстановление** — на этой же или на чистой машине с тем же `docker-compose.yml` и **тем же `.env`** (главное — тот же `S3_KMS_MASTER_KEY`):
+
+```bash
+docker compose up -d   # на чистой машине: сначала обычная установка
+./restore.sh backups/chinchi-backup-2026-10-16-120000.tar
+```
+
+Скрипт спросит подтверждение (или `--yes`), заменит базу и файлы содержимым архива и запустит Chinchi. Версия установки должна быть не старше версии бэкапа — иначе скрипт откажется и подскажет, какую указать в `CHINCHI_VERSION`. Если установка новее, миграции применятся при старте.
+
+Файлы в архиве зашифрованы ключом хранилища, а `.env` в архив не входит: храните `.env` (и особенно `S3_KMS_MASTER_KEY`) отдельно от бэкапов. Без мастер-ключа файлы из архива не прочитать. Зашифрованные беседы пользователей из бэкапа не расшифровать никому: ключи от них — на устройствах пользователей.
+
+Цикл «бэкап → чистая установка → восстановление» проверен: учётные записи, сообщения и файлы возвращаются полностью.
 
 ## Голос и видео
 

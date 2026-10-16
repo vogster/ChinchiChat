@@ -26,6 +26,8 @@ node scripts/demo-data.mjs [--hold]               # демо-сервер на d
 node scripts/demo-screenshots.mjs <суффикс>       # скриншоты README в docs/screenshots
 ```
 
+Бэкап установки — `deploy/backup.sh` / `deploy/restore.sh` (едут в релиз; файлы хранилища передаются через stdin/stdout контейнера, без монтирования путей хоста — так скрипты работают и в Git Bash).
+
 Релиз: поднять версию по умолчанию (`CHINCHI_VERSION`) в `deploy/docker-compose.yml`, закоммитить, затем `git tag vX.Y.Z && git push origin vX.Y.Z` — workflow `release.yml` публикует образы в GHCR и релиз с файлами установки (и падает, если версия в compose не совпадает с тегом).
 
 ## Структура

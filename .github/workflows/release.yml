@@ -1,5 +1,6 @@
 # A version tag (v0.1.0) publishes the Docker images to GitHub Container Registry and a GitHub
-# release whose assets are all an install needs: docker-compose.yml and env.example.
+# release whose assets are all an install needs: docker-compose.yml, env.example and the
+# backup and restore scripts.
 #
 #   1. Set the version in deploy/docker-compose.yml (the CHINCHI_VERSION default) and commit.
 #   2. git tag v0.1.0 && git push origin v0.1.0
@@ -61,8 +62,10 @@ jobs:
           mkdir -p dist
           cp deploy/docker-compose.yml dist/docker-compose.yml
           cp deploy/.env.example dist/env.example
+          cp deploy/backup.sh deploy/restore.sh dist/
           # Hand-written notes in docs/releases/<tag>.md win over generated ones.
           notes="docs/releases/$GITHUB_REF_NAME.md"
           if [ -f "$notes" ]; then set -- --notes-file "$notes"; else set -- --generate-notes; fi
           gh release create "$GITHUB_REF_NAME" dist/docker-compose.yml dist/env.example \
+            dist/backup.sh dist/restore.sh \
             --title "Chinchi $GITHUB_REF_NAME" "$@"
