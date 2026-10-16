@@ -83,15 +83,15 @@
 mkdir chinchi && cd chinchi
 curl -fsSLO https://github.com/vogster/ChinchiChat/releases/latest/download/docker-compose.yml
 curl -fsSL -o .env https://github.com/vogster/ChinchiChat/releases/latest/download/env.example
-# заполните .env: домен и секреты
+# заполните .env: домен, секреты (openssl rand -hex 32) и ваш email
 docker compose up -d
 ```
 
-Администратором станет учётная запись, зарегистрированная с адресом из `INITIAL_ADMIN_EMAIL` (обязательная переменная).
+Администратором станет учётная запись, зарегистрированная с адресом из `INITIAL_ADMIN_EMAIL` (обязательная переменная). Без почтового сервера (`SMTP_URL`) поставьте `REQUIRE_VERIFIED_EMAIL=off`, иначе никто не подтвердит адрес.
 
 Подробно — в [руководстве по установке](docs/self-hosting.md): требования, порты, обновление, резервные копии, голос за NAT, сборка из исходников.
 
-**Обновление** — поменяйте `CHINCHI_VERSION` в `.env` (или скачайте новый `docker-compose.yml`) и выполните `docker compose pull && docker compose up -d`. Миграции применяются сами. Что нового — в [релизах](https://github.com/vogster/ChinchiChat/releases).
+**Обновление** — сделайте бэкап (`./backup.sh`), поменяйте `CHINCHI_VERSION` в `.env` (или скачайте новый `docker-compose.yml`, если заметки к релизу просят) и выполните `docker compose pull && docker compose up -d`. Миграции применяются сами. Что нового — в [релизах](https://github.com/vogster/ChinchiChat/releases).
 
 ## Разработка
 
