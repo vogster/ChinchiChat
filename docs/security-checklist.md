@@ -67,5 +67,6 @@
 
 ## 9. Зависимости
 
-- [ ] `pnpm audit --prod` без critical/high (или каждое исключение записано с причиной).
-- [ ] Образы собраны из актуальных базовых образов (`docker scout cves` или аналог для `chinchi-server`/`chinchi-web`).
+- [ ] `pnpm audit --prod` без critical/high — проверяется в CI на каждом коммите; исключения записаны с причиной.
+- [ ] Образы релиза прошли скан Trivy в `release.yml` (CRITICAL/HIGH с исправлением блокируют релиз), digest базовых образов в Dockerfile и compose обновлены через Dependabot.
+- [ ] Аттестация происхождения образов проверяется: `gh attestation verify oci://ghcr.io/vogster/chinchi-server:<версия> --owner vogster` (и для `chinchi-web`).

@@ -52,7 +52,8 @@ docker compose exec -T postgres pg_restore -U chinchi -d chinchi --no-owner --ex
   <"$work/database.dump"
 
 echo "Restoring the files"
-docker run --rm -i -v "${project}_rustfs-data:/data" alpine:3 \
+docker run --rm -i -v "${project}_rustfs-data:/data" \
+  alpine:3@sha256:294b683cb724975bec92580e1e685676bd4b50bda910ddb8c51d4cabeaec77e6 \
   sh -c 'find /data -mindepth 1 -delete && tar xzf - -C /data' <"$work/files.tar.gz"
 
 echo "Starting Chinchi"

@@ -12,23 +12,28 @@ concurrency:
 permissions:
   contents: read
 
+# Actions are pinned to commits (the tag in the comment is what they resolve to): a moved or
+# compromised tag cannot change what runs here. Dependabot keeps the pins fresh.
 jobs:
   check:
     name: Lint, typecheck, test, build
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
       # Version comes from "packageManager" in package.json.
-      - uses: pnpm/action-setup@v6
+      - uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6
 
-      - uses: actions/setup-node@v7
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
         with:
           node-version-file: .nvmrc
           cache: pnpm
 
       - run: pnpm install --frozen-lockfile
+
+      # Known vulnerabilities in what ships (not dev tooling) fail the build.
+      - run: pnpm audit --prod --audit-level=high
 
       - run: pnpm format:check
       - run: pnpm lint
@@ -77,9 +82,9 @@ jobs:
           RUSTFS_KMS_LOCAL_MASTER_KEY: chinchi-dev-kms-master-key-0123456789
         ports: ['9000:9000']
     steps:
-      - uses: actions/checkout@v7
-      - uses: pnpm/action-setup@v6
-      - uses: actions/setup-node@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
         with:
           node-version-file: .nvmrc
           cache: pnpm
@@ -93,21 +98,65 @@ jobs:
       # e2e server on the host with webhooks, so it runs on the host network.
       - name: Start LiveKit
         run: |
-          docker run -d --name livekit --network host             --add-host host.docker.internal:127.0.0.1             -e 'LIVEKIT_KEYS=devkey: chinchi-dev-livekit-secret-0123456789'             -v "$PWD/deploy/livekit.dev.yaml:/etc/livekit.yaml:ro"             livekit/livekit-server:v1.13.9 --config /etc/livekit.yaml
+          docker run -d --name livekit --network host \
+            --add-host host.docker.internal:127.0.0.1 \
+            -e 'LIVEKIT_KEYS=devkey: chinchi-dev-livekit-secret-0123456789' \
+            -v "$PWD/deploy/livekit.dev.yaml:/etc/livekit.yaml:ro" \
+            livekit/livekit-server:v1.13.9 --config /etc/livekit.yaml
           timeout 60 sh -c 'until curl -fs http://localhost:7880; do sleep 1; done'
       - run: pnpm e2e
 
-      - uses: actions/upload-artifact@v7
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         if: failure()
         with:
           name: playwright-report
           path: e2e/playwright-report/
           retention-days: 7
 
-  # The production images (deploy/docker-compose.yml) must keep building.
+  # The production images must keep building, and the stack they make must come up from
+  # env.example alone, the way a first install does: secrets generated as the file says, the
+  # domain pointed at localhost (Caddy signs it with its own CA), then probed through Caddy.
   docker:
+    name: Docker images and install smoke test
     runs-on: ubuntu-latest
+    timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: deploy
+    env:
+      COMPOSE_FILE: docker-compose.yml:docker-compose.build.yml
     steps:
-      - uses: actions/checkout@v7
-      - run: docker build --target server -t chinchi-server .
-      - run: docker build --target web -t chinchi-web .
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      - name: Fill .env like a fresh install
+        run: |
+          cp .env.example .env
+          sed -i \
+            -e "s|^CHINCHI_VERSION=.*|CHINCHI_VERSION=local|" \
+            -e "s|^CHINCHI_DOMAIN=.*|CHINCHI_DOMAIN=localhost|" \
+            -e "s|^POSTGRES_PASSWORD=.*|POSTGRES_PASSWORD=$(openssl rand -hex 32)|" \
+            -e "s|^S3_SECRET_KEY=.*|S3_SECRET_KEY=$(openssl rand -hex 32)|" \
+            -e "s|^LIVEKIT_API_SECRET=.*|LIVEKIT_API_SECRET=$(openssl rand -hex 32)|" \
+            -e "s|^S3_KMS_MASTER_KEY=.*|S3_KMS_MASTER_KEY=$(openssl rand -hex 32)|" \
+            -e "s|^INITIAL_ADMIN_EMAIL=.*|INITIAL_ADMIN_EMAIL=admin@example.com|" \
+            .env
+
+      - run: docker compose build
+
+      - name: Start the stack and probe it through Caddy
+        run: |
+          docker compose up -d --wait --wait-timeout 180
+          # Caddy's own CA signs the localhost certificate, so curl needs -k.
+          curl -fsSk https://localhost/health | grep -q '"status":"ok"'
+          curl -fsSk https://localhost/api/v1/instance | grep -q '"registrationMode"'
+          curl -fsSk -o /dev/null -w '%{http_code}\n' https://localhost/ | grep -qx 200
+
+      - name: Logs
+        if: failure()
+        run: |
+          docker compose ps
+          docker compose logs
+
+      - name: Stop
+        if: always()
+        run: docker compose down -v

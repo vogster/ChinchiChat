@@ -5,13 +5,13 @@
 # Multi-arch, as releases do: docker buildx build --platform linux/amd64,linux/arm64 ...
 # deploy/docker-compose.yml builds both.
 
-FROM node:24-slim AS base
+FROM node:24-slim@sha256:a5f4366e834695d5f363b920c104953a535d3a9864d1bdf74566a0ebe01daee5 AS base
 ENV PNPM_HOME=/pnpm PATH=/pnpm:$PATH
 RUN corepack enable
 WORKDIR /repo
 
 # The web app is the same files on every architecture: build it once, natively (no emulation).
-FROM --platform=$BUILDPLATFORM node:24-slim AS web-build
+FROM --platform=$BUILDPLATFORM node:24-slim@sha256:a5f4366e834695d5f363b920c104953a535d3a9864d1bdf74566a0ebe01daee5 AS web-build
 ENV PNPM_HOME=/pnpm PATH=/pnpm:$PATH
 RUN corepack enable
 WORKDIR /repo
@@ -29,7 +29,7 @@ RUN pnpm --filter @chinchi/server deploy --prod --legacy /out/server \
   && cp -r apps/server/dist apps/server/drizzle /out/server/
 
 # The API and realtime gateway. Runs migrations at start.
-FROM node:24-slim AS server
+FROM node:24-slim@sha256:a5f4366e834695d5f363b920c104953a535d3a9864d1bdf74566a0ebe01daee5 AS server
 ENV NODE_ENV=production HOST=0.0.0.0 PORT=3000
 WORKDIR /app
 COPY --from=build --chown=node:node /out/server ./
@@ -40,7 +40,7 @@ HEALTHCHECK --interval=10s --timeout=3s --start-period=20s --retries=5 \
 CMD ["node", "dist/server.mjs"]
 
 # The web app, served by Caddy, which also terminates TLS and proxies the API, files and voice.
-FROM caddy:2.10-alpine AS web
+FROM caddy:2.10-alpine@sha256:4c6e91c6ed0e2fa03efd5b44747b625fec79bc9cd06ac5235a779726618e530d AS web
 COPY --from=web-build /repo/apps/web/dist /srv/web
 COPY deploy/Caddyfile /etc/caddy/Caddyfile
 COPY --chmod=755 deploy/caddy-entrypoint.sh /usr/local/bin/caddy-entrypoint.sh

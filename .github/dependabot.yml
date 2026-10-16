@@ -1,0 +1,43 @@
+# Dependency updates as pull requests, grouped and only after a release has aged: a package
+# taken over or published by mistake is usually pulled within days (the same idea as pnpm's
+# minimumReleaseAge, which still applies when the lockfile is installed).
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    cooldown:
+      default-days: 3
+    groups:
+      # Patch and minor updates land together; majors come one by one for review.
+      minor-and-patch:
+        update-types: [minor, patch]
+    # Exact versions, as the repository pins them (no ^).
+    versioning-strategy: increase
+    ignore:
+      # Pinned by ts-mls's exact peer dependencies: they move together with ts-mls.
+      - dependency-name: '@noble/curves'
+      - dependency-name: '@noble/ciphers'
+      # typescript-eslint does not support TypeScript 7 yet (see AGENTS.md).
+      - dependency-name: typescript
+        update-types: [version-update:semver-major]
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    cooldown:
+      default-days: 3
+
+  - package-ecosystem: docker
+    directories:
+      - /
+      - /deploy
+    schedule:
+      interval: weekly
+      day: monday
+    cooldown:
+      default-days: 3

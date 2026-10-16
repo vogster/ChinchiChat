@@ -37,7 +37,9 @@ docker compose exec -T postgres pg_dump -U chinchi -d chinchi --format=custom >"
 
 echo "Copying the files"
 # Streamed out of a throwaway container: no host path to mount, so it works on any Docker host.
-docker run --rm -v "${project}_rustfs-data:/data:ro" alpine:3 tar czf - -C /data . \
+docker run --rm -v "${project}_rustfs-data:/data:ro" \
+  alpine:3@sha256:294b683cb724975bec92580e1e685676bd4b50bda910ddb8c51d4cabeaec77e6 \
+  tar czf - -C /data . \
   >"$work/files.tar.gz"
 
 docker compose start server >/dev/null

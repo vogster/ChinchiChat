@@ -298,13 +298,13 @@
 
 Итоги полного ревью проекта (16 октября 2026). Критичных и высоких находок нет; здесь то, что мешает установке и доверию к сборкам.
 
-- [ ] Генерация секретов: `openssl rand -hex 32` вместо `-base64` в `deploy/.env.example` и `docs/self-hosting.md` (base64 даёт `/` примерно в половине паролей, и `DATABASE_URL` не проходит валидацию — сервер не стартует); понятная `ConfigError` для пароля со спецсимволами в URL; тест в `env.test.ts`
-- [ ] `TRUST_PROXY: '1'` вместо `true` в `deploy/docker-compose.yml` (ровно один доверенный хоп — Caddy); заготовка `servers { trusted_proxies … trusted_proxies_strict }` в Caddyfile через `TRUSTED_PROXIES`; раздел «Другой прокси спереди» в `docs/self-hosting.md`
-- [ ] `FILES_DOMAIN` — рекомендованный шаг установки, а не опция (сейчас файлы по умолчанию на домене приложения под sandbox-CSP)
-- [ ] CI: `pnpm audit --prod --audit-level=high`, скан образов (Trivy / `docker scout`) в `release.yml`, actions по SHA вместо `@vN`, Renovate или Dependabot с учётом `minimumReleaseAge`
-- [ ] Базовые образы в Dockerfile и compose — по digest; подпись образов релиза (cosign / GitHub attestations)
-- [ ] Обновить `@noble/curves`, `@noble/ciphers`, `undici`, `archiver` (мажор); `engine-strict=true` в `.npmrc`
-- [ ] Smoke-тест установки в CI: `docker compose up` из `deploy/docker-compose.yml` с `.env.example`, `/ready` отвечает
+- [x] Генерация секретов: `openssl rand -hex 32` вместо `-base64` в `deploy/.env.example` и `docs/self-hosting.md` (base64 даёт `/` примерно в половине паролей, и `DATABASE_URL` не проходит валидацию — сервер не стартует); `ConfigError` для `DATABASE_URL`/`REDIS_URL`/`SMTP_URL` объясняет про спецсимволы в пароле, не раскрывая значение; тест в `env.test.ts`
+- [x] `TRUST_PROXY: '1'` вместо `true` в `deploy/docker-compose.yml` (ровно один доверенный хоп — Caddy); `TRUSTED_PROXIES` в `.env` включает `servers { trusted_proxies static … trusted_proxies_strict }` (генерируется `caddy-entrypoint.sh`, Caddyfile проверен `caddy validate` в обоих режимах); раздел «Другой прокси перед Caddy» в `docs/self-hosting.md`
+- [x] `FILES_DOMAIN` — рекомендованный шаг установки в `.env.example` и `self-hosting.md`, а не опция
+- [x] CI: `pnpm audit --prod --audit-level=high` в `check`; в `release.yml` образы собираются и сканируются Trivy (CRITICAL/HIGH с исправлением) до публикации; actions закреплены по SHA с тегом в комментарии; `.github/dependabot.yml` (npm, actions, docker; cooldown 3 дня, группировка minor/patch)
+- [x] Базовые образы в Dockerfile, compose и скриптах бэкапа — по digest; релиз публикует build provenance (`actions/attest-build-provenance`), проверка — `gh attestation verify oci://ghcr.io/vogster/chinchi-server:<версия> --owner vogster`
+- [x] Обновлены `undici` 8.12.1 и `archiver` 8 (ESM, `new ZipArchive`); `engine-strict=true` в `.npmrc` — `@noble/curves` и `@noble/ciphers` не трогаем: ts-mls фиксирует их точными peer-версиями, обновляются вместе с ним (исключены в Dependabot)
+- [x] Smoke-тест установки в CI (`docker` job): образы собираются из исходников, стек поднимается из `.env.example` с сгенерированными секретами на `localhost`, через Caddy проверяются `/health`, `/api/v1/instance` и страница приложения
 - [ ] **Релиз v0.12.1**
 
 ---
