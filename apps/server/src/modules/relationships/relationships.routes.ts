@@ -1,3 +1,4 @@
+import { ok } from '../../http/responses'
 import { addressBucket } from '../../http/address-bucket'
 import {
   friendRequestSchema,
@@ -16,7 +17,6 @@ export interface RelationshipsRoutesOptions {
   readonly relationshipService: RelationshipService
 }
 
-const ok = <T extends z.ZodType>(data: T) => z.object({ success: z.literal(true), data })
 const one = ok(z.object({ relationship: relationshipSchema }))
 const target = z.object({ userId: snowflakeSchema })
 

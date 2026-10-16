@@ -8,6 +8,7 @@ import {
 } from '@chinchi/shared'
 import { z } from 'zod'
 
+import { perUserRateLimit } from '../../http/rate-limit'
 import { requireHuman } from '../auth/auth.plugin'
 
 import type { ApprovalService } from './approval.service'
@@ -23,13 +24,6 @@ const approvalResponse = z.object({
 })
 const params = z.object({ approvalId: snowflakeSchema })
 
-const perUser = (max: number) => ({
-  max,
-  timeWindow: '1 minute',
-  keyGenerator: (request: { auth: { user: { id: string } } | null; ip: string }) =>
-    request.auth ? `approval:${request.auth.user.id}` : `approval:${request.ip}`,
-})
-
 export const approvalRoutes: FastifyPluginAsyncZod<ApprovalRoutesOptions> = async (
   app,
   { approvalService },
@@ -40,7 +34,7 @@ export const approvalRoutes: FastifyPluginAsyncZod<ApprovalRoutesOptions> = asyn
     path,
     {
       schema: { body: createApprovalRequestSchema, response: { 200: approvalResponse } },
-      config: { rateLimit: perUser(10) },
+      config: { rateLimit: perUserRateLimit('approval', 10) },
     },
     async (request) => ({
       success: true as const,
@@ -68,7 +62,7 @@ export const approvalRoutes: FastifyPluginAsyncZod<ApprovalRoutesOptions> = asyn
     `${path}/:approvalId/accept`,
     {
       schema: { params, body: acceptApprovalRequestSchema, response: { 200: approvalResponse } },
-      config: { rateLimit: perUser(30) },
+      config: { rateLimit: perUserRateLimit('approval', 30) },
     },
     async (request) => ({
       success: true as const,
@@ -86,7 +80,7 @@ export const approvalRoutes: FastifyPluginAsyncZod<ApprovalRoutesOptions> = asyn
     `${path}/:approvalId/reveal`,
     {
       schema: { params, body: revealApprovalRequestSchema, response: { 200: approvalResponse } },
-      config: { rateLimit: perUser(30) },
+      config: { rateLimit: perUserRateLimit('approval', 30) },
     },
     async (request) => ({
       success: true as const,
@@ -104,7 +98,7 @@ export const approvalRoutes: FastifyPluginAsyncZod<ApprovalRoutesOptions> = asyn
     `${path}/:approvalId/complete`,
     {
       schema: { params, body: completeApprovalRequestSchema, response: { 200: approvalResponse } },
-      config: { rateLimit: perUser(30) },
+      config: { rateLimit: perUserRateLimit('approval', 30) },
     },
     async (request) => ({
       success: true as const,

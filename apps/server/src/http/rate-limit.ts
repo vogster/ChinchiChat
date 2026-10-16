@@ -52,3 +52,17 @@ export const rateLimitPlugin = fp<RateLimitOptions>(
   },
   { name: 'chinchi-rate-limit' },
 )
+
+/**
+ * A limit per signed-in user (per address before sign-in) under its own `scope`, so one
+ * person's spree in a feature never eats the budget of everyone behind the same proxy.
+ */
+export const perUserRateLimit = (scope: string, max: number, timeWindow = MINUTE_MS) =>
+  Object.freeze({
+    max,
+    timeWindow,
+    // After the auth hook has resolved the session.
+    hook: 'preHandler' as const,
+    keyGenerator: (request: { auth: { user: { id: string } } | null; ip: string }) =>
+      request.auth ? `${scope}:${request.auth.user.id}` : `${scope}:${addressBucket(request.ip)}`,
+  })

@@ -1,3 +1,4 @@
+import { ok } from '../../http/responses'
 import { addressBucket } from '../../http/address-bucket'
 import {
   createPrivateChannelRequestSchema,
@@ -18,7 +19,6 @@ export interface DmsRoutesOptions {
   readonly groupDmService: GroupDmService
 }
 
-const ok = <T extends z.ZodType>(data: T) => z.object({ success: z.literal(true), data })
 const one = ok(z.object({ channel: privateChannelSchema }))
 const recipient = z.object({ channelId: snowflakeSchema, userId: snowflakeSchema })
 

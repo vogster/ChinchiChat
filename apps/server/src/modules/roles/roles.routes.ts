@@ -7,6 +7,7 @@ import {
 } from '@chinchi/shared'
 import { z } from 'zod'
 
+import { ok } from '../../http/responses'
 import { requireAuth } from '../auth/auth.plugin'
 
 import type { RoleService } from './role.service'
@@ -16,7 +17,6 @@ export interface RolesRoutesOptions {
   readonly roleService: RoleService
 }
 
-const ok = <T extends z.ZodType>(data: T) => z.object({ success: z.literal(true), data })
 const roleResponse = ok(z.object({ role: roleSchema }))
 const rolesResponse = ok(z.object({ roles: z.array(roleSchema) }))
 const guildParams = z.object({ guildId: snowflakeSchema })

@@ -1,3 +1,4 @@
+import { ok } from '../../http/responses'
 import { addressBucket } from '../../http/address-bucket'
 import {
   joinVoiceRequestSchema,
@@ -17,8 +18,6 @@ import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod'
 export interface VoiceRoutesOptions {
   readonly voiceService: VoiceService
 }
-
-const ok = <T extends z.ZodType>(data: T) => z.object({ success: z.literal(true), data })
 
 /** Joining is cheap for the server but each join reaches LiveKit; a few per minute will do. */
 const JOIN_RATE_LIMIT = Object.freeze({

@@ -5,6 +5,7 @@ import {
 } from '@chinchi/shared'
 import { z } from 'zod'
 
+import { ok } from '../../http/responses'
 import { requireHuman } from '../auth/auth.plugin'
 
 import type { NotificationService } from './notification.service'
@@ -13,8 +14,6 @@ import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod'
 export interface NotificationsRoutesOptions {
   readonly notificationService: NotificationService
 }
-
-const ok = <T extends z.ZodType>(data: T) => z.object({ success: z.literal(true), data })
 
 export const notificationsRoutes: FastifyPluginAsyncZod<NotificationsRoutesOptions> = async (
   app,

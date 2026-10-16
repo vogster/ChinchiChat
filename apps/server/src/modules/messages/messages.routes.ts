@@ -1,3 +1,4 @@
+import { ok } from '../../http/responses'
 import { addressBucket } from '../../http/address-bucket'
 import {
   createMessageRequestSchema,
@@ -21,7 +22,6 @@ export interface MessagesRoutesOptions {
   readonly mentionCounter: MentionCounter
 }
 
-const ok = <T extends z.ZodType>(data: T) => z.object({ success: z.literal(true), data })
 const messageResponse = ok(z.object({ message: messageSchema }))
 const channelParams = z.object({ channelId: snowflakeSchema })
 const messageParams = z.object({ channelId: snowflakeSchema, messageId: snowflakeSchema })

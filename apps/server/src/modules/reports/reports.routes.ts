@@ -1,3 +1,4 @@
+import { ok } from '../../http/responses'
 import { addressBucket } from '../../http/address-bucket'
 import {
   createReportRequestSchema,
@@ -18,7 +19,6 @@ export interface ReportsRoutesOptions {
   readonly reportService: ReportService
 }
 
-const ok = <T extends z.ZodType>(data: T) => z.object({ success: z.literal(true), data })
 const reportsResponse = ok(z.object({ reports: z.array(reportSchema) }))
 const reportResponse = ok(z.object({ report: reportSchema }))
 

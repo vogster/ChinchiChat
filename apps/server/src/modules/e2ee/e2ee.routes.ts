@@ -13,6 +13,8 @@ import {
 } from '@chinchi/shared'
 import { z } from 'zod'
 
+import { perUserRateLimit } from '../../http/rate-limit'
+import { ok } from '../../http/responses'
 import { requireHuman } from '../auth/auth.plugin'
 
 import type { E2eeService } from './e2ee.service'
@@ -22,17 +24,7 @@ export interface E2eeRoutesOptions {
   readonly e2eeService: E2eeService
 }
 
-const ok = <T extends z.ZodType>(data: T) => z.object({ success: z.literal(true), data })
 const devicesResponse = ok(z.object({ devices: z.array(deviceSchema) }))
-
-const perUser = (max: number) =>
-  Object.freeze({
-    max,
-    timeWindow: 60_000,
-    hook: 'preHandler' as const,
-    keyGenerator: (request: { auth: { user: { id: string } } | null; ip: string }) =>
-      request.auth ? `e2ee:${request.auth.user.id}` : `e2ee:${request.ip}`,
-  })
 
 export const e2eeRoutes: FastifyPluginAsyncZod<E2eeRoutesOptions> = async (
   app,
@@ -73,7 +65,7 @@ export const e2eeRoutes: FastifyPluginAsyncZod<E2eeRoutesOptions> = async (
         body: registerDeviceRequestSchema,
         response: { 200: ok(z.object({ device: deviceSchema })) },
       },
-      config: { rateLimit: perUser(10) },
+      config: { rateLimit: perUserRateLimit('e2ee', 10) },
     },
     async (request) => ({
       success: true as const,
@@ -120,7 +112,7 @@ export const e2eeRoutes: FastifyPluginAsyncZod<E2eeRoutesOptions> = async (
         body: setUserKeyRequestSchema,
         response: { 200: ok(z.object({ userKey: userKeySchema })) },
       },
-      config: { rateLimit: perUser(10) },
+      config: { rateLimit: perUserRateLimit('e2ee', 10) },
     },
     async (request) => ({
       success: true as const,
@@ -134,7 +126,7 @@ export const e2eeRoutes: FastifyPluginAsyncZod<E2eeRoutesOptions> = async (
     '/users/@me/devices/:deviceId/signature',
     {
       schema: { params: z.object({ deviceId: snowflakeSchema }), body: signDeviceRequestSchema },
-      config: { rateLimit: perUser(30) },
+      config: { rateLimit: perUserRateLimit('e2ee', 30) },
     },
     async (request, reply) => {
       await e2eeService.signDevice(
@@ -162,7 +154,7 @@ export const e2eeRoutes: FastifyPluginAsyncZod<E2eeRoutesOptions> = async (
         params: z.object({ deviceId: snowflakeSchema }),
         body: uploadKeyPackagesRequestSchema,
       },
-      config: { rateLimit: perUser(30) },
+      config: { rateLimit: perUserRateLimit('e2ee', 30) },
     },
     async (request, reply) => {
       await e2eeService.uploadKeyPackages(
@@ -201,7 +193,7 @@ export const e2eeRoutes: FastifyPluginAsyncZod<E2eeRoutesOptions> = async (
         response: { 200: ok(z.object({ keyPackages: z.array(claimedKeyPackageSchema) })) },
       },
       // Each claim uses up a package of every device: no draining someone's supply.
-      config: { rateLimit: perUser(30) },
+      config: { rateLimit: perUserRateLimit('e2ee', 30) },
     },
     async (request) => ({
       success: true as const,
@@ -218,7 +210,7 @@ export const e2eeRoutes: FastifyPluginAsyncZod<E2eeRoutesOptions> = async (
     '/channels/:channelId/e2ee/commits',
     {
       schema: { params: z.object({ channelId: snowflakeSchema }), body: postCommitRequestSchema },
-      config: { rateLimit: perUser(60) },
+      config: { rateLimit: perUserRateLimit('e2ee', 60) },
     },
     async (request, reply) => {
       await e2eeService.postCommit(

@@ -8,6 +8,7 @@ import {
 } from '@chinchi/shared'
 import { z } from 'zod'
 
+import { ok } from '../../http/responses'
 import { requireAuth } from '../auth/auth.plugin'
 
 import type { ChannelService } from './channel.service'
@@ -17,7 +18,6 @@ export interface ChannelsRoutesOptions {
   readonly channelService: ChannelService
 }
 
-const ok = <T extends z.ZodType>(data: T) => z.object({ success: z.literal(true), data })
 const channelResponse = ok(z.object({ channel: channelSchema }))
 const channelParams = z.object({ channelId: snowflakeSchema })
 const guildParams = z.object({ guildId: snowflakeSchema })

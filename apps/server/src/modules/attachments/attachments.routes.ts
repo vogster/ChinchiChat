@@ -5,6 +5,7 @@ import {
 } from '@chinchi/shared'
 import { z } from 'zod'
 
+import { ok } from '../../http/responses'
 import { requireAuth } from '../auth/auth.plugin'
 import { SEND_RATE_LIMIT } from '../messages/messages.routes'
 
@@ -19,8 +20,6 @@ export interface AttachmentsRoutesOptions {
 const UPLOAD_RATE_LIMIT = Object.freeze({ ...SEND_RATE_LIMIT, max: 30, timeWindow: 60_000 })
 
 const fileParams = z.object({ attachmentId: snowflakeSchema, filename: z.string().max(1024) })
-
-const ok = <T extends z.ZodType>(data: T) => z.object({ success: z.literal(true), data })
 
 export const attachmentsRoutes: FastifyPluginAsyncZod<AttachmentsRoutesOptions> = async (
   app,

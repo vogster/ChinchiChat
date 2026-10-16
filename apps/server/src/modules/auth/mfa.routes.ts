@@ -7,6 +7,7 @@ import {
 } from '@chinchi/shared'
 import { z } from 'zod'
 
+import { ok } from '../../http/responses'
 import { LOGIN_RATE_LIMIT } from '../../http/rate-limit'
 import { requireHuman } from './auth.plugin'
 
@@ -17,7 +18,6 @@ export interface MfaRoutesOptions {
   readonly mfaService: MfaService
 }
 
-const ok = <T extends z.ZodType>(data: T) => z.object({ success: z.literal(true), data })
 // Every endpoint here checks a password or a code: same budget as login.
 const config = { rateLimit: LOGIN_RATE_LIMIT }
 

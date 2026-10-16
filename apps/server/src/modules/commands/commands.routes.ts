@@ -1,3 +1,4 @@
+import { ok } from '../../http/responses'
 import { addressBucket } from '../../http/address-bucket'
 import {
   commandSchema,
@@ -19,7 +20,6 @@ export interface CommandsRoutesOptions {
   readonly commandService: CommandService
 }
 
-const ok = <T extends z.ZodType>(data: T) => z.object({ success: z.literal(true), data })
 const commandList = ok(z.object({ commands: z.array(commandSchema) }))
 
 /** An interaction is answered once: a handful of tries per interaction is plenty. */

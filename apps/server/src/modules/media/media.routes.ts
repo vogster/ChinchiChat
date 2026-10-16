@@ -1,3 +1,4 @@
+import { ok } from '../../http/responses'
 import { addressBucket } from '../../http/address-bucket'
 import {
   PROFILE_IMAGE_MAX_BYTES,
@@ -20,7 +21,6 @@ export interface MediaRoutesOptions {
   readonly mediaService: MediaService
 }
 
-const ok = <T extends z.ZodType>(data: T) => z.object({ success: z.literal(true), data })
 const userResponse = ok(z.object({ user: currentUserSchema }))
 const guildResponse = ok(z.object({ guild: guildSchema }))
 const guildParams = z.object({ guildId: snowflakeSchema })

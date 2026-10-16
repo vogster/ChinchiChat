@@ -1,3 +1,4 @@
+import { ok } from '../../http/responses'
 import { addressBucket } from '../../http/address-bucket'
 import {
   createWebhookRequestSchema,
@@ -17,7 +18,6 @@ export interface WebhooksRoutesOptions {
   readonly webhookService: WebhookService
 }
 
-const ok = <T extends z.ZodType>(data: T) => z.object({ success: z.literal(true), data })
 const channelParams = z.object({ channelId: snowflakeSchema })
 
 /**

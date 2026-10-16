@@ -1,3 +1,4 @@
+import { ok } from '../../http/responses'
 import { addressBucket } from '../../http/address-bucket'
 import {
   followChannelRequestSchema,
@@ -15,8 +16,6 @@ import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod'
 export interface AnnouncementsRoutesOptions {
   readonly announcementService: AnnouncementService
 }
-
-const ok = <T extends z.ZodType>(data: T) => z.object({ success: z.literal(true), data })
 
 /** Publishing copies a message into every follower: rarely needed in bulk. */
 const PUBLISH_RATE_LIMIT = Object.freeze({

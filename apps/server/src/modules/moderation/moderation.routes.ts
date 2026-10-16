@@ -1,3 +1,4 @@
+import { ok } from '../../http/responses'
 import { addressBucket } from '../../http/address-bucket'
 import {
   auditLogEntrySchema,
@@ -21,7 +22,6 @@ export interface ModerationRoutesOptions {
   readonly auditLogService: AuditLogService
 }
 
-const ok = <T extends z.ZodType>(data: T) => z.object({ success: z.literal(true), data })
 const guildParams = z.object({ guildId: snowflakeSchema })
 const memberParams = z.object({ guildId: snowflakeSchema, userId: snowflakeSchema })
 

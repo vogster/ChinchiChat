@@ -11,6 +11,7 @@ import {
 } from '@chinchi/shared'
 import { z } from 'zod'
 
+import { ok } from '../../http/responses'
 import { forbidden } from '../../http/http-error'
 import { requireAuth } from '../auth/auth.plugin'
 
@@ -24,8 +25,6 @@ export interface AdminRoutesOptions {
   readonly adminService: AdminService
   readonly accountDeletion?: AccountDeletion
 }
-
-const ok = <T extends z.ZodType>(data: T) => z.object({ success: z.literal(true), data })
 
 /** The signed-in user, if they run this instance. */
 export const requireAdmin = (request: FastifyRequest): AuthContext => {

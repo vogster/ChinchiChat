@@ -7,6 +7,8 @@ import {
 } from '@chinchi/shared'
 import { z } from 'zod'
 
+import { perUserRateLimit } from '../../http/rate-limit'
+import { ok } from '../../http/responses'
 import { requireHuman } from '../auth/auth.plugin'
 
 import type { BackupService } from './backup.service'
@@ -15,15 +17,6 @@ import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod'
 export interface BackupRoutesOptions {
   readonly backupService: BackupService
 }
-
-const ok = <T extends z.ZodType>(data: T) => z.object({ success: z.literal(true), data })
-
-const perUser = (max: number) => ({
-  max,
-  timeWindow: '1 minute',
-  keyGenerator: (request: { auth: { user: { id: string } } | null; ip: string }) =>
-    request.auth ? `backup:${request.auth.user.id}` : `backup:${request.ip}`,
-})
 
 export const backupRoutes: FastifyPluginAsyncZod<BackupRoutesOptions> = async (
   app,
@@ -45,7 +38,7 @@ export const backupRoutes: FastifyPluginAsyncZod<BackupRoutesOptions> = async (
         body: createKeyBackupRequestSchema,
         response: { 200: ok(z.object({ backup: keyBackupSchema })) },
       },
-      config: { rateLimit: perUser(10) },
+      config: { rateLimit: perUserRateLimit('backup', 10) },
     },
     async (request) => ({
       success: true as const,
@@ -55,7 +48,10 @@ export const backupRoutes: FastifyPluginAsyncZod<BackupRoutesOptions> = async (
 
   app.post(
     '/users/@me/e2ee/backup/entries',
-    { schema: { body: uploadBackupEntriesRequestSchema }, config: { rateLimit: perUser(120) } },
+    {
+      schema: { body: uploadBackupEntriesRequestSchema },
+      config: { rateLimit: perUserRateLimit('backup', 120) },
+    },
     async (request, reply) => {
       await backupService.putEntries(requireHuman(request).user.id, request.body)
       return reply.status(204).send()

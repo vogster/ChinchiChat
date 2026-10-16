@@ -1,3 +1,4 @@
+import { ok } from '../../http/responses'
 import { addressBucket } from '../../http/address-bucket'
 import {
   addBotRequestSchema,
@@ -17,7 +18,6 @@ export interface BotsRoutesOptions {
   readonly botService: BotService
 }
 
-const ok = <T extends z.ZodType>(data: T) => z.object({ success: z.literal(true), data })
 const botParams = z.object({ botId: snowflakeSchema })
 
 /** Each creation hashes a throwaway password and mints a token: a few a minute is plenty. */

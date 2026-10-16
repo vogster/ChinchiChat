@@ -9,6 +9,7 @@ import {
 } from '@chinchi/shared'
 import { z } from 'zod'
 
+import { ok } from '../../http/responses'
 import { requireAuth, requireVerifiedHuman } from '../auth/auth.plugin'
 import { toGuild } from './guild.mapper'
 
@@ -20,7 +21,6 @@ export interface GuildsRoutesOptions {
   readonly guildService: GuildService
 }
 
-const ok = <T extends z.ZodType>(data: T) => z.object({ success: z.literal(true), data })
 const guildParams = z.object({ guildId: snowflakeSchema })
 const guildResponse = ok(z.object({ guild: guildDetailSchema }))
 

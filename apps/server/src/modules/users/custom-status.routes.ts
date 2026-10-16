@@ -5,6 +5,7 @@ import {
 } from '@chinchi/shared'
 import { z } from 'zod'
 
+import { ok } from '../../http/responses'
 import { badRequest } from '../../http/http-error'
 import { requireHuman } from '../auth/auth.plugin'
 
@@ -16,7 +17,6 @@ export interface CustomStatusRoutesOptions {
   readonly now?: () => number
 }
 
-const ok = <T extends z.ZodType>(data: T) => z.object({ success: z.literal(true), data })
 const MAX_MS = CUSTOM_STATUS_MAX_DAYS * 86_400_000
 
 /** A line under my name ("🏖 On holiday"); it lives with the presence, in Valkey. */

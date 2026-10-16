@@ -1,6 +1,7 @@
 import { createInviteRequestSchema, inviteSchema, snowflakeSchema } from '@chinchi/shared'
 import { z } from 'zod'
 
+import { ok } from '../../http/responses'
 import { requireAuth, requireVerifiedHuman } from '../auth/auth.plugin'
 import { profileImageUrl } from '../media/media-paths'
 import { toPublicUser } from '../users/user.mapper'
@@ -16,7 +17,6 @@ export interface InvitesRoutesOptions {
 }
 
 const HOUR_MS = 60 * 60 * 1000
-const ok = <T extends z.ZodType>(data: T) => z.object({ success: z.literal(true), data })
 const inviteResponse = ok(z.object({ invite: inviteSchema }))
 const codeParams = z.object({ code: z.string().regex(/^[A-Za-z0-9]{1,16}$/) })
 
