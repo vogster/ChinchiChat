@@ -901,6 +901,13 @@ export const createApiClient = (options: HttpOptions) => {
           path: `/guilds/${id(guildId)}/members/${id(userId)}/voice`,
           body,
         }),
+      /** Sends someone in voice to another voice channel of the server. */
+      move: (guildId: Snowflake, userId: Snowflake, channelId: Snowflake) =>
+        request({
+          method: 'POST',
+          path: `/guilds/${id(guildId)}/members/${id(userId)}/voice/move`,
+          body: { channelId },
+        }),
     },
     dms: {
       list: () =>

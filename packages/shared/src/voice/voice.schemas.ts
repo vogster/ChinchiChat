@@ -46,8 +46,19 @@ export const memberVoiceRequestSchema = z
   })
   .refine(notEmpty, 'Nothing to update')
 
+/** A moderator sends someone to another voice channel. */
+export const moveVoiceRequestSchema = z.strictObject({ channelId: snowflakeSchema })
+
+/** To the moved user's clients: switch to this channel. */
+export const voiceMoveEventSchema = z.object({
+  guildId: snowflakeSchema,
+  channelId: snowflakeSchema,
+})
+
 export type VoiceState = z.infer<typeof voiceStateSchema>
 export type VoiceConnection = z.infer<typeof voiceConnectionSchema>
 export type JoinVoiceRequest = z.input<typeof joinVoiceRequestSchema>
 export type UpdateVoiceStateRequest = z.infer<typeof updateVoiceStateRequestSchema>
 export type MemberVoiceRequest = z.infer<typeof memberVoiceRequestSchema>
+export type MoveVoiceRequest = z.infer<typeof moveVoiceRequestSchema>
+export type VoiceMoveEvent = z.infer<typeof voiceMoveEventSchema>

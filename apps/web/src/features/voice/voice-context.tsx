@@ -3,6 +3,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useRef, use
 
 import { useApi } from '../../lib/api-context'
 import { CodedError } from '../../lib/errors'
+import { useGateway } from '../realtime/gateway-context'
 import { useCallEncryption, useCallKeyRotation } from './call-encryption'
 import { declineCall } from './queries'
 import { getVoicePreferences, subscribeVoicePreferences } from './voice-preferences'
@@ -10,7 +11,7 @@ import { createLiveKitRoom } from './voice-room'
 
 import type { CallKey } from '../e2ee/client'
 import type { VideoTile, VoiceRoom, VoiceRoomFactory } from './voice-room'
-import type { Snowflake } from '@chinchi/shared'
+import type { Snowflake, VoiceMoveEvent } from '@chinchi/shared'
 import type { ReactNode } from 'react'
 
 export interface VoiceSession {
@@ -228,6 +229,19 @@ export const VoiceProvider = ({ children }: { children: ReactNode }) => {
         void room.current?.setPreferences(getVoicePreferences()).catch(() => undefined)
       }),
     [],
+  )
+
+  // A moderator moved us: only the tab that is in voice on that server follows.
+  const gateway = useGateway()
+  useEffect(
+    () =>
+      gateway.subscribe((type, data) => {
+        if (type !== 'VOICE_MOVE') return
+        const { guildId, channelId } = data as VoiceMoveEvent
+        if (latest.current.status === 'idle' || latest.current.guildId !== guildId) return
+        void join(guildId, channelId)
+      }),
+    [gateway, join],
   )
 
   // Signing out (the provider unmounts) ends the call.

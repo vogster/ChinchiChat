@@ -6,6 +6,7 @@ import { HttpError, badRequest, forbidden } from '../../http/http-error'
 import { isGuildChannel } from '../channels/channel.repository'
 import { outranks } from '../guilds/outranks'
 import { channelOfRoom, issueVoiceToken, voiceRoom } from './livekit'
+import { createVoiceMove } from './voice-move'
 
 import type { VoiceConfig } from '../../config/env'
 import type { EventBus } from '../../events/event-bus'
@@ -347,6 +348,9 @@ export const createVoiceService = ({
       }
       if (disconnect && here) await voice.rooms.removeParticipant(voiceRoom(here), targetId)
     },
+
+    /** Sends someone to another voice channel of the server. */
+    move: createVoiceMove({ store: () => requireVoice().store, channelRows, access, events }),
 
     revalidate,
 

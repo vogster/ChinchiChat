@@ -16,7 +16,7 @@ import { encryptedReactionEventSchema, reactionEventSchema } from '../messages/r
 import { relationshipRemoveSchema, relationshipSchema } from '../users/relationship.schemas'
 import { roleSchema } from '../permissions/role.schemas'
 import { snowflakeSchema } from '../snowflake/snowflake'
-import { voiceStateSchema } from '../voice/voice.schemas'
+import { voiceMoveEventSchema, voiceStateSchema } from '../voice/voice.schemas'
 import { currentUserSchema, publicUserSchema } from '../users/user.schemas'
 import { notificationSettingSchema } from '../users/notification.schemas'
 import { customStatusSchema } from '../users/custom-status.schemas'
@@ -177,6 +177,8 @@ export const dispatchSchemas = {
   /** Someone's public profile changed (name or avatar). */
   USER_UPDATE: publicUserSchema,
   VOICE_STATE_UPDATE: voiceStateSchema,
+  /** A moderator moved this user to another voice channel. */
+  VOICE_MOVE: voiceMoveEventSchema,
   /** Another device of the same user read up to this message. */
   CHANNEL_ACK: readStateSchema.extend({ mentionCount: z.number().int().nonnegative() }),
   /** A commit or Welcome in an encrypted conversation (Welcomes reach only their device's user). */

@@ -107,6 +107,7 @@ describe('dispatchSchemas', () => {
         'RESUMED',
         'TYPING_START',
         'USER_UPDATE',
+        'VOICE_MOVE',
         'VOICE_STATE_UPDATE',
       ].sort(),
     )

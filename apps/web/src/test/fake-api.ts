@@ -717,6 +717,7 @@ export const createFakeApi = ({ user = null, registrationMode = 'open' }: FakeAp
       join: vi.fn(async () => ({ connection: { url: 'ws://livekit.test', token: 'voice-token' } })),
       updateState: vi.fn(async () => undefined),
       moderate: vi.fn(async () => undefined),
+      move: vi.fn(async () => undefined),
     },
     dms: {
       list: vi.fn(async () => ({ channels: [testDm, testGroupDm] })),

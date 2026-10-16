@@ -9,6 +9,21 @@ import type { VoiceState } from '@chinchi/shared'
 const GENERAL_URL = `/channels/${testGuild.id}/503`
 const VOICE_ID = '505'
 
+const SECOND_VOICE_ID = '599'
+
+/** The test server with one more voice channel. */
+const withSecondVoice = () => {
+  const voice = testGuild.channels.find((channel) => channel.id === VOICE_ID)
+  if (!voice) throw new Error('The test server has no voice channel')
+  return {
+    ...testGuild,
+    channels: [
+      ...testGuild.channels,
+      { ...voice, id: SECOND_VOICE_ID, name: 'Тихий', position: 1 },
+    ],
+  }
+}
+
 const withVoice = () => {
   const api = createFakeApi({ user: testUser })
   api.instance.get.mockResolvedValue({
@@ -230,5 +245,50 @@ describe('voice moderation', () => {
 
     await screen.findByRole('listitem', { name: 'Боб' })
     expect(screen.queryByRole('button', { name: 'Действия — Боб' })).not.toBeInTheDocument()
+  })
+
+  it('moves people to another voice channel', async () => {
+    const api = withVoice()
+    api.guilds.get.mockResolvedValue({ guild: withSecondVoice() })
+    const { user, gateway } = renderApp(GENERAL_URL, { api })
+    await screen.findByRole('button', { name: 'Голосовой канал Общий' })
+    gateway.emit('VOICE_STATE_UPDATE', state('200'))
+
+    await user.click(await screen.findByRole('button', { name: 'Действия — Боб' }))
+    expect(screen.queryByRole('menuitem', { name: 'Переместить в «Общий»' })).toBeNull()
+    await user.click(await screen.findByRole('menuitem', { name: 'Переместить в «Тихий»' }))
+
+    expect(api.voice.move).toHaveBeenCalledWith(testGuild.id, '200', SECOND_VOICE_ID)
+  })
+})
+
+describe('being moved', () => {
+  it('switches to the channel a moderator moved you to', async () => {
+    const api = withVoice()
+    api.guilds.get.mockResolvedValue({ guild: withSecondVoice() })
+    const { user, gateway } = renderApp(GENERAL_URL, { api })
+    await joinFromSidebar(user)
+    expect(await panel()).toHaveTextContent('Голос подключён')
+
+    gateway.emit('VOICE_MOVE', { guildId: testGuild.id, channelId: SECOND_VOICE_ID })
+
+    await waitFor(() =>
+      expect(api.voice.join).toHaveBeenLastCalledWith(SECOND_VOICE_ID, {
+        selfMute: false,
+        selfDeaf: false,
+      }),
+    )
+    await waitFor(async () => expect(await panel()).toHaveTextContent('Тихий'))
+  })
+
+  it('does not pull you into voice when you were not in it here', async () => {
+    const api = withVoice()
+    const { gateway } = renderApp(GENERAL_URL, { api })
+    await screen.findByRole('button', { name: 'Голосовой канал Общий' })
+
+    gateway.emit('VOICE_MOVE', { guildId: testGuild.id, channelId: VOICE_ID })
+
+    await new Promise((resolve) => setTimeout(resolve, 20))
+    expect(api.voice.join).not.toHaveBeenCalled()
   })
 })

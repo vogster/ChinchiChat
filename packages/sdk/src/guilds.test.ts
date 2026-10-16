@@ -592,6 +592,13 @@ const cases: Case[] = [
     '/guilds/1/members/5/voice',
     null,
   ],
+  [
+    'voice.move',
+    (api) => api.voice.move('1', '5', '7'),
+    'POST',
+    '/guilds/1/members/5/voice/move',
+    null,
+  ],
   ['dms.list', (api) => api.dms.list(), 'GET', '/users/@me/channels', 'privateChannels'],
   ['dms.open', (api) => api.dms.open(['5']), 'POST', '/users/@me/channels', 'privateChannel'],
   [

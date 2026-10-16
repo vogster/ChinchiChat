@@ -1,9 +1,10 @@
-import { useMutation } from '@tanstack/react-query'
-import { HeadphoneOff, MicOff, MoreHorizontal, PhoneOff } from 'lucide-react'
+import { useMutation, useQuery } from '@tanstack/react-query'
+import { ArrowRightLeft, HeadphoneOff, MicOff, MoreHorizontal, PhoneOff } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
-import { Menu, MenuContent, MenuItem, MenuTrigger } from '../../components/ui/menu'
+import { Menu, MenuContent, MenuItem, MenuSeparator, MenuTrigger } from '../../components/ui/menu'
 import { useApi } from '../../lib/api-context'
+import { guildQueryOptions } from '../guilds/queries'
 
 import type { MemberVoiceRequest, VoiceState } from '@chinchi/shared'
 
@@ -13,7 +14,7 @@ export interface VoiceModerationRights {
   readonly move: boolean
 }
 
-/** Server mute, server deafen and disconnect for one person, as far as the viewer may. */
+/** Server mute, deafen, move and disconnect for one person, as far as the viewer may. */
 export const VoiceModerationMenu = ({
   state,
   name,
@@ -29,6 +30,16 @@ export const VoiceModerationMenu = ({
     mutationFn: (body: MemberVoiceRequest) =>
       api.voice.moderate(state.guildId ?? '', state.userId, body),
   })
+  const move = useMutation({
+    mutationFn: (channelId: string) => api.voice.move(state.guildId ?? '', state.userId, channelId),
+  })
+  const { data: guild } = useQuery({
+    ...guildQueryOptions(api, state.guildId ?? ''),
+    enabled: rights.move && state.guildId !== null,
+  })
+  const elsewhere = (guild?.channels ?? []).filter(
+    (channel) => channel.type === 'voice' && channel.id !== state.channelId,
+  )
   if (!state.guildId || (!rights.mute && !rights.deafen && !rights.move)) return null
 
   return (
@@ -55,6 +66,21 @@ export const VoiceModerationMenu = ({
           >
             {state.serverDeaf ? t('voice.serverUndeafen') : t('voice.serverDeafen')}
           </MenuItem>
+        ) : null}
+        {rights.move && elsewhere.length > 0 ? (
+          <>
+            <MenuSeparator />
+            {elsewhere.map((channel) => (
+              <MenuItem
+                key={channel.id}
+                icon={<ArrowRightLeft aria-hidden className="size-4" />}
+                onSelect={() => move.mutate(channel.id)}
+              >
+                {t('voice.moveTo', { channel: channel.name })}
+              </MenuItem>
+            ))}
+            <MenuSeparator />
+          </>
         ) : null}
         {rights.move ? (
           <MenuItem

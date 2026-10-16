@@ -2,6 +2,7 @@ import { addressBucket } from '../../http/address-bucket'
 import {
   joinVoiceRequestSchema,
   memberVoiceRequestSchema,
+  moveVoiceRequestSchema,
   snowflakeSchema,
   updateVoiceStateRequestSchema,
   voiceConnectionSchema,
@@ -73,6 +74,23 @@ export const voiceRoutes: FastifyPluginAsyncZod<VoiceRoutesOptions> = async (
     async (request, reply) => {
       const { guildId, userId } = request.params
       await voiceService.moderate(requireAuth(request).user.id, guildId, userId, request.body)
+      return reply.status(204).send()
+    },
+  )
+
+  app.post(
+    '/guilds/:guildId/members/:userId/voice/move',
+    {
+      schema: {
+        params: z.object({ guildId: snowflakeSchema, userId: snowflakeSchema }),
+        body: moveVoiceRequestSchema,
+      },
+      config: { rateLimit: JOIN_RATE_LIMIT },
+    },
+    async (request, reply) => {
+      const { guildId, userId } = request.params
+      const actorId = requireAuth(request).user.id
+      await voiceService.move(actorId, guildId, userId, request.body.channelId)
       return reply.status(204).send()
     },
   )

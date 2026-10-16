@@ -225,7 +225,8 @@
     "INVALID_STATUS_END": "A status can be set for a month at most.",
     "RULES_NOT_ACCEPTED": "Accept the server rules first.",
     "E2EE_CALL_NOT_READY": "You can't call yet: this device hasn't been let into the conversation. Open it on another of your devices or wait for the other person.",
-    "E2EE_CALLS_UNSUPPORTED": "This browser can't encrypt calls. Open the conversation in a recent Chrome, Edge, Firefox or Safari."
+    "E2EE_CALLS_UNSUPPORTED": "This browser can't encrypt calls. Open the conversation in a recent Chrome, Edge, Firefox or Safari.",
+    "CANNOT_CONNECT": "This member can’t join that channel"
   },
   "settings": {
     "title": "User settings",
@@ -865,7 +866,8 @@
     "accept": "Accept",
     "decline": "Decline",
     "call": "Call",
-    "joinCall": "Join the call"
+    "joinCall": "Join the call",
+    "moveTo": "Move to “{{channel}}”"
   },
   "profile": {
     "label": "Profile: {{name}}",
