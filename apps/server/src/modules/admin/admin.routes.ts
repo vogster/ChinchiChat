@@ -38,7 +38,8 @@ export const adminRoutes: FastifyPluginAsyncZod<AdminRoutesOptions> = async (
   app,
   { adminService, accountDeletion },
 ) => {
-  app.addHook('preHandler', async (request) => {
+  // Before validation: nobody but an admin learns what these routes expect.
+  app.addHook('onRequest', async (request) => {
     requireAdmin(request)
   })
 

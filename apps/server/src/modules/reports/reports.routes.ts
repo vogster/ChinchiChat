@@ -13,6 +13,7 @@ import { requireAdmin } from '../admin/admin.routes'
 import { requireAuth } from '../auth/auth.plugin'
 
 import type { ReportService } from './report.service'
+import type { FastifyRequest } from 'fastify'
 import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod'
 
 export interface ReportsRoutesOptions {
@@ -93,9 +94,17 @@ export const reportsRoutes: FastifyPluginAsyncZod<ReportsRoutesOptions> = async 
     },
   )
 
+  // Before validation, like the admin module's own routes.
+  const adminOnly = async (request: FastifyRequest) => {
+    requireAdmin(request)
+  }
+
   app.get(
     '/admin/reports',
-    { schema: { querystring: reportsQuerySchema, response: { 200: reportsResponse } } },
+    {
+      schema: { querystring: reportsQuerySchema, response: { 200: reportsResponse } },
+      onRequest: adminOnly,
+    },
     async (request) => {
       requireAdmin(request)
       return {
@@ -113,6 +122,7 @@ export const reportsRoutes: FastifyPluginAsyncZod<ReportsRoutesOptions> = async 
         body: updateReportRequestSchema,
         response: { 200: reportResponse },
       },
+      onRequest: adminOnly,
     },
     async (request) => {
       const adminId = requireAdmin(request).user.id
