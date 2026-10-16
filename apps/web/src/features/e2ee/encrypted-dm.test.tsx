@@ -77,6 +77,16 @@ describe('encrypted conversations', () => {
     expect(await screen.findByText(/Шифрование пока в бета-версии/)).toBeVisible()
   })
 
+  it('offer no reports: the server could not see what is reported', async () => {
+    const { user } = renderApp(URL, { api: withEncryptedDm() })
+    const row = (await screen.findByText('Секретная встреча в пятницу')).closest(
+      'li',
+    ) as HTMLElement
+
+    await user.hover(row)
+    expect(within(row).queryByRole('button', { name: 'Пожаловаться' })).not.toBeInTheDocument()
+  })
+
   it('fold messages this device can not read into one line', async () => {
     const api = createFakeApi({ user: testUser })
     api.dms.list.mockResolvedValue({ channels: [encryptedDm] })

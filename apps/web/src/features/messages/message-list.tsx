@@ -277,7 +277,11 @@ export const MessageList = ({
                           : undefined
                       }
                       onReport={
-                        row.message.author && row.message.author.id !== myId && !row.message.pending
+                        // Not in encrypted conversations: a report would reach moderators empty.
+                        !encryption &&
+                        row.message.author &&
+                        row.message.author.id !== myId &&
+                        !row.message.pending
                           ? () => setReporting(row.message.id)
                           : undefined
                       }

@@ -89,6 +89,13 @@ export const createReportService = ({
       if (found.message.authorId === reporterId) {
         throw badRequest('CANNOT_REPORT_OWN', "You can't report your own message")
       }
+      // Moderators would get an empty copy: the server can't read encrypted messages.
+      if (found.message.ciphertext !== null) {
+        throw badRequest(
+          'ENCRYPTED_CHANNEL',
+          "Messages of encrypted conversations can't be reported",
+        )
+      }
       await reports.insert({
         id: nextId(),
         guildId: channel.guildId,

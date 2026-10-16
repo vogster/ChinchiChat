@@ -152,4 +152,18 @@ describe('reporting a direct message', () => {
     // Server moderators never see DM reports.
     expect((await api(mod, 'GET', `${g()}/reports`)).json().data.reports).toEqual([])
   })
+
+  it('refuses messages of encrypted conversations, which it could not show', async () => {
+    const dm = (
+      await api(member, 'POST', '/users/@me/channels', { recipientIds: [mod.id], encrypted: true })
+    ).json().data.channel
+    const secret = (
+      await api(member, 'POST', `/channels/${dm.id}/messages`, { ciphertext: 'AAAA' })
+    ).json().data.message.id as string
+
+    const refused = await report(mod, dm.id, secret, 'harassment')
+
+    expect(refused.json().code).toBe('ENCRYPTED_CHANNEL')
+    expect((await api(owner, 'GET', '/admin/reports')).json().data.reports).toEqual([])
+  })
 })
