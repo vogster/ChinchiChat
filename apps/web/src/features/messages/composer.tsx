@@ -6,8 +6,11 @@ import { useTranslation } from 'react-i18next'
 import { CommandSuggestions } from '../commands/command-suggestions'
 import { parseCommand, suggestCommands } from '../commands/parse-command'
 import { EmojiPicker } from '../emoji/emoji-picker'
+import { MentionSuggestions } from '../mentions/mention-suggestions'
+import { useMentionSuggestions } from '../mentions/use-mention-suggestions'
 import { CreatePollDialog } from './create-poll-dialog'
 import type { EmojiPickerProps } from '../emoji/emoji-picker'
+import type { MentionCandidate } from '../mentions/mention-query'
 
 import type { Command, Snowflake } from '@chinchi/shared'
 import type { KeyboardEvent } from 'react'
@@ -32,6 +35,8 @@ export interface ComposerProps {
   readonly commands?: ComposerCommands | null
   /** Where a poll from the composer goes; absent where polls don't work (encrypted). */
   readonly pollChannelId?: Snowflake | null
+  /** What `@` and `#` suggest: people, roles, channels. */
+  readonly mentions?: readonly MentionCandidate[] | null
 }
 
 export interface ComposerCommands {
@@ -99,6 +104,7 @@ export const Composer = ({
   slowmode = null,
   commands = null,
   pollChannelId = null,
+  mentions = null,
 }: ComposerProps) => {
   const { t } = useTranslation()
   const [creatingPoll, setCreatingPoll] = useState(false)
@@ -107,6 +113,12 @@ export const Composer = ({
   const [active, setActive] = useState(0)
   const suggestions = commands ? suggestCommands(value, commands.list) : []
   const ref = useRef<HTMLTextAreaElement>(null)
+  const mention = useMentionSuggestions({
+    value,
+    candidates: mentions,
+    ref,
+    onChange: (next) => change(next),
+  })
 
   // Starting a reply (from the message's toolbar) continues in the composer.
   const replyId = reply?.messageId
@@ -175,6 +187,7 @@ export const Composer = ({
   }
 
   const onKeyDown = (event: KeyboardEvent<HTMLTextAreaElement>) => {
+    if (mention.onKey(event)) return
     if (suggestions.length > 0 && onSuggestionKey(event)) return
     if (event.key === 'Enter' && !event.shiftKey && !event.nativeEvent.isComposing) {
       event.preventDefault()
@@ -204,7 +217,13 @@ export const Composer = ({
 
   return (
     <div className="px-4 pb-1">
-      {suggestions.length > 0 ? (
+      {mention.matches.length > 0 ? (
+        <MentionSuggestions
+          candidates={mention.matches}
+          active={mention.active}
+          onPick={mention.pick}
+        />
+      ) : suggestions.length > 0 ? (
         <CommandSuggestions commands={suggestions} active={active} onPick={pick} />
       ) : null}
       {reply ? <ReplyBar reply={reply} /> : null}
@@ -255,8 +274,10 @@ export const Composer = ({
           placeholder={placeholder ?? t('messages.placeholder', { name: channelName })}
           onChange={(event) => {
             change(event.target.value)
+            mention.track()
             if (event.target.value) onTyping()
           }}
+          onSelect={mention.track}
           onKeyDown={onKeyDown}
           className="max-h-60 flex-1 resize-none bg-transparent outline-none placeholder:text-muted"
         />

@@ -50,6 +50,7 @@ import { NotificationSettingsDialog } from '../notifications/notification-settin
 import { BetaBadge } from '../e2ee/beta-badge'
 import { EncryptionNotice, EncryptionStatus } from '../e2ee/encryption-notice'
 import { LocalSearchPanel } from '../e2ee/local-search-panel'
+import { dmMentions } from '../mentions/mention-candidates'
 import { RecoveryPrompt } from '../e2ee/recovery-prompt'
 import { SearchBox } from '../search/search-box'
 import { SafetyDialog } from '../e2ee/safety-dialog'
@@ -363,6 +364,7 @@ export const DmView = ({ channel }: { channel: PrivateChannel }) => {
           ) : canTalk ? (
             <Composer
               channelName={name}
+              mentions={dmMentions(channel)}
               placeholder={
                 isGroup ? t('dm.groupPlaceholder', { name }) : t('dm.placeholder', { name })
               }

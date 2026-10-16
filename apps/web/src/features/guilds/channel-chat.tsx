@@ -30,6 +30,7 @@ import { useSlowmode } from '../messages/use-slowmode'
 import { can } from '../permissions/permissions'
 import { useGuildPermissions } from '../permissions/use-guild-permissions'
 import { useMemberColors } from '../permissions/use-member-colors'
+import { useGuildMentions } from '../mentions/mention-candidates'
 
 import { RulesDialog } from './rules-dialog'
 import type { MessageItem, MessagePages } from '../messages/queries'
@@ -70,6 +71,7 @@ export const ChannelChat = ({
     channel.type === 'thread' ? guild.channels.find((c) => c.id === channel.parentId) : undefined
   const guildPermissions = useGuildPermissions(guild)
   const permissions = guildPermissions.inChannel(channel)
+  const mentions = useGuildMentions(guild, can(permissions, Permission.MentionEveryone))
   const authorColor = useMemberColors(guild)
 
   const send = useSendMessage(channel.id, guild.id)
@@ -196,6 +198,7 @@ export const ChannelChat = ({
         {can(permissions, Permission.SendMessages) ? (
           <Composer
             channelName={channel.name}
+            mentions={mentions}
             onSend={sendContent}
             onTyping={typing.typed}
             onEditLast={editLast}

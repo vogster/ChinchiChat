@@ -1356,5 +1356,11 @@
     "send": "Forward",
     "label": "Forwarded",
     "block": "Forwarded message"
+  },
+  "mentions": {
+    "suggestions": "Mentions",
+    "role": "role",
+    "everyone": "everyone who can see the channel",
+    "here": "everyone who can see the channel"
   }
 }
