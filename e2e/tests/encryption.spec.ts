@@ -74,6 +74,15 @@ test('two people talk and call in an encrypted conversation the server cannot re
   await bobComposer.press('Enter')
   await expect(alice.page.getByText('Принято, сожгу после прочтения')).toBeVisible()
 
+  // Bob reacts; Alice sees it, the server only holds an encrypted set.
+  const bobRow = bob.page.getByText('Пароль от сейфа: 4242').locator('xpath=ancestor::li[1]')
+  await bobRow.hover()
+  await bobRow.getByRole('button', { name: 'Добавить реакцию' }).click()
+  await bob.page.getByRole('button', { name: 'Отреагировать: 😂' }).click()
+  const aliceRow = alice.page.getByText('Пароль от сейфа: 4242').locator('xpath=ancestor::li[1]')
+  await expect(aliceRow.getByRole('button', { name: '😂: 1' })).toBeVisible()
+  await expect(bobRow.getByRole('button', { name: '😂: 1, вы среди них' })).toBeVisible()
+
   // What the server stores is ciphertext: the API never returns the text.
   const channelId = alice.page.url().split('/').at(-1) as string
   const stored = await alice.page.evaluate(async (id) => {
@@ -82,6 +91,8 @@ test('two people talk and call in an encrypted conversation the server cannot re
   }, channelId)
   expect(stored).not.toContain('4242')
   expect(stored).toContain('"ciphertext"')
+  expect(stored).not.toContain('😂')
+  expect(stored).toContain('"encryptedReactions"')
 
   // Both see the same safety code for each other: compared, it proves the devices are theirs.
   const codeOf = async (page: typeof alice.page, name: string) => {

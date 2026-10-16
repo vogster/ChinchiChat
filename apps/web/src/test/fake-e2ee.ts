@@ -15,7 +15,7 @@ import type {
 } from '../features/e2ee/client'
 import type { E2eeClientFactory } from '../features/e2ee/e2ee-context'
 import type { ApiClient } from '@chinchi/sdk'
-import type { DeviceApproval } from '@chinchi/shared'
+import type { DeviceApproval, EncryptedReaction } from '@chinchi/shared'
 
 /** What the fake shows as this device's recovery key. */
 export const TEST_RECOVERY_KEY = 'ABCD-EFGH-JKMN-PQRS-TVWX-YZ01-2345-6789-ABCD-EFGH-JKMN-PQRS-TVWX'
@@ -26,6 +26,10 @@ const testUserId = '100'
 /** What the fake "encrypts" to: the payload in base64, so the fake can read it back. */
 export const fakeCiphertext = (text: string, files?: EncryptedFile[]) =>
   toBase64(encodePayload(files ? { v: 1, text, files } : { v: 1, text }))
+
+/** What the fake "encrypts" a set of reactions to. */
+export const fakeReactionCiphertext = (emojis: string[]) =>
+  toBase64(encodePayload({ v: 1, text: '', react: emojis }))
 
 /** Stands in for the MLS client in UI tests (MLS itself is tested in features/e2ee). */
 export const createFakeE2ee = (status: ConversationStatus = 'ready') => {
@@ -84,6 +88,20 @@ export const createFakeE2ee = (status: ConversationStatus = 'ready') => {
       message.ciphertext ? decodePayload(fromBase64(message.ciphertext)) : null,
     ),
     devicesChanged: vi.fn(async (_userId: string) => undefined),
+    react: vi.fn(
+      async (channel: EncryptedChannel, messageId: string, emojis: readonly string[]) => {
+        if (!api) throw new Error('The fake e2ee client has no API yet')
+        await api.reactions.setEncrypted(
+          channel.id,
+          messageId,
+          emojis.length > 0 ? fakeReactionCiphertext([...emojis]) : null,
+        )
+      },
+    ),
+    readReaction: vi.fn(
+      async (_channel: EncryptedChannel, _messageId: string, reaction: EncryptedReaction) =>
+        decodePayload(fromBase64(reaction.ciphertext))?.react ?? [],
+    ),
     recovery: {
       key: vi.fn(async (): Promise<string | null> => TEST_RECOVERY_KEY),
       // Saved by default, so the reminder stays out of tests about something else.

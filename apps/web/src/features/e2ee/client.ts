@@ -18,6 +18,7 @@ import {
 import { decodePayload, encodePayload, fromBase64, toBase64 } from './codec'
 import { createCrossSigning } from './cross-signing'
 import { createDeviceApproval } from './device-approval'
+import { createEncryptedReactions } from './encrypted-reactions'
 import { createHistoryBackup } from './history-backup'
 import { createSafety } from './safety'
 
@@ -49,6 +50,7 @@ export interface E2eeApi {
     | 'backupEntries'
     | 'approvals'
   >
+  readonly reactions: Pick<ApiClient['reactions'], 'setEncrypted'>
   readonly messages: {
     create(
       channelId: string,
@@ -266,6 +268,40 @@ export const createE2eeClient = ({ api, store, userId, deviceName }: E2eeClientO
   }
 
   const crossSigning = createCrossSigning({ api, store, userId })
+
+  /** Decrypts an MLS message of the conversation; null if this device can't (call within `serial`). */
+  const decrypt = async (
+    channelId: string,
+    ciphertext: string,
+  ): Promise<EncryptedPayload | null> => {
+    const keys = await ready()
+    if (!(await conversationOf(channelId))) await sync(channelId, keys)
+    const attempt = async () => {
+      const conversation = await conversationOf(channelId)
+      if (!conversation) return null
+      const result = await processIncoming(conversation, fromBase64(ciphertext))
+      await persist(channelId, result.conversation)
+      return result.incoming.kind === 'message' ? decodePayload(result.incoming.plaintext) : null
+    }
+    try {
+      return await attempt()
+    } catch {
+      // Maybe sent after a commit this device hasn't applied: catch up and try again.
+      await sync(channelId, keys)
+      return attempt().catch(() => null)
+    }
+  }
+
+  /** Encrypts a payload for the conversation as it is now (call within `serial`). */
+  const encrypt = async (
+    channelId: string,
+    conversation: Conversation,
+    payload: EncryptedPayload,
+  ): Promise<string> => {
+    const result = await encryptMessage(conversation, encodePayload(payload))
+    await persist(channelId, result.conversation)
+    return toBase64(result.ciphertext)
+  }
   const backup = createHistoryBackup({ api, store, crossSigning })
   /** Backs a message up, sending soon (several messages read together go in one upload). */
   const keep = (messageId: string, payload: EncryptedPayload) => {
@@ -557,28 +593,7 @@ export const createE2eeClient = ({ api, store, userId, deviceName }: E2eeClientO
             : undefined)
         if (known) return known
         if (!message.ciphertext) return null
-        const keys = await ready()
-        if (!(await conversationOf(channel.id))) await sync(channel.id, keys)
-        const attempt = async () => {
-          const conversation = await conversationOf(channel.id)
-          if (!conversation) return null
-          const result = await processIncoming(
-            conversation,
-            fromBase64(message.ciphertext as string),
-          )
-          await persist(channel.id, result.conversation)
-          return result.incoming.kind === 'message'
-            ? decodePayload(result.incoming.plaintext)
-            : null
-        }
-        let payload: EncryptedPayload | null
-        try {
-          payload = await attempt()
-        } catch {
-          // Maybe sent after a commit this device hasn't applied: catch up and try again.
-          await sync(channel.id, keys)
-          payload = await attempt().catch(() => null)
-        }
+        let payload = await decrypt(channel.id, message.ciphertext)
         if (payload) keep(message.id, payload)
         // Sent before this device joined (or lost with it): the history backup may have it.
         payload ??= await backup.restore(channel.id, message.id).catch(() => null)
@@ -634,6 +649,8 @@ export const createE2eeClient = ({ api, store, userId, deviceName }: E2eeClientO
         devicesByUser.delete(userId)
       },
     },
+
+    ...createEncryptedReactions({ api, store, userId, serial, ready, inStep, encrypt, decrypt }),
 
     /** Approving this device from another of the user's, or another device from this one. */
     approvals: createDeviceApproval({ api, ready, crossSigning, backup }),

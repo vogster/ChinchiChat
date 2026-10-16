@@ -23,6 +23,8 @@ const payloadSchema = z.object({
   v: z.literal(1),
   text: z.string(),
   files: z.array(encryptedFileSchema).optional(),
+  /** A person's whole set of reactions to a message (a reaction, not a message). */
+  react: z.array(z.string().max(64)).max(20).optional(),
 })
 
 /** One file of an encrypted message: its attachment and what opens it. */

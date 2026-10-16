@@ -71,6 +71,11 @@ export const useEncryptedConversation = (channel: EncryptedChannel | undefined) 
       }
       return client.send(channel, text, { nonce, files: sealed, reply })
     },
+    /** My whole set of reactions to a message, sent encrypted. */
+    react: (messageId: string, emojis: readonly string[]) => {
+      if (!channel || !client) throw new Error('Not an encrypted conversation')
+      return client.react(channel, messageId, emojis)
+    },
     edit: (messageId: string, text: string) => {
       if (!channel || !client) throw new Error('Not an encrypted conversation')
       return client.edit(channel, messageId, text)

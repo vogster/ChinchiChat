@@ -283,6 +283,13 @@ export const DmView = ({ channel }: { channel: PrivateChannel }) => {
             canPin={false}
             onTogglePin={() => undefined}
             onToggleReaction={(message, emoji) => {
+              if (encryption) {
+                // The whole set goes, encrypted: the server never learns which emoji.
+                const own = message.reactions.filter((r) => r.me).map((r) => r.emoji)
+                const next = own.includes(emoji) ? own.filter((e) => e !== emoji) : [...own, emoji]
+                void encrypted.react(message.id, next).catch(() => undefined)
+                return
+              }
               const mine = message.reactions.find((r) => r.emoji === emoji)?.me ?? false
               react.mutate({ messageId: message.id, emoji, add: !mine })
             }}

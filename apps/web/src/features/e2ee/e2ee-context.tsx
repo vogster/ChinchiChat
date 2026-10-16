@@ -26,6 +26,8 @@ export type E2eeClientLike = Pick<
   | 'safety'
   | 'recovery'
   | 'approvals'
+  | 'react'
+  | 'readReaction'
 >
 
 export type E2eeClientFactory = (userId: string, api: ApiClient) => E2eeClientLike

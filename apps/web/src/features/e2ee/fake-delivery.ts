@@ -30,6 +30,8 @@ export const createFakeDelivery = () => {
   }[] = []
   /** History backups by user: the sealed user key, and entries by message id. */
   const approvals = createFakeApprovals(devices, id)
+  /** Encrypted reaction sets by `messageId:userId`. */
+  const encryptedReactions = new Map<string, string>()
   const backups = new Map<string, { version: string; userKey: string }>()
   const entries = new Map<string, Map<string, { channelId: string; payload: string }>>()
 
@@ -71,6 +73,12 @@ export const createFakeDelivery = () => {
   })
 
   const apiFor = (userId: string): E2eeApi => ({
+    reactions: {
+      setEncrypted: async (_channelId, messageId, ciphertext) => {
+        if (ciphertext) encryptedReactions.set(`${messageId}:${userId}`, ciphertext)
+        else encryptedReactions.delete(`${messageId}:${userId}`)
+      },
+    },
     e2ee: {
       ...backupApi(userId),
       approvals: approvals.apiFor(userId),
@@ -222,5 +230,6 @@ export const createFakeDelivery = () => {
     userKeys,
     backups,
     approvalEvents: approvals.events,
+    encryptedReactions,
   }
 }

@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { useE2ee } from './e2ee-context'
+import { useDecryptedReactions } from './use-decrypted-reactions'
 
 import type { EncryptedChannel } from './client'
 import type { EncryptedPayload } from './codec'
@@ -23,6 +24,7 @@ export const useDecryptedMessages = (
   const [payloads, setPayloads] = useState<ReadonlyMap<string, EncryptedPayload | null>>(new Map())
   // Asked already (answers may still be on their way): each message is read once.
   const asked = useRef(new Set<string>())
+  const reactionsOf = useDecryptedReactions(channel, messages)
 
   useEffect(() => {
     if (!channel || !client) return
@@ -72,6 +74,7 @@ export const useDecryptedMessages = (
       attachments: [],
       encryptedFiles,
       reply: quoteOf(message.reply),
+      reactions: reactionsOf(message),
     }
   })
   return foldUnreadable(messages, shown, (count) => t('e2ee.unreadable', { count }))

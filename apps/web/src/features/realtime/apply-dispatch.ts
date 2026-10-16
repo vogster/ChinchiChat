@@ -198,6 +198,26 @@ export const applyDispatch = (
       return
     }
 
+    case 'E2EE_REACTION_UPDATE': {
+      // Someone's encrypted set of reactions changed: the screen decrypts the new one.
+      const { channelId, messageId, userId, reaction } =
+        data as DispatchPayload<'E2EE_REACTION_UPDATE'>
+      updatePages(queryClient, channelId, (page) =>
+        page.map((m) =>
+          m.id === messageId
+            ? {
+                ...m,
+                encryptedReactions: [
+                  ...(m.encryptedReactions ?? []).filter((r) => r.userId !== userId),
+                  ...(reaction ? [{ userId, ...reaction }] : []),
+                ],
+              }
+            : m,
+        ),
+      )
+      return
+    }
+
     case 'TYPING_START': {
       const { channelId, userId } = data as DispatchPayload<'TYPING_START'>
       typing.start(channelId, userId)

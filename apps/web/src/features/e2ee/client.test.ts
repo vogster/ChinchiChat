@@ -161,6 +161,25 @@ describe('e2ee client', () => {
     expect(await carol.read(group, sent)).toBeNull()
   })
 
+  it('encrypts each person’s set of reactions; the others read it, the sender keeps its own', async () => {
+    const { client, delivery } = setup()
+    const alice = client(ALICE).client
+    const bob = client(BOB).client
+    await bob.ready()
+    await alice.open(DM)
+    const message = await alice.send(DM, 'Кто идёт?')
+
+    await alice.react(DM, message.id, ['👍', '🔥'])
+    const stored = delivery.encryptedReactions.get(`${message.id}:${ALICE}`)
+    expect(stored).toEqual(expect.any(String))
+    const reaction = { userId: ALICE, version: '1', ciphertext: stored as string }
+
+    expect(await bob.readReaction(DM, message.id, reaction)).toEqual(['👍', '🔥'])
+    expect(await alice.readReaction(DM, message.id, reaction)).toEqual(['👍', '🔥'])
+    await alice.react(DM, message.id, [])
+    expect(delivery.encryptedReactions.has(`${message.id}:${ALICE}`)).toBe(false)
+  })
+
   it('gives every member the same call key, which changes with the conversation', async () => {
     const { client } = setup()
     const alice = client(ALICE).client
