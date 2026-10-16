@@ -1,6 +1,6 @@
 import { publishRevokedSessions } from '../../events/internal-events'
 import { badRequest, conflict } from '../../http/http-error'
-import { passwordResetEmail, verificationEmail } from '../../mail/templates'
+import { lockoutEmail, passwordResetEmail, verificationEmail } from '../../mail/templates'
 
 import type { Locale } from '@chinchi/shared'
 
@@ -71,7 +71,8 @@ export const createAccountEmailService = ({
     })
   }
 
-  const link = (path: string, token: string) => `${publicUrl}${path}?token=${token}`
+  // The token rides in the fragment: it never reaches a server, a proxy log or a Referer.
+  const link = (path: string, token: string) => `${publicUrl}${path}#token=${token}`
 
   const sendVerification = async (user: UserRow): Promise<void> => {
     const token = await issueToken(user.id, 'verify_email')
@@ -113,6 +114,19 @@ export const createAccountEmailService = ({
           link('/reset-password', token),
           localeOf(user),
         ),
+      )
+    },
+
+    /**
+     * The account's sign-in was locked after failed attempts: tells the owner, with a reset
+     * link in case the attempts were theirs (a reset lifts the lock). Unknown logins get nothing.
+     */
+    async notifyLockout(login: string): Promise<void> {
+      const user = await users.findByLogin(login)
+      if (!user) return
+      const token = await issueToken(user.id, 'reset_password')
+      dispatch(
+        lockoutEmail(user.email, user.username, link('/reset-password', token), localeOf(user)),
       )
     },
 

@@ -189,6 +189,8 @@ export const createServices = (
     mfa,
     onPasswordChanged: (userId) =>
       createEmailTokenRepository(db).discardUnused(userId, 'reset_password', new Date()),
+    // Reached at request time, once the email service below exists.
+    onAccountLocked: (login) => accountEmails.notifyLockout(login),
   })
   const accountEmails = createAccountEmailService({
     users,

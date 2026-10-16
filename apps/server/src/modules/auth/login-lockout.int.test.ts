@@ -36,6 +36,35 @@ afterAll(async () => {
 })
 
 describe('locking an account after failed logins', () => {
+  it('tells the owner once per window, with a reset link that lifts the lock', async () => {
+    await failTimes(MAX_FAILED_LOGINS)
+    expect((await login('alice', 'password123')).statusCode).toBe(429)
+
+    const mail = await outbox.waitForMessage('alice@example.com', /заблокирован/)
+    expect(mail.text).toContain('https://chat.example.com/reset-password#token=')
+    // Locked again and again: still one email.
+    await failTimes(3)
+    expect(outbox.messages.filter((m) => /заблокирован/.test(m.subject))).toHaveLength(1)
+
+    const reset = await app.inject({
+      method: 'POST',
+      url: '/api/v1/auth/password/reset',
+      headers: { origin: WEB_ORIGIN },
+      payload: { token: outbox.tokenFrom(mail, '/reset-password'), password: 'fresh-password-1' },
+    })
+    expect(reset.statusCode).toBe(200)
+    expect((await login('alice', 'fresh-password-1')).statusCode).toBe(200)
+  })
+
+  it('tells nobody about a login that is not an account', async () => {
+    await failTimes(MAX_FAILED_LOGINS, 'nobody-here')
+
+    expect((await login('nobody-here', 'password123')).statusCode).toBe(429)
+    await new Promise((resolve) => setTimeout(resolve, 50))
+    // Only the registration email of the account that does exist.
+    expect(outbox.messages.filter((m) => /заблокирован/.test(m.subject))).toHaveLength(0)
+  })
+
   it('refuses even the right password once too many guesses failed', async () => {
     await failTimes(MAX_FAILED_LOGINS)
 

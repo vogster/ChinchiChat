@@ -9,7 +9,7 @@ const TOKEN = 'B'.repeat(43)
 describe('verify email page', () => {
   it('verifies the address once and offers to continue', async () => {
     const api = createFakeApi()
-    renderApp(`/verify-email?token=${TOKEN}`, { api })
+    renderApp(`/verify-email#token=${TOKEN}`, { api })
 
     expect(await screen.findByRole('status')).toHaveTextContent('Email подтверждён')
     expect(screen.getByRole('link', { name: 'Перейти в Chinchi' })).toHaveAttribute('href', '/')

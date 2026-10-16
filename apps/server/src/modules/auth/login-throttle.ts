@@ -36,6 +36,8 @@ export const loginThrottleKey = {
   mfa: (userId: string) => `mfa:${userId}`,
   /** Re-entering the password while signed in (password change, 2FA, account deletion). */
   reauth: (userId: string) => `reauth:${userId}`,
+  /** One lockout email per login and window (the key expires with the lock). */
+  lockoutMail: (login: string) => `lockout-mail:${login.trim().toLowerCase()}`,
 }
 
 const redisKey = (key: string) => `login-fail:${key}`

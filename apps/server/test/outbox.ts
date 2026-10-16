@@ -20,7 +20,7 @@ export const createOutbox = () => {
     })
 
   const tokenFrom = (message: MailMessage, path: string): string => {
-    const match = new RegExp(`${path}\\?token=([A-Za-z0-9_-]+)`).exec(message.text)
+    const match = new RegExp(`${path}#token=([A-Za-z0-9_-]+)`).exec(message.text)
     if (!match?.[1]) throw new Error(`No ${path} link in mail`)
     return match[1]
   }

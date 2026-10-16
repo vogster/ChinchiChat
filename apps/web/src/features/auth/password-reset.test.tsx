@@ -31,14 +31,24 @@ describe('forgot password page', () => {
 })
 
 describe('reset password page', () => {
-  it('sets a new password from the emailed link', async () => {
+  it('sets a new password from the emailed link (token in the fragment)', async () => {
+    const api = createFakeApi()
+    const { user } = renderApp(`/reset-password#token=${TOKEN}`, { api })
+
+    await user.type(await screen.findByLabelText('Новый пароль'), 'brand-new-pass')
+    await user.click(screen.getByRole('button', { name: 'Сохранить пароль' }))
+
+    expect(await screen.findByRole('status')).toHaveTextContent('Пароль изменён')
+    expect(api.auth.resetPassword).toHaveBeenCalledWith(TOKEN, 'brand-new-pass')
+  })
+
+  it('still takes the token from the query string of older emails', async () => {
     const api = createFakeApi()
     const { user } = renderApp(`/reset-password?token=${TOKEN}`, { api })
 
     await user.type(await screen.findByLabelText('Новый пароль'), 'brand-new-pass')
     await user.click(screen.getByRole('button', { name: 'Сохранить пароль' }))
 
-    expect(await screen.findByRole('status')).toHaveTextContent('Пароль изменён')
     expect(api.auth.resetPassword).toHaveBeenCalledWith(TOKEN, 'brand-new-pass')
   })
 

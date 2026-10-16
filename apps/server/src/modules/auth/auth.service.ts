@@ -52,6 +52,8 @@ export interface AuthServiceDeps {
   readonly mfa?: Pick<MfaService, 'startLogin' | 'completeLogin'>
   /** After a password change (old reset links stop working). */
   readonly onPasswordChanged?: (userId: Snowflake) => Promise<void>
+  /** Sign-in to a login just got locked (once per lock window): the owner is told. */
+  readonly onAccountLocked?: (login: string) => Promise<void>
 }
 
 /** Signing in either finishes or waits for the second factor. */
@@ -81,6 +83,7 @@ export const createAuthService = ({
   loginThrottle = createMemoryLoginThrottle(),
   mfa,
   onPasswordChanged = async () => undefined,
+  onAccountLocked = async () => undefined,
 }: AuthServiceDeps) => {
   const ttlMs = sessionTtlDays * DAY_MS
 
@@ -155,6 +158,11 @@ export const createAuthService = ({
         loginThrottle.take(anywhere, MAX_FAILED_LOGINS_PER_ACCOUNT),
       ])
       if (!here || !overall) {
+        // The owner hears about it once per window, whoever is guessing; the reset link in
+        // the email lifts the lock if it was them.
+        if (await loginThrottle.take(loginThrottleKey.lockoutMail(input.login), 1)) {
+          await onAccountLocked(input.login)
+        }
         throw new HttpError(429, 'LOGIN_LOCKED', 'Too many failed attempts, try again later')
       }
       const user = await users.findByLogin(input.login)

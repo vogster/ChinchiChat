@@ -35,7 +35,7 @@ export const tokenFromEmail = async (
     )
     .toBe(true)
 
-  const match = new RegExp(`${path}\\?token=([A-Za-z0-9_-]+)`).exec(text)
+  const match = new RegExp(`${path}#token=([A-Za-z0-9_-]+)`).exec(text)
   if (!match?.[1]) throw new Error(`No ${path} link in the email to ${to}`)
   return match[1]
 }

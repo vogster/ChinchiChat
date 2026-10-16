@@ -41,8 +41,8 @@ describe('email verification', () => {
     await registerUser(app)
 
     const message = await outbox.waitForMessage('alice@example.com', /подтвердите/i)
-    expect(message.text).toContain('https://chat.example.com/verify-email?token=')
-    expect(message.html).toContain('https://chat.example.com/verify-email?token=')
+    expect(message.text).toContain('https://chat.example.com/verify-email#token=')
+    expect(message.html).toContain('https://chat.example.com/verify-email#token=')
   })
 
   it('marks the email as verified with a valid token', async () => {

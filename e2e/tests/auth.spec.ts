@@ -37,7 +37,7 @@ test('register → verify email → log out → log in', async ({ page }) => {
   await expect(page.getByText(`мы отправили письмо на ${user.email}`)).toBeVisible()
 
   const token = await tokenFromEmail(user.email, /подтвердите/i, '/verify-email')
-  await page.goto(`/verify-email?token=${token}`)
+  await page.goto(`/verify-email#token=${token}`)
   await expect(page.getByText('Email подтверждён')).toBeVisible()
   await page.getByRole('link', { name: 'Перейти в Chinchi' }).click()
   await expect(page.getByText(/Подтвердите email/)).toHaveCount(0)
@@ -83,7 +83,7 @@ test('forgot password → reset via email → log in with the new password', asy
   await expect(page.getByRole('status')).toContainText('Если такой email зарегистрирован')
 
   const token = await tokenFromEmail(user.email, /сброс пароля/i, '/reset-password')
-  await page.goto(`/reset-password?token=${token}`)
+  await page.goto(`/reset-password#token=${token}`)
   await page.getByLabel('Новый пароль').fill('a-brand-new-password')
   await page.getByRole('button', { name: 'Сохранить пароль' }).click()
   await expect(page.getByRole('status')).toContainText('Пароль изменён')

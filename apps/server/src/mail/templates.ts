@@ -42,7 +42,7 @@ const linkEmail = ({
   ].join(''),
 })
 
-type EmailKind = 'verification' | 'reset'
+type EmailKind = 'verification' | 'reset' | 'lockout'
 
 const TEXTS: Record<
   Locale,
@@ -65,6 +65,12 @@ const TEXTS: Record<
       action: 'Сбросить пароль',
       footer: 'Ссылка действует 1 час. Если вы не запрашивали сброс, просто проигнорируйте письмо.',
     },
+    lockout: {
+      subject: 'Chinchi: вход в учётную запись заблокирован',
+      body: 'Кто-то много раз вводил неверный пароль к вашей учётной записи, и вход заблокирован на 15 минут. Если это были вы и пароль забыт — задайте новый по кнопке: блокировка снимется сразу. Если это не вы, делать ничего не нужно: без пароля войти нельзя.',
+      action: 'Задать новый пароль',
+      footer: 'Ссылка действует 1 час. Такое письмо приходит не чаще раза в 15 минут.',
+    },
   },
   en: {
     greeting: (username) => `Hi, ${username}!`,
@@ -80,6 +86,12 @@ const TEXTS: Record<
       action: 'Reset password',
       footer: "The link works for 1 hour. If you didn't ask for a reset, just ignore this email.",
     },
+    lockout: {
+      subject: 'Chinchi: sign-in to your account is locked',
+      body: 'Someone entered a wrong password for your account too many times, and sign-in is locked for 15 minutes. If that was you and you forgot the password, set a new one with the button: the lock lifts at once. If it was not you, nothing to do: nobody gets in without the password.',
+      action: 'Set a new password',
+      footer: 'The link works for 1 hour. This email comes at most once in 15 minutes.',
+    },
   },
 }
 
@@ -92,3 +104,5 @@ const emailOf =
 
 export const verificationEmail = emailOf('verification')
 export const passwordResetEmail = emailOf('reset')
+/** Sent once per lock window; its reset link also lifts the lock. */
+export const lockoutEmail = emailOf('lockout')
