@@ -22,7 +22,7 @@ const SessionsPage = () => {
 const SessionsAndKeysPage = () => {
   const { t } = useTranslation()
   return (
-    <>
+    <div className="flex flex-col gap-12">
       <SessionsPage />
       <SettingsSection
         title={t('settings.encryptionDevices.title')}
@@ -36,7 +36,7 @@ const SessionsAndKeysPage = () => {
       >
         <RecoveryKeySettings />
       </SettingsSection>
-    </>
+    </div>
   )
 }
 

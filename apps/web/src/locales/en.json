@@ -1234,7 +1234,7 @@
     "start": "Encrypted conversation",
     "listState": "encrypted conversation",
     "noticeTitle": "End-to-end encryption",
-    "notice": "The server can't see this conversation's messages: they are encrypted on the members' devices. So there is no search, link previews or bots here, and messages sent before a device joined aren't available on it.",
+    "notice": "The server can't see this conversation's messages: they are encrypted on the members' devices. So there are no link previews or bots here, and search runs on your device only. A new device gets the old messages once you approve it from another one or enter your recovery key.",
     "decrypting": "Decrypting…",
     "opening": "Setting up encryption on this device…",
     "waiting": "Waiting for another of your devices or the other person to let this device in. Open the conversation there — it takes a second.",

@@ -21,11 +21,11 @@ export const RecoveryKeySettings = () => {
     return (
       <div className="flex flex-col items-start gap-3">
         <p className="text-sm text-muted">{t('e2ee.recovery.notHere')}</p>
-        <Button variant="secondary" onClick={() => setEntering(true)}>
+        <Button variant="secondary" fullWidth={false} onClick={() => setEntering(true)}>
           {t('e2ee.recovery.enter')}
         </Button>
         <p className="mt-2 text-sm text-muted">{t('e2ee.recovery.resetQuestion')}</p>
-        <Button variant="danger" onClick={() => setResetting(true)}>
+        <Button variant="danger" fullWidth={false} onClick={() => setResetting(true)}>
           {t('e2ee.recovery.reset')}
         </Button>
         {entering ? (
@@ -68,12 +68,13 @@ export const RecoveryKeySettings = () => {
       {shown ? <RecoveryKeyText value={recovery.key} /> : null}
       <div className="flex flex-wrap gap-2">
         {shown ? null : (
-          <Button variant="secondary" onClick={() => setShown(true)}>
+          <Button variant="secondary" fullWidth={false} onClick={() => setShown(true)}>
             {t('e2ee.recovery.show')}
           </Button>
         )}
         <Button
           variant="secondary"
+          fullWidth={false}
           onClick={() => {
             downloadRecoveryKey(recovery.key as string, t('e2ee.recovery.fileNote'))
             void recovery.markSaved()
