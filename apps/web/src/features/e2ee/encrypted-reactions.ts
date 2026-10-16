@@ -19,6 +19,17 @@ export interface EncryptedReactionsDeps {
   ) => Promise<string>
   /** Decrypts an MLS message of the conversation (not one this device sent). */
   readonly decrypt: (channelId: string, ciphertext: string) => Promise<EncryptedPayload | null>
+  /** Puts a set into its message's history backup. */
+  readonly keepReaction: (
+    messageId: string,
+    set: { userId: string; version: string; emojis: readonly string[] },
+  ) => Promise<void>
+  /** A set from the history backup, for a device that joined after it was sent. */
+  readonly restoreReaction: (
+    channelId: string,
+    messageId: string,
+    reaction: { userId: string; version: string },
+  ) => Promise<readonly string[] | null>
 }
 
 const ownKey = (messageId: string) => `react:own:${messageId}`
@@ -37,6 +48,8 @@ export const createEncryptedReactions = ({
   inStep,
   encrypt,
   decrypt,
+  keepReaction,
+  restoreReaction,
 }: EncryptedReactionsDeps) => ({
   /** Sets my reactions to a message (an empty set takes them back). */
   react: (channel: EncryptedChannel, messageId: string, emojis: readonly string[]) =>
@@ -66,11 +79,17 @@ export const createEncryptedReactions = ({
       const known = await store.get<string[]>(versionKey(reaction.version))
       if (known) return known
       const payload = await decrypt(channel.id, reaction.ciphertext).catch(() => null)
-      if (payload?.react) {
-        await store.set(versionKey(reaction.version), payload.react)
-        return payload.react
-      }
-      if (reaction.userId === userId) return (await store.get<string[]>(ownKey(messageId))) ?? []
-      return []
+      const set =
+        payload?.react ??
+        (reaction.userId === userId ? await store.get<string[]>(ownKey(messageId)) : undefined) ??
+        (await restoreReaction(channel.id, messageId, reaction))
+      if (!set) return []
+      await store.set(versionKey(reaction.version), [...set])
+      await keepReaction(messageId, {
+        userId: reaction.userId,
+        version: reaction.version,
+        emojis: set,
+      })
+      return set
     }),
 })

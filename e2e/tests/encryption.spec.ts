@@ -380,6 +380,19 @@ test('a new browser is approved from an old one by comparing emoji', async ({ br
   await composer.fill('Встречаемся у фонтана')
   await composer.press('Enter')
   await expect(laptop.page.getByText('Встречаемся у фонтана')).toBeVisible()
+  // Bob reacts; the laptop reads the reaction (and so backs it up with the message).
+  await bob.page.goto('/')
+  await bob.page
+    .getByRole('complementary', { name: 'Личные сообщения' })
+    .getByRole('link', { name: /зашифрованная беседа/ })
+    .click()
+  await saveRecoveryKey(bob.page)
+  const bobRow = bob.page.getByText('Встречаемся у фонтана').locator('xpath=ancestor::li[1]')
+  await bobRow.hover()
+  await bobRow.getByRole('button', { name: 'Добавить реакцию' }).click()
+  await bob.page.getByRole('button', { name: 'Отреагировать: 👍' }).click()
+  const laptopRow = laptop.page.getByText('Встречаемся у фонтана').locator('xpath=ancestor::li[1]')
+  await expect(laptopRow.getByRole('button', { name: '👍: 1' })).toBeVisible()
   await laptop.page.goto('/')
 
   // Alice signs in on her phone; the laptop stays open.
@@ -412,6 +425,13 @@ test('a new browser is approved from an old one by comparing emoji', async ({ br
   await expect(banner).toBeHidden()
   await phone.page.reload()
   await expect(phone.page.getByText('Встречаемся у фонтана')).toBeVisible()
+  // The reaction from before the phone existed came back with the history.
+  await expect(
+    phone.page
+      .getByText('Встречаемся у фонтана')
+      .locator('xpath=ancestor::li[1]')
+      .getByRole('button', { name: '👍: 1' }),
+  ).toBeVisible()
   const signed = await phone.page.evaluate(async () => {
     const response = await fetch('/api/v1/users/@me/devices')
     const { data } = (await response.json()) as {

@@ -51,6 +51,29 @@ describe('history backup', () => {
     expect(await fresh.recovery.saved()).toBe(true)
   })
 
+  it('brings back reactions to old messages along with them', async () => {
+    const { client, delivery } = setup()
+    const laptop = client(ALICE, 'Ноутбук')
+    const bob = client(BOB)
+    await bob.ready()
+    await laptop.open(DM)
+    const message = await laptop.send(DM, 'Кто за пиццу?')
+    await bob.react(DM, message.id, ['🍕', '👍'])
+    const reaction = {
+      userId: BOB,
+      version: '77',
+      ciphertext: delivery.encryptedReactions.get(`${message.id}:${BOB}`) as string,
+    }
+    expect(await laptop.readReaction(DM, message.id, reaction)).toEqual(['🍕', '👍'])
+    const key = (await laptop.recovery.key()) as string
+    await laptop.flushBackup()
+
+    const fresh = client(ALICE, 'Новый браузер')
+    expect(await fresh.recovery.useKey(key)).toBe('ok')
+
+    expect(await fresh.readReaction(DM, message.id, reaction)).toEqual(['🍕', '👍'])
+  })
+
   it('says whether a typed key is malformed or simply not this account’s', async () => {
     const { client } = setup()
     await client(ALICE, 'Ноутбук').ready()

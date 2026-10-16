@@ -25,6 +25,17 @@ const payloadSchema = z.object({
   files: z.array(encryptedFileSchema).optional(),
   /** A person's whole set of reactions to a message (a reaction, not a message). */
   react: z.array(z.string().max(64)).max(20).optional(),
+  /** History backups only: the reactions to this message as this device read them. */
+  reactionSets: z
+    .array(
+      z.object({
+        userId: z.string().min(1),
+        version: z.string().min(1),
+        emojis: z.array(z.string().max(64)).max(20),
+      }),
+    )
+    .max(100)
+    .optional(),
 })
 
 /** One file of an encrypted message: its attachment and what opens it. */

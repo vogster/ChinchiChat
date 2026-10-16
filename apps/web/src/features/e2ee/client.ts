@@ -308,9 +308,45 @@ export const createE2eeClient = ({ api, store, userId, deviceName }: E2eeClientO
   const backup = createHistoryBackup({ api, store, crossSigning })
   const index = createLocalSearch(store)
   /** Backs a message up, sending soon (several messages read together go in one upload). */
-  const keep = (messageId: string, payload: EncryptedPayload) => {
-    backup.add(messageId, payload)
+  /** What this device last backed up of a message (reactions ride along with it). */
+  const backedUp = (messageId: string) => store.get<EncryptedPayload>(`backup:${messageId}`)
+  const send_ = async (messageId: string, entry: EncryptedPayload) => {
+    await store.set(`backup:${messageId}`, entry)
+    backup.add(messageId, entry)
     queueMicrotask(() => void backup.flush().catch(() => undefined))
+  }
+  const keep = async (messageId: string, payload: EncryptedPayload) => {
+    const before = await backedUp(messageId)
+    await send_(
+      messageId,
+      before?.reactionSets ? { ...payload, reactionSets: before.reactionSets } : payload,
+    )
+  }
+  /** Someone's set of reactions, added to its message's backup (if the message is known here). */
+  const keepReaction = async (
+    messageId: string,
+    set: { userId: string; version: string; emojis: readonly string[] },
+  ) => {
+    const before = await backedUp(messageId)
+    if (!before) return
+    const others = (before.reactionSets ?? []).filter((s) => s.userId !== set.userId)
+    await send_(messageId, {
+      ...before,
+      reactionSets: [...others, { ...set, emojis: [...set.emojis] }],
+    })
+  }
+  /** A set of reactions this device can't decrypt (it joined later), from the backup. */
+  const restoreReaction = async (
+    channelId: string,
+    messageId: string,
+    reaction: { userId: string; version: string },
+  ) => {
+    const entry = await backup.restore(channelId, messageId).catch(() => null)
+    return (
+      entry?.reactionSets?.find(
+        (s) => s.userId === reaction.userId && s.version === reaction.version,
+      )?.emojis ?? null
+    )
   }
 
   /** The device, registered and (where this browser can) vouched for by the user key. */
@@ -583,7 +619,7 @@ export const createE2eeClient = ({ api, store, userId, deviceName }: E2eeClientO
           ...(reply ? { replyTo: reply.messageId, replyMention: reply.mention } : {}),
         })
         await store.set(`plain:${message.id}`, payload)
-        keep(message.id, payload)
+        await keep(message.id, payload)
         await index.record(channel.id, { id: message.id, authorId: userId, text })
         return message
       }),
@@ -599,7 +635,7 @@ export const createE2eeClient = ({ api, store, userId, deviceName }: E2eeClientO
         if (known) return known
         if (!message.ciphertext) return null
         let payload = await decrypt(channel.id, message.ciphertext)
-        if (payload) keep(message.id, payload)
+        if (payload) await keep(message.id, payload)
         // Sent before this device joined (or lost with it): the history backup may have it.
         payload ??= await backup.restore(channel.id, message.id).catch(() => null)
         if (payload) {
@@ -629,7 +665,7 @@ export const createE2eeClient = ({ api, store, userId, deviceName }: E2eeClientO
           ciphertext: toBase64(result.ciphertext),
         })
         await store.set(plainKey(message), payload)
-        keep(messageId, payload)
+        await keep(messageId, payload)
         await index.record(channel.id, { id: messageId, authorId: userId, text })
         return message
       }),
@@ -663,7 +699,18 @@ export const createE2eeClient = ({ api, store, userId, deviceName }: E2eeClientO
       },
     },
 
-    ...createEncryptedReactions({ api, store, userId, serial, ready, inStep, encrypt, decrypt }),
+    ...createEncryptedReactions({
+      api,
+      store,
+      userId,
+      serial,
+      ready,
+      inStep,
+      encrypt,
+      decrypt,
+      keepReaction,
+      restoreReaction,
+    }),
 
     /** Search in a conversation, over what this device decrypted (the server can't). */
     search: (channel: EncryptedChannel, query: string) => index.search(channel.id, query),
