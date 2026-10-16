@@ -215,6 +215,10 @@ export const MessageList = ({
                       <span className="h-px flex-1 bg-border" />
                     </div>
                   </li>
+                ) : row.message.notice ? (
+                  <li key={row.message.id} className="px-4 py-1 text-sm text-muted italic">
+                    {row.message.notice}
+                  </li>
                 ) : row.message.system ? (
                   <SystemMessage key={row.message.id} message={row.message} />
                 ) : (

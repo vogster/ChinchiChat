@@ -59,9 +59,36 @@ describe('encrypted conversations', () => {
     const { e2ee } = renderApp(URL, { api: withEncryptedDm() })
 
     expect(await screen.findByText('Секретная встреча в пятницу')).toBeVisible()
-    expect(screen.getByText('Сообщение недоступно на этом устройстве')).toBeVisible()
+    expect(
+      screen.getByText(
+        '1 сообщение отправлено до подключения этого устройства и недоступно на нём',
+      ),
+    ).toBeVisible()
     expect(screen.getByText(/Сервер не видит сообщений/)).toBeVisible()
     expect(e2ee.open).toHaveBeenCalledWith({ id: encryptedDm.id, memberIds: [testUser.id, '200'] })
+  })
+
+  it('fold messages this device can not read into one line', async () => {
+    const api = createFakeApi({ user: testUser })
+    api.dms.list.mockResolvedValue({ channels: [encryptedDm] })
+    const base = { channelId: encryptedDm.id, guildId: null, content: '' }
+    api.messages.list.mockResolvedValue({
+      messages: [
+        testMessage('1297', { ...base, ciphertext: 'AAAA' }),
+        testMessage('1298', { ...base, ciphertext: 'AAAB' }),
+        testMessage('1299', { ...base, ciphertext: 'AAAC' }),
+        testMessage('1300', { ...base, ciphertext: fakeCiphertext('Уже видно') }),
+      ],
+    })
+    renderApp(URL, { api })
+
+    expect(await screen.findByText('Уже видно')).toBeVisible()
+    expect(
+      screen.getByText(
+        '3 сообщения отправлены до подключения этого устройства и недоступны на нём',
+      ),
+    ).toBeVisible()
+    expect(screen.queryByText('Сообщение недоступно на этом устройстве')).not.toBeInTheDocument()
   })
 
   it('send through encryption', async () => {

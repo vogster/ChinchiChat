@@ -55,13 +55,13 @@ export const useDecryptedMessages = (
       message: { ...reply.message, content: replySnippetText(text ?? t('e2ee.encryptedQuote')) },
     }
   }
-  return messages.map((message) => {
+  const shown = messages.map((message): MessageItem | null => {
     if (!message.ciphertext || message.pending) return message
     const key = keyOf(message)
     // The server's attachments are ciphertext under a generic name: never shown as they are.
     if (!payloads.has(key)) return { ...message, content: t('e2ee.decrypting'), attachments: [] }
     const payload = payloads.get(key)
-    if (!payload) return { ...message, content: t('e2ee.undecryptable'), attachments: [] }
+    if (!payload) return null
     const encryptedFiles = (payload.files ?? []).flatMap((file) => {
       const attachment = message.attachments.find((a) => a.id === file.id)
       return attachment ? [{ ...file, url: attachment.url }] : []
@@ -74,4 +74,33 @@ export const useDecryptedMessages = (
       reply: quoteOf(message.reply),
     }
   })
+  return foldUnreadable(messages, shown, (count) => t('e2ee.unreadable', { count }))
+}
+
+/**
+ * Messages this device can't read (sent before it joined) fold into one quiet line per run,
+ * instead of a wall of "unavailable".
+ */
+const foldUnreadable = (
+  messages: readonly MessageItem[],
+  shown: readonly (MessageItem | null)[],
+  notice: (count: number) => string,
+): MessageItem[] => {
+  const out: MessageItem[] = []
+  let run: MessageItem[] = []
+  const close = () => {
+    const first = run[0]
+    if (first) out.push({ ...first, content: '', attachments: [], notice: notice(run.length) })
+    run = []
+  }
+  shown.forEach((item, index) => {
+    if (item) {
+      close()
+      out.push(item)
+    } else {
+      run.push(messages[index] as MessageItem)
+    }
+  })
+  close()
+  return out
 }

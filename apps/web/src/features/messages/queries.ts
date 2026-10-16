@@ -14,6 +14,8 @@ export type MessageItem = Message & {
   readonly files?: readonly File[]
   /** Files of an encrypted message: where the ciphertext is and what opens it. */
   readonly encryptedFiles?: readonly SealedFile[]
+  /** Shown as one quiet line instead of the message (messages this device can't read). */
+  readonly notice?: string
 }
 
 /** Pages go newest → older; each page is oldest → newest. `undefined` cursor = latest page. */

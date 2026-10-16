@@ -312,7 +312,11 @@ test('a new browser gets the old messages back with the recovery key', async ({ 
     .click()
   const banner = fresh.page.getByRole('status', { name: 'Старые сообщения недоступны' })
   await expect(banner).toBeVisible()
-  await expect(fresh.page.getByText('Сообщение недоступно на этом устройстве')).toBeVisible()
+  await expect(
+    fresh.page.getByText(
+      '1 сообщение отправлено до подключения этого устройства и недоступно на нём',
+    ),
+  ).toBeVisible()
 
   await banner.getByRole('button', { name: 'Ввести ключ восстановления' }).click()
   const dialog = fresh.page.getByRole('dialog', { name: 'Ключ восстановления' })
