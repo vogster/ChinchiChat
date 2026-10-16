@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 
 import { sessionsQueryOptions } from '../../features/auth/queries'
 import { EncryptionDevices } from '../../features/settings/encryption-devices'
+import { RecoveryKeySettings } from '../../features/settings/recovery-key-settings'
 import { SessionsList } from '../../features/settings/sessions-list'
 import { SettingsSection } from '../../features/settings/settings-section'
 
@@ -28,6 +29,12 @@ const SessionsAndKeysPage = () => {
         subtitle={t('settings.encryptionDevices.subtitle')}
       >
         <EncryptionDevices />
+      </SettingsSection>
+      <SettingsSection
+        title={t('e2ee.recovery.enterTitle')}
+        subtitle={t('e2ee.recovery.settingsHint')}
+      >
+        <RecoveryKeySettings />
       </SettingsSection>
     </>
   )

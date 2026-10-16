@@ -3,6 +3,7 @@ import { vi } from 'vitest'
 import { decodePayload, encodePayload, fromBase64, toBase64 } from '../features/e2ee/codec'
 
 import type { EncryptedFile } from '../features/e2ee/codec'
+import type { UseKeyResult } from '../features/e2ee/history-backup'
 import type { SafetyStatus } from '../features/e2ee/safety'
 import type {
   CallKey,
@@ -13,6 +14,9 @@ import type {
 } from '../features/e2ee/client'
 import type { E2eeClientFactory } from '../features/e2ee/e2ee-context'
 import type { ApiClient } from '@chinchi/sdk'
+
+/** What the fake shows as this device's recovery key. */
+export const TEST_RECOVERY_KEY = 'ABCD-EFGH-JKMN-PQRS-TVWX-YZ01-2345-6789-ABCD-EFGH-JKMN-PQRS-TVWX'
 
 /** The signed-in user of `renderApp` (`testUser`). */
 const testUserId = '100'
@@ -54,6 +58,13 @@ export const createFakeE2ee = (status: ConversationStatus = 'ready') => {
       message.ciphertext ? decodePayload(fromBase64(message.ciphertext)) : null,
     ),
     devicesChanged: vi.fn(async (_userId: string) => undefined),
+    recovery: {
+      key: vi.fn(async (): Promise<string | null> => TEST_RECOVERY_KEY),
+      // Saved by default, so the reminder stays out of tests about something else.
+      saved: vi.fn(async () => true),
+      markSaved: vi.fn(async () => undefined),
+      useKey: vi.fn(async (_text: string): Promise<UseKeyResult> => 'ok'),
+    },
     safety: {
       codeWith: vi.fn(
         async (_otherId: string) => '111112222233333444445555566666777778888899999000001234567890',

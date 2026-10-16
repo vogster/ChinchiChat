@@ -15,7 +15,7 @@ import type { ReactNode } from 'react'
 /** What the app uses of the client; tests put a fake behind it. */
 export type E2eeClientLike = Pick<
   E2eeClient,
-  'ready' | 'open' | 'send' | 'edit' | 'read' | 'devicesChanged' | 'callKey' | 'safety'
+  'ready' | 'open' | 'send' | 'edit' | 'read' | 'devicesChanged' | 'callKey' | 'safety' | 'recovery'
 >
 
 export type E2eeClientFactory = (userId: string, api: ApiClient) => E2eeClientLike
@@ -77,19 +77,30 @@ export const E2eeProvider = ({ children }: { children: ReactNode }) => {
 export const useE2ee = () => useContext(E2eeContext)
 
 /**
- * This browser's encryption device, also where there is no gateway (settings): the shared client
- * when there is one, otherwise a client over the same browser storage.
+ * The encryption client also where there is no gateway (settings): the shared one when there
+ * is one, otherwise a client over the same browser storage.
  */
 // eslint-disable-next-line react-refresh/only-export-components -- hook belongs with its provider
-export const useThisDeviceId = (): string | null => {
+export const useAnyE2eeClient = (): E2eeClientLike | null => {
   const api = useApi()
   const userId = useCurrentUser()?.id
   const factory = useContext(FactoryContext)
   const { client } = useContext(E2eeContext)
+  return useMemo(
+    () => client ?? (userId ? factory(userId, api) : null),
+    [client, userId, factory, api],
+  )
+}
+
+/** This browser's encryption device id. */
+// eslint-disable-next-line react-refresh/only-export-components -- hook belongs with its provider
+export const useThisDeviceId = (): string | null => {
+  const client = useAnyE2eeClient()
+  const userId = useCurrentUser()?.id
   const { data = null } = useQuery({
     queryKey: ['e2eeDevices', 'this', userId],
-    queryFn: () => (client ?? factory(userId as string, api)).ready(),
-    enabled: userId !== undefined,
+    queryFn: () => (client as E2eeClientLike).ready(),
+    enabled: client !== null,
     staleTime: Infinity,
   })
   return data

@@ -47,6 +47,7 @@ import { GroupMembersPanel } from './group-members-panel'
 
 import { NotificationSettingsDialog } from '../notifications/notification-settings-dialog'
 import { EncryptionNotice, EncryptionStatus } from '../e2ee/encryption-notice'
+import { RecoveryPrompt } from '../e2ee/recovery-prompt'
 import { SafetyDialog } from '../e2ee/safety-dialog'
 import { SafetyWarning } from '../e2ee/safety-warning'
 import { useSafety } from '../e2ee/use-safety'
@@ -315,6 +316,9 @@ export const DmView = ({ channel }: { channel: PrivateChannel }) => {
             <div className="mx-4 mt-2">
               <Alert tone="error">{pending.error}</Alert>
             </div>
+          ) : null}
+          {encryption ? (
+            <RecoveryPrompt ready={encrypted.state === 'ready' || encrypted.state === 'waiting'} />
           ) : null}
           {encryption && me ? (
             <SafetyWarning

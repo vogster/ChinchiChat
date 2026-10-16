@@ -1256,6 +1256,30 @@
       "check": "Check",
       "gotIt": "Got it",
       "codeLabel": "Safety code"
+    },
+    "recovery": {
+      "saveTitle": "Save your recovery key",
+      "saveHint": "If you lose all your devices, this key brings back your encrypted conversations. Keep it where you won't lose it: a password manager or on paper.",
+      "download": "Download",
+      "copy": "Copy",
+      "copied": "Copied",
+      "lossWarning": "Without the key and your devices, old encrypted messages can't be recovered — not even by the server admin.",
+      "later": "Later",
+      "saved": "I saved the key",
+      "fileNote": "Chinchi recovery key. It brings back your encrypted conversations on a new device. Don't show it to anyone.",
+      "enterTitle": "Recovery key",
+      "enterHint": "Enter the key you saved: this device gets the old messages and becomes approved.",
+      "restore": "Restore",
+      "invalid": "That doesn't look like a recovery key — check you typed all of it.",
+      "wrong": "This key doesn't match this account.",
+      "failed": "That didn't work — try again.",
+      "missingLabel": "Old messages unavailable",
+      "missing": "Messages from before this device joined aren't available on it. Your recovery key brings them back.",
+      "enter": "Enter recovery key",
+      "notHere": "The key is kept on your approved devices. If you saved it, enter it here so this device gets the old messages.",
+      "notSaved": "You haven't marked the key as saved yet. Download it and keep it apart from your devices.",
+      "show": "Show key",
+      "settingsHint": "Brings back your encrypted conversations if all your devices are lost."
     }
   }
 }

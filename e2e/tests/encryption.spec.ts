@@ -1,6 +1,7 @@
 import { expect, test } from '@playwright/test'
 
 import { registerAndOpenHome } from '../support/auth'
+import { saveRecoveryKey } from '../support/encryption'
 import { befriend } from '../support/friends'
 import { acceptInvite, createServerWithInvite } from '../support/guild'
 import { newUser } from '../support/users'
@@ -53,6 +54,7 @@ test('two people talk and call in an encrypted conversation the server cannot re
   await members.getByRole('button', { name: new RegExp(`^${bobUser.username},`) }).click()
   await alice.page.getByRole('button', { name: 'Зашифрованная беседа' }).click()
   await expect(alice.page.getByText('Сквозное шифрование')).toBeVisible()
+  await saveRecoveryKey(alice.page)
 
   const aliceComposer = alice.page.getByRole('textbox', { name: `Написать @${bobUser.username}` })
   await aliceComposer.fill('Пароль от сейфа: 4242')
@@ -64,6 +66,7 @@ test('two people talk and call in an encrypted conversation the server cannot re
     .getByRole('complementary', { name: 'Личные сообщения' })
     .getByRole('link', { name: new RegExp(`^${aliceUser.username}.*зашифрованная беседа`) })
     .click()
+  await saveRecoveryKey(bob.page)
   await expect(bob.page.getByText('Пароль от сейфа: 4242')).toBeVisible()
 
   const bobComposer = bob.page.getByRole('textbox', { name: `Написать @${aliceUser.username}` })
@@ -186,6 +189,7 @@ test('three people talk in an encrypted group, and one who leaves is left out', 
   await dialog.getByRole('switch', { name: 'Зашифрованная беседа' }).click()
   await dialog.getByRole('button', { name: 'Создать группу' }).click()
   await expect(alice.page.getByText('Сквозное шифрование')).toBeVisible()
+  await saveRecoveryKey(alice.page)
   const channelId = alice.page.url().split('/').at(-1) as string
 
   const composer = (page: typeof alice.page) => page.getByRole('textbox', { name: /^Написать/ })
@@ -199,6 +203,7 @@ test('three people talk in an encrypted group, and one who leaves is left out', 
       .getByRole('complementary', { name: 'Личные сообщения' })
       .getByRole('link', { name: /зашифрованная беседа/ })
       .click()
+    await saveRecoveryKey(page)
   }
 
   await say(alice.page, 'Всем привет')
@@ -256,4 +261,78 @@ test('three people talk in an encrypted group, and one who leaves is left out', 
   }
 
   await Promise.all([alice.context.close(), bob.context.close(), carol.context.close()])
+})
+
+test('a new browser gets the old messages back with the recovery key', async ({ browser }) => {
+  const alice = await openAs(browser)
+  const bob = await openAs(browser)
+  const aliceUser = newUser()
+  const bobUser = newUser()
+  await registerAndOpenHome(alice.page, aliceUser)
+  await registerAndOpenHome(bob.page, bobUser)
+  await befriend(alice.page, bob.page, aliceUser.username, bobUser.username)
+
+  // Alice talks to Bob and keeps her recovery key.
+  await alice.page.reload()
+  await alice.page.getByRole('tab', { name: 'Все' }).click()
+  await alice.page
+    .getByRole('button', { name: new RegExp(`^${bobUser.username}`) })
+    .first()
+    .click()
+  await alice.page.getByRole('button', { name: 'Зашифрованная беседа' }).click()
+  await expect(alice.page.getByText('Сквозное шифрование')).toBeVisible()
+  const recoveryKey = await saveRecoveryKey(alice.page)
+  const composer = alice.page.getByRole('textbox', { name: `Написать @${bobUser.username}` })
+  await composer.fill('Код от домофона: 77')
+  await composer.press('Enter')
+  await expect(alice.page.getByText('Код от домофона: 77')).toBeVisible()
+  // The message is in the history backup (encrypted) before the old browser is gone.
+  const channelId = alice.page.url().split('/').at(-1) as string
+  await expect
+    .poll(() =>
+      alice.page.evaluate(async (id) => {
+        const response = await fetch(`/api/v1/users/@me/e2ee/backup/entries?channelId=${id}`)
+        return ((await response.json()) as { data: { entries: unknown[] } }).data.entries.length
+      }, channelId),
+    )
+    .toBeGreaterThan(0)
+  await alice.context.close()
+
+  // A new browser: signed in, but its device was not there for the message.
+  const fresh = await openAs(browser)
+  await fresh.page.goto('/login')
+  await fresh.page
+    .getByLabel('Имя пользователя или email', { exact: true })
+    .fill(aliceUser.username)
+  await fresh.page.getByLabel('Пароль', { exact: true }).fill(aliceUser.password)
+  await fresh.page.getByRole('button', { name: 'Войти' }).click()
+  await fresh.page
+    .getByRole('complementary', { name: 'Личные сообщения' })
+    .getByRole('link', { name: /зашифрованная беседа/ })
+    .click()
+  const banner = fresh.page.getByRole('status', { name: 'Старые сообщения недоступны' })
+  await expect(banner).toBeVisible()
+  await expect(fresh.page.getByText('Сообщение недоступно на этом устройстве')).toBeVisible()
+
+  await banner.getByRole('button', { name: 'Ввести ключ восстановления' }).click()
+  const dialog = fresh.page.getByRole('dialog', { name: 'Ключ восстановления' })
+  await dialog.getByLabel('Ключ восстановления', { exact: true }).fill(recoveryKey.toLowerCase())
+  await dialog.getByRole('button', { name: 'Восстановить' }).click()
+  await expect(dialog).toBeHidden()
+
+  // The old message reads again here, and this browser is vouched for by Alice's user key.
+  await fresh.page.reload()
+  await expect(fresh.page.getByText('Код от домофона: 77')).toBeVisible()
+  await expect(banner).toBeHidden()
+  const signed = await fresh.page.evaluate(async () => {
+    const response = await fetch('/api/v1/users/@me/devices')
+    const { data } = (await response.json()) as {
+      data: { devices: { userSignature: string | null }[] }
+    }
+    return data.devices.map((device) => Boolean(device.userSignature))
+  })
+  expect(signed).toEqual([true, true])
+
+  await fresh.context.close()
+  await bob.context.close()
 })
