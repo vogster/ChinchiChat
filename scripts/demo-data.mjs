@@ -17,12 +17,12 @@ const ONLINE = process.argv.find((arg) => arg.startsWith('--online='))?.slice('-
 const RUN = ONLINE ?? Date.now().toString(36).slice(-4)
 
 const PEOPLE = [
-  { key: 'anna', name: 'Анна', color: '#5865f2', bio: 'Делаю этот сервер уютным ☕' },
-  { key: 'boris', name: 'Борис', color: '#eb459e', bio: 'Бэкенд, Postgres и велосипед' },
-  { key: 'vika', name: 'Вика', color: '#57f287', bio: 'Дизайн и иллюстрации' },
-  { key: 'dima', name: 'Дима', color: '#fee75c', bio: 'Фронтенд, React' },
-  { key: 'lena', name: 'Лена', color: '#ed4245', bio: 'Тестирую всё, что движется' },
-  { key: 'kirill', name: 'Кирилл', color: '#00a8fc', bio: 'DevOps: docker compose up' },
+  { key: 'anna', name: 'Анна', bio: 'Делаю этот сервер уютным ☕' },
+  { key: 'boris', name: 'Борис', bio: 'Бэкенд, Postgres и велосипед' },
+  { key: 'vika', name: 'Вика', bio: 'Дизайн и иллюстрации' },
+  { key: 'dima', name: 'Дима', bio: 'Фронтенд, React' },
+  { key: 'lena', name: 'Лена', bio: 'Тестирую всё, что движется' },
+  { key: 'kirill', name: 'Кирилл', bio: 'DevOps: docker compose up' },
 ]
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
@@ -53,21 +53,6 @@ const call = async (token, method, path, body) => {
   }
 }
 
-/** A round picture with the person's initial (or the server's). */
-const picture = async (letter, color, size = 256) =>
-  new Uint8Array(
-    await sharp(
-      Buffer.from(
-        `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}">` +
-          `<rect width="100%" height="100%" fill="${color}"/>` +
-          `<text x="50%" y="54%" font-family="Segoe UI, Arial, sans-serif" font-size="${size * 0.5}" ` +
-          `font-weight="700" fill="#fff" text-anchor="middle" dominant-baseline="middle">${letter}</text></svg>`,
-      ),
-    )
-      .png()
-      .toBuffer(),
-  )
-
 /** Small emoji pictures drawn as SVG, so the demo needs no image files. */
 const emojiPicture = async (svg) =>
   new Uint8Array(
@@ -92,7 +77,8 @@ const verifyEmail = async (email) => {
   throw new Error(`No verification email for ${email}`)
 }
 
-const signUp = async ({ key, name, color, bio }) => {
+// No uploaded avatars or icons: the app draws them from the id (DiceBear), as for real users.
+const signUp = async ({ key, name, bio }) => {
   const username = `${key}_${RUN}`
   const email = `${username}@demo.chinchi.test`
   const { token, user } = await call(null, 'POST', '/auth/register', {
@@ -102,7 +88,6 @@ const signUp = async ({ key, name, color, bio }) => {
   })
   await verifyEmail(email)
   await call(token, 'PATCH', '/users/@me', { displayName: name, bio })
-  await call(token, 'PUT', '/users/@me/avatar', await picture(name[0], color))
   return { key, name, token, id: user.id, username }
 }
 
@@ -150,7 +135,6 @@ const main = async () => {
   }
 
   const { guild } = await call(anna.token, 'POST', '/guilds', { name: 'Кофе и код', locale: 'ru' })
-  await call(anna.token, 'PUT', `/guilds/${guild.id}/icon`, await picture('☕', '#2b2d31'))
   const general = guild.channels.find((c) => c.type === 'text')
   const lounge = guild.channels.find((c) => c.type === 'voice')
   const textCategory = guild.channels.find((c) => c.type === 'category')?.id ?? null
@@ -288,7 +272,6 @@ const main = async () => {
     name: 'Велоклуб',
     locale: 'ru',
   })
-  await call(boris.token, 'PUT', `/guilds/${club.id}/icon`, await picture('🚲', '#3ba55d'))
   const clubInvite = (
     await call(
       boris.token,
