@@ -1,5 +1,6 @@
 import { infiniteQueryOptions, queryOptions } from '@tanstack/react-query'
 
+import type { SenderCheck } from '../e2ee/client'
 import type { SealedFile } from '../e2ee/codec'
 import type { ApiClient } from '@chinchi/sdk'
 import type { MentionCounts, Message, PresenceStatus, Snowflake } from '@chinchi/shared'
@@ -16,6 +17,8 @@ export type MessageItem = Message & {
   readonly encryptedFiles?: readonly SealedFile[]
   /** Shown as one quiet line instead of the message (messages this device can't read). */
   readonly notice?: string
+  /** Encrypted messages: whether the signer MLS verified is the author the server named. */
+  readonly senderCheck?: SenderCheck
 }
 
 /** Pages go newest → older; each page is oldest → newest. `undefined` cursor = latest page. */

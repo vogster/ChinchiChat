@@ -5,6 +5,7 @@ import { createFakeApi, testFriend, testGuild, testMessage, testUser } from '../
 import { fakeCiphertext } from '../../test/fake-e2ee'
 import { renderApp } from '../../test/render-app'
 
+import type { ReadMessage } from './client'
 import type { PrivateChannel } from '@chinchi/shared'
 
 const encryptedDm: PrivateChannel = {
@@ -66,6 +67,45 @@ describe('encrypted conversations', () => {
     ).toBeVisible()
     expect(screen.getByText(/Сервер не видит сообщений/)).toBeVisible()
     expect(e2ee.open).toHaveBeenCalledWith({ id: encryptedDm.id, memberIds: [testUser.id, '200'] })
+  })
+
+  it('show who really signed a message when the server names someone else', async () => {
+    const api = createFakeApi({ user: testUser })
+    api.dms.list.mockResolvedValue({ channels: [encryptedDm] })
+    // The server attributes Bob's message to me; MLS says Bob signed it.
+    api.messages.list.mockResolvedValue({
+      messages: [
+        testMessage('1300', {
+          channelId: encryptedDm.id,
+          guildId: null,
+          author: testFriend,
+          content: '',
+          ciphertext: fakeCiphertext('Привет от Боба'),
+        }),
+        testMessage('1301', {
+          channelId: encryptedDm.id,
+          guildId: null,
+          author: testUser,
+          content: '',
+          ciphertext: fakeCiphertext('Это не я писал'),
+        }),
+      ],
+    })
+    const { e2ee } = renderApp(URL, { api })
+    e2ee.read.mockImplementation(async (_channel, message): Promise<ReadMessage> => ({
+      payload: { v: 1, text: message.id === '1301' ? 'Это не я писал' : 'Привет от Боба' },
+      sender:
+        message.id === '1301' ? { kind: 'mismatch', userId: testFriend.id } : { kind: 'verified' },
+    }))
+
+    const row = (await screen.findByText('Это не я писал')).closest('li') as HTMLElement
+    const badge = within(row).getByText('Подпись другого участника')
+    expect(badge).toBeVisible()
+    expect(badge).toHaveAttribute('title', expect.stringContaining('Сервер назвал автором'))
+    // Shown as Bob's, whatever the server said.
+    expect(within(row).getByText('Боб')).toBeVisible()
+    const honest = (await screen.findByText('Привет от Боба')).closest('li') as HTMLElement
+    expect(within(honest).queryByText('Подпись другого участника')).not.toBeInTheDocument()
   })
 
   it('are marked beta: in the header and where the conversation starts', async () => {

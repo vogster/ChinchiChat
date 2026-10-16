@@ -12,6 +12,7 @@ import type {
   CipherMessage,
   ConversationStatus,
   EncryptedChannel,
+  ReadMessage,
   SendOptions,
 } from '../features/e2ee/client'
 import type { E2eeClientFactory } from '../features/e2ee/e2ee-context'
@@ -85,8 +86,11 @@ export const createFakeE2ee = (status: ConversationStatus = 'ready') => {
       })
       return message
     }),
-    read: vi.fn(async (_channel: EncryptedChannel, message: CipherMessage) =>
-      message.ciphertext ? decodePayload(fromBase64(message.ciphertext)) : null,
+    read: vi.fn(
+      async (_channel: EncryptedChannel, message: CipherMessage): Promise<ReadMessage | null> => {
+        const payload = message.ciphertext ? decodePayload(fromBase64(message.ciphertext)) : null
+        return payload ? { payload, sender: { kind: 'verified' } } : null
+      },
     ),
     devicesChanged: vi.fn(async (_userId: string) => undefined),
     search: vi.fn(

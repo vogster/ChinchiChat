@@ -19,10 +19,10 @@ const setup = () => {
   return { delivery, client }
 }
 
-/** Sends from one client and returns what the other reads of it. */
+/** Sends from one client and returns what the other reads of it (the payload, when readable). */
 const relay = async (from: E2eeClient, to: E2eeClient, text: string) => {
   const sent = await from.send(DM, text)
-  return to.read(DM, sent)
+  return (await to.read(DM, sent))?.payload ?? null
 }
 
 describe('e2ee client', () => {
@@ -45,9 +45,9 @@ describe('e2ee client', () => {
     await alice.open(DM)
     const sent = await alice.send(DM, 'Один раз')
 
-    expect(await bobSide.client.read(DM, sent)).toMatchObject({ text: 'Один раз' })
-    expect(await bobSide.client.read(DM, sent)).toMatchObject({ text: 'Один раз' })
-    expect(await alice.read(DM, sent)).toMatchObject({ text: 'Один раз' })
+    expect(await bobSide.client.read(DM, sent)).toMatchObject({ payload: { text: 'Один раз' } })
+    expect(await bobSide.client.read(DM, sent)).toMatchObject({ payload: { text: 'Один раз' } })
+    expect(await alice.read(DM, sent)).toMatchObject({ payload: { text: 'Один раз' } })
 
     // After a reload (same store, new client) both still read it.
     const reloaded = createE2eeClient({
@@ -56,7 +56,77 @@ describe('e2ee client', () => {
       userId: BOB,
       deviceName: 'Браузер',
     })
-    expect(await reloaded.read(DM, sent)).toMatchObject({ text: 'Один раз' })
+    expect(await reloaded.read(DM, sent)).toMatchObject({ payload: { text: 'Один раз' } })
+  })
+
+  it('vouches for the author when the signer MLS verified is who the server says', async () => {
+    const { client } = setup()
+    const alice = client(ALICE).client
+    const bob = client(BOB).client
+    await bob.ready()
+    await alice.open(DM)
+    const sent = await alice.send(DM, 'Это писала Алиса')
+
+    expect(await bob.read(DM, { ...sent, authorId: ALICE })).toEqual({
+      payload: { v: 1, text: 'Это писала Алиса' },
+      sender: { kind: 'verified' },
+    })
+    // One's own messages are one's own.
+    expect(await alice.read(DM, sent)).toMatchObject({ sender: { kind: 'verified' } })
+  })
+
+  it('shows who really signed a message when the server names someone else', async () => {
+    const { client } = setup()
+    const alice = client(ALICE).client
+    const bob = client(BOB).client
+    await bob.ready()
+    await alice.open(DM)
+    const sent = await alice.send(DM, 'Это писала Алиса')
+
+    // The server (or whoever controls it) relabels Alice's message as Bob's own.
+    expect(await bob.read(DM, { ...sent, authorId: BOB })).toEqual({
+      payload: { v: 1, text: 'Это писала Алиса' },
+      sender: { kind: 'mismatch', userId: ALICE },
+    })
+    // The local index files it under the real author.
+    expect(await bob.search(DM, 'писала')).toEqual([
+      { id: sent.id, authorId: ALICE, text: 'Это писала Алиса' },
+    ])
+  })
+
+  it('does not vouch for a message sent just before the conversation changed keys', async () => {
+    const { client } = setup()
+    const alice = client(ALICE).client
+    const bob = client(BOB).client
+    await bob.ready()
+    await alice.open(DM)
+    await bob.open(DM)
+    const sent = await alice.send(DM, 'Перед новым устройством')
+    // Bob's phone joins: a new epoch. Bob's laptop reads the older message only afterwards.
+    const bobPhone = client(BOB, 'Телефон').client
+    await bobPhone.ready()
+    await alice.open(DM)
+    await bob.open(DM)
+
+    expect(await bob.read(DM, { ...sent, authorId: ALICE })).toEqual({
+      payload: { v: 1, text: 'Перед новым устройством' },
+      sender: { kind: 'unverified' },
+    })
+  })
+
+  it('ignores a set of reactions the server attributes to someone who did not sign it', async () => {
+    const { client, delivery } = setup()
+    const alice = client(ALICE).client
+    const bob = client(BOB).client
+    await bob.ready()
+    await alice.open(DM)
+    const message = await alice.send(DM, 'Кто идёт?')
+    await alice.react(DM, message.id, ['👍'])
+    const stored = delivery.encryptedReactions.get(`${message.id}:${ALICE}`) as string
+
+    expect(
+      await bob.readReaction(DM, message.id, { userId: BOB, version: '1', ciphertext: stored }),
+    ).toEqual([])
   })
 
   it('brings in a new device of a member, which reads from then on', async () => {
@@ -78,7 +148,7 @@ describe('e2ee client', () => {
       text: 'Уже с телефоном',
     })
     expect(await bob.read(DM, await alice.send(DM, 'И на ноутбук'))).toMatchObject({
-      text: 'И на ноутбук',
+      payload: { text: 'И на ноутбук' },
     })
   })
 
@@ -97,7 +167,7 @@ describe('e2ee client', () => {
     await alice.open(DM)
 
     const secret = await alice.send(DM, 'Не для старого')
-    expect(await bob.read(DM, secret)).toMatchObject({ text: 'Не для старого' })
+    expect(await bob.read(DM, secret)).toMatchObject({ payload: { text: 'Не для старого' } })
     expect(await bobOld.read(DM, secret)).toBeNull()
   })
 
@@ -119,8 +189,10 @@ describe('e2ee client', () => {
     const sent = await alice.send(DM, 'Вот план', { files: [file] })
 
     expect(delivery.messages.at(-1)?.attachmentIds).toEqual(['900'])
-    expect(await bob.read(DM, sent)).toEqual({ v: 1, text: 'Вот план', files: [file] })
-    expect(await alice.read(DM, sent)).toMatchObject({ files: [file] })
+    expect(await bob.read(DM, sent)).toMatchObject({
+      payload: { v: 1, text: 'Вот план', files: [file] },
+    })
+    expect(await alice.read(DM, sent)).toMatchObject({ payload: { files: [file] } })
   })
 
   it('edits a message: everyone reads the new text, files stay', async () => {
@@ -131,15 +203,17 @@ describe('e2ee client', () => {
     await alice.open(DM)
     const file = { id: '900', name: 'a.txt', type: 'text/plain', size: 1, key: 'a2V5', iv: 'aXY=' }
     const sent = await alice.send(DM, 'Встреча в 5', { files: [file] })
-    expect(await bob.read(DM, sent)).toMatchObject({ text: 'Встреча в 5' })
+    expect(await bob.read(DM, sent)).toMatchObject({ payload: { text: 'Встреча в 5' } })
 
     const edited = await alice.edit(DM, sent.id, 'Встреча в 6')
 
     expect(edited.editedAt).toEqual(expect.any(String))
-    expect(await bob.read(DM, edited)).toEqual({ v: 1, text: 'Встреча в 6', files: [file] })
-    expect(await alice.read(DM, edited)).toMatchObject({ text: 'Встреча в 6' })
+    expect(await bob.read(DM, edited)).toMatchObject({
+      payload: { v: 1, text: 'Встреча в 6', files: [file] },
+    })
+    expect(await alice.read(DM, edited)).toMatchObject({ payload: { text: 'Встреча в 6' } })
     // The original stays readable by what it was (an older copy of the message).
-    expect(await bob.read(DM, sent)).toMatchObject({ text: 'Встреча в 5' })
+    expect(await bob.read(DM, sent)).toMatchObject({ payload: { text: 'Встреча в 5' } })
   })
 
   it('never encrypts for someone removed from a group, even before anyone reopens it', async () => {
@@ -151,13 +225,15 @@ describe('e2ee client', () => {
     const carol = client(CAROL).client
     await Promise.all([bob.ready(), carol.ready()])
     await alice.open(group)
-    expect(await carol.read(group, await alice.send(group, 'Всем'))).toMatchObject({ text: 'Всем' })
+    expect(await carol.read(group, await alice.send(group, 'Всем'))).toMatchObject({
+      payload: { text: 'Всем' },
+    })
 
     // Carol leaves the group; Alice writes at once, without opening it again.
     const withoutCarol = { ...group, memberIds: [ALICE, BOB] }
     const sent = await alice.send(withoutCarol, 'Без Кэрол')
 
-    expect(await bob.read(withoutCarol, sent)).toMatchObject({ text: 'Без Кэрол' })
+    expect(await bob.read(withoutCarol, sent)).toMatchObject({ payload: { text: 'Без Кэрол' } })
     expect(await carol.read(group, sent)).toBeNull()
   })
 

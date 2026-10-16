@@ -1309,7 +1309,13 @@
     },
     "beta": "beta",
     "betaHint": "Encryption has not been independently reviewed yet",
-    "betaNotice": "Encryption is in beta: it has not been independently reviewed yet. Rely on it with care for truly sensitive secrets."
+    "betaNotice": "Encryption is in beta: it has not been independently reviewed yet. Rely on it with care for truly sensitive secrets.",
+    "sender": {
+      "mismatch": "Signed by someone else",
+      "mismatchHint": "The server named an author other than the one who signed this message. The real sender is shown.",
+      "unverified": "sender not verified",
+      "unverifiedHint": "Sent just before the conversation keys changed; the signer was not checked against the author."
+    }
   },
   "polls": {
     "label": "Poll: {{question}}",

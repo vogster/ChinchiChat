@@ -61,7 +61,7 @@ describe('approving a new device from an old one', () => {
       expect.any(String),
     )
     expect(await phone.recovery.key()).toBe(await laptop.recovery.key())
-    expect(await phone.read(DM, old)).toMatchObject({ text: 'До нового телефона' })
+    expect(await phone.read(DM, old)).toMatchObject({ payload: { text: 'До нового телефона' } })
   })
 
   it('stops when the old device says no', async () => {

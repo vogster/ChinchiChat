@@ -38,7 +38,7 @@ describe('history backup', () => {
     await laptop.open(DM)
     const mine = await laptop.send(DM, 'Пароль от вайфая — котики')
     const theirs = await bob.send(DM, 'Записал')
-    expect(await laptop.read(DM, theirs)).toMatchObject({ text: 'Записал' })
+    expect(await laptop.read(DM, theirs)).toMatchObject({ payload: { text: 'Записал' } })
     const key = (await laptop.recovery.key()) as string
     await laptop.flushBackup()
 
@@ -46,8 +46,10 @@ describe('history backup', () => {
     const fresh = client(ALICE, 'Новый браузер')
     expect(await fresh.recovery.useKey(key)).toBe('ok')
 
-    expect(await fresh.read(DM, mine)).toMatchObject({ text: 'Пароль от вайфая — котики' })
-    expect(await fresh.read(DM, theirs)).toMatchObject({ text: 'Записал' })
+    expect(await fresh.read(DM, mine)).toMatchObject({
+      payload: { text: 'Пароль от вайфая — котики' },
+    })
+    expect(await fresh.read(DM, theirs)).toMatchObject({ payload: { text: 'Записал' } })
     expect(await fresh.recovery.saved()).toBe(true)
   })
 

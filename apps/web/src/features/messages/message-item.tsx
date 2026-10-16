@@ -265,6 +265,21 @@ export const MessageItem = ({
                 {t('webhooks.badge')}
               </span>
             ) : null}
+            {/* Encrypted conversations: the signature MLS checked disagrees with the server. */}
+            {message.senderCheck?.kind === 'mismatch' ? (
+              <span
+                role="status"
+                title={t('e2ee.sender.mismatchHint')}
+                className="shrink-0 rounded border border-danger px-1 text-[10px] font-semibold text-danger uppercase"
+              >
+                {t('e2ee.sender.mismatch')}
+              </span>
+            ) : null}
+            {message.senderCheck?.kind === 'unverified' ? (
+              <span title={t('e2ee.sender.unverifiedHint')} className="shrink-0 text-xs text-muted">
+                {t('e2ee.sender.unverified')}
+              </span>
+            ) : null}
             <time dateTime={message.createdAt} className="shrink-0 text-xs text-muted">
               {formatMessageTime(message.createdAt, i18n.language)}
             </time>

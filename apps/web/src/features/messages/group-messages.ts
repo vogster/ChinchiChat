@@ -15,11 +15,13 @@ export const groupMessages = (messages: readonly MessageItem[]): MessageRow[] =>
     const previous = messages[index - 1]
     const day = localDay(message.createdAt)
     const newDay = !previous || localDay(previous.createdAt) !== day
-    // A reply (or a command's answer) always gets a header: it shows what it answers.
+    // A reply (or a command's answer) always gets a header: it shows what it answers. So does
+    // an encrypted message whose signer the server misnamed: the header carries the warning.
     const compact =
       !newDay &&
       message.reply === null &&
       message.interaction === null &&
+      message.senderCheck?.kind !== 'mismatch' &&
       message.system === null &&
       previous?.system === null &&
       previous !== undefined &&

@@ -17,8 +17,11 @@ export interface EncryptedReactionsDeps {
     conversation: Conversation,
     payload: EncryptedPayload,
   ) => Promise<string>
-  /** Decrypts an MLS message of the conversation (not one this device sent). */
-  readonly decrypt: (channelId: string, ciphertext: string) => Promise<EncryptedPayload | null>
+  /** Decrypts an MLS message of the conversation (not one this device sent), with its signer. */
+  readonly decrypt: (
+    channelId: string,
+    ciphertext: string,
+  ) => Promise<{ payload: EncryptedPayload; sender: { userId: string } | null } | null>
   /** Puts a set into its message's history backup. */
   readonly keepReaction: (
     messageId: string,
@@ -78,9 +81,11 @@ export const createEncryptedReactions = ({
     serial(channel.id, async () => {
       const known = await store.get<string[]>(versionKey(reaction.version))
       if (known) return known
-      const payload = await decrypt(channel.id, reaction.ciphertext).catch(() => null)
+      const opened = await decrypt(channel.id, reaction.ciphertext).catch(() => null)
+      // The server says whose set this is; the signature MLS checked must say the same.
+      if (opened?.sender && opened.sender.userId !== reaction.userId) return []
       const set =
-        payload?.react ??
+        opened?.payload.react ??
         (reaction.userId === userId ? await store.get<string[]>(ownKey(messageId)) : undefined) ??
         (await restoreReaction(channel.id, messageId, reaction))
       if (!set) return []
