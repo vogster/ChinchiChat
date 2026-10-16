@@ -5,6 +5,7 @@ import { HttpError, badRequest, forbidden } from '../../http/http-error'
 import { isMessageChannel } from '../channels/channel.repository'
 import { cannotMessage } from '../dms/dm.service'
 import { previewLinks } from '../embeds/link-previews'
+import { createForwarding, encryptedForward } from './forwarding'
 import { createMessageViews } from './message-views'
 
 const sameLinks = (a: readonly string[], b: readonly string[]) =>
@@ -79,6 +80,7 @@ export interface CreateMessageInput {
   /** Encrypted conversations: the MLS message (base64); content stays empty. */
   readonly ciphertext?: string | undefined
   readonly poll?: z.output<typeof createPollSchema> | undefined
+  readonly forward?: { readonly channelId: Snowflake; readonly messageId: Snowflake } | undefined
 }
 
 /** What an edit changes: the text, or in encrypted conversations the MLS message. */
@@ -131,6 +133,7 @@ export const createMessageService = ({
   visibleChannels,
 }: MessageServiceDeps) => {
   const views = createMessageViews({ messages, attachmentRows, reactions, polls, users })
+  const forwarding = createForwarding({ channels, messages, attachmentRows })
 
   /**
    * A text channel or DM the user can see (404 otherwise) with the given permission in it
@@ -192,10 +195,15 @@ export const createMessageService = ({
         nonce,
         ciphertext,
         poll,
+        forward,
       }: CreateMessageInput,
     ): Promise<Message> {
+      // The original first: forwarding needs it readable, and its files need ATTACH_FILES.
+      const source = forward
+        ? await forwarding.source(forward.channelId, forward.messageId, author.id)
+        : null
       const flag =
-        attachmentIds.length > 0
+        attachmentIds.length > 0 || (source?.files.length ?? 0) > 0
           ? Permission.SendMessages | Permission.AttachFiles
           : Permission.SendMessages
       const { channel, permissions } = await textChannel(channelId, author.id, flag)
@@ -204,6 +212,7 @@ export const createMessageService = ({
       if (poll && channel.encrypted) {
         throw badRequest('ENCRYPTED_CHANNEL', 'Encrypted conversations have no polls')
       }
+      if (source && channel.encrypted) throw encryptedForward()
       const original = replyTo ? await messages.findInChannel(channel.id, replyTo) : null
       if (replyTo && !original) {
         throw badRequest('INVALID_REPLY', 'Can only reply to a message in this channel')
@@ -221,7 +230,15 @@ export const createMessageService = ({
           })
       if (!ciphertext) await screen(channel, author.id, content, permissions, true)
       const id = nextId()
-      const files = await attachments.prepare(channel.id, author.id, attachmentIds, id)
+      const forwardedFiles = source
+        ? await attachments.cloneAsUploads(source.messageId, source.files, channel.id, author.id)
+        : []
+      const files = await attachments.prepare(
+        channel.id,
+        author.id,
+        [...attachmentIds, ...forwardedFiles],
+        id,
+      )
       // Last before writing, so a send that fails on its files doesn't use up the turn.
       try {
         await takeSlowmodeTurn(channel, author.id, permissions)
@@ -241,6 +258,7 @@ export const createMessageService = ({
             replyMention: replyTo !== undefined && replyMention,
             ...mentions,
             ...(ciphertext ? { ciphertext } : {}),
+            ...(source ? { forward: source.column } : {}),
           },
           files.map((file) => file.id),
           poll && {

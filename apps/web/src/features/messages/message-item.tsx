@@ -1,6 +1,7 @@
 import { Link } from '@tanstack/react-router'
 import {
   Flag,
+  Forward,
   Megaphone,
   Paperclip,
   MessagesSquare,
@@ -23,6 +24,8 @@ import { MessageContent } from '../markdown/message-content'
 import { QUICK_REACTIONS } from './reaction-cache'
 import { EncryptedAttachments } from '../e2ee/encrypted-attachments'
 import { AttachmentList } from './attachment-list'
+import { ForwardDialog } from './forward-dialog'
+import { ForwardedBlock } from './forwarded-block'
 import { PollCard } from './poll-card'
 import { EmbedCard } from './embed-card'
 import { ReactionsBar } from './reactions-bar'
@@ -151,10 +154,19 @@ export const MessageItem = ({
     : message.author
       ? (authorNickname ?? message.author.displayName ?? message.author.username)
       : t('messages.deletedUser')
+  // Encrypted messages stay in their conversation: the server can't copy what it can't read.
+  const canForward = !message.pending && !message.system && !message.ciphertext
+  const [forwarding, setForwarding] = useState(false)
   const showActions =
     !message.pending &&
     !editing &&
-    (canReact || canReply || canPin || canEdit || canDelete || onPublish !== undefined)
+    (canReact ||
+      canReply ||
+      canPin ||
+      canEdit ||
+      canDelete ||
+      canForward ||
+      onPublish !== undefined)
 
   const content = editing ? (
     <EditBox initial={message.content} onSave={onSaveEdit} onCancel={onCancelEdit} />
@@ -262,6 +274,7 @@ export const MessageItem = ({
           </div>
         )}
         {content}
+        {message.forward ? <ForwardedBlock forward={message.forward} /> : null}
         <AttachmentList attachments={message.attachments} />
         {message.encryptedFiles ? <EncryptedAttachments files={message.encryptedFiles} /> : null}
         {message.poll && !message.pending ? (
@@ -353,6 +366,17 @@ export const MessageItem = ({
               <Reply aria-hidden className="size-4" />
             </button>
           ) : null}
+          {canForward ? (
+            <button
+              type="button"
+              aria-label={t('forward.action')}
+              title={t('forward.action')}
+              onClick={() => setForwarding(true)}
+              className="p-1.5 text-muted hover:text-text"
+            >
+              <Forward aria-hidden className="size-4" />
+            </button>
+          ) : null}
           {canPin ? (
             <button
               type="button"
@@ -425,6 +449,7 @@ export const MessageItem = ({
           ) : null}
         </div>
       ) : null}
+      {forwarding ? <ForwardDialog message={message} onOpenChange={setForwarding} /> : null}
     </li>
   )
 }

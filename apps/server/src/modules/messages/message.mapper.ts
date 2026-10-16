@@ -24,6 +24,8 @@ export interface MessageContext {
   /** Encrypted messages: each person's encrypted set (an encrypted message always has the list). */
   readonly encryptedReactions?: readonly EncryptedReaction[] | undefined
   readonly poll?: Poll | null | undefined
+  /** Who wrote the original of a forwarded message. */
+  readonly forwardAuthor?: UserRow | null
   readonly nonce?: string | undefined
   /** Who ran the command a bot's message answers. */
   readonly interactionUser?: UserRow | null
@@ -41,6 +43,7 @@ export const toMessage = (
     reactions = [],
     encryptedReactions = [],
     poll = null,
+    forwardAuthor = null,
     nonce,
     interactionUser = null,
     systemTarget = null,
@@ -86,5 +89,15 @@ export const toMessage = (
   reactions: [...reactions],
   ...(message.ciphertext ? { encryptedReactions: [...encryptedReactions] } : {}),
   poll,
+  forward: message.forward
+    ? {
+        channelId: message.forward.channelId,
+        guildId: message.forward.guildId,
+        messageId: message.forward.messageId,
+        author: forwardAuthor ? toPublicUser(forwardAuthor) : null,
+        content: message.forward.content,
+        createdAt: message.forward.createdAt,
+      }
+    : null,
   nonce: nonce ?? null,
 })

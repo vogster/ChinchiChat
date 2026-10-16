@@ -1341,5 +1341,14 @@
       "72": "3 days",
       "168": "1 week"
     }
+  },
+  "forward": {
+    "action": "Forward",
+    "title": "Forward message",
+    "search": "Channel or direct message",
+    "comment": "Comment",
+    "send": "Forward",
+    "label": "Forwarded",
+    "block": "Forwarded message"
   }
 }

@@ -43,13 +43,16 @@ export const createMessageRequestSchema = z
     ciphertext: base64Schema(CIPHERTEXT_MAX_BASE64).optional(),
     /** A poll with the message (it can be the whole message). */
     poll: createPollSchema.optional(),
+    /** Forwards this message here (with `content` as an optional comment). */
+    forward: z.strictObject({ channelId: snowflakeSchema, messageId: snowflakeSchema }).optional(),
   })
   .refine(
     (body) =>
       body.content.length > 0 ||
       (body.attachmentIds?.length ?? 0) > 0 ||
       body.ciphertext !== undefined ||
-      body.poll !== undefined,
+      body.poll !== undefined ||
+      body.forward !== undefined,
     { message: 'Message is empty', path: ['content'] },
   )
   .refine((body) => body.ciphertext === undefined || body.content.length === 0, {
@@ -126,6 +129,18 @@ export const systemMessageKindSchema = z.enum([
 ])
 export type SystemMessageKind = z.infer<typeof systemMessageKindSchema>
 
+/** What a forwarded message keeps of the original (its files come along as attachments). */
+export const forwardedMessageSchema = z.object({
+  channelId: snowflakeSchema,
+  /** null when it came from a DM. */
+  guildId: snowflakeSchema.nullable(),
+  messageId: snowflakeSchema,
+  /** null once the author's account is gone. */
+  author: publicUserSchema.nullable(),
+  content: z.string(),
+  createdAt: z.iso.datetime(),
+})
+
 export const messageSchema = z.object({
   id: snowflakeSchema,
   channelId: snowflakeSchema,
@@ -165,6 +180,8 @@ export const messageSchema = z.object({
   encryptedReactions: z.array(encryptedReactionSchema).optional(),
   /** A poll sent with the message; null or absent if none. */
   poll: pollSchema.nullable().optional(),
+  /** A forwarded message: a copy of the original as it was when forwarded. */
+  forward: forwardedMessageSchema.nullable().optional(),
   nonce: z.string().nullable(),
 })
 
@@ -185,5 +202,6 @@ export type CreateMessageRequest = z.input<typeof createMessageRequestSchema>
 export type UpdateMessageRequest = z.infer<typeof updateMessageRequestSchema>
 export type ListMessagesQuery = z.input<typeof listMessagesQuerySchema>
 export type Message = z.infer<typeof messageSchema>
+export type ForwardedMessage = z.infer<typeof forwardedMessageSchema>
 export type MessageReply = z.infer<typeof messageReplySchema>
 export type ReplySnippet = z.infer<typeof replySnippetSchema>

@@ -337,6 +337,13 @@
       "when": 1792123258277,
       "tag": "0047_polls",
       "breakpoints": true
+    },
+    {
+      "idx": 48,
+      "version": "7",
+      "when": 1792124354965,
+      "tag": "0048_forwarded_messages",
+      "breakpoints": true
     }
   ]
 }

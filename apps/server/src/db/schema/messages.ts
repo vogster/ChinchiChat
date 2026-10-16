@@ -45,6 +45,15 @@ export const messages = pgTable(
     content: text('content').notNull(),
     /** Encrypted conversations: the MLS message, base64 (content is empty). */
     ciphertext: text('ciphertext'),
+    /** A forwarded message: the original as it was (content is the forwarder's comment). */
+    forward: jsonb('forward').$type<{
+      channelId: string
+      guildId: string | null
+      messageId: string
+      authorId: string | null
+      content: string
+      createdAt: string
+    }>(),
     // Not a foreign key: a reply keeps pointing at its original after that is deleted.
     replyToId: snowflake('reply_to_id'),
     replyMention: boolean('reply_mention').notNull().default(false),

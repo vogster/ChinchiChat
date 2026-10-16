@@ -78,6 +78,7 @@ export const createMessageRepository = (db: DbExecutor) => ({
           | 'interactionUserId'
           | 'system'
           | 'ciphertext'
+          | 'forward'
         >
       >,
     attachmentIds: readonly Snowflake[] = [],

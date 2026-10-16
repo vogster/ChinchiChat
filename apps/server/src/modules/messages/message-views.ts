@@ -74,6 +74,7 @@ export const createMessageViews = ({
         rows.flatMap(({ message }) => [
           ...(message.interactionUserId ? [message.interactionUserId] : []),
           ...(message.system?.targetId ? [message.system.targetId] : []),
+          ...(message.forward?.authorId ? [message.forward.authorId] : []),
         ]),
       ),
     ]
@@ -106,6 +107,9 @@ export const createMessageViews = ({
         reactions: reactionsByMessage.get(message.id),
         encryptedReactions: encryptedByMessage.get(message.id),
         poll: pollsByMessage.get(message.id) ?? null,
+        forwardAuthor: message.forward?.authorId
+          ? (usersById.get(message.forward.authorId) ?? null)
+          : null,
         nonce,
         interactionUser: message.interactionUserId
           ? (usersById.get(message.interactionUserId) ?? null)

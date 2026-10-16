@@ -164,6 +164,40 @@ export const createAttachmentService = ({
     },
 
     /**
+     * Copies a message's files as fresh uploads of `uploaderId` in another channel (forwarding):
+     * they then go through `prepare` like any upload. Returns the new upload ids, in order.
+     */
+    async cloneAsUploads(
+      sourceMessageId: Snowflake,
+      sources: readonly AttachmentRow[],
+      channelId: Snowflake,
+      uploaderId: Snowflake,
+    ): Promise<Snowflake[]> {
+      if (sources.length === 0) return []
+      const store = requireStorage()
+      const ids: Snowflake[] = []
+      for (const source of sources) {
+        const row = await attachments.insert({
+          id: nextId(),
+          channelId,
+          uploaderId,
+          filename: source.filename,
+          contentType: source.contentType,
+          size: source.size,
+          previewState:
+            isInlineImage(source.contentType) && source.size <= PREVIEW_MAX_INPUT_BYTES
+              ? 'pending'
+              : 'none',
+        })
+        if (!(await store.copy(attachmentKey(source, sourceMessageId), uploadKey(row)))) {
+          throw invalidAttachment()
+        }
+        ids.push(row.id)
+      }
+      return ids
+    },
+
+    /**
      * Copies the author's uploads under the new message and verifies the copies, so what was
      * checked is exactly what gets served. The message insert then claims the rows atomically;
      * if it fails, `discard` the copies. Each attempt has its own message id, so concurrent
