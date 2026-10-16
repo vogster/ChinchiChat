@@ -16,25 +16,30 @@ export const createMfaRepository = (db: Database) => {
   }
 
   return {
-    async setPendingSecret(userId: Snowflake, secret: string): Promise<void> {
-      await db.update(users).set({ totpPendingSecret: secret }).where(eq(users.id, userId))
+    /** `stored` is the secret as it goes into the database (sealed when a key is set). */
+    async setPendingSecret(userId: Snowflake, stored: string): Promise<void> {
+      await db.update(users).set({ totpPendingSecret: stored }).where(eq(users.id, userId))
     },
 
-    /** Turns the confirmed pending secret on, with fresh recovery codes. False if it changed. */
+    /**
+     * Turns the confirmed pending secret on, with fresh recovery codes. `pendingStored` is the
+     * pending value as read (so a setup restarted meanwhile is noticed); false if it changed.
+     */
     async enable(
       userId: Snowflake,
-      secret: string,
+      pendingStored: string,
+      stored: string,
       step: number,
       codeHashes: readonly string[],
     ): Promise<boolean> {
       return db.transaction(async (tx) => {
         const updated = await tx
           .update(users)
-          .set({ totpSecret: secret, totpPendingSecret: null, totpLastStep: step })
+          .set({ totpSecret: stored, totpPendingSecret: null, totpLastStep: step })
           .where(
             and(
               eq(users.id, userId),
-              eq(users.totpPendingSecret, secret),
+              eq(users.totpPendingSecret, pendingStored),
               isNull(users.totpSecret),
             ),
           )
@@ -53,6 +58,14 @@ export const createMfaRepository = (db: Database) => {
           .where(eq(users.id, userId))
         await tx.delete(mfaRecoveryCodes).where(eq(mfaRecoveryCodes.userId, userId))
       })
+    },
+
+    /** Rewrites the stored secret (sealing one stored before a key existed), if unchanged. */
+    async reseal(userId: Snowflake, current: string, stored: string): Promise<void> {
+      await db
+        .update(users)
+        .set({ totpSecret: stored })
+        .where(and(eq(users.id, userId), eq(users.totpSecret, current)))
     },
 
     async replaceRecoveryCodes(userId: Snowflake, codeHashes: readonly string[]): Promise<void> {

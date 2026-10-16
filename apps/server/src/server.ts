@@ -53,6 +53,9 @@ const start = async (): Promise<void> => {
   } else {
     app.log.warn('S3_ENDPOINT is not set: file uploads are disabled')
   }
+  if (!config.secretsKey && config.env === 'production') {
+    app.log.warn('SECRETS_KEY is not set: two-factor secrets are stored unencrypted')
+  }
 
   await app.listen({ host: config.host, port: config.port })
   app.previews?.start()

@@ -36,10 +36,11 @@ export const users = pgTable(
     dmPolicy: dmPolicy('dm_policy').notNull().default('servers'),
     // The language of emails (ru | en).
     locale: varchar('locale', { length: 8 }).notNull().default('ru'),
-    // Authenticator (TOTP) secret, base32; set means sign-in asks for a code.
-    totpSecret: varchar('totp_secret', { length: 64 }),
+    // Authenticator (TOTP) secret: base32, or sealed under SECRETS_KEY (enc1:…); set means
+    // sign-in asks for a code.
+    totpSecret: text('totp_secret'),
     // A secret shown during setup, until a code from it confirms the app has it.
-    totpPendingSecret: varchar('totp_pending_secret', { length: 64 }),
+    totpPendingSecret: text('totp_pending_secret'),
     // Last accepted 30-second step: each code works once.
     totpLastStep: integer('totp_last_step'),
     // Instance admin: manages users, servers and registration.

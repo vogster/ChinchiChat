@@ -128,6 +128,14 @@ const envSchema = z.object({
   LIVEKIT_API_KEY: z.string().trim().min(1).optional(),
   /** LiveKit itself refuses secrets shorter than 32 characters. */
   LIVEKIT_API_SECRET: z.string().min(32).optional(),
+  /**
+   * 32 bytes, hex: encrypts secrets the server must keep readable (TOTP) so a database copy
+   * alone does not yield them. Optional for upgrades; the bundled deployment requires it.
+   */
+  SECRETS_KEY: z
+    .string()
+    .regex(/^[0-9a-fA-F]{64}$/, 'Expected 64 hex characters (openssl rand -hex 32)')
+    .optional(),
   /** Per-file limit; a single presigned PUT, so at most 1 GiB. */
   UPLOAD_MAX_BYTES: z.coerce
     .number()
@@ -223,6 +231,8 @@ export interface Config {
   readonly storage: StorageConfig | undefined
   readonly uploadMaxBytes: number
   readonly voice: VoiceConfig | undefined
+  /** Key for secrets at rest (see SECRETS_KEY); undefined stores them as they are. */
+  readonly secretsKey: Uint8Array | undefined
 }
 
 export class ConfigError extends Error {
@@ -285,5 +295,6 @@ export const loadConfig = (env: Readonly<Record<string, string | undefined>>): C
     storage: toStorageConfig(data),
     uploadMaxBytes: data.UPLOAD_MAX_BYTES,
     voice: toVoiceConfig(data),
+    secretsKey: data.SECRETS_KEY ? Buffer.from(data.SECRETS_KEY, 'hex') : undefined,
   })
 }

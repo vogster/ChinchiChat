@@ -213,6 +213,24 @@ describe('loadConfig', () => {
     },
   )
 
+  it('takes SECRETS_KEY as 32 hex bytes, and never echoes it', () => {
+    const hex = 'ab'.repeat(32)
+    expect(loadConfig({ ...REQUIRED, SECRETS_KEY: hex }).secretsKey).toEqual(
+      Buffer.from(hex, 'hex'),
+    )
+    expect(loadConfig(REQUIRED).secretsKey).toBeUndefined()
+    for (const bad of ['ab'.repeat(16), 'zz'.repeat(32), 'not hex']) {
+      expect(() => loadConfig({ ...REQUIRED, SECRETS_KEY: bad })).toThrow(
+        expect.objectContaining({
+          message: expect.stringMatching(/SECRETS_KEY/),
+        }),
+      )
+      expect(() => loadConfig({ ...REQUIRED, SECRETS_KEY: bad })).toThrow(
+        expect.objectContaining({ message: expect.not.stringContaining(bad) }),
+      )
+    }
+  })
+
   it('accepts the postgresql:// scheme', () => {
     const url = 'postgresql://chinchi:chinchi@db:5432/chinchi'
     expect(loadConfig({ ...REQUIRED, DATABASE_URL: url }).databaseUrl).toBe(url)

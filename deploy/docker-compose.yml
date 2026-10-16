@@ -110,6 +110,8 @@ services:
       S3_ACCESS_KEY: ${S3_ACCESS_KEY}
       S3_SECRET_KEY: ${S3_SECRET_KEY}
       S3_ENCRYPTION: 'on'
+      # Two-factor secrets are encrypted in the database under this key (kept in .env).
+      SECRETS_KEY: ${SECRETS_KEY:?set SECRETS_KEY in .env (openssl rand -hex 32)}
       LIVEKIT_URL: wss://${VOICE_DOMAIN:-${CHINCHI_DOMAIN}/livekit}
       LIVEKIT_API_URL: http://livekit:7880
       LIVEKIT_API_KEY: chinchi

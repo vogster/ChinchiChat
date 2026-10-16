@@ -35,6 +35,7 @@ import { createMemoryMfaTickets, createRedisMfaTickets } from './modules/auth/mf
 import { createMfaRepository } from './modules/auth/mfa.repository'
 import { createMfaService } from './modules/auth/mfa.service'
 import { createMemoryLoginThrottle, createRedisLoginThrottle } from './modules/auth/login-throttle'
+import { createSecretBox } from './modules/auth/secret-box'
 import { createEmailTokenRepository } from './modules/auth/email-token.repository'
 import { createSessionRepository } from './modules/auth/session.repository'
 import { createChannelEvents } from './modules/channels/channel-events'
@@ -164,6 +165,7 @@ export const createServices = (
     loginThrottle,
     sessions,
     events,
+    box: createSecretBox(config.secretsKey),
   })
   const auth = createAuthService({
     users,

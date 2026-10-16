@@ -2,6 +2,7 @@ import { publishRevokedSessions } from '../../events/internal-events'
 import { HttpError, badRequest, conflict, unauthorized } from '../../http/http-error'
 import { loginThrottleKey } from './login-throttle'
 import { generateRecoveryCodes, hashRecoveryCode } from './recovery-codes'
+import { createSecretBox, isSealed } from './secret-box'
 import { generateTotpSecret, totpUri, verifyTotp } from './totp'
 
 import { confirmPassword } from './reauth'
@@ -11,6 +12,7 @@ import type { SessionRepository } from './session.repository'
 import type { LoginThrottle } from './login-throttle'
 import type { MfaTickets } from './mfa-tickets'
 import type { MfaRepository } from './mfa.repository'
+import type { SecretBox } from './secret-box'
 import type { Snowflake, TotpSetup } from '@chinchi/shared'
 
 export interface MfaServiceDeps {
@@ -20,6 +22,8 @@ export interface MfaServiceDeps {
   readonly loginThrottle: LoginThrottle
   readonly sessions: Pick<SessionRepository, 'deleteOthersForUser'>
   readonly events: EventBus
+  /** Seals TOTP secrets at rest; without a key (tests, old installs) they are stored as is. */
+  readonly box?: SecretBox
   readonly now?: () => Date
 }
 
@@ -39,6 +43,7 @@ export const createMfaService = ({
   loginThrottle,
   sessions,
   events,
+  box = createSecretBox(undefined),
   now = () => new Date(),
 }: MfaServiceDeps) => {
   /** The current row: the one from the session may predate a change. */
@@ -52,8 +57,14 @@ export const createMfaService = ({
   const spendCode = async (user: UserRow, code: string): Promise<boolean> => {
     if (!user.totpSecret) return false
     if (/^\d{6}$/.test(code)) {
-      const step = verifyTotp(user.totpSecret, code, now().getTime(), user.totpLastStep)
-      return step !== null && (await mfa.useStep(user.id, step))
+      const secret = box.open(user.totpSecret)
+      const step = verifyTotp(secret, code, now().getTime(), user.totpLastStep)
+      if (step === null || !(await mfa.useStep(user.id, step))) return false
+      // A secret from before SECRETS_KEY existed is sealed the first time it proves right.
+      if (box.enabled && !isSealed(user.totpSecret)) {
+        await mfa.reseal(user.id, user.totpSecret, box.seal(secret))
+      }
+      return true
     }
     return mfa.useRecoveryCode(user.id, hashRecoveryCode(code), now())
   }
@@ -90,7 +101,7 @@ export const createMfaService = ({
       if (user.totpSecret) throw conflict('MFA_ALREADY_ENABLED', 'Two-factor sign-in is on')
       if (!(await confirmPassword(loginThrottle, user, password))) throw wrongPassword()
       const secret = generateTotpSecret()
-      await mfa.setPendingSecret(user.id, secret)
+      await mfa.setPendingSecret(user.id, box.seal(secret))
       return { secret, uri: totpUri(secret, user.username, ISSUER) }
     },
 
@@ -103,10 +114,13 @@ export const createMfaService = ({
       if (user.totpSecret) throw conflict('MFA_ALREADY_ENABLED', 'Two-factor sign-in is on')
       const pending = user.totpPendingSecret
       if (!pending) throw badRequest('MFA_SETUP_REQUIRED', 'Start the setup first')
-      const step = verifyTotp(pending, code, now().getTime(), null)
+      const secret = box.open(pending)
+      const step = verifyTotp(secret, code, now().getTime(), null)
       if (step === null) throw invalidCode()
       const { codes, hashes } = newCodes()
-      if (!(await mfa.enable(user.id, pending, step, hashes))) throw invalidCode()
+      if (!(await mfa.enable(user.id, pending, box.seal(secret), step, hashes))) {
+        throw invalidCode()
+      }
       await sessions.deleteOthersForUser(user.id, sessionId)
       await publishRevokedSessions(events, user.id, { scope: 'allExcept', sessionId })
       return codes
