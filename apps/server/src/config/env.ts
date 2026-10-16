@@ -229,6 +229,20 @@ export class ConfigError extends Error {
   override readonly name = 'ConfigError'
 }
 
+/** Connection strings: a password with `/ @ # ?` in it is the usual reason they fail to parse. */
+const CONNECTION_URLS = new Set(['DATABASE_URL', 'REDIS_URL', 'SMTP_URL'])
+
+const describeIssue = (issue: z.core.$ZodIssue): string => {
+  const variable = issue.path.join('.')
+  if (CONNECTION_URLS.has(variable) && issue.code === 'invalid_format') {
+    return (
+      `${variable}: not a valid URL. Characters / @ # ? in the password must be ` +
+      'percent-encoded, or generate the password with `openssl rand -hex 32`'
+    )
+  }
+  return `${variable}: ${issue.code}`
+}
+
 /** Validates environment variables. Messages name the variable but never echo its value. */
 export const loadConfig = (env: Readonly<Record<string, string | undefined>>): Config => {
   // `VAR=` in an env file (or docker compose's `${VAR:-}`) means "not set", not "set to nothing".
@@ -236,9 +250,7 @@ export const loadConfig = (env: Readonly<Record<string, string | undefined>>): C
   const result = configSchema.safeParse(given)
 
   if (!result.success) {
-    const problems = result.error.issues.map(
-      (issue) => `  - ${issue.path.join('.')}: ${issue.code}`,
-    )
+    const problems = result.error.issues.map((issue) => `  - ${describeIssue(issue)}`)
     throw new ConfigError(`Invalid environment configuration:\n${problems.join('\n')}`)
   }
 

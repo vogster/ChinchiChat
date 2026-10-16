@@ -195,6 +195,24 @@ describe('loadConfig', () => {
     },
   )
 
+  it.each(['DATABASE_URL', 'REDIS_URL'])(
+    'explains %s with URL-breaking characters in the password without echoing it',
+    (key) => {
+      const scheme = key === 'DATABASE_URL' ? 'postgres' : 'redis'
+      const value = `${scheme}://chinchi:abc/def+gh==@host:5432/chinchi`
+      expect(() => loadConfig({ ...REQUIRED, [key]: value })).toThrow(
+        expect.objectContaining({
+          message: expect.stringMatching(
+            new RegExp(`${key}: not a valid URL.*percent-encod.*openssl rand -hex`),
+          ),
+        }),
+      )
+      expect(() => loadConfig({ ...REQUIRED, [key]: value })).toThrow(
+        expect.objectContaining({ message: expect.not.stringContaining('abc/def') }),
+      )
+    },
+  )
+
   it('accepts the postgresql:// scheme', () => {
     const url = 'postgresql://chinchi:chinchi@db:5432/chinchi'
     expect(loadConfig({ ...REQUIRED, DATABASE_URL: url }).databaseUrl).toBe(url)
