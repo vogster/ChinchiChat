@@ -16,12 +16,18 @@ const setup = () => {
       userId,
       deviceName: name,
     })
-  return { delivery, client }
+  /** Another device of the user, approved with the recovery key (so signed by the user key). */
+  const approved = async (first: ReturnType<typeof client>, userId: string, name: string) => {
+    const device = client(userId, name)
+    expect(await device.recovery.useKey((await first.recovery.key()) as string)).toBe('ok')
+    return device
+  }
+  return { delivery, client, approved }
 }
 
-describe('safety codes', () => {
-  it('are the same on both sides and change with the devices', async () => {
-    const { client } = setup()
+describe('checking who is on the other end', () => {
+  it('shows both people the same code, kept when they approve a new device themselves', async () => {
+    const { client, approved } = setup()
     const alice = client(ALICE)
     const bob = client(BOB)
     await Promise.all([alice.ready(), bob.ready()])
@@ -30,50 +36,67 @@ describe('safety codes', () => {
     expect(code).toMatch(/^\d{60}$/)
     expect(await bob.safety.codeWith(ALICE)).toBe(code)
 
-    await client(BOB, 'Телефон').ready()
+    await approved(bob, BOB, 'Телефон')
     await alice.devicesChanged(BOB)
-    expect(await alice.safety.codeWith(BOB)).not.toBe(code)
+    expect(await alice.safety.codeWith(BOB)).toBe(code)
   })
 
-  it('stay verified until the person gets another device', async () => {
-    const { client } = setup()
+  it('stay verified through approved devices; warn only about an unapproved one', async () => {
+    const { client, approved } = setup()
     const alice = client(ALICE)
-    await Promise.all([alice.ready(), client(BOB).ready()])
-
-    expect((await alice.safety.status([ALICE, BOB])).people).toEqual([
-      { userId: BOB, verified: false, newDevices: [] },
-    ])
-    await alice.safety.verify(BOB)
-    expect((await alice.safety.status([ALICE, BOB])).people[0]?.verified).toBe(true)
-
-    await client(BOB, 'Телефон').ready()
-    await alice.devicesChanged(BOB)
-    const [bob] = (await alice.safety.status([ALICE, BOB])).people
-    expect(bob?.verified).toBe(false)
-    expect(bob?.newDevices.map((d) => d.name)).toEqual(['Телефон'])
-  })
-
-  it('warn about a new device once, until acknowledged', async () => {
-    const { client } = setup()
-    const alice = client(ALICE)
-    await Promise.all([alice.ready(), client(BOB).ready()])
-    // Seen first: trusted as it is.
+    const bob = client(BOB)
+    await Promise.all([alice.ready(), bob.ready()])
     await alice.safety.status([ALICE, BOB])
+    await alice.safety.verify(BOB)
 
-    await client(BOB, 'Телефон').ready()
+    await approved(bob, BOB, 'Телефон')
     await alice.devicesChanged(BOB)
-    expect((await alice.safety.status([ALICE, BOB])).people[0]?.newDevices).toHaveLength(1)
+    expect((await alice.safety.status([ALICE, BOB])).people).toEqual([
+      { userId: BOB, verified: true, newDevices: [], keyChanged: false },
+    ])
 
+    // A device nobody approved: the server could have slipped it in.
+    await client(BOB, 'Неизвестный').ready()
+    await alice.devicesChanged(BOB)
+    const [person] = (await alice.safety.status([ALICE, BOB])).people
+    expect(person?.newDevices.map((d) => d.name)).toEqual(['Неизвестный'])
+    expect(person?.verified).toBe(true)
     await alice.safety.acknowledge(BOB)
     expect((await alice.safety.status([ALICE, BOB])).people[0]?.newDevices).toEqual([])
   })
 
-  it('warn about a new device of my own (not this one)', async () => {
+  it('see a reset of keys: a new code, no longer verified, and a warning', async () => {
     const { client } = setup()
+    const alice = client(ALICE)
+    const bob = client(BOB)
+    await Promise.all([alice.ready(), bob.ready()])
+    await alice.safety.status([ALICE, BOB])
+    await alice.safety.verify(BOB)
+    const before = await alice.safety.codeWith(BOB)
+    const oldKey = await bob.recovery.key()
+
+    // Bob lost everything, key included, and starts over on a new browser.
+    const fresh = client(BOB, 'Новый браузер')
+    await fresh.recovery.reset()
+    await alice.devicesChanged(BOB)
+
+    expect(await fresh.recovery.key()).not.toBe(oldKey)
+    expect(await alice.safety.codeWith(BOB)).not.toBe(before)
+    expect((await alice.safety.status([ALICE, BOB])).people[0]).toMatchObject({
+      verified: false,
+      keyChanged: true,
+    })
+    await alice.safety.acknowledge(BOB)
+    expect((await alice.safety.status([ALICE, BOB])).people[0]?.keyChanged).toBe(false)
+  })
+
+  it('warn about an unapproved device on my own account (not this one)', async () => {
+    const { client, approved } = setup()
     const alice = client(ALICE)
     await alice.ready()
     expect((await alice.safety.status([ALICE])).mine).toEqual([])
 
+    await approved(alice, ALICE, 'Мой телефон')
     await client(ALICE, 'Чужой ноутбук').ready()
     await alice.devicesChanged(ALICE)
 

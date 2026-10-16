@@ -58,6 +58,11 @@ export const useRecovery = (enabled = true) => {
       await client?.recovery.markSaved()
       await refresh()
     },
+    /** New keys after losing everything (the caller warned the user). */
+    reset: async () => {
+      await client?.recovery.reset()
+      await refresh()
+    },
     useKey: async (text: string): Promise<UseKeyResult> => {
       const result = (await client?.recovery.useKey(text)) ?? 'wrong'
       if (result === 'ok') await refresh()

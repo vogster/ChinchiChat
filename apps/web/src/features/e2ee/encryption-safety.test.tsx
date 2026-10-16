@@ -42,7 +42,7 @@ describe('checking who is on the other end', () => {
     expect(within(bob).getByText('Не проверен')).toBeVisible()
 
     e2ee.safety.status.mockResolvedValue({
-      people: [{ userId: testFriend.id, verified: true, newDevices: [] }],
+      people: [{ userId: testFriend.id, verified: true, newDevices: [], keyChanged: false }],
       mine: [],
     })
     await user.click(within(bob).getByRole('button', { name: 'Коды совпали' }))
@@ -51,7 +51,7 @@ describe('checking who is on the other end', () => {
     expect(await within(bob).findByText('Проверен')).toBeVisible()
   })
 
-  it('warns about a new device of the other person until acknowledged', async () => {
+  it('warns about an unapproved device of the other person until acknowledged', async () => {
     const { user, e2ee } = renderApp(URL_PATH, { api: withEncryptedDm() })
     e2ee.safety.status.mockResolvedValue({
       people: [
@@ -59,27 +59,40 @@ describe('checking who is on the other end', () => {
           userId: testFriend.id,
           verified: false,
           newDevices: [device('7', testFriend.id, 'Телефон')],
+          keyChanged: false,
         },
       ],
       mine: [],
     })
 
     const warning = await screen.findByRole('alert', { name: 'Новые устройства' })
-    expect(warning).toHaveTextContent('У Боб новое устройство: Телефон')
+    expect(warning).toHaveTextContent('У Боб неподтверждённое устройство: Телефон')
 
     await user.click(within(warning).getByRole('button', { name: 'Понятно' }))
     await waitFor(() => expect(e2ee.safety.acknowledge).toHaveBeenCalledWith(testFriend.id))
   })
 
-  it('warns about a new device on my own account', async () => {
+  it('warns about an unapproved device on my own account', async () => {
     const { e2ee } = renderApp(URL_PATH, { api: withEncryptedDm() })
     e2ee.safety.status.mockResolvedValue({
-      people: [{ userId: testFriend.id, verified: false, newDevices: [] }],
+      people: [{ userId: testFriend.id, verified: false, newDevices: [], keyChanged: false }],
       mine: [device('8', testUser.id, 'Чужой ноутбук')],
     })
 
     expect(await screen.findByRole('alert', { name: 'Новые устройства' })).toHaveTextContent(
-      'В вашей учётной записи новое устройство: Чужой ноутбук',
+      'В вашей учётной записи неподтверждённое устройство: Чужой ноутбук',
+    )
+  })
+
+  it('warns when the other person reset their keys', async () => {
+    const { e2ee } = renderApp(URL_PATH, { api: withEncryptedDm() })
+    e2ee.safety.status.mockResolvedValue({
+      people: [{ userId: testFriend.id, verified: false, newDevices: [], keyChanged: true }],
+      mine: [],
+    })
+
+    expect(await screen.findByRole('alert', { name: 'Новые устройства' })).toHaveTextContent(
+      'Боб сбросил(а) ключи шифрования',
     )
   })
 })

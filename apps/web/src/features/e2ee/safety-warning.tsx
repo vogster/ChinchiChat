@@ -20,7 +20,7 @@ export const SafetyWarning = ({
   const { t } = useTranslation()
   const { status } = safety
   if (!status) return null
-  const people = status.people.filter((person) => person.newDevices.length > 0)
+  const people = status.people.filter((person) => person.newDevices.length > 0 || person.keyChanged)
   if (people.length === 0 && status.mine.length === 0) return null
   const names = (devices: readonly { name: string }[]) => devices.map((d) => d.name).join(', ')
 
@@ -33,12 +33,19 @@ export const SafetyWarning = ({
       <ShieldAlert aria-hidden className="mt-0.5 size-4 shrink-0 text-danger" />
       <div className="min-w-0 flex-1">
         {people.map((person) => (
-          <p key={person.userId}>
-            {t('e2ee.safety.newDevice', {
-              name: nameOf(person.userId),
-              devices: names(person.newDevices),
-            })}
-          </p>
+          <div key={person.userId}>
+            {person.keyChanged ? (
+              <p>{t('e2ee.safety.keyChanged', { name: nameOf(person.userId) })}</p>
+            ) : null}
+            {person.newDevices.length > 0 ? (
+              <p>
+                {t('e2ee.safety.newDevice', {
+                  name: nameOf(person.userId),
+                  devices: names(person.newDevices),
+                })}
+              </p>
+            ) : null}
+          </div>
         ))}
         {status.mine.length > 0 ? (
           <p>{t('e2ee.safety.newOwnDevice', { devices: names(status.mine) })}</p>

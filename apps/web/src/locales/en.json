@@ -1251,11 +1251,12 @@
       "notVerified": "Not verified",
       "codesMatch": "Codes match",
       "newDevicesLabel": "New devices",
-      "newDevice": "{{name}} has a new device: {{devices}}. If you're not sure it's them, compare safety codes.",
-      "newOwnDevice": "A new device on your account: {{devices}}. If it wasn't you, remove it in settings and change your password.",
+      "newDevice": "{{name}} has an unapproved device: {{devices}}. It wasn't approved from another of their devices — if you're not sure it's them, compare safety codes.",
+      "newOwnDevice": "An unapproved device on your account: {{devices}}. If it wasn't you, remove it in “Settings → Devices” and change your password.",
       "check": "Check",
       "gotIt": "Got it",
-      "codeLabel": "Safety code"
+      "codeLabel": "Safety code",
+      "keyChanged": "{{name}} reset their encryption keys — for example, they lost all their devices. Compare safety codes again."
     },
     "recovery": {
       "saveTitle": "Save your recovery key",
@@ -1279,7 +1280,12 @@
       "notHere": "The key is kept on your approved devices. If you saved it, enter it here so this device gets the old messages.",
       "notSaved": "You haven't marked the key as saved yet. Download it and keep it apart from your devices.",
       "show": "Show key",
-      "settingsHint": "Brings back your encrypted conversations if all your devices are lost."
+      "settingsHint": "Brings back your encrypted conversations if all your devices are lost.",
+      "resetQuestion": "Lost your recovery key and all your other devices?",
+      "reset": "Reset encryption keys",
+      "resetTitle": "Reset encryption keys?",
+      "resetText": "New keys and a new recovery key are created. Old encrypted messages stay unavailable on this device, and the people you talk to will see that you reset your keys and can compare codes again. If you still have another device or your recovery key, use those instead.",
+      "resetConfirm": "Reset"
     },
     "approval": {
       "title": "New sign-in",

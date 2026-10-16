@@ -34,13 +34,14 @@ export const createCrossSigning = ({ api, store, userId }: CrossSigningDeps) => 
     await api.e2ee.signDevice(deviceId, toBase64(signature))
   }
 
+  const generate = async (): Promise<StoredUserKey> => {
+    const pair = await createUserKey()
+    return { publicKey: toBase64(pair.publicKey), privateKey: toBase64(pair.privateKey) }
+  }
+
   /** Creates the user key if nobody has; false when another device was first. */
   const create = async (keys: DeviceKeys): Promise<boolean> => {
-    const pair = await createUserKey()
-    const stored: StoredUserKey = {
-      publicKey: toBase64(pair.publicKey),
-      privateKey: toBase64(pair.privateKey),
-    }
+    const stored = await generate()
     try {
       await api.e2ee.setUserKey({ publicKey: stored.publicKey })
     } catch (error) {
@@ -67,6 +68,18 @@ export const createCrossSigning = ({ api, store, userId }: CrossSigningDeps) => 
     },
 
     held: () => store.get<StoredUserKey>(USER_KEY),
+
+    /**
+     * A new user key, replacing the old one (all devices and the recovery key were lost): every
+     * device signature goes, and people who checked this user see the change.
+     */
+    reset: async (keys: DeviceKeys): Promise<StoredUserKey> => {
+      const stored = await generate()
+      await api.e2ee.setUserKey({ publicKey: stored.publicKey, replace: true })
+      await store.set(USER_KEY, stored)
+      await sign(stored.privateKey, keys)
+      return stored
+    },
 
     /** Takes the user key (from the recovery key or another device) and vouches for this one. */
     adopt: async (userKey: StoredUserKey, keys: DeviceKeys): Promise<void> => {

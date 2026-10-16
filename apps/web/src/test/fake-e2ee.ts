@@ -90,6 +90,7 @@ export const createFakeE2ee = (status: ConversationStatus = 'ready') => {
       saved: vi.fn(async () => true),
       markSaved: vi.fn(async () => undefined),
       useKey: vi.fn(async (_text: string): Promise<UseKeyResult> => 'ok'),
+      reset: vi.fn(async () => undefined),
     },
     safety: {
       codeWith: vi.fn(
@@ -98,7 +99,7 @@ export const createFakeE2ee = (status: ConversationStatus = 'ready') => {
       status: vi.fn(async (memberIds: readonly string[]): Promise<SafetyStatus> => ({
         people: memberIds
           .filter((id) => id !== testUserId)
-          .map((userId) => ({ userId, verified: false, newDevices: [] })),
+          .map((userId) => ({ userId, verified: false, newDevices: [], keyChanged: false })),
         mine: [],
       })),
       verify: vi.fn(async (_userId: string) => undefined),

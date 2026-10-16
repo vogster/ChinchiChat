@@ -627,6 +627,12 @@ export const createE2eeClient = ({ api, store, userId, deviceName }: E2eeClientO
         if (result === 'ok') devicesByUser.delete(userId)
         return result
       },
+      /** Lost everything, key included: new keys; people who checked this user see it. */
+      reset: async () => {
+        const userKey = await crossSigning.reset(await ready())
+        await backup.reset(userKey)
+        devicesByUser.delete(userId)
+      },
     },
 
     /** Approving this device from another of the user's, or another device from this one. */
@@ -640,6 +646,8 @@ export const createE2eeClient = ({ api, store, userId, deviceName }: E2eeClientO
       store,
       userId,
       devicesOf,
+      userKeyOf: async (id) =>
+        (await api.e2ee.userKey(id === userId ? '@me' : id)).userKey?.publicKey ?? null,
       thisDevice: async () => (await ready()).identity.deviceId,
     }),
 

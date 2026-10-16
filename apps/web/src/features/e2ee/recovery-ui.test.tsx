@@ -89,4 +89,21 @@ describe('the recovery key', () => {
 
     expect(within(section).getByText(TEST_RECOVERY_KEY)).toBeVisible()
   })
+
+  it('can be reset from settings, after a warning, when everything is lost', async () => {
+    const { user, e2ee } = renderApp('/settings/sessions', { api: withEncryptedDm() })
+    e2ee.recovery.key.mockResolvedValue(null)
+    const section = await screen.findByRole('region', { name: 'Ключ восстановления' })
+
+    await user.click(
+      await within(section).findByRole('button', { name: 'Сбросить ключи шифрования' }),
+    )
+    const dialog = await screen.findByRole('dialog', { name: 'Сбросить ключи шифрования?' })
+    expect(dialog).toHaveTextContent('собеседники увидят')
+    e2ee.recovery.key.mockResolvedValue(TEST_RECOVERY_KEY)
+    await user.click(within(dialog).getByRole('button', { name: 'Сбросить' }))
+
+    expect(e2ee.recovery.reset).toHaveBeenCalled()
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument())
+  })
 })

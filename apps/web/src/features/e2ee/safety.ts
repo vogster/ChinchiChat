@@ -1,29 +1,38 @@
+import { verifyStatement } from '@chinchi/e2ee'
+import { deviceStatement } from '@chinchi/shared'
+
+import { fromBase64 } from './codec'
+
 import type { E2eeStore } from './store'
 import type { Device } from '@chinchi/shared'
 
 /**
- * Checking who is on the other end. The server vouches for the devices of a user, so a server
- * that lies could slip in a device of its own; comparing safety codes in person (or over
- * another channel) catches that, and a new device of someone already checked is announced.
+ * Checking who is on the other end. The server lists a user's devices, so a server that lies
+ * could slip in one of its own. People are checked once, by their user key (the safety code);
+ * devices they approved carry its signature and pass quietly, others are pointed out.
  */
 export interface SafetyDeps {
   readonly store: E2eeStore
   readonly userId: string
   readonly devicesOf: (userId: string) => Promise<readonly Device[]>
+  /** The user's public key (base64), or null if they never set one. */
+  readonly userKeyOf: (userId: string) => Promise<string | null>
   readonly thisDevice: () => Promise<string>
 }
 
 export interface PersonSafety {
   readonly userId: string
-  /** Their devices are the ones they had when the code was compared. */
+  /** The code was compared, and their user key is still the one it was compared for. */
   readonly verified: boolean
-  /** Devices that appeared since this browser last looked (and the user acknowledged). */
+  /** Devices their user key does not vouch for, not acknowledged yet. */
   readonly newDevices: readonly Device[]
+  /** Their user key changed since last seen: they reset their keys (or someone else did). */
+  readonly keyChanged: boolean
 }
 
 export interface SafetyStatus {
   readonly people: readonly PersonSafety[]
-  /** New devices on my own account, other than this one. */
+  /** Devices on my own account my user key does not vouch for, other than this one. */
   readonly mine: readonly Device[]
 }
 
@@ -32,12 +41,14 @@ const GROUP_BYTES = 5
 
 const active = (devices: readonly Device[]) => devices.filter((device) => !device.revokedAt)
 
-/** Who a user is, as far as encryption goes: their id and the keys of their devices. */
-const identityOf = (userId: string, devices: readonly Device[]) =>
-  `${userId}:${active(devices)
-    .map((device) => device.signaturePublicKey)
-    .sort()
-    .join(',')}`
+/** Who a user is for encryption: their user key, or (without one) their devices' keys. */
+const identityOf = (userId: string, userKey: string | null, devices: readonly Device[]) =>
+  userKey
+    ? `${userId}:user:${userKey}`
+    : `${userId}:devices:${active(devices)
+        .map((device) => device.signaturePublicKey)
+        .sort()
+        .join(',')}`
 
 const byId = (a: string, b: string) => (BigInt(a) < BigInt(b) ? -1 : BigInt(a) > BigInt(b) ? 1 : 0)
 
@@ -54,38 +65,68 @@ const toDigits = (digest: Uint8Array) =>
 const sha512 = async (text: string) =>
   new Uint8Array(await crypto.subtle.digest('SHA-512', new TextEncoder().encode(text)))
 
+/** Checked here, not taken from the server: the signature is by the user key we know. */
+const vouched = async (userId: string, userKey: string | null, device: Device) =>
+  Boolean(userKey && device.userSignature) &&
+  verifyStatement(
+    fromBase64(userKey as string),
+    deviceStatement(userId, device.id, device.signaturePublicKey),
+    fromBase64(device.userSignature as string),
+  )
+
 const seenKey = (userId: string) => `safety:seen:${userId}`
+const userKeyKey = (userId: string) => `safety:userKey:${userId}`
 const verifiedKey = (userId: string) => `safety:verified:${userId}`
 
-export const createSafety = ({ store, userId, devicesOf, thisDevice }: SafetyDeps) => {
-  /** Devices not seen before; the first look trusts what is there. */
-  const newDevicesOf = async (id: string, devices: readonly Device[]) => {
+export const createSafety = ({ store, userId, devicesOf, userKeyOf, thisDevice }: SafetyDeps) => {
+  const look = async (id: string) => {
+    const [devices, userKey] = await Promise.all([devicesOf(id), userKeyOf(id)])
+    const current = active(devices)
+    const flags = await Promise.all(current.map((device) => vouched(id, userKey, device)))
+    return { userKey, devices: current, unvouched: current.filter((_, i) => !flags[i]) }
+  }
+
+  /** Unvouched devices not acknowledged yet; the first look takes things as they are. */
+  const unseen = async (id: string, unvouched: readonly Device[]) => {
     const seen = await store.get<string[]>(seenKey(id))
     if (!seen) {
       await store.set(
         seenKey(id),
-        devices.map((device) => device.id),
+        unvouched.map((device) => device.id),
       )
       return []
     }
-    return devices.filter((device) => !seen.includes(device.id))
+    return unvouched.filter((device) => !seen.includes(device.id))
+  }
+
+  /** Whether the user key changed since last seen (the first look remembers it). */
+  const changed = async (id: string, userKey: string | null) => {
+    const known = await store.get<string | null>(userKeyKey(id))
+    if (known === undefined) {
+      await store.set(userKeyKey(id), userKey)
+      return false
+    }
+    return known !== null && known !== userKey
   }
 
   const acknowledge = async (id: string) => {
-    const devices = active(await devicesOf(id))
+    const { userKey, unvouched } = await look(id)
     await store.set(
       seenKey(id),
-      devices.map((device) => device.id),
+      unvouched.map((device) => device.id),
     )
+    await store.set(userKeyKey(id), userKey)
   }
 
   return {
-    /** The code both people see for each other: compare it to know the devices are theirs. */
+    /** The code both people see for each other: compare it once to know it's them. */
     codeWith: async (otherId: string): Promise<string> => {
       const [first, second] = [userId, otherId].sort(byId) as [string, string]
-      const [a, b] = await Promise.all([devicesOf(first), devicesOf(second)])
+      const [a, b] = await Promise.all([look(first), look(second)])
       return toDigits(
-        await sha512(`chinchi-safety-v1\n${identityOf(first, a)}\n${identityOf(second, b)}`),
+        await sha512(
+          `chinchi-safety-v2\n${identityOf(first, a.userKey, a.devices)}\n${identityOf(second, b.userKey, b.devices)}`,
+        ),
       )
     },
 
@@ -94,23 +135,31 @@ export const createSafety = ({ store, userId, devicesOf, thisDevice }: SafetyDep
         memberIds
           .filter((id) => id !== userId)
           .map(async (id): Promise<PersonSafety> => {
-            const devices = active(await devicesOf(id))
-            const verified = (await store.get<string>(verifiedKey(id))) === identityOf(id, devices)
-            return { userId: id, verified, newDevices: await newDevicesOf(id, devices) }
+            const { userKey, devices, unvouched } = await look(id)
+            const verified =
+              (await store.get<string>(verifiedKey(id))) === identityOf(id, userKey, devices)
+            return {
+              userId: id,
+              verified,
+              newDevices: await unseen(id, unvouched),
+              keyChanged: await changed(id, userKey),
+            }
           }),
       )
       const here = await thisDevice()
-      const mine = await newDevicesOf(userId, active(await devicesOf(userId)))
+      const own = await look(userId)
+      const mine = await unseen(userId, own.unvouched)
       return { people, mine: mine.filter((device) => device.id !== here) }
     },
 
-    /** The codes matched: remember their devices as checked (and as seen). */
+    /** The codes matched: remember who they are (and take their devices as they are now). */
     verify: async (id: string) => {
-      await store.set(verifiedKey(id), identityOf(id, await devicesOf(id)))
+      const { userKey, devices } = await look(id)
+      await store.set(verifiedKey(id), identityOf(id, userKey, devices))
       await acknowledge(id)
     },
 
-    /** The new devices are known now: stop warning about them. */
+    /** The warnings were seen: stop showing them until something changes again. */
     acknowledge,
   }
 }

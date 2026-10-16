@@ -14,7 +14,7 @@ import {
 
 import type { E2eeApi } from './client'
 import type { EncryptedPayload } from './codec'
-import type { CrossSigning } from './cross-signing'
+import type { CrossSigning, StoredUserKey } from './cross-signing'
 import type { RecoveryKeys } from './recovery'
 import type { E2eeStore } from './store'
 import type { DeviceKeys } from '@chinchi/e2ee'
@@ -95,6 +95,22 @@ export const createHistoryBackup = ({ api, store, crossSigning }: HistoryBackupD
       } catch (error) {
         if (!(error instanceof ApiError && error.code === 'BACKUP_EXISTS')) throw error
       }
+    },
+
+    /** Starts over with a new recovery key (after a reset of the user key). */
+    reset: async (userKey: StoredUserKey): Promise<void> => {
+      const raw = generateRecoveryKey()
+      const keys = await deriveRecoveryKeys(raw)
+      const { backup } = await api.e2ee.createBackup({
+        userKey: await sealUserKey(keys, userKey),
+        replace: true,
+      })
+      fetched.clear()
+      await store.set(RECOVERY, {
+        key: formatRecoveryKey(raw),
+        version: backup.version,
+        saved: false,
+      } satisfies StoredRecovery)
     },
 
     /** Remembers a message to back up; `flush` sends what piled up. */

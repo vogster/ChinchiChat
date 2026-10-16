@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { Button } from '../../components/ui/button'
+import { Dialog } from '../../components/ui/dialog'
 import { EnterRecoveryKeyDialog, RecoveryKeyText } from '../e2ee/recovery-dialogs'
 import { downloadRecoveryKey } from '../e2ee/recovery-file'
 import { useRecovery } from '../e2ee/use-recovery'
@@ -12,6 +13,8 @@ export const RecoveryKeySettings = () => {
   const recovery = useRecovery()
   const [shown, setShown] = useState(false)
   const [entering, setEntering] = useState(false)
+  const [resetting, setResetting] = useState(false)
+  const [pending, setPending] = useState(false)
   if (!recovery.loaded) return null
 
   if (!recovery.key) {
@@ -21,8 +24,39 @@ export const RecoveryKeySettings = () => {
         <Button variant="secondary" onClick={() => setEntering(true)}>
           {t('e2ee.recovery.enter')}
         </Button>
+        <p className="mt-2 text-sm text-muted">{t('e2ee.recovery.resetQuestion')}</p>
+        <Button variant="danger" onClick={() => setResetting(true)}>
+          {t('e2ee.recovery.reset')}
+        </Button>
         {entering ? (
           <EnterRecoveryKeyDialog recovery={recovery} onOpenChange={setEntering} />
+        ) : null}
+        {resetting ? (
+          <Dialog
+            open
+            onOpenChange={setResetting}
+            title={t('e2ee.recovery.resetTitle')}
+            description={t('e2ee.recovery.resetText')}
+          >
+            <div className="flex gap-2">
+              <Button variant="secondary" onClick={() => setResetting(false)}>
+                {t('common.cancel')}
+              </Button>
+              <Button
+                variant="danger"
+                pending={pending}
+                onClick={() => {
+                  setPending(true)
+                  void recovery
+                    .reset()
+                    .then(() => setResetting(false))
+                    .finally(() => setPending(false))
+                }}
+              >
+                {t('e2ee.recovery.resetConfirm')}
+              </Button>
+            </div>
+          </Dialog>
         ) : null}
       </div>
     )
