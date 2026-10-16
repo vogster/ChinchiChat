@@ -13,6 +13,7 @@
     "test:coverage": "vitest run --coverage"
   },
   "devDependencies": {
-    "@chinchi/config": "workspace:*"
+    "@chinchi/config": "workspace:*",
+    "fast-check": "4.10.2"
   }
 }
