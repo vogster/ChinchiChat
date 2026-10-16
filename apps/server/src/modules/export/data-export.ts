@@ -1,6 +1,6 @@
 import { Readable } from 'node:stream'
 
-import archiver from 'archiver'
+import { ZipArchive } from 'archiver'
 import { decodeSnowflake } from '@chinchi/shared'
 
 import { attachmentKey } from '../attachments/attachment.mapper'
@@ -139,7 +139,7 @@ export const createDataExport = ({
   return {
     /** The archive as a stream; it ends when everything is in (or aborts on failure). */
     build(user: UserRow): Archiver {
-      const archive = archiver('zip', { zlib: { level: 6 } })
+      const archive = new ZipArchive({ zlib: { level: 6 } })
       fill(user, archive)
         .then(() => archive.finalize())
         .catch((error: unknown) => {
