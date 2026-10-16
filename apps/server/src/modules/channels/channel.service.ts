@@ -1,12 +1,9 @@
 import {
   MAX_CHANNELS_PER_GUILD,
-  highestPosition,
   CHANNEL_NAME_MAX_LENGTH,
-  CHANNEL_PERMISSIONS,
   Permission,
   has,
   normalizeTextChannelName,
-  parsePermissions,
 } from '@chinchi/shared'
 
 import { and, count, eq, ne, sql } from 'drizzle-orm'
@@ -14,19 +11,13 @@ import { and, count, eq, ne, sql } from 'drizzle-orm'
 import { channels as channelsTable } from '../../db/schema'
 import { guildTopic } from '../../events/event-bus'
 import { HttpError, badRequest, forbidden } from '../../http/http-error'
-import { createOverwriteRepository } from '../roles/overwrite.repository'
-import { outranks } from '../guilds/outranks'
-import { createChannelRepository, isGuildChannel, lockChannel } from './channel.repository'
+import { createOverwriteOperations, invalidThreadTarget } from './channel-overwrites'
+import { createChannelRepository, isGuildChannel } from './channel.repository'
 
 import type { AuditLogService } from '../moderation/audit-log.service'
 import type { Database } from '../../db/client'
 import type { EventBus } from '../../events/event-bus'
-import type {
-  AnyChannelAccess,
-  ChannelAccess,
-  GuildAccess,
-  GuildAccessChecks,
-} from '../guilds/guild-access'
+import type { AnyChannelAccess, ChannelAccess, GuildAccessChecks } from '../guilds/guild-access'
 import type { GuildRepository } from '../guilds/guild.repository'
 import type { GuildViews } from '../guilds/guild-views'
 import type { OverwriteRepository } from '../roles/overwrite.repository'
@@ -35,7 +26,6 @@ import type { AnyChannelRow, ChannelRepository, ChannelRow } from './channel.rep
 import type {
   Channel,
   ChannelType,
-  PutOverwriteRequest,
   ReorderChannelsRequest,
   Snowflake,
   UpdateChannelRequest,
@@ -74,8 +64,6 @@ export interface ChannelServiceDeps {
 }
 
 const unknownChannel = () => new HttpError(404, 'UNKNOWN_CHANNEL', 'Unknown channel')
-const invalidThreadTarget = () =>
-  badRequest('INVALID_CHANNEL', "A thread follows its channel's permissions and place")
 const invalidParent = () =>
   badRequest('INVALID_PARENT', 'Channels can only be placed inside a category of the same server')
 
@@ -91,9 +79,6 @@ const normalizeName = (type: ChannelType, name: string): string => {
   }
   return normalized
 }
-
-const outranked = () =>
-  forbidden('ROLE_HIERARCHY', 'You can only change permissions of roles and members below you')
 
 export const createChannelService = ({
   db,
@@ -127,26 +112,6 @@ export const createChannelService = ({
     }
   }
 
-  /**
-   * Changes a channel's permissions and copies them to its threads, all under the channel's
-   * row lock, so a thread created (or another change made) meanwhile can't keep stale ones.
-   * Returns the threads to announce once committed.
-   */
-  const changeOverwrites = async (
-    channel: ChannelRow,
-    change: (txOverwrites: ReturnType<typeof createOverwriteRepository>) => Promise<boolean>,
-  ): Promise<{ changed: boolean; threads: ChannelRow[] }> =>
-    db.transaction(async (tx) => {
-      await lockChannel(tx, channel.id)
-      const txOverwrites = createOverwriteRepository(tx)
-      if (!(await change(txOverwrites))) return { changed: false, threads: [] }
-      if (channel.type !== 'text') return { changed: true, threads: [] }
-      const threads = await createChannelRepository(tx).listThreads(channel.id)
-      const rows = await txOverwrites.listForChannel(channel.id)
-      for (const thread of threads) await txOverwrites.replaceForChannel(thread.id, rows)
-      return { changed: true, threads }
-    })
-
   const loadGuildChannels = async (guildId: Snowflake) =>
     new Map((await channels.listByGuild(guildId)).map((channel) => [channel.id, channel]))
 
@@ -179,37 +144,6 @@ export const createChannelService = ({
       throw forbidden('MISSING_PERMISSIONS', 'Missing permissions')
     }
     return { access: null, channel, permissions }
-  }
-
-  /**
-   * Changing an overwrite: every bit that changes (added or lifted) must be one the caller
-   * holds, and the target must rank below them, so nobody unmutes themselves or limits a
-   * senior. The owner and administrators may do anything.
-   */
-  const assertMayChangeOverwrite = async (
-    channel: ChannelRow,
-    actor: GuildAccess,
-    permissions: bigint,
-    targetType: 'role' | 'member',
-    targetId: Snowflake,
-    next: { allow: bigint; deny: bigint },
-  ) => {
-    if (actor.isOwner || has(actor.permissions, Permission.Administrator)) return
-    const current = (await overwrites.listForChannel(channel.id)).find(
-      (row) => row.targetId === targetId,
-    )
-    const changed = ((current?.allow ?? 0n) ^ next.allow) | ((current?.deny ?? 0n) ^ next.deny)
-    if ((changed & ~permissions) !== 0n) {
-      throw forbidden('MISSING_PERMISSIONS', 'You can only change permissions you have')
-    }
-    if (targetType === 'role') {
-      const role = actor.roles.find((r) => r.id === targetId)
-      const ceiling = highestPosition(actor.memberRoleIds, actor.roles)
-      if (role && role.id !== channel.guildId && role.position >= ceiling) throw outranked()
-      return
-    }
-    const target = await access.requireMember(channel.guildId, targetId).catch(() => null)
-    if (!target || !outranks(actor, target)) throw outranked()
   }
 
   return {
@@ -417,116 +351,16 @@ export const createChannelService = ({
       return (await views.detail(guildAccess)).channels
     },
 
-    /**
-     * Sets a role's or member's allow/deny in a channel. Requires MANAGE_ROLES there, and one can
-     * only grant or take away permissions one has in that channel.
-     */
-    async putOverwrite(
-      channelId: Snowflake,
-      targetId: Snowflake,
-      userId: Snowflake,
-      body: PutOverwriteRequest,
-    ): Promise<Channel> {
-      const {
-        channel,
-        access: actor,
-        permissions,
-      } = await resolveGuild(channelId, userId, Permission.ManageRoles)
-      if (channel.type === 'thread') throw invalidThreadTarget()
-      const target =
-        body.targetType === 'role'
-          ? await roles.findInGuild(channel.guildId, targetId)
-          : await guilds.findMember(channel.guildId, targetId)
-      if (!target) throw badRequest('UNKNOWN_TARGET', 'No such role or member in this server')
-
-      const allow = parsePermissions(body.allow) & CHANNEL_PERMISSIONS
-      const deny = parsePermissions(body.deny) & CHANNEL_PERMISSIONS & ~allow
-      await assertMayChangeOverwrite(channel, actor, permissions, body.targetType, targetId, {
-        allow,
-        deny,
-      })
-
-      const { threads } = await changeOverwrites(channel, async (txOverwrites) => {
-        await txOverwrites.upsert({
-          channelId,
-          targetType: body.targetType,
-          targetId,
-          allow,
-          deny,
-        })
-        return true
-      })
-      await publish('CHANNEL_UPDATE', channel)
-      for (const thread of threads) await publish('CHANNEL_UPDATE', thread)
-      return views.channel(channel)
-    },
-
-    /** Replaces the channel's overwrites with its category's (what new channels start with). */
-    async syncWithCategory(channelId: Snowflake, userId: Snowflake): Promise<Channel> {
-      const {
-        channel,
-        access: actor,
-        permissions,
-      } = await resolveGuild(channelId, userId, Permission.ManageRoles)
-      if (channel.type === 'thread') throw invalidThreadTarget()
-      if (!channel.parentId) throw badRequest('NO_CATEGORY', 'This channel is not in a category')
-      const [current, wanted] = await Promise.all([
-        overwrites.listForChannel(channel.id),
-        overwrites.listForChannel(channel.parentId),
-      ])
-      // Every overwrite that changes goes through the same rules as changing it by hand.
-      const targets = new Map(
-        [...current, ...wanted].map((row) => [row.targetId, row.targetType] as const),
-      )
-      for (const [targetId, targetType] of targets) {
-        const next = wanted.find((row) => row.targetId === targetId)
-        const now = current.find((row) => row.targetId === targetId)
-        if (next?.allow === now?.allow && next?.deny === now?.deny) continue
-        await assertMayChangeOverwrite(channel, actor, permissions, targetType, targetId, {
-          allow: next?.allow ?? 0n,
-          deny: next?.deny ?? 0n,
-        })
-      }
-      const { threads } = await changeOverwrites(channel, async (txOverwrites) => {
-        await txOverwrites.replaceForChannel(
-          channel.id,
-          wanted.map((row) => ({ ...row, channelId: channel.id })),
-        )
-        return true
-      })
-      await publish('CHANNEL_UPDATE', channel)
-      for (const thread of threads) await publish('CHANNEL_UPDATE', thread)
-      return views.channel(channel)
-    },
-
-    async deleteOverwrite(
-      channelId: Snowflake,
-      targetId: Snowflake,
-      userId: Snowflake,
-    ): Promise<void> {
-      const {
-        channel,
-        access: actor,
-        permissions,
-      } = await resolveGuild(channelId, userId, Permission.ManageRoles)
-      if (channel.type === 'thread') throw invalidThreadTarget()
-      const existing = (await overwrites.listForChannel(channelId)).find(
-        (row) => row.targetId === targetId,
-      )
-      if (existing) {
-        await assertMayChangeOverwrite(channel, actor, permissions, existing.targetType, targetId, {
-          allow: 0n,
-          deny: 0n,
-        })
-      }
-      const { changed, threads } = await changeOverwrites(channel, (txOverwrites) =>
-        txOverwrites.delete(channelId, targetId),
-      )
-      if (changed) {
-        await publish('CHANNEL_UPDATE', channel)
-        for (const thread of threads) await publish('CHANNEL_UPDATE', thread)
-      }
-    },
+    ...createOverwriteOperations({
+      db,
+      overwrites,
+      roles,
+      guilds,
+      access,
+      views,
+      resolveGuild,
+      publish,
+    }),
   }
 }
 
