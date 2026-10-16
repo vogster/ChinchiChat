@@ -2,48 +2,19 @@ import { useQuery } from '@tanstack/react-query'
 import { createContext, useContext, useEffect, useMemo, useState } from 'react'
 
 import { useApi } from '../../lib/api-context'
-import { useCurrentUser } from '../auth/use-auth-actions'
+import { meQueryOptions } from '../auth/queries'
 import { useGateway } from '../realtime/gateway-context'
-import { describeUserAgent } from '../settings/user-agent'
-import { createE2eeClient } from './client'
-import { createIndexedDbStore } from './store'
+import { useE2eeFactory } from './e2ee-factory'
 
-import type { E2eeClient } from './client'
-import type { ApiClient } from '@chinchi/sdk'
+import type { E2eeClientLike } from './e2ee-factory'
 import type { DeviceApproval } from '@chinchi/shared'
 import type { ReactNode } from 'react'
 
-/** What the app uses of the client; tests put a fake behind it. */
-export type E2eeClientLike = Pick<
-  E2eeClient,
-  | 'ready'
-  | 'open'
-  | 'send'
-  | 'edit'
-  | 'read'
-  | 'devicesChanged'
-  | 'callKey'
-  | 'safety'
-  | 'recovery'
-  | 'approvals'
-  | 'react'
-  | 'readReaction'
-  | 'search'
->
+export { E2eeFactoryProvider } from './e2ee-factory'
+export type { E2eeClientFactory, E2eeClientLike } from './e2ee-factory'
 
-export type E2eeClientFactory = (userId: string, api: ApiClient) => E2eeClientLike
-
-const browserClient: E2eeClientFactory = (userId, api) =>
-  createE2eeClient({
-    api,
-    store: createIndexedDbStore(userId),
-    userId,
-    deviceName: describeUserAgent(navigator.userAgent) ?? 'Browser',
-  })
-
-const FactoryContext = createContext<E2eeClientFactory>(browserClient)
-
-export const E2eeFactoryProvider = FactoryContext.Provider
+/** The signed-in user from the cache (the auth actions module imports this one, not the reverse). */
+const useMe = () => useQuery(meQueryOptions(useApi())).data ?? null
 
 interface E2eeContextValue {
   readonly client: E2eeClientLike | null
@@ -56,8 +27,8 @@ const E2eeContext = createContext<E2eeContextValue>({ client: null, revision: 0 
 /** One encryption client per signed-in user, kept in step with the gateway. */
 export const E2eeProvider = ({ children }: { children: ReactNode }) => {
   const api = useApi()
-  const me = useCurrentUser()
-  const factory = useContext(FactoryContext)
+  const me = useMe()
+  const factory = useE2eeFactory()
   const gateway = useGateway()
   const userId = me?.id
   const client = useMemo(() => (userId ? factory(userId, api) : null), [userId, api, factory])
@@ -98,8 +69,8 @@ export const useE2ee = () => useContext(E2eeContext)
 // eslint-disable-next-line react-refresh/only-export-components -- hook belongs with its provider
 export const useAnyE2eeClient = (): E2eeClientLike | null => {
   const api = useApi()
-  const userId = useCurrentUser()?.id
-  const factory = useContext(FactoryContext)
+  const userId = useMe()?.id
+  const factory = useE2eeFactory()
   const { client } = useContext(E2eeContext)
   return useMemo(
     () => client ?? (userId ? factory(userId, api) : null),
@@ -111,7 +82,7 @@ export const useAnyE2eeClient = (): E2eeClientLike | null => {
 // eslint-disable-next-line react-refresh/only-export-components -- hook belongs with its provider
 export const useThisDeviceId = (): string | null => {
   const client = useAnyE2eeClient()
-  const userId = useCurrentUser()?.id
+  const userId = useMe()?.id
   const { data = null } = useQuery({
     queryKey: ['e2eeDevices', 'this', userId],
     queryFn: () => (client as E2eeClientLike).ready(),

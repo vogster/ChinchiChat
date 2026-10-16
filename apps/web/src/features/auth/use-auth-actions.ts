@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from '@tanstack/react-router'
 
 import { useApi } from '../../lib/api-context'
+import { useAnyE2eeClient } from '../e2ee/e2ee-context'
 import { authKeys, meQueryOptions } from './queries'
 import { safeRedirect } from './redirect'
 
@@ -49,8 +50,14 @@ export const useLogout = () => {
   const api = useApi()
   const queryClient = useQueryClient()
   const navigate = useNavigate()
+  const e2ee = useAnyE2eeClient()
   return useMutation({
-    mutationFn: () => api.auth.logout(),
+    // Encryption first, while the session still works: this device leaves its conversations
+    // and its keys and decrypted messages are wiped from the browser.
+    mutationFn: async () => {
+      await e2ee?.forget().catch(() => undefined)
+      await api.auth.logout()
+    },
     // Even if the server call fails (e.g. session already gone), the user wants to be signed out.
     onSettled: async () => {
       queryClient.clear()

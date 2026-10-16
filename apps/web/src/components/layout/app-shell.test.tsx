@@ -1,4 +1,4 @@
-import { screen, within } from '@testing-library/react'
+import { act, screen, waitFor, within } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 
 import { createFakeApi, testUser } from '../../test/fake-api'
@@ -26,15 +26,31 @@ describe('app shell', () => {
     expect(within(panel).getByText('Алиса')).toBeVisible()
   })
 
-  it('logs out and returns to the login page', async () => {
+  it('logs out and returns to the login page, leaving no encryption keys behind', async () => {
     const api = createFakeApi({ user: testUser })
-    const { user, router } = renderApp('/', { api })
+    const { user, router, e2ee } = renderApp('/', { api })
 
     await user.click(await screen.findByRole('button', { name: 'Выйти' }))
 
     expect(await screen.findByRole('heading', { name: 'С возвращением!' })).toBeVisible()
     expect(api.auth.logout).toHaveBeenCalledTimes(1)
     expect(router.state.location.pathname).toBe('/login')
+    // The device left its conversations while the session still worked, then signed out.
+    expect(e2ee.forget).toHaveBeenCalledTimes(1)
+    expect(e2ee.forget.mock.invocationCallOrder[0]).toBeLessThan(
+      api.auth.logout.mock.invocationCallOrder[0] as number,
+    )
+  })
+
+  it('wipes encryption state when the session is revoked elsewhere', async () => {
+    const api = createFakeApi({ user: testUser })
+    const { gateway, router, e2ee } = renderApp('/', { api })
+    await screen.findByRole('button', { name: 'Выйти' })
+
+    act(() => gateway.rejectAuth())
+
+    await waitFor(() => expect(router.state.location.pathname).toBe('/login'))
+    expect(e2ee.forget).toHaveBeenCalledTimes(1)
   })
 
   it('opens and closes the navigation drawer on small screens', async () => {

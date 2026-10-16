@@ -635,6 +635,22 @@ export const createE2eeClient = ({ api, store, userId, deviceName }: E2eeClientO
     /** Registers this device on first use and keeps its key packages topped up. */
     ready: async () => (await ready()).identity.deviceId,
 
+    /**
+     * Signing out: this device leaves every conversation (the server revokes it, members drop
+     * it on their next send) and nothing of it stays in the browser: no keys, no plaintext, no
+     * recovery key. The next sign-in here is a new device.
+     */
+    forget: async (): Promise<void> => {
+      const saved = await store.get<StoredDevice>('device')
+      // Best effort: with the session already gone the local wipe still happens.
+      if (saved?.id) await api.e2ee.deleteDevice(saved.id).catch(() => undefined)
+      await store.clear()
+      device = null
+      conversations.clear()
+      devicesByUser.clear()
+      queues.clear()
+    },
+
     open,
 
     /**

@@ -337,6 +337,33 @@ describe('e2ee client', () => {
     expect(await alice.open(DM)).toBe('ready')
   })
 
+  it('forgets everything on sign-out: the device is revoked and the next sign-in is a new one', async () => {
+    const { client, delivery } = setup()
+    const alice = client(ALICE).client
+    const bobSide = client(BOB)
+    const bobId = await bobSide.client.ready()
+    await alice.open(DM)
+    const sent = await alice.send(DM, 'Пока Боб был здесь')
+    expect(await bobSide.client.read(DM, sent)).toMatchObject({
+      payload: { text: 'Пока Боб был здесь' },
+    })
+
+    await bobSide.client.forget()
+
+    expect(delivery.devices.find((d) => d.id === bobId)?.revokedAt).toEqual(expect.any(String))
+    expect(await bobSide.store.get('device')).toBeUndefined()
+    expect(await bobSide.store.get(`plain:${sent.id}`)).toBeUndefined()
+    // Signing in again on this browser: a new device, which the old message was not for.
+    const again = createE2eeClient({
+      api: delivery.apiFor(BOB),
+      store: bobSide.store,
+      userId: BOB,
+      deviceName: 'Браузер',
+    })
+    expect(await again.ready()).not.toBe(bobId)
+    expect(await again.read(DM, sent)).toBeNull()
+  })
+
   it('registers one device even when two clients of a browser start at once', async () => {
     const { client, delivery } = setup()
     const store = createMemoryStore()

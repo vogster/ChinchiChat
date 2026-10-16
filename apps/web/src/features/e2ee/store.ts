@@ -7,6 +7,8 @@ export interface E2eeStore {
   get<T>(key: string): Promise<T | undefined>
   set(key: string, value: unknown): Promise<void>
   delete(key: string): Promise<void>
+  /** Everything goes: keys, conversations, plaintext (signing out). */
+  clear(): Promise<void>
 }
 
 export const createMemoryStore = (): E2eeStore => {
@@ -21,6 +23,9 @@ export const createMemoryStore = (): E2eeStore => {
     },
     delete: async (key) => {
       values.delete(key)
+    },
+    clear: async () => {
+      values.clear()
     },
   }
 }
@@ -55,6 +60,9 @@ export const createIndexedDbStore = (userId: string): E2eeStore => {
     },
     delete: async (key) => {
       await run('readwrite', (s) => s.delete(key))
+    },
+    clear: async () => {
+      await run('readwrite', (s) => s.clear())
     },
   }
 }

@@ -3,6 +3,7 @@ import { useNavigate } from '@tanstack/react-router'
 import { createContext, useContext, useEffect, useMemo, useRef, useState } from 'react'
 
 import { authKeys } from '../auth/queries'
+import { useForgetE2ee } from '../e2ee/e2ee-factory'
 import { useDesktopNotifier } from '../notifications/use-desktop-notifier'
 import { applyDispatch } from './apply-dispatch'
 import { createBrowserGateway } from './gateway-factory'
@@ -10,7 +11,7 @@ import { createTypingStore } from './typing-store'
 
 import type { GatewayConnection, GatewayFactory } from './gateway-factory'
 import type { TypingStore } from './typing-store'
-import type { DispatchType, SelectableStatus } from '@chinchi/shared'
+import type { CurrentUser, DispatchType, SelectableStatus } from '@chinchi/shared'
 import type { GatewayState } from '@chinchi/sdk'
 import type { ReactNode } from 'react'
 
@@ -41,8 +42,11 @@ export const GatewayProvider = ({ children }: { children: ReactNode }) => {
   // The latest notifier, without reconnecting when it changes.
   const notify = useDesktopNotifier()
   const notifyRef = useRef(notify)
+  const forgetE2ee = useForgetE2ee()
+  const forgetRef = useRef(forgetE2ee)
   useEffect(() => {
     notifyRef.current = notify
+    forgetRef.current = forgetE2ee
   })
 
   useEffect(() => {
@@ -54,7 +58,10 @@ export const GatewayProvider = ({ children }: { children: ReactNode }) => {
       },
       onStateChange: setState,
       onAuthFailed: () => {
-        // Logged out elsewhere or the session was revoked.
+        // Logged out elsewhere or the session was revoked: this browser keeps no keys or
+        // decrypted messages of the account that just left it.
+        const me = queryClient.getQueryData<CurrentUser | null>(authKeys.me)
+        if (me) void forgetRef.current(me.id)
         queryClient.clear()
         queryClient.setQueryData(authKeys.me, null)
         void navigate({ to: '/login' })

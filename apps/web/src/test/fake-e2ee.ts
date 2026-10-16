@@ -62,6 +62,7 @@ export const createFakeE2ee = (status: ConversationStatus = 'ready') => {
       },
     },
     ready: vi.fn(async () => '700'),
+    forget: vi.fn(async () => undefined),
     open: vi.fn(async (_channel: EncryptedChannel) => status),
     send: vi.fn(
       async (
