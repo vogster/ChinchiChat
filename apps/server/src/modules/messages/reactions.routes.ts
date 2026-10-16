@@ -1,4 +1,9 @@
-import { publicUserSchema, reactionEmojiSchema, snowflakeSchema } from '@chinchi/shared'
+import {
+  base64Schema,
+  publicUserSchema,
+  reactionEmojiSchema,
+  snowflakeSchema,
+} from '@chinchi/shared'
 import { z } from 'zod'
 
 import { requireAuth } from '../auth/auth.plugin'
@@ -32,6 +37,37 @@ export const reactionsRoutes: FastifyPluginAsyncZod<ReactionsRoutesOptions> = as
     { schema: { params: target }, config: { rateLimit: REACT_RATE_LIMIT } },
     async (request, reply) => {
       await reactionService.add(request.params, requireAuth(request).user.id)
+      return reply.status(204).send()
+    },
+  )
+
+  const encrypted = '/channels/:channelId/messages/:messageId/e2ee-reactions/@me'
+  const message = z.object({ channelId: snowflakeSchema, messageId: snowflakeSchema })
+
+  app.put(
+    encrypted,
+    {
+      schema: { params: message, body: z.strictObject({ ciphertext: base64Schema(8 * 1024) }) },
+      config: { rateLimit: REACT_RATE_LIMIT },
+    },
+    async (request, reply) => {
+      const { channelId, messageId } = request.params
+      await reactionService.setEncrypted(
+        channelId,
+        messageId,
+        requireAuth(request).user.id,
+        request.body.ciphertext,
+      )
+      return reply.status(204).send()
+    },
+  )
+
+  app.delete(
+    encrypted,
+    { schema: { params: message }, config: { rateLimit: REACT_RATE_LIMIT } },
+    async (request, reply) => {
+      const { channelId, messageId } = request.params
+      await reactionService.setEncrypted(channelId, messageId, requireAuth(request).user.id, null)
       return reply.status(204).send()
     },
   )

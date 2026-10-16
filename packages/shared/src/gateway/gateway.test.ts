@@ -78,6 +78,7 @@ describe('dispatchSchemas', () => {
         'E2EE_APPROVAL_UPDATE',
         'E2EE_DEVICES_UPDATE',
         'E2EE_HANDSHAKE',
+        'E2EE_REACTION_UPDATE',
         'GUILD_CREATE',
         'GUILD_DELETE',
         'GUILD_MEMBER_ADD',

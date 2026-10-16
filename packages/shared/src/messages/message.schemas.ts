@@ -4,7 +4,7 @@ import { CIPHERTEXT_MAX_BASE64, base64Schema } from '../e2ee/e2ee.schemas'
 import { snowflakeSchema } from '../snowflake/snowflake'
 import { publicUserSchema } from '../users/user.schemas'
 import { ATTACHMENTS_PER_MESSAGE_MAX, attachmentSchema } from './attachment.schemas'
-import { reactionSchema } from './reaction.schemas'
+import { encryptedReactionSchema, reactionSchema } from './reaction.schemas'
 
 export const MESSAGE_MAX_LENGTH = 2000
 export const MESSAGES_PAGE_MAX = 100
@@ -157,6 +157,8 @@ export const messageSchema = z.object({
   embeds: z.array(embedSchema),
   /** In order of first use. `me` is per viewer; gateway copies of new messages have none. */
   reactions: z.array(reactionSchema),
+  /** Encrypted conversations: each person's set of reactions, encrypted (`reactions` stays empty). */
+  encryptedReactions: z.array(encryptedReactionSchema).optional(),
   nonce: z.string().nullable(),
 })
 

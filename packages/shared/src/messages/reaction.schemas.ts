@@ -50,5 +50,27 @@ export const reactionEventSchema = z.object({
   emoji: z.string(),
 })
 
+/**
+ * One person's reactions to a message in an encrypted conversation: their whole set of emoji,
+ * encrypted for the conversation. The server knows that they reacted, not with what.
+ */
+export const encryptedReactionSchema = z.object({
+  userId: snowflakeSchema,
+  /** Changes with every new set (each is a new MLS message, decrypted on its own). */
+  version: snowflakeSchema,
+  ciphertext: z.string(),
+})
+
+export const encryptedReactionEventSchema = z.object({
+  channelId: snowflakeSchema,
+  guildId: snowflakeSchema.nullable(),
+  messageId: snowflakeSchema,
+  userId: snowflakeSchema,
+  /** null once the person took back every reaction. */
+  reaction: z.object({ version: snowflakeSchema, ciphertext: z.string() }).nullable(),
+})
+
 export type Reaction = z.infer<typeof reactionSchema>
 export type ReactionEvent = z.infer<typeof reactionEventSchema>
+export type EncryptedReaction = z.infer<typeof encryptedReactionSchema>
+export type EncryptedReactionEvent = z.infer<typeof encryptedReactionEventSchema>

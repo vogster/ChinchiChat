@@ -260,6 +260,20 @@ const cases: Case[] = [
   ],
   ['e2ee.backup', (api) => api.e2ee.backup(), 'GET', '/users/@me/e2ee/backup', 'backup'],
   [
+    'reactions.setEncrypted',
+    (api) => api.reactions.setEncrypted('1', '2', 'AAAA'),
+    'PUT',
+    '/channels/1/messages/2/e2ee-reactions/@me',
+    null,
+  ],
+  [
+    'reactions.clearEncrypted',
+    (api) => api.reactions.setEncrypted('1', '2', null),
+    'DELETE',
+    '/channels/1/messages/2/e2ee-reactions/@me',
+    null,
+  ],
+  [
     'e2ee.approvals.request',
     (api) => api.e2ee.approvals.request({ deviceId: '7', commitment: 'AAAA' }),
     'POST',

@@ -73,12 +73,17 @@ export const createMessageViews = ({
         ]),
       ),
     ]
-    const [files, replies, reactionsByMessage, interactionUsers] = await Promise.all([
-      attachmentRows.listByMessages(ids),
-      repliesFor(channelId, rows),
-      reactions.summaries(ids, viewerId),
-      interactionUserIds.length > 0 ? users.findByIds(interactionUserIds) : [],
-    ])
+    const encryptedIds = rows
+      .filter(({ message }) => message.ciphertext)
+      .map(({ message }) => message.id)
+    const [files, replies, reactionsByMessage, interactionUsers, encryptedByMessage] =
+      await Promise.all([
+        attachmentRows.listByMessages(ids),
+        repliesFor(channelId, rows),
+        reactions.summaries(ids, viewerId),
+        interactionUserIds.length > 0 ? users.findByIds(interactionUserIds) : [],
+        reactions.encryptedFor(encryptedIds),
+      ])
     const usersById = new Map(interactionUsers.map((user) => [user.id, user]))
     const filesByMessage = groupByMessage(files)
     return rows.map(({ message, author }) =>
@@ -94,6 +99,7 @@ export const createMessageViews = ({
             }
           : null,
         reactions: reactionsByMessage.get(message.id),
+        encryptedReactions: encryptedByMessage.get(message.id),
         nonce,
         interactionUser: message.interactionUserId
           ? (usersById.get(message.interactionUserId) ?? null)

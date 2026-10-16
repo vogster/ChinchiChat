@@ -722,6 +722,9 @@ export const createFakeApi = ({ user = null, registrationMode = 'open' }: FakeAp
       unpin: vi.fn(async () => undefined),
     },
     reactions: {
+      setEncrypted: vi.fn(
+        async (_channelId: string, _messageId: string, _ciphertext: string | null) => undefined,
+      ),
       add: vi.fn(async () => undefined),
       remove: vi.fn(async () => undefined),
       removeOf: vi.fn(async () => undefined),

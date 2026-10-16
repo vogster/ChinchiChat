@@ -22,3 +22,20 @@ export const messageReactions = pgTable(
     index('message_reactions_message_id_created_at_idx').on(table.messageId, table.createdAt),
   ],
 )
+
+/** One user's set of reactions to a message of an encrypted conversation, encrypted. */
+export const encryptedReactions = pgTable(
+  'encrypted_reactions',
+  {
+    messageId: snowflake('message_id')
+      .notNull()
+      .references(() => messages.id, { onDelete: 'cascade' }),
+    userId: snowflake('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    /** A new id for every new set: each is a separate MLS message. */
+    version: snowflake('version').notNull(),
+    ciphertext: text('ciphertext').notNull(),
+  },
+  (table) => [primaryKey({ columns: [table.messageId, table.userId] })],
+)

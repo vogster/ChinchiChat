@@ -524,6 +524,7 @@ export const createServices = (
       channelEvents,
     }),
     reaction: createReactionService({
+      nextId,
       reactions: reactionRows,
       messages: messageRows,
       channels: channel,

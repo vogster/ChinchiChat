@@ -944,6 +944,13 @@ export const createApiClient = (options: HttpOptions) => {
         request({ method: 'DELETE', path: `/channels/${id(channelId)}/pins/${id(messageId)}` }),
     },
     reactions: {
+      /** Encrypted conversations: my whole set, encrypted (null takes them all back). */
+      setEncrypted: (channelId: Snowflake, messageId: Snowflake, ciphertext: string | null) =>
+        request({
+          method: ciphertext ? 'PUT' : 'DELETE',
+          path: `/channels/${id(channelId)}/messages/${id(messageId)}/e2ee-reactions/@me`,
+          ...(ciphertext ? { body: { ciphertext } } : {}),
+        }),
       add: (channelId: Snowflake, messageId: Snowflake, emoji: string) =>
         request({ method: 'PUT', path: `${reactionPath(channelId, messageId, emoji)}/@me` }),
       remove: (channelId: Snowflake, messageId: Snowflake, emoji: string) =>

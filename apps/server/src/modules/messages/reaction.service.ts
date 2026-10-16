@@ -28,6 +28,7 @@ export interface ReactionServiceDeps {
    * be reactions there), else null.
    */
   readonly serverEmoji?: (guildId: Snowflake, emojiId: Snowflake) => Promise<string | null>
+  readonly nextId: () => Snowflake
 }
 
 export interface ReactionTarget {
@@ -44,6 +45,7 @@ export const createReactionService = ({
   channels,
   channelEvents,
   serverEmoji = async () => null,
+  nextId,
 }: ReactionServiceDeps) => {
   /** A message in a text channel the user can read (404 otherwise). */
   const locate = async (channelId: Snowflake, messageId: Snowflake, userId: Snowflake) => {
@@ -51,6 +53,13 @@ export const createReactionService = ({
     if (!isMessageChannel(access.channel.type)) throw unknownMessage()
     if (!(await messages.findInChannel(access.channel.id, messageId))) throw unknownMessage()
     return access
+  }
+
+  /** Plain reactions would show the server the emoji: encrypted conversations take only sets. */
+  const assertPlain = (channel: AnyChannelRow) => {
+    if (channel.encrypted) {
+      throw badRequest('ENCRYPTED_CHANNEL', 'This conversation takes only encrypted reactions')
+    }
   }
 
   const publish = (
@@ -70,6 +79,7 @@ export const createReactionService = ({
     /** A new emoji needs ADD_REACTIONS; joining an existing one does not (as in Discord). */
     async add(target: ReactionTarget, userId: Snowflake): Promise<void> {
       const { channel, permissions } = await locate(target.channelId, target.messageId, userId)
+      assertPlain(channel)
       // Across a block in a 1:1 DM, not even joining an existing reaction gets through.
       if (channel.type === 'dm' && !has(permissions, Permission.SendMessages)) {
         throw cannotMessage()
@@ -106,6 +116,32 @@ export const createReactionService = ({
     async removeOwn(target: ReactionTarget, userId: Snowflake): Promise<void> {
       const { channel } = await locate(target.channelId, target.messageId, userId)
       await removeFor(target, channel, userId)
+    },
+
+    /**
+     * My whole set of reactions to a message of an encrypted conversation, encrypted on my device
+     * (null takes them all back). The server learns that I reacted, not with what.
+     */
+    async setEncrypted(
+      channelId: Snowflake,
+      messageId: Snowflake,
+      userId: Snowflake,
+      ciphertext: string | null,
+    ): Promise<void> {
+      const { channel, permissions } = await locate(channelId, messageId, userId)
+      if (!channel.encrypted)
+        throw badRequest('NOT_ENCRYPTED', 'This conversation is not encrypted')
+      if (!has(permissions, Permission.SendMessages)) throw cannotMessage()
+      const reaction = ciphertext ? { version: nextId(), ciphertext } : null
+      if (reaction) await reactions.setEncrypted({ messageId, userId, ...reaction })
+      else if (!(await reactions.removeEncrypted(messageId, userId))) return
+      await channelEvents.publish(channel, 'E2EE_REACTION_UPDATE', {
+        channelId: channel.id,
+        guildId: channel.guildId,
+        messageId,
+        userId,
+        reaction,
+      })
     },
 
     /** Someone else's reaction: moderators only. */

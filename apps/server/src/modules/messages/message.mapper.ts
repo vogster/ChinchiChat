@@ -4,7 +4,14 @@ import { toPublicUser } from '../users/user.mapper'
 
 import type { UserRow } from '../users/user.repository'
 import type { MessageRow } from './message.repository'
-import type { Attachment, Message, MessageReply, Reaction, Snowflake } from '@chinchi/shared'
+import type {
+  Attachment,
+  EncryptedReaction,
+  Message,
+  MessageReply,
+  Reaction,
+  Snowflake,
+} from '@chinchi/shared'
 
 export interface MessageContext {
   /** null in DMs. */
@@ -13,6 +20,8 @@ export interface MessageContext {
   readonly attachments?: readonly Attachment[] | undefined
   readonly reply?: MessageReply | null | undefined
   readonly reactions?: readonly Reaction[] | undefined
+  /** Encrypted messages: each person's encrypted set (an encrypted message always has the list). */
+  readonly encryptedReactions?: readonly EncryptedReaction[] | undefined
   readonly nonce?: string | undefined
   /** Who ran the command a bot's message answers. */
   readonly interactionUser?: UserRow | null
@@ -28,6 +37,7 @@ export const toMessage = (
     attachments = [],
     reply = null,
     reactions = [],
+    encryptedReactions = [],
     nonce,
     interactionUser = null,
     systemTarget = null,
@@ -71,5 +81,6 @@ export const toMessage = (
   published: message.publishedAt !== null,
   embeds: message.embeds,
   reactions: [...reactions],
+  ...(message.ciphertext ? { encryptedReactions: [...encryptedReactions] } : {}),
   nonce: nonce ?? null,
 })

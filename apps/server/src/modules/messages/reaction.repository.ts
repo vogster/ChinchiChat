@@ -1,10 +1,10 @@
 import { and, asc, count, eq, inArray, sql } from 'drizzle-orm'
 
-import { messageReactions, messages, users } from '../../db/schema'
+import { encryptedReactions, messageReactions, messages, users } from '../../db/schema'
 
 import type { DbExecutor } from '../../db/client'
 import type { UserRow } from '../users/user.repository'
-import type { Reaction, Snowflake } from '@chinchi/shared'
+import type { EncryptedReaction, Reaction, Snowflake } from '@chinchi/shared'
 
 export interface ReactionKey {
   readonly messageId: Snowflake
@@ -21,6 +21,47 @@ export interface AddRules {
 }
 
 export const createReactionRepository = (db: DbExecutor) => ({
+  /** Replaces a user's encrypted set of reactions to a message. */
+  async setEncrypted(row: EncryptedReaction & { messageId: Snowflake }): Promise<void> {
+    await db
+      .insert(encryptedReactions)
+      .values(row)
+      .onConflictDoUpdate({
+        target: [encryptedReactions.messageId, encryptedReactions.userId],
+        set: { version: row.version, ciphertext: row.ciphertext },
+      })
+  },
+
+  async removeEncrypted(messageId: Snowflake, userId: Snowflake): Promise<boolean> {
+    const removed = await db
+      .delete(encryptedReactions)
+      .where(
+        and(eq(encryptedReactions.messageId, messageId), eq(encryptedReactions.userId, userId)),
+      )
+      .returning({ userId: encryptedReactions.userId })
+    return removed.length > 0
+  },
+
+  /** Each message's encrypted sets, oldest first. */
+  async encryptedFor(
+    messageIds: readonly Snowflake[],
+  ): Promise<Map<Snowflake, EncryptedReaction[]>> {
+    const byMessage = new Map<Snowflake, EncryptedReaction[]>()
+    if (messageIds.length === 0) return byMessage
+    const rows = await db
+      .select()
+      .from(encryptedReactions)
+      .where(inArray(encryptedReactions.messageId, [...messageIds]))
+      .orderBy(asc(encryptedReactions.version))
+    for (const { messageId, userId, version, ciphertext } of rows) {
+      byMessage.set(messageId, [
+        ...(byMessage.get(messageId) ?? []),
+        { userId, version, ciphertext },
+      ])
+    }
+    return byMessage
+  },
+
   /**
    * Adds a reaction under the message's row lock, so the distinct-emoji limit and the rule for
    * new emoji hold under concurrent requests.
