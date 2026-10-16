@@ -365,6 +365,13 @@
       "when": 1792169545956,
       "tag": "0051_totp_secret_text",
       "breakpoints": true
+    },
+    {
+      "idx": 52,
+      "version": "7",
+      "when": 1792170071024,
+      "tag": "0052_require_verified_email",
+      "breakpoints": true
     }
   ]
 }

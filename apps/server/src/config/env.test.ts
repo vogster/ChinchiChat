@@ -25,6 +25,7 @@ describe('loadConfig', () => {
       mailFrom: 'Chinchi <no-reply@localhost>',
       instanceName: 'Chinchi',
       registrationMode: 'open',
+      requireVerifiedEmail: false,
       trustProxy: false,
       gatewayHeartbeatMs: 41_250,
       linkPreviews: true,

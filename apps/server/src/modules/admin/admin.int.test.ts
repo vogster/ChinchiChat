@@ -64,6 +64,7 @@ describe('registration', () => {
     expect(settings.json().data.settings).toEqual({
       registrationMode: 'invite',
       maxGuildsPerUser: null,
+      requireVerifiedEmail: false,
     })
     const instance = await call(null, 'GET', '/instance')
     expect(instance.json().data.instance.registrationMode).toBe('invite')

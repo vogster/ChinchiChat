@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next'
 
 import { Alert } from '../../components/ui/alert'
 import { Button } from '../../components/ui/button'
+import { Switch } from '../../components/ui/switch'
 import { useApi } from '../../lib/api-context'
 import { errorMessage } from '../../lib/errors'
 import { SettingsCard, SettingsSection } from '../settings/settings-section'
@@ -23,11 +24,13 @@ const SettingsForm = ({ settings }: { settings: InstanceSettings }) => {
   const queryClient = useQueryClient()
   const [mode, setMode] = useState(settings.registrationMode)
   const [limit, setLimit] = useState(settings.maxGuildsPerUser?.toString() ?? '')
+  const [verifiedEmail, setVerifiedEmail] = useState(settings.requireVerifiedEmail)
   const save = useMutation({
     mutationFn: () =>
       api.admin.updateSettings({
         registrationMode: mode,
         maxGuildsPerUser: limit.trim() ? Number(limit) : null,
+        requireVerifiedEmail: verifiedEmail,
       }),
     onSuccess: (data) => {
       queryClient.setQueryData(settingsKey, data)
@@ -81,6 +84,12 @@ const SettingsForm = ({ settings }: { settings: InstanceSettings }) => {
           className="rounded-md border border-border bg-rail px-3 py-2"
         />
       </div>
+      <Switch
+        checked={verifiedEmail}
+        onCheckedChange={setVerifiedEmail}
+        label={t('admin.instance.requireVerifiedEmail')}
+        description={t('admin.instance.requireVerifiedEmailHint')}
+      />
       {save.isError ? <Alert tone="error">{errorMessage(t, save.error)}</Alert> : null}
       {save.isSuccess ? <Alert tone="success">{t('admin.instance.saved')}</Alert> : null}
       <Button type="submit" fullWidth={false} pending={save.isPending}>

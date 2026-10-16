@@ -27,6 +27,7 @@ describe('GET /api/v1/instance', () => {
           registrationMode: 'open',
           uploads: { maxBytes: 25 * 1024 * 1024, maxAttachments: 10 },
           voice: false,
+          requireVerifiedEmail: false,
         },
       },
     })

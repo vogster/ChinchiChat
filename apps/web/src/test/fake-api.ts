@@ -308,6 +308,7 @@ export interface FakeApiOptions {
 export const testInstanceSettings: InstanceSettings = {
   registrationMode: 'open',
   maxGuildsPerUser: null,
+  requireVerifiedEmail: false,
 }
 export const testAdminUsers: readonly AdminUser[] = [
   {
@@ -764,6 +765,7 @@ export const createFakeApi = ({ user = null, registrationMode = 'open' }: FakeAp
           registrationMode,
           uploads: { maxBytes: 25 * 1024 * 1024, maxAttachments: 10 } as UploadLimits | null,
           voice: false,
+          requireVerifiedEmail: false,
         },
       })),
     },

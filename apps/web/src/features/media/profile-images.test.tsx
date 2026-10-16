@@ -76,7 +76,13 @@ describe('avatar in profile settings', () => {
   it('hides uploading when the instance has no file storage', async () => {
     const api = createFakeApi({ user: testUser })
     api.instance.get.mockResolvedValue({
-      instance: { name: 'Chinchi', registrationMode: 'open', uploads: null, voice: false },
+      instance: {
+        name: 'Chinchi',
+        registrationMode: 'open',
+        uploads: null,
+        voice: false,
+        requireVerifiedEmail: false,
+      },
     })
     renderApp('/settings/profile', { api })
 

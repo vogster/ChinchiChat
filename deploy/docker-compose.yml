@@ -100,6 +100,7 @@ services:
       TRUST_PROXY: '1'
       INSTANCE_NAME: ${INSTANCE_NAME:-Chinchi}
       REGISTRATION_MODE: ${REGISTRATION_MODE:-open}
+      REQUIRE_VERIFIED_EMAIL: ${REQUIRE_VERIFIED_EMAIL:-on}
       # Required: otherwise whoever registers first on a fresh domain would run the instance.
       INITIAL_ADMIN_EMAIL: ${INITIAL_ADMIN_EMAIL:?set INITIAL_ADMIN_EMAIL in .env}
       SMTP_URL: ${SMTP_URL:-}

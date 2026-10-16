@@ -1,7 +1,7 @@
 import { createInviteRequestSchema, inviteSchema, snowflakeSchema } from '@chinchi/shared'
 import { z } from 'zod'
 
-import { requireAuth, requireHuman } from '../auth/auth.plugin'
+import { requireAuth, requireVerifiedHuman } from '../auth/auth.plugin'
 import { profileImageUrl } from '../media/media-paths'
 import { toPublicUser } from '../users/user.mapper'
 
@@ -79,7 +79,7 @@ export const invitesRoutes: FastifyPluginAsyncZod<InvitesRoutesOptions> = async 
       config: { rateLimit: { max: 30, timeWindow: HOUR_MS } },
     },
     async (request) => {
-      const { user } = requireHuman(request)
+      const { user } = await requireVerifiedHuman(request)
       const userId = user.id
       const guildId = await inviteService.accept(request.params.code, user)
       const guild = await guildService.get(guildId, userId)

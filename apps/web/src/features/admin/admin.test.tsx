@@ -66,11 +66,13 @@ describe('instance administration', () => {
     const { user } = renderApp('/admin/instance', { api })
 
     await user.selectOptions(await screen.findByLabelText('Регистрация', { exact: true }), 'invite')
+    await user.click(screen.getByRole('switch', { name: 'Требовать подтверждённый email' }))
     await user.click(screen.getByRole('button', { name: 'Сохранить' }))
     await waitFor(() =>
       expect(api.admin.updateSettings).toHaveBeenCalledWith({
         registrationMode: 'invite',
         maxGuildsPerUser: null,
+        requireVerifiedEmail: true,
       }),
     )
 

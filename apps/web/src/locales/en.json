@@ -226,7 +226,8 @@
     "RULES_NOT_ACCEPTED": "Accept the server rules first.",
     "E2EE_CALL_NOT_READY": "You can't call yet: this device hasn't been let into the conversation. Open it on another of your devices or wait for the other person.",
     "E2EE_CALLS_UNSUPPORTED": "This browser can't encrypt calls. Open the conversation in a recent Chrome, Edge, Firefox or Safari.",
-    "CANNOT_CONNECT": "This member can’t join that channel"
+    "CANNOT_CONNECT": "This member can’t join that channel",
+    "EMAIL_NOT_VERIFIED": "Confirm your email first — the link is waiting in your inbox"
   },
   "settings": {
     "title": "User settings",
@@ -1007,7 +1008,9 @@
       "expires": "until {{date}}",
       "copy": "Copy",
       "revoke": "Revoke invite {{code}}",
-      "revokeShort": "Revoke"
+      "revokeShort": "Revoke",
+      "requireVerifiedEmail": "Require a confirmed email",
+      "requireVerifiedEmailHint": "Creating servers, accepting invites, messaging and adding friends need a confirmed email address. Keeps people safe from throwaway sign-ups."
     }
   },
   "reports": {

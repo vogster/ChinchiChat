@@ -284,7 +284,11 @@ export const buildApp = (
 
   app.register(rateLimitPlugin, { enabled: config.rateLimitEnabled, redis })
   app.register(cookie)
-  app.register(authPlugin, { authService: services.auth, webOrigins: config.webOrigins })
+  app.register(authPlugin, {
+    authService: services.auth,
+    webOrigins: config.webOrigins,
+    requireVerifiedEmail: async () => (await services.instanceSettings.get()).requireVerifiedEmail,
+  })
   app.register(healthRoutes, { db, redis })
   if (redis && presence) registerGateway(app, config, services, presence, redis, events, metrics)
 
@@ -341,12 +345,16 @@ export const buildApp = (
       api.register(mediaRoutes, { mediaService: services.media })
       api.register(rolesRoutes, { roleService: services.role })
       api.register(instanceRoutes, {
-        instance: async () => ({
-          name: config.instanceName,
-          registrationMode: (await services.instanceSettings.get()).registrationMode,
-          uploads: services.attachment.limits(),
-          voice: services.voice.enabled,
-        }),
+        instance: async () => {
+          const settings = await services.instanceSettings.get()
+          return {
+            name: config.instanceName,
+            registrationMode: settings.registrationMode,
+            uploads: services.attachment.limits(),
+            voice: services.voice.enabled,
+            requireVerifiedEmail: settings.requireVerifiedEmail,
+          }
+        },
       })
       api.register(adminRoutes, {
         adminService: services.admin,

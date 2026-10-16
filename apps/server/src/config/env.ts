@@ -89,6 +89,11 @@ const envSchema = z.object({
   INSTANCE_NAME: z.string().trim().min(1).max(64).default('Chinchi'),
   REGISTRATION_MODE: registrationModeSchema.default('open'),
   /**
+   * Default for the admin setting: a confirmed email before creating servers, accepting
+   * invites, opening DMs or asking to be friends. Keeps throwaway sign-ups from reaching people.
+   */
+  REQUIRE_VERIFIED_EMAIL: z.enum(['on', 'off']).default('off'),
+  /**
    * The account that runs the instance: registering with this email makes it an admin
    * (and is allowed while there is no admin, whatever the registration mode). Without it,
    * the first account to register becomes the admin.
@@ -223,6 +228,7 @@ export interface Config {
   readonly mailFrom: string
   readonly instanceName: string
   readonly registrationMode: RegistrationMode
+  readonly requireVerifiedEmail: boolean
   readonly initialAdminEmail: string | undefined
   readonly trustProxy: boolean | number | readonly string[]
   readonly gatewayHeartbeatMs: number
@@ -282,6 +288,7 @@ export const loadConfig = (env: Readonly<Record<string, string | undefined>>): C
     mailFrom: data.MAIL_FROM,
     instanceName: data.INSTANCE_NAME,
     registrationMode: data.REGISTRATION_MODE,
+    requireVerifiedEmail: data.REQUIRE_VERIFIED_EMAIL === 'on',
     initialAdminEmail: data.INITIAL_ADMIN_EMAIL,
     trustProxy: Array.isArray(data.TRUST_PROXY)
       ? Object.freeze([...data.TRUST_PROXY])

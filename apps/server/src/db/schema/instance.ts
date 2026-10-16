@@ -1,4 +1,12 @@
-import { integer, pgEnum, pgTable, smallint, timestamp, varchar } from 'drizzle-orm/pg-core'
+import {
+  boolean,
+  integer,
+  pgEnum,
+  pgTable,
+  smallint,
+  timestamp,
+  varchar,
+} from 'drizzle-orm/pg-core'
 
 import { snowflake } from '../columns'
 import { users } from './users'
@@ -10,6 +18,8 @@ export const instanceSettings = pgTable('instance_settings', {
   id: smallint('id').primaryKey().default(1),
   registrationMode: registrationMode('registration_mode'),
   maxGuildsPerUser: integer('max_guilds_per_user'),
+  // Null falls back to REQUIRE_VERIFIED_EMAIL.
+  requireVerifiedEmail: boolean('require_verified_email'),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
 })
 

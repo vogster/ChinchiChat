@@ -15,6 +15,8 @@ export const instanceInfoSchema = z.object({
   uploads: uploadLimitsSchema.nullable(),
   /** Whether voice and video (LiveKit) are set up. */
   voice: z.boolean(),
+  /** Whether servers, invites, DMs and friend requests need a confirmed email first. */
+  requireVerifiedEmail: z.boolean(),
 })
 
 export type RegistrationMode = z.infer<typeof registrationModeSchema>

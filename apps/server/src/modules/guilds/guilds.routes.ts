@@ -9,7 +9,7 @@ import {
 } from '@chinchi/shared'
 import { z } from 'zod'
 
-import { requireAuth, requireHuman } from '../auth/auth.plugin'
+import { requireAuth, requireVerifiedHuman } from '../auth/auth.plugin'
 import { toGuild } from './guild.mapper'
 
 import type { GuildService } from './guild.service'
@@ -43,7 +43,10 @@ export const guildsRoutes: FastifyPluginAsyncZod<GuildsRoutesOptions> = async (
     '/guilds',
     { schema: { body: createGuildRequestSchema, response: { 201: guildResponse } } },
     async (request, reply) => {
-      const created = await guildService.create(requireHuman(request).user.id, request.body)
+      const created = await guildService.create(
+        (await requireVerifiedHuman(request)).user.id,
+        request.body,
+      )
       return reply.status(201).send(toDetail(created))
     },
   )

@@ -27,7 +27,13 @@ const withSecondVoice = () => {
 const withVoice = () => {
   const api = createFakeApi({ user: testUser })
   api.instance.get.mockResolvedValue({
-    instance: { name: 'Chinchi', registrationMode: 'open', uploads: null, voice: true },
+    instance: {
+      name: 'Chinchi',
+      registrationMode: 'open',
+      uploads: null,
+      voice: true,
+      requireVerifiedEmail: false,
+    },
   })
   return api
 }

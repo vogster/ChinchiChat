@@ -134,6 +134,7 @@ export const createServices = (
   const sessions = createSessionRepository(db)
   const instanceSettings = createInstanceSettings(db, {
     registrationMode: config.registrationMode,
+    requireVerifiedEmail: config.requireVerifiedEmail,
   })
   const instanceInvites = createInstanceInviteRepository(db)
   const adminRows = createAdminRepository(db)

@@ -17,12 +17,15 @@ export const instanceSettingsSchema = z.object({
   registrationMode: registrationModeSchema,
   /** Servers one person may own; null means no limit. */
   maxGuildsPerUser: z.number().int().positive().nullable(),
+  /** Creating servers, accepting invites, DMs and friend requests need a confirmed email. */
+  requireVerifiedEmail: z.boolean(),
 })
 
 export const updateInstanceSettingsRequestSchema = z
   .strictObject({
     registrationMode: registrationModeSchema.optional(),
     maxGuildsPerUser: z.number().int().min(1).max(MAX_GUILDS_PER_USER_LIMIT).nullable().optional(),
+    requireVerifiedEmail: z.boolean().optional(),
   })
   .refine((body) => Object.keys(body).length > 0, 'Nothing to update')
 

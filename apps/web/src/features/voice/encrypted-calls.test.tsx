@@ -19,7 +19,13 @@ const encryptedDm: PrivateChannel = {
 const withVoice = () => {
   const api = createFakeApi({ user: testUser })
   api.instance.get.mockResolvedValue({
-    instance: { name: 'Chinchi', registrationMode: 'open', uploads: null, voice: true },
+    instance: {
+      name: 'Chinchi',
+      registrationMode: 'open',
+      uploads: null,
+      voice: true,
+      requireVerifiedEmail: false,
+    },
   })
   api.dms.list.mockResolvedValue({ channels: [testDm, encryptedDm] })
   return api

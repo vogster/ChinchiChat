@@ -7,7 +7,7 @@ import {
 } from '@chinchi/shared'
 import { z } from 'zod'
 
-import { requireHuman } from '../auth/auth.plugin'
+import { requireHuman, requireVerifiedHuman } from '../auth/auth.plugin'
 
 import type { DmService } from './dm.service'
 import type { GroupDmService } from './group-dm.service'
@@ -57,7 +57,7 @@ export const dmsRoutes: FastifyPluginAsyncZod<DmsRoutesOptions> = async (
       config: { rateLimit: OPEN_RATE_LIMIT },
     },
     async (request) => {
-      const { user } = requireHuman(request)
+      const { user } = await requireVerifiedHuman(request)
       const { recipientIds, encrypted = false } = request.body
       const [only, ...more] = recipientIds
       const channel =
@@ -95,7 +95,11 @@ export const dmsRoutes: FastifyPluginAsyncZod<DmsRoutesOptions> = async (
     { schema: { params: recipient }, config: { rateLimit: OPEN_RATE_LIMIT } },
     async (request, reply) => {
       const { channelId, userId } = request.params
-      await groupDmService.addRecipient(requireHuman(request).user, channelId, userId)
+      await groupDmService.addRecipient(
+        (await requireVerifiedHuman(request)).user,
+        channelId,
+        userId,
+      )
       return reply.status(204).send()
     },
   )

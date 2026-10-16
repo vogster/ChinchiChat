@@ -69,6 +69,7 @@ describe('attaching files', () => {
         registrationMode: 'open',
         uploads: { maxBytes: 100, maxAttachments: 2 },
         voice: false,
+        requireVerifiedEmail: false,
       },
     })
     const { user } = renderApp(CHANNEL_URL, { api })

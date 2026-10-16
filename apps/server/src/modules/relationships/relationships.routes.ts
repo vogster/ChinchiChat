@@ -7,7 +7,7 @@ import {
 } from '@chinchi/shared'
 import { z } from 'zod'
 
-import { requireHuman } from '../auth/auth.plugin'
+import { requireHuman, requireVerifiedHuman } from '../auth/auth.plugin'
 
 import type { RelationshipService } from './relationship.service'
 import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod'
@@ -53,7 +53,7 @@ export const relationshipsRoutes: FastifyPluginAsyncZod<RelationshipsRoutesOptio
     },
     async (request) => {
       const relationship = await relationshipService.requestByUsername(
-        requireHuman(request).user,
+        (await requireVerifiedHuman(request)).user,
         request.body.username,
       )
       return { success: true as const, data: { relationship } }

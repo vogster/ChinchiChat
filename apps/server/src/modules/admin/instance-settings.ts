@@ -11,13 +11,14 @@ export type InstanceInviteRow = typeof instanceInvites.$inferSelect
 /** Runtime instance settings (one row); environment variables give the defaults. */
 export const createInstanceSettings = (
   db: Database,
-  defaults: { readonly registrationMode: RegistrationMode },
+  defaults: { readonly registrationMode: RegistrationMode; readonly requireVerifiedEmail: boolean },
 ) => ({
   async get(): Promise<InstanceSettings> {
     const [row] = await db.select().from(instanceSettings).where(eq(instanceSettings.id, 1))
     return {
       registrationMode: row?.registrationMode ?? defaults.registrationMode,
       maxGuildsPerUser: row?.maxGuildsPerUser ?? null,
+      requireVerifiedEmail: row?.requireVerifiedEmail ?? defaults.requireVerifiedEmail,
     }
   },
 
