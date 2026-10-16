@@ -30,7 +30,10 @@ export const ReplyHeader = ({
 
   const name = original.author ? nameOf(original.author) : t('messages.deletedUser')
   // One line, as plain text: the snippet is a hint, the original is one click away.
-  const snippet = original.content.replace(/\s+/g, ' ').trim()
+  const snippet = original.content
+    .replace(/<a?:([A-Za-z0-9_]{2,32}):\d+>/g, ':$1:')
+    .replace(/\s+/g, ' ')
+    .trim()
 
   return (
     <button

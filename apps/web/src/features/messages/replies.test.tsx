@@ -125,6 +125,27 @@ describe('reply headers', () => {
     scroll.mockRestore()
   })
 
+  it('shows server emoji in the snippet by name, not as raw text', async () => {
+    const api = createFakeApi({ user: testUser })
+    api.messages.list.mockResolvedValue({
+      messages: [
+        testMessage('1002', {
+          content: 'Ура',
+          reply: {
+            messageId: '1001',
+            mentionsAuthor: false,
+            message: { author: BOB, content: 'Вышло <a:shipit:600> вот', attachmentCount: 0 },
+          },
+        }),
+      ],
+    })
+    renderApp(CHANNEL_URL, { api })
+
+    expect(
+      await screen.findByRole('button', { name: 'Ответ на сообщение Боб: Вышло :shipit: вот' }),
+    ).toBeVisible()
+  })
+
   it('says when the original is gone or only had files', async () => {
     const api = createFakeApi({ user: testUser })
     api.messages.list.mockResolvedValue({
