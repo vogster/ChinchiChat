@@ -29,21 +29,12 @@ const PREVIEW_CSP = [
 export interface WebViteOptions {
   /** Lazy-load route components. Disabled in tests so coverage maps to the real source. */
   readonly codeSplitting: boolean
-  /** A folder with another index.html (the desktop entry); routes and the route tree stay in src/. */
-  readonly root?: string
 }
 
-export const createViteConfig = ({ codeSplitting, root }: WebViteOptions): UserConfig => ({
-  ...(root ? { root } : {}),
+export const createViteConfig = ({ codeSplitting }: WebViteOptions): UserConfig => ({
   plugins: [
     // Must come before the React plugin: generates src/routeTree.gen.ts from src/routes.
-    tanstackRouter({
-      target: 'react',
-      autoCodeSplitting: codeSplitting,
-      ...(root
-        ? { routesDirectory: '../src/routes', generatedRouteTree: '../src/routeTree.gen.ts' }
-        : {}),
-    }),
+    tanstackRouter({ target: 'react', autoCodeSplitting: codeSplitting }),
     react(),
     tailwindcss(),
   ],

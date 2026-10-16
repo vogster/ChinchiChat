@@ -1,12 +1,13 @@
 import { QueryClient } from '@tanstack/react-query'
 import { createHashHistory } from '@tanstack/react-router'
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 
 import { App } from '../app'
 import { createAppRouter } from '../router'
 import { createDesktopApi, createDesktopGateway } from './api'
 import { InstancePicker } from './instance-picker'
 
+import type { Shell } from '../features/shell/shell-context'
 import type { DesktopSettings, DesktopSettingsStore } from './settings'
 import type { FetchLike } from '@chinchi/sdk'
 
@@ -35,7 +36,12 @@ const connect = (
   // Hash routes: the shell serves one HTML file, and a reload must land on it, not on /channels.
   const router = createAppRouter({ queryClient, api, history: createHashHistory() })
   const gateway = createDesktopGateway(instanceUrl, () => token)
-  return { api, queryClient, router, gateway }
+  return { instanceUrl, api, queryClient, router, gateway }
+}
+
+export interface DesktopActions {
+  /** Forgets the instance (and its session) and shows the picker again. */
+  readonly changeInstance: () => Promise<void>
 }
 
 export interface DesktopAppProps {
@@ -43,12 +49,24 @@ export interface DesktopAppProps {
   readonly initial: DesktopSettings
   /** Tauri's HTTP plugin in the shell; a fake in tests. */
   readonly fetch: FetchLike
+  /** Builds the Shell the web app sees, given what the app itself can do for it. */
+  readonly shell?: (actions: DesktopActions) => Shell
 }
 
 /** Picks an instance on the first launch, then runs the web app against it. */
-export const DesktopApp = ({ settings, initial, fetch }: DesktopAppProps) => {
+export const DesktopApp = ({ settings, initial, fetch, shell: shellFor }: DesktopAppProps) => {
   const [connection, setConnection] = useState(() =>
     initial.instanceUrl ? connect(initial.instanceUrl, settings, fetch, initial.token) : null,
+  )
+  const shell = useMemo(
+    () =>
+      shellFor?.({
+        changeInstance: async () => {
+          await settings.forgetInstance()
+          setConnection(null)
+        },
+      }) ?? null,
+    [shellFor, settings],
   )
 
   if (!connection) {
@@ -67,10 +85,12 @@ export const DesktopApp = ({ settings, initial, fetch }: DesktopAppProps) => {
   }
   return (
     <App
+      key={connection.instanceUrl}
       router={connection.router}
       queryClient={connection.queryClient}
       api={connection.api}
       gateway={connection.gateway}
+      shell={shell}
     />
   )
 }

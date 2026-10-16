@@ -36,6 +36,11 @@ export const createDesktopSettings = (store: SettingsStore) => ({
     await store.set('instanceUrl', instanceUrl)
     await store.delete('token')
   },
+  /** Back to the first launch: no instance, no session. */
+  async forgetInstance(): Promise<void> {
+    await store.delete('instanceUrl')
+    await store.delete('token')
+  },
   async setToken(token: string | null): Promise<void> {
     if (token) await store.set('token', token)
     else await store.delete('token')

@@ -5,6 +5,7 @@ import { ApprovalDialog } from '../features/e2ee/approval-dialog'
 import { E2eeProvider } from '../features/e2ee/e2ee-context'
 import { UnreadBadge } from '../features/notifications/unread-badge'
 import { GatewayProvider } from '../features/realtime/gateway-context'
+import { PushToTalk } from '../features/shell/push-to-talk'
 import { VoiceProvider } from '../features/voice/voice-context'
 
 /**
@@ -19,6 +20,7 @@ export const Route = createFileRoute('/_app')({
         <ApprovalDialog />
         <UnreadBadge />
         <VoiceProvider>
+          <PushToTalk />
           <Outlet />
         </VoiceProvider>
       </E2eeProvider>

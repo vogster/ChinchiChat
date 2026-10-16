@@ -1,11 +1,13 @@
-import { render, screen, waitFor } from '@testing-library/react'
+import { act, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it, vi } from 'vitest'
 
 import { initI18n } from '../lib/i18n'
+import { createFakeShell } from '../test/fake-shell'
 import { DesktopApp } from './desktop-app'
 import { createDesktopSettings, createMemorySettingsStore } from './settings'
 
+import type { DesktopActions } from './desktop-app'
 import type { FetchLike } from '@chinchi/sdk'
 
 initI18n('ru')
@@ -52,6 +54,31 @@ describe('DesktopApp', () => {
     expect(
       server.mock.calls.some(([url]) => url === 'https://chat.example.com/api/v1/users/@me'),
     ).toBe(true)
+  })
+
+  it('goes back to the picker when the shell is asked to change the instance', async () => {
+    const store = createMemorySettingsStore()
+    const settings = createDesktopSettings(store)
+    await settings.setInstanceUrl('https://chat.example.com')
+    await settings.setToken('secret-token')
+    let actions: DesktopActions | null = null
+    render(
+      <DesktopApp
+        settings={settings}
+        initial={await settings.load()}
+        fetch={server}
+        shell={(given) => {
+          actions = given
+          return createFakeShell().shell
+        }}
+      />,
+    )
+    expect(await screen.findByRole('heading', { name: 'С возвращением!' })).toBeInTheDocument()
+
+    await act(() => (actions as DesktopActions | null)?.changeInstance() ?? Promise.resolve())
+
+    expect(await screen.findByLabelText('Адрес сервера')).toHaveValue('https://chat.example.com')
+    expect(await settings.load()).toEqual({ instanceUrl: null, token: null })
   })
 
   it('skips the picker when an instance is already chosen', async () => {
