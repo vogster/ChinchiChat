@@ -11,7 +11,7 @@
 [![CI](https://github.com/vogster/ChinchiChat/actions/workflows/ci.yml/badge.svg)](https://github.com/vogster/ChinchiChat/actions/workflows/ci.yml)
 [![Лицензия: AGPL-3.0](https://img.shields.io/badge/%D0%BB%D0%B8%D1%86%D0%B5%D0%BD%D0%B7%D0%B8%D1%8F-AGPL--3.0-blue)](LICENSE)
 
-[Установка](#установка) · [Возможности](#возможности) · [Скриншоты](#скриншоты) · [Шифрование](docs/encryption.md) · [Разработка](#разработка)
+[Установка](#установка) · [Возможности](#возможности) · [Скриншоты](#скриншоты) · [Руководство (wiki)](https://github.com/vogster/ChinchiChat/wiki) · [Шифрование](docs/encryption.md) · [Разработка](#разработка)
 
 <img src="docs/screenshots/chat.png" alt="Текстовый канал Chinchi Chat: сообщения, реакции, свои эмодзи, опрос и список участников по ролям">
 
@@ -134,6 +134,7 @@ pnpm dev             # сервер на :3000, web на http://localhost:5173
 
 ## Документы
 
+- [Руководство пользователя и администратора](https://github.com/vogster/ChinchiChat/wiki) — wiki со всеми возможностями
 - [Установка на свой сервер](docs/self-hosting.md)
 - [Шифрование](docs/encryption.md): что защищено, от кого и как это устроено
 - [Чек-лист безопасности](docs/security-checklist.md)
