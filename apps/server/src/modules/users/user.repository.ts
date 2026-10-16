@@ -4,10 +4,13 @@ import { uniqueViolationConstraint } from '../../db/errors'
 import { users } from '../../db/schema'
 
 import type { Database } from '../../db/client'
-import type { DmPolicy, Snowflake } from '@chinchi/shared'
+import type { DmPolicy, Locale, Snowflake } from '@chinchi/shared'
 
 export type UserRow = typeof users.$inferSelect
-export type NewUser = Pick<typeof users.$inferInsert, 'id' | 'username' | 'email' | 'passwordHash'>
+export type NewUser = Pick<
+  typeof users.$inferInsert,
+  'id' | 'username' | 'email' | 'passwordHash' | 'locale'
+>
 
 export type InsertUserResult =
   | { readonly ok: true; readonly user: UserRow }
@@ -100,6 +103,7 @@ export const createUserRepository = (db: Database) => ({
       displayName?: string | null | undefined
       bio?: string | null | undefined
       dmPolicy?: DmPolicy | undefined
+      locale?: Locale | undefined
       accentColor?: number | null | undefined
     },
   ): Promise<UserRow> {
@@ -108,6 +112,7 @@ export const createUserRepository = (db: Database) => ({
       .set({
         ...(profile.displayName !== undefined ? { displayName: profile.displayName } : {}),
         ...(profile.dmPolicy !== undefined ? { dmPolicy: profile.dmPolicy } : {}),
+        ...(profile.locale !== undefined ? { locale: profile.locale } : {}),
         ...(profile.accentColor !== undefined ? { accentColor: profile.accentColor } : {}),
         // An emptied bio is no bio.
         ...(profile.bio !== undefined ? { bio: profile.bio || null } : {}),

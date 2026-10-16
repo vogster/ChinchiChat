@@ -7,6 +7,9 @@ export const EMAIL_MAX_LENGTH = 254
 export const PASSWORD_MIN_LENGTH = 8
 export const PASSWORD_MAX_LENGTH = 128
 
+/** The language of emails sent to the user (the app's own language is set per device). */
+export const localeSchema = z.enum(['ru', 'en'])
+
 // Lowercase latin letters, digits, "_" and "."; no leading/trailing or doubled dots.
 const USERNAME_PATTERN = /^(?!\.)(?!.*\.\.)[a-z0-9_.]+(?<!\.)$/
 
@@ -34,6 +37,8 @@ export const registerRequestSchema = z.strictObject({
   username: usernameSchema,
   email: emailSchema,
   password: passwordSchema,
+  /** The language of emails; Russian when not given. */
+  locale: localeSchema.optional(),
   /** Needed while the instance registers by invite only. */
   inviteCode: z
     .string()

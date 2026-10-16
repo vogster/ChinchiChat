@@ -31,7 +31,7 @@ export const RegisterForm = ({
   inviteRequired?: boolean
   inviteCode?: string | undefined
 }) => {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const {
     register,
     handleSubmit,
@@ -45,17 +45,22 @@ export const RegisterForm = ({
   const signUp = useRegister(redirectTo)
   const fieldError = isApiError(signUp.error) ? FIELD_ERRORS[signUp.error.code] : undefined
 
+  // Emails come in the language the app is shown in.
+  const locale = i18n.resolvedLanguage === 'en' ? 'en' : 'ru'
   const onSubmit = handleSubmit((values) =>
-    signUp.mutate(values, {
-      onError: (error) => {
-        const field = isApiError(error) ? FIELD_ERRORS[error.code] : undefined
-        if (field) setError(field, { type: 'server', message: errorMessage(t, error) })
+    signUp.mutate(
+      { ...values, locale },
+      {
+        onError: (error) => {
+          const field = isApiError(error) ? FIELD_ERRORS[error.code] : undefined
+          if (field) setError(field, { type: 'server', message: errorMessage(t, error) })
+        },
       },
-    }),
+    ),
   )
 
   /** Server errors carry their own translated message; client errors show the field's rule. */
-  const message = (field: keyof RegisterRequest) => {
+  const message = (field: Exclude<keyof RegisterRequest, 'locale'>) => {
     const error = errors[field]
     if (!error) return undefined
     return error.type === 'server' ? error.message : t(`validation.${field}`)

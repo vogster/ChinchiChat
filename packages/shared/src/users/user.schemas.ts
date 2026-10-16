@@ -1,6 +1,6 @@
 import { z } from 'zod'
 
-import { displayNameSchema } from '../auth/auth.schemas'
+import { displayNameSchema, localeSchema } from '../auth/auth.schemas'
 import { snowflakeSchema } from '../snowflake/snowflake'
 
 /** Profile pictures and server icons: uploaded as one image, stored as a square WebP. */
@@ -26,6 +26,7 @@ export const currentUserSchema = publicUserSchema.extend({
   email: z.string(),
   emailVerified: z.boolean(),
   dmPolicy: dmPolicySchema,
+  locale: localeSchema,
   /** "About me"; null when empty. */
   bio: z.string().nullable(),
   /** Whether signing in also asks for an authenticator code. */
@@ -37,6 +38,7 @@ export const currentUserSchema = publicUserSchema.extend({
   accentColor: z.number().int().nullable(),
 })
 
+export type Locale = z.infer<typeof localeSchema>
 export type PublicUser = z.infer<typeof publicUserSchema>
 export type CurrentUser = z.infer<typeof currentUserSchema>
 export type DmPolicy = z.infer<typeof dmPolicySchema>
@@ -50,6 +52,8 @@ export const updateProfileRequestSchema = z
     // Kept here (not imported from profile.schemas) to avoid an import cycle.
     bio: z.string().trim().max(190).nullable().optional(),
     dmPolicy: dmPolicySchema.optional(),
+    /** The language of emails: the web sends it when the user switches the app's language. */
+    locale: localeSchema.optional(),
     /** The profile's colour (0xRRGGBB), shown when there is no banner; null resets it. */
     accentColor: accentColorSchema.nullable().optional(),
   })

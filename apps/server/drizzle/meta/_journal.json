@@ -351,6 +351,13 @@
       "when": 1792125838552,
       "tag": "0049_animated_emoji",
       "breakpoints": true
+    },
+    {
+      "idx": 50,
+      "version": "7",
+      "when": 1792152803155,
+      "tag": "0050_user_locale",
+      "breakpoints": true
     }
   ]
 }

@@ -247,3 +247,33 @@ describe('password reset', () => {
     expect(response.json()).toMatchObject({ code: 'VALIDATION_FAILED' })
   })
 })
+
+describe('the language of emails', () => {
+  it('follows the language chosen at sign-up and later in the settings', async () => {
+    const registered = await post('/auth/register', {
+      username: 'bob',
+      email: 'bob@example.com',
+      password: 'password123',
+      locale: 'en',
+    })
+    expect(registered.json().data.user.locale).toBe('en')
+    const welcome = await outbox.waitForMessage('bob@example.com', /confirm your email/i)
+    expect(welcome.text).toContain('Hi, bob!')
+
+    const cookie = registered.cookies.find((c) => c.name === SESSION_COOKIE)?.value as string
+    const changed = await app.inject({
+      method: 'PATCH',
+      url: '/api/v1/users/@me',
+      headers: { origin: WEB_ORIGIN, ...cookieHeader(cookie) },
+      payload: { locale: 'ru' },
+    })
+    expect(changed.json().data.user.locale).toBe('ru')
+    await post('/auth/password/forgot', { email: 'bob@example.com' })
+    await outbox.waitForMessage('bob@example.com', /сброс пароля/i)
+  })
+
+  it('is Russian when the client does not say', async () => {
+    const { response } = await registerUser(app)
+    expect(response.json().data.user.locale).toBe('ru')
+  })
+})

@@ -10,6 +10,7 @@ const user = {
   email: 'alice@example.com',
   emailVerified: false,
   dmPolicy: 'servers',
+  locale: 'ru',
   bio: null,
   mfaEnabled: false,
   isAdmin: false,

@@ -51,6 +51,7 @@ export const testUser: CurrentUser = {
   email: 'alice@example.com',
   emailVerified: true,
   dmPolicy: 'servers',
+  locale: 'ru',
   bio: null,
   mfaEnabled: false,
   isAdmin: false,

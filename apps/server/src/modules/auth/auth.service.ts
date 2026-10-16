@@ -123,6 +123,7 @@ export const createAuthService = ({
           username: input.username,
           email: input.email,
           passwordHash: await hashPassword(input.password),
+          locale: input.locale ?? 'ru',
         })
       } catch (error) {
         if (invite) await registration.releaseInvite(invite)

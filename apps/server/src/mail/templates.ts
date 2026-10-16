@@ -1,3 +1,4 @@
+import type { Locale } from '@chinchi/shared'
 import type { MailMessage } from './mailer'
 
 const escapeHtml = (value: string): string =>
@@ -41,25 +42,53 @@ const linkEmail = ({
   ].join(''),
 })
 
-// TODO(i18n): pick the language from the user's locale once accounts store it.
-export const verificationEmail = (to: string, username: string, link: string): MailMessage =>
-  linkEmail({
-    to,
-    subject: 'Chinchi: подтвердите email',
-    greeting: `Привет, ${username}!`,
-    body: 'Подтвердите адрес электронной почты, чтобы завершить регистрацию в Chinchi.',
-    action: 'Подтвердить email',
-    link,
-    footer: 'Ссылка действует 24 часа. Если вы не регистрировались, просто проигнорируйте письмо.',
-  })
+type EmailKind = 'verification' | 'reset'
 
-export const passwordResetEmail = (to: string, username: string, link: string): MailMessage =>
-  linkEmail({
-    to,
-    subject: 'Chinchi: сброс пароля',
-    greeting: `Привет, ${username}!`,
-    body: 'Мы получили запрос на сброс пароля. Нажмите на кнопку, чтобы задать новый пароль.',
-    action: 'Сбросить пароль',
-    link,
-    footer: 'Ссылка действует 1 час. Если вы не запрашивали сброс, просто проигнорируйте письмо.',
-  })
+const TEXTS: Record<
+  Locale,
+  Record<EmailKind, Omit<LinkEmail, 'to' | 'greeting' | 'link'>> & {
+    greeting: (username: string) => string
+  }
+> = {
+  ru: {
+    greeting: (username) => `Привет, ${username}!`,
+    verification: {
+      subject: 'Chinchi: подтвердите email',
+      body: 'Подтвердите адрес электронной почты, чтобы завершить регистрацию в Chinchi.',
+      action: 'Подтвердить email',
+      footer:
+        'Ссылка действует 24 часа. Если вы не регистрировались, просто проигнорируйте письмо.',
+    },
+    reset: {
+      subject: 'Chinchi: сброс пароля',
+      body: 'Мы получили запрос на сброс пароля. Нажмите на кнопку, чтобы задать новый пароль.',
+      action: 'Сбросить пароль',
+      footer: 'Ссылка действует 1 час. Если вы не запрашивали сброс, просто проигнорируйте письмо.',
+    },
+  },
+  en: {
+    greeting: (username) => `Hi, ${username}!`,
+    verification: {
+      subject: 'Chinchi: confirm your email',
+      body: 'Confirm your email address to finish signing up for Chinchi.',
+      action: 'Confirm email',
+      footer: "The link works for 24 hours. If you didn't sign up, just ignore this email.",
+    },
+    reset: {
+      subject: 'Chinchi: reset your password',
+      body: 'We got a request to reset your password. Press the button to set a new one.',
+      action: 'Reset password',
+      footer: "The link works for 1 hour. If you didn't ask for a reset, just ignore this email.",
+    },
+  },
+}
+
+const emailOf =
+  (kind: EmailKind) =>
+  (to: string, username: string, link: string, locale: Locale = 'ru'): MailMessage => {
+    const texts = TEXTS[locale]
+    return linkEmail({ to, link, greeting: texts.greeting(username), ...texts[kind] })
+  }
+
+export const verificationEmail = emailOf('verification')
+export const passwordResetEmail = emailOf('reset')

@@ -34,6 +34,8 @@ export const users = pgTable(
     emailVerifiedAt: timestamp('email_verified_at', { withTimezone: true }),
     // Who may send this user DMs (friends always can).
     dmPolicy: dmPolicy('dm_policy').notNull().default('servers'),
+    // The language of emails (ru | en).
+    locale: varchar('locale', { length: 8 }).notNull().default('ru'),
     // Authenticator (TOTP) secret, base32; set means sign-in asks for a code.
     totpSecret: varchar('totp_secret', { length: 64 }),
     // A secret shown during setup, until a code from it confirms the app has it.

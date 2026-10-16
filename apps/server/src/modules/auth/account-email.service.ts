@@ -1,6 +1,10 @@
 import { publishRevokedSessions } from '../../events/internal-events'
 import { badRequest, conflict } from '../../http/http-error'
 import { passwordResetEmail, verificationEmail } from '../../mail/templates'
+
+import type { Locale } from '@chinchi/shared'
+
+const localeOf = (user: { locale: string }): Locale => (user.locale === 'en' ? 'en' : 'ru')
 import { hashPassword } from './password'
 import { generateSessionToken, hashSessionToken } from './session-token'
 
@@ -71,7 +75,9 @@ export const createAccountEmailService = ({
 
   const sendVerification = async (user: UserRow): Promise<void> => {
     const token = await issueToken(user.id, 'verify_email')
-    dispatch(verificationEmail(user.email, user.username, link('/verify-email', token)))
+    dispatch(
+      verificationEmail(user.email, user.username, link('/verify-email', token), localeOf(user)),
+    )
   }
 
   return {
@@ -100,7 +106,14 @@ export const createAccountEmailService = ({
       const user = await users.findByEmail(email)
       if (!user) return
       const token = await issueToken(user.id, 'reset_password')
-      dispatch(passwordResetEmail(user.email, user.username, link('/reset-password', token)))
+      dispatch(
+        passwordResetEmail(
+          user.email,
+          user.username,
+          link('/reset-password', token),
+          localeOf(user),
+        ),
+      )
     },
 
     /** Sets a new password and signs the user out everywhere. */

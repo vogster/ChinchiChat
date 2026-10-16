@@ -202,10 +202,12 @@ describe('sessions section', () => {
 })
 
 describe('language section', () => {
-  it('switches the interface language', async () => {
-    const { user } = renderApp('/settings/language', { user: testUser })
+  it('switches the interface language, and emails follow it', async () => {
+    const api = createFakeApi({ user: testUser })
+    const { user } = renderApp('/settings/language', { api })
 
     await user.click(await screen.findByRole('radio', { name: 'English' }))
+    expect(api.users.updateMe).toHaveBeenCalledWith({ locale: 'en' })
 
     expect(await screen.findByRole('heading', { name: 'Language' })).toBeVisible()
     expect(screen.getByRole('link', { name: 'My account' })).toBeVisible()

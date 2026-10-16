@@ -22,4 +22,17 @@ describe('email templates', () => {
     expect(message.html).toContain('a=1&amp;b=2')
     expect(message.html).not.toContain('<b>x</b>')
   })
+
+  it("speaks the user's language: Russian by default, English when asked", () => {
+    const link = 'https://chat.example.com/x?token=abc'
+    expect(verificationEmail('a@example.com', 'alice', link).subject).toBe(
+      'Chinchi: подтвердите email',
+    )
+    const english = verificationEmail('a@example.com', 'alice', link, 'en')
+    expect(english.subject).toBe('Chinchi: confirm your email')
+    expect(english.text).toContain('Hi, alice!')
+    expect(passwordResetEmail('a@example.com', 'alice', link, 'en').subject).toBe(
+      'Chinchi: reset your password',
+    )
+  })
 })

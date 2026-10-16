@@ -16,6 +16,7 @@ export const toCurrentUser = (user: UserRow): CurrentUser => ({
   email: user.email,
   emailVerified: user.emailVerifiedAt !== null,
   dmPolicy: user.dmPolicy,
+  locale: user.locale === 'en' ? 'en' : 'ru',
   bio: user.bio,
   mfaEnabled: user.totpSecret !== null,
   isAdmin: user.isAdmin,

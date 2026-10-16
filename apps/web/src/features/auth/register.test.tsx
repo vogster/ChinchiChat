@@ -23,7 +23,8 @@ describe('register page', () => {
     await fill(user, valid)
 
     expect(await screen.findByRole('heading', { name: 'Друзья', level: 1 })).toBeVisible()
-    expect(api.auth.register).toHaveBeenCalledWith(valid)
+    // Emails come in the language the app is shown in.
+    expect(api.auth.register).toHaveBeenCalledWith({ ...valid, locale: 'ru' })
   })
 
   it('explains the rules of invalid fields', async () => {

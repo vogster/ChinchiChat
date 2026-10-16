@@ -43,6 +43,7 @@ describe('POST /api/v1/auth/register', () => {
           email: 'alice@example.com',
           emailVerified: false,
           dmPolicy: 'servers',
+          locale: 'ru',
           bio: null,
           mfaEnabled: false,
           isAdmin: true,
