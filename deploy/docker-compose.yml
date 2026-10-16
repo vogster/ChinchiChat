@@ -88,7 +88,7 @@ services:
 
   server:
     <<: *restart
-    image: ghcr.io/vogster/chinchi-server:${CHINCHI_VERSION:-0.12.0}
+    image: ghcr.io/vogster/chinchi-server:${CHINCHI_VERSION:-0.12.1}
     environment:
       DATABASE_URL: postgres://chinchi:${POSTGRES_PASSWORD}@postgres:5432/chinchi
       REDIS_URL: redis://valkey:6379
@@ -130,7 +130,7 @@ services:
   # The web app on Caddy, which also terminates TLS and proxies the API, files and voice.
   web:
     <<: *restart
-    image: ghcr.io/vogster/chinchi-web:${CHINCHI_VERSION:-0.12.0}
+    image: ghcr.io/vogster/chinchi-web:${CHINCHI_VERSION:-0.12.1}
     environment:
       CHINCHI_DOMAIN: ${CHINCHI_DOMAIN}
       FILES_DOMAIN: ${FILES_DOMAIN:-}
