@@ -2,6 +2,7 @@ import { createFileRoute } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
 
 import { sessionsQueryOptions } from '../../features/auth/queries'
+import { EncryptionDevices } from '../../features/settings/encryption-devices'
 import { SessionsList } from '../../features/settings/sessions-list'
 import { SettingsSection } from '../../features/settings/settings-section'
 
@@ -17,7 +18,22 @@ const SessionsPage = () => {
   )
 }
 
+const SessionsAndKeysPage = () => {
+  const { t } = useTranslation()
+  return (
+    <>
+      <SessionsPage />
+      <SettingsSection
+        title={t('settings.encryptionDevices.title')}
+        subtitle={t('settings.encryptionDevices.subtitle')}
+      >
+        <EncryptionDevices />
+      </SettingsSection>
+    </>
+  )
+}
+
 export const Route = createFileRoute('/settings/sessions')({
   loader: ({ context }) => context.queryClient.ensureQueryData(sessionsQueryOptions(context.api)),
-  component: SessionsPage,
+  component: SessionsAndKeysPage,
 })

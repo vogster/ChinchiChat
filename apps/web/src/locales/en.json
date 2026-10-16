@@ -353,6 +353,13 @@
       "title": "Your data",
       "description": "A ZIP archive with your account, every message you wrote and the files in them. A large archive is built while it downloads.",
       "download": "Download my data"
+    },
+    "encryptionDevices": {
+      "title": "Encryption keys",
+      "subtitle": "Browsers holding the keys to your encrypted conversations. Remove one you don't recognise: from the next message on it can't read encrypted conversations. Sign it out in the list above.",
+      "added": "Added {{time}}",
+      "remove": "Remove",
+      "removeLabel": "Remove the keys of device {{name}}"
     }
   },
   "guild": {

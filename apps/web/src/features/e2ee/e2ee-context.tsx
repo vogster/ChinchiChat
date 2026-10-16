@@ -1,3 +1,4 @@
+import { useQuery } from '@tanstack/react-query'
 import { createContext, useContext, useEffect, useMemo, useState } from 'react'
 
 import { useApi } from '../../lib/api-context'
@@ -74,3 +75,22 @@ export const E2eeProvider = ({ children }: { children: ReactNode }) => {
 
 // eslint-disable-next-line react-refresh/only-export-components -- hook belongs with its provider
 export const useE2ee = () => useContext(E2eeContext)
+
+/**
+ * This browser's encryption device, also where there is no gateway (settings): the shared client
+ * when there is one, otherwise a client over the same browser storage.
+ */
+// eslint-disable-next-line react-refresh/only-export-components -- hook belongs with its provider
+export const useThisDeviceId = (): string | null => {
+  const api = useApi()
+  const userId = useCurrentUser()?.id
+  const factory = useContext(FactoryContext)
+  const { client } = useContext(E2eeContext)
+  const { data = null } = useQuery({
+    queryKey: ['e2eeDevices', 'this', userId],
+    queryFn: () => (client ?? factory(userId as string, api)).ready(),
+    enabled: userId !== undefined,
+    staleTime: Infinity,
+  })
+  return data
+}

@@ -93,6 +93,13 @@ test('two people talk and call in an encrypted conversation the server cannot re
   expect(aliceSees).toMatch(/^\d{60}$/)
   expect(await codeOf(bob.page, aliceUser.username)).toBe(aliceSees)
 
+  // Bob's settings list the browser that holds his keys: this one, the only one.
+  await bob.page.goto('/settings/sessions')
+  const keys = bob.page.getByRole('list', { name: 'Ключи шифрования' })
+  await expect(keys.getByRole('listitem')).toHaveCount(1)
+  await expect(keys).toContainText('Это устройство')
+  await bob.page.goBack()
+
   // Files are encrypted before upload: Bob sees the picture, the server only a generic blob.
   await alice.page
     .getByLabel('Прикрепить файлы', { exact: true })
