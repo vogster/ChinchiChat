@@ -283,6 +283,21 @@ describe('CSRF protection', () => {
   const logout = (headers: Record<string, string>) =>
     app.inject({ method: 'POST', url: '/api/v1/auth/logout', headers })
 
+  it('lets a native client in bearer mode sign up from an origin of its own', async () => {
+    // A desktop shell has no cookie to forge and asks for a token instead; the header it sends
+    // is one no cross-site form can add, so its origin (tauri://localhost) is not a concern.
+    const response = await app.inject({
+      method: 'POST',
+      url: '/api/v1/auth/register',
+      headers: { 'x-auth-mode': 'bearer', origin: 'http://tauri.localhost' },
+      payload: { username: 'native', email: 'native@example.com', password: 'password123' },
+    })
+
+    expect(response.statusCode).toBe(201)
+    expect(response.json().data.token).toEqual(expect.any(String))
+    expect(response.headers['set-cookie']).toBeUndefined()
+  })
+
   it('rejects cookie-authenticated writes from a foreign origin', async () => {
     const { cookie } = await registerUser(app)
     const response = await logout({

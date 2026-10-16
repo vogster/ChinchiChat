@@ -53,7 +53,12 @@ export const authPlugin = fp<AuthPluginOptions>(
     app.addHook('onRequest', async (request) => {
       const credentials = extractCredentials(request)
 
-      if (!isSafeMethod(request.method) && credentials?.method !== 'bearer') {
+      // Bearer clients are not subject to CSRF: a request that carries a token, or asks for one
+      // (x-auth-mode, a header no cross-site form can send) while carrying no cookie.
+      const native =
+        credentials?.method === 'bearer' ||
+        (request.headers['x-auth-mode'] === 'bearer' && credentials?.method !== 'cookie')
+      if (!isSafeMethod(request.method) && !native) {
         assertTrustedOrigin(request, webOrigins, credentials?.method === 'cookie')
       }
 
