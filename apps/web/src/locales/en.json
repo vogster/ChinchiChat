@@ -360,7 +360,9 @@
       "subtitle": "Browsers holding the keys to your encrypted conversations. Remove one you don't recognise: from the next message on it can't read encrypted conversations. Sign it out in the list above.",
       "added": "Added {{time}}",
       "remove": "Remove",
-      "removeLabel": "Remove the keys of device {{name}}"
+      "removeLabel": "Remove the keys of device {{name}}",
+      "strict": "Approved devices only",
+      "strictHint": "Messages are encrypted only for devices their owner approved with their key, and those you accepted yourself after a warning. Other devices get none of your messages until you press “Got it” in the conversation. A setting of this browser."
     }
   },
   "guild": {

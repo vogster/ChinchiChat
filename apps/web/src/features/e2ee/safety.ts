@@ -18,6 +18,8 @@ export interface SafetyDeps {
   /** The user's public key (base64), or null if they never set one. */
   readonly userKeyOf: (userId: string) => Promise<string | null>
   readonly thisDevice: () => Promise<string>
+  /** Strict mode: every unapproved device is pointed out, none is taken for granted. */
+  readonly strict?: () => Promise<boolean>
 }
 
 export interface PersonSafety {
@@ -78,7 +80,14 @@ const seenKey = (userId: string) => `safety:seen:${userId}`
 const userKeyKey = (userId: string) => `safety:userKey:${userId}`
 const verifiedKey = (userId: string) => `safety:verified:${userId}`
 
-export const createSafety = ({ store, userId, devicesOf, userKeyOf, thisDevice }: SafetyDeps) => {
+export const createSafety = ({
+  store,
+  userId,
+  devicesOf,
+  userKeyOf,
+  thisDevice,
+  strict = async () => false,
+}: SafetyDeps) => {
   const look = async (id: string) => {
     const [devices, userKey] = await Promise.all([devicesOf(id), userKeyOf(id)])
     const current = active(devices)
@@ -86,10 +95,14 @@ export const createSafety = ({ store, userId, devicesOf, userKeyOf, thisDevice }
     return { userKey, devices: current, unvouched: current.filter((_, i) => !flags[i]) }
   }
 
-  /** Unvouched devices not acknowledged yet; the first look takes things as they are. */
+  /**
+   * Unvouched devices not acknowledged yet. The first look takes things as they are, except in
+   * strict mode, where nothing is accepted until the person here says so.
+   */
   const unseen = async (id: string, unvouched: readonly Device[]) => {
     const seen = await store.get<string[]>(seenKey(id))
     if (!seen) {
+      if (await strict()) return [...unvouched]
       await store.set(
         seenKey(id),
         unvouched.map((device) => device.id),
@@ -119,6 +132,20 @@ export const createSafety = ({ store, userId, devicesOf, userKeyOf, thisDevice }
   }
 
   return {
+    /**
+     * The user's devices that messages may be encrypted for in strict mode: those their user
+     * key vouches for, plus those the person here accepted ("got it") after being warned.
+     */
+    allowedDevices: async (id: string): Promise<ReadonlySet<string>> => {
+      const { devices, unvouched } = await look(id)
+      const accepted = new Set((await store.get<string[]>(seenKey(id))) ?? [])
+      return new Set(
+        devices
+          .filter((device) => !unvouched.includes(device) || accepted.has(device.id))
+          .map((device) => device.id),
+      )
+    },
+
     /** The code both people see for each other: compare it once to know it's them. */
     codeWith: async (otherId: string): Promise<string> => {
       const [first, second] = [userId, otherId].sort(byId) as [string, string]

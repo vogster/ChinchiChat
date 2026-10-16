@@ -310,6 +310,42 @@ export const createE2eeClient = ({ api, store, userId, deviceName }: E2eeClientO
   const crossSigning = createCrossSigning({ api, store, userId })
 
   /**
+   * Strict mode: messages are encrypted only for devices the user's key vouches for, or that
+   * the person here accepted after a warning. Off, every device the server lists is included
+   * (and unapproved ones are only pointed out).
+   */
+  const strictMode = async () => (await store.get<boolean>('strict')) ?? false
+
+  /** Safety codes and new-device warnings; in strict mode also who may be encrypted for. */
+  const safety = createSafety({
+    store,
+    userId,
+    devicesOf,
+    userKeyOf: async (id) =>
+      (await api.e2ee.userKey(id === userId ? '@me' : id)).userKey?.publicKey ?? null,
+    thisDevice: async () => (await ready()).identity.deviceId,
+    strict: strictMode,
+  })
+
+  /** The devices of these members a message should reach (device id → user id). */
+  const devicesFor = async (
+    memberIds: readonly string[],
+    keys: DeviceKeys,
+  ): Promise<Map<string, string>> => {
+    const strict = await strictMode()
+    const expected = new Map<string, string>()
+    for (const memberId of memberIds) {
+      const allowed = strict ? await safety.allowedDevices(memberId) : null
+      for (const d of await devicesOf(memberId)) {
+        if (!d.revokedAt && (!allowed || allowed.has(d.id))) expected.set(d.id, d.userId)
+      }
+    }
+    // This device is the one writing: it stays whatever its own standing.
+    expected.set(keys.identity.deviceId, userId)
+    return expected
+  }
+
+  /**
    * Decrypts an MLS message of the conversation, with the device that signed it (null for a
    * message of an earlier epoch); null if this device can't read it (call within `serial`).
    */
@@ -518,10 +554,7 @@ export const createE2eeClient = ({ api, store, userId, deviceName }: E2eeClientO
     conversation: Conversation,
     keys: DeviceKeys,
   ) => {
-    const expected = new Map<string, string>()
-    for (const memberId of channel.memberIds) {
-      for (const d of await devicesOf(memberId)) if (!d.revokedAt) expected.set(d.id, d.userId)
-    }
+    const expected = await devicesFor(channel.memberIds, keys)
     const present = members(conversation).map((m) => m.identity)
     const gone = present.filter((m) => !expected.has(m.deviceId))
     if (gone.length > 0) {
@@ -583,12 +616,8 @@ export const createE2eeClient = ({ api, store, userId, deviceName }: E2eeClientO
       options,
     )
     // An empty commit even when alone: it tells everyone the group exists.
-    const others = new Map<string, string>()
-    for (const memberId of channel.memberIds) {
-      for (const d of await devicesOf(memberId)) {
-        if (d.id !== keys.identity.deviceId && !d.revokedAt) others.set(d.id, d.userId)
-      }
-    }
+    const others = await devicesFor(channel.memberIds, keys)
+    others.delete(keys.identity.deviceId)
     const claimed = (
       await Promise.all(
         [...new Set(others.values())].map((owner) => api.e2ee.claimKeyPackages(owner)),
@@ -793,14 +822,15 @@ export const createE2eeClient = ({ api, store, userId, deviceName }: E2eeClientO
     flushBackup: () => backup.flush(),
 
     /** Safety codes and new-device warnings. */
-    safety: createSafety({
-      store,
-      userId,
-      devicesOf,
-      userKeyOf: async (id) =>
-        (await api.e2ee.userKey(id === userId ? '@me' : id)).userKey?.publicKey ?? null,
-      thisDevice: async () => (await ready()).identity.deviceId,
-    }),
+    safety,
+
+    /** Strict mode, a setting of this device: see `strictMode` above. */
+    strict: {
+      enabled: strictMode,
+      set: async (on: boolean) => {
+        await store.set('strict', on)
+      },
+    },
 
     /** A member's devices changed: forget the cached list (the next open reconciles). */
     devicesChanged: async (changedUserId: string) => {

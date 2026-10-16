@@ -43,4 +43,19 @@ describe('encryption devices in settings', () => {
     expect(api.e2ee.deleteDevice).toHaveBeenCalledWith('701')
     await waitFor(() => expect(within(list).queryByText('Чужой ноутбук')).not.toBeInTheDocument())
   })
+
+  it('turns strict mode on for this browser', async () => {
+    const api = createFakeApi({ user: testUser })
+    api.e2ee.myDevices.mockResolvedValue({ devices: [device('700', 'Chrome на Windows')] })
+    const { user, e2ee } = renderApp('/settings/sessions', { api })
+
+    const toggle = await screen.findByRole('switch', { name: 'Только подтверждённые устройства' })
+    expect(toggle).toHaveAttribute('aria-checked', 'false')
+    expect(toggle).toHaveAccessibleDescription(/Сообщения шифруются только для устройств/)
+    e2ee.strict.enabled.mockResolvedValue(true)
+    await user.click(toggle)
+
+    expect(e2ee.strict.set).toHaveBeenCalledWith(true)
+    await waitFor(() => expect(toggle).toHaveAttribute('aria-checked', 'true'))
+  })
 })

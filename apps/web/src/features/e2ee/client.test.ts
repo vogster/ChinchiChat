@@ -129,6 +129,34 @@ describe('e2ee client', () => {
     ).toEqual([])
   })
 
+  it('in strict mode encrypts only for approved devices, until a warned person accepts one', async () => {
+    const { client } = setup()
+    const alice = client(ALICE).client
+    const bob = client(BOB).client
+    await bob.ready()
+    await alice.strict.set(true)
+    await alice.open(DM)
+    // Bob signs in on a phone and never approves it from the laptop.
+    const bobPhone = client(BOB, 'Телефон').client
+    await bobPhone.ready()
+    await alice.devicesChanged(BOB)
+    await alice.open(DM)
+
+    const secret = await alice.send(DM, 'Только для подтверждённых')
+    expect(await bob.read(DM, secret)).toMatchObject({
+      payload: { text: 'Только для подтверждённых' },
+    })
+    expect(await bobPhone.read(DM, secret)).toBeNull()
+    expect((await alice.safety.status([BOB])).people[0]?.newDevices.map((d) => d.name)).toEqual([
+      'Телефон',
+    ])
+
+    // Alice says "got it": the phone is hers to trust from now on.
+    await alice.safety.acknowledge(BOB)
+    const accepted = await alice.send(DM, 'И для телефона')
+    expect(await bobPhone.read(DM, accepted)).toMatchObject({ payload: { text: 'И для телефона' } })
+  })
+
   it('brings in a new device of a member, which reads from then on', async () => {
     const { client } = setup()
     const alice = client(ALICE).client

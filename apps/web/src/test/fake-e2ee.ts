@@ -111,6 +111,10 @@ export const createFakeE2ee = (status: ConversationStatus = 'ready') => {
       async (_channel: EncryptedChannel, _messageId: string, reaction: EncryptedReaction) =>
         decodePayload(fromBase64(reaction.ciphertext))?.react ?? [],
     ),
+    strict: {
+      enabled: vi.fn(async () => false),
+      set: vi.fn(async (_on: boolean) => undefined),
+    },
     recovery: {
       key: vi.fn(async (): Promise<string | null> => TEST_RECOVERY_KEY),
       // Saved by default, so the reminder stays out of tests about something else.
@@ -131,6 +135,7 @@ export const createFakeE2ee = (status: ConversationStatus = 'ready') => {
       })),
       verify: vi.fn(async (_userId: string) => undefined),
       acknowledge: vi.fn(async (_userId: string) => undefined),
+      allowedDevices: vi.fn(async (_userId: string): Promise<ReadonlySet<string>> => new Set()),
     },
     callKey: vi.fn(async (_channel: EncryptedChannel): Promise<CallKey | null> =>
       status === 'ready' ? { epoch: 1, key: new Uint8Array(32).fill(1) } : null,

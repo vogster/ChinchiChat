@@ -4,12 +4,45 @@ import { useTranslation } from 'react-i18next'
 
 import { Alert } from '../../components/ui/alert'
 import { Button } from '../../components/ui/button'
+import { Switch } from '../../components/ui/switch'
 import { useApi } from '../../lib/api-context'
 import { errorMessage } from '../../lib/errors'
 import { formatRelativeTime } from '../../lib/relative-time'
-import { useThisDeviceId } from '../e2ee/e2ee-context'
+import { useAnyE2eeClient, useThisDeviceId } from '../e2ee/e2ee-context'
 
 const devicesKey = ['e2eeDevices'] as const
+const strictKey = ['e2eeStrict'] as const
+
+/**
+ * Strict mode, a setting of this browser: encrypt only for devices vouched for by their
+ * owner's key, or accepted here after a warning. Off, every device the server lists is
+ * included, and unapproved ones are only pointed out.
+ */
+const StrictModeSwitch = () => {
+  const { t } = useTranslation()
+  const client = useAnyE2eeClient()
+  const queryClient = useQueryClient()
+  const { data: enabled = false } = useQuery({
+    queryKey: strictKey,
+    queryFn: () => (client ? client.strict.enabled() : false),
+    enabled: client !== null,
+  })
+  const toggle = useMutation({
+    mutationFn: (on: boolean) => (client ? client.strict.set(on) : Promise.resolve()),
+    onSettled: () => queryClient.invalidateQueries({ queryKey: strictKey }),
+  })
+  return (
+    <div className="rounded-lg bg-sidebar px-4">
+      <Switch
+        checked={enabled}
+        onCheckedChange={(on) => toggle.mutate(on)}
+        disabled={client === null || toggle.isPending}
+        label={t('settings.encryptionDevices.strict')}
+        description={t('settings.encryptionDevices.strictHint')}
+      />
+    </div>
+  )
+}
 
 /**
  * The browsers that hold my encryption keys. One I don't recognise is removed here: it is left
@@ -33,6 +66,7 @@ export const EncryptionDevices = () => {
   return (
     <div className="flex flex-col gap-4">
       {remove.error ? <Alert tone="error">{errorMessage(t, remove.error)}</Alert> : null}
+      <StrictModeSwitch />
       <ul
         aria-label={t('settings.encryptionDevices.title')}
         className="divide-y divide-border rounded-lg bg-sidebar px-4"
