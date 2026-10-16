@@ -80,14 +80,19 @@ describe('the recovery key', () => {
     )
   })
 
-  it('is shown again in settings, on a device that holds it', async () => {
+  it('is masked in settings until the eye shows it, and hides again', async () => {
     const { user } = renderApp('/settings/sessions', { api: withEncryptedDm() })
 
     const section = await screen.findByRole('region', { name: 'Ключ восстановления' })
+    const eye = await within(section).findByRole('button', { name: 'Показать ключ' })
     expect(within(section).queryByText(TEST_RECOVERY_KEY)).not.toBeInTheDocument()
-    await user.click(await within(section).findByRole('button', { name: 'Показать ключ' }))
+    expect(within(section).getByText(/^[•-]+$/)).toBeVisible()
 
+    await user.click(eye)
     expect(within(section).getByText(TEST_RECOVERY_KEY)).toBeVisible()
+    await user.click(within(section).getByRole('button', { name: 'Скрыть ключ' }))
+    expect(within(section).queryByText(TEST_RECOVERY_KEY)).not.toBeInTheDocument()
+    expect(within(section).getByRole('button', { name: 'Скопировать' })).toBeVisible()
   })
 
   it('can be reset from settings, after a warning, when everything is lost', async () => {

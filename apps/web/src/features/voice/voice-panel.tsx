@@ -53,7 +53,7 @@ export const VoicePanel = () => {
           </div>
           <div className="truncate text-muted">{place.filter(Boolean).join(' / ')}</div>
           {connected && voice.encrypted ? (
-            <div className="flex items-center gap-1 text-muted">
+            <div className="flex items-center gap-1 text-secure">
               <Lock aria-hidden className="size-3 shrink-0" />
               <span className="truncate">{t('voice.encrypted')}</span>
             </div>

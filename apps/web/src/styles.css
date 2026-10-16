@@ -20,6 +20,8 @@
   --zl-mention: #f0b232;
   --zl-danger: #da373c;
   --zl-danger-contrast: #ffffff;
+  /* End-to-end encrypted: the green of "only you two can read this". */
+  --zl-secure: #3ba55d;
 }
 
 /* A theme picked in the settings wins over the OS preference (`data-theme` on <html>). */
@@ -38,6 +40,8 @@
   --zl-mention: #c9881e;
   --zl-danger: #da373c;
   --zl-danger-contrast: #ffffff;
+  /* End-to-end encrypted: the green of "only you two can read this". */
+  --zl-secure: #248046;
 }
 
 @media (prefers-color-scheme: light) {
@@ -56,6 +60,8 @@
     --zl-mention: #c9881e;
     --zl-danger: #da373c;
     --zl-danger-contrast: #ffffff;
+    /* End-to-end encrypted: the green of "only you two can read this". */
+    --zl-secure: #248046;
   }
 }
 
@@ -73,6 +79,7 @@
   --color-mention: var(--zl-mention);
   --color-danger: var(--zl-danger);
   --color-danger-contrast: var(--zl-danger-contrast);
+  --color-secure: var(--zl-secure);
 }
 
 html,

@@ -1284,7 +1284,8 @@
       "reset": "Reset encryption keys",
       "resetTitle": "Reset encryption keys?",
       "resetText": "New keys and a new recovery key are created. Old encrypted messages stay unavailable on this device, and the people you talk to will see that you reset your keys and can compare codes again. If you still have another device or your recovery key, use those instead.",
-      "resetConfirm": "Reset"
+      "resetConfirm": "Reset",
+      "hide": "Hide key"
     },
     "approval": {
       "title": "New sign-in",

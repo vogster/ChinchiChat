@@ -154,7 +154,8 @@ export const DmView = ({ channel }: { channel: PrivateChannel }) => {
         )}
         <h1 className="truncate">{name}</h1>
         {encryption ? (
-          <span className="flex shrink-0 items-center gap-1 rounded bg-elevated px-1.5 py-0.5 text-xs text-muted">
+          // Green: at a glance, this conversation is end-to-end encrypted.
+          <span className="flex shrink-0 items-center gap-1 rounded border border-secure/60 bg-secure/10 px-1.5 py-0.5 text-xs font-medium text-secure">
             <Lock aria-hidden className="size-3" />
             {t('e2ee.badge')}
           </span>

@@ -51,7 +51,7 @@ const DmRow = ({ channel }: { channel: PrivateChannel }) => {
           </span>
         )}
         <span className="truncate">{name}</span>
-        {channel.encrypted ? <Lock aria-hidden className="size-3.5 shrink-0 text-muted" /> : null}
+        {channel.encrypted ? <Lock aria-hidden className="size-3.5 shrink-0 text-secure" /> : null}
         {mentions > 0 ? (
           <span
             aria-hidden

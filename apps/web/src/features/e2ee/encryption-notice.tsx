@@ -8,7 +8,7 @@ export const EncryptionNotice = () => {
   const { t } = useTranslation()
   return (
     <div className="px-4 pt-8 pb-4">
-      <div className="mb-2 flex size-12 items-center justify-center rounded-full bg-elevated">
+      <div className="mb-2 flex size-12 items-center justify-center rounded-full bg-secure/15 text-secure">
         <Lock aria-hidden className="size-6" />
       </div>
       <h2 className="text-lg font-bold">{t('e2ee.noticeTitle')}</h2>

@@ -1,3 +1,4 @@
+import { Eye, EyeOff } from 'lucide-react'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
@@ -12,6 +13,7 @@ export const RecoveryKeySettings = () => {
   const { t } = useTranslation()
   const recovery = useRecovery()
   const [shown, setShown] = useState(false)
+  const [copied, setCopied] = useState(false)
   const [entering, setEntering] = useState(false)
   const [resetting, setResetting] = useState(false)
   const [pending, setPending] = useState(false)
@@ -65,13 +67,36 @@ export const RecoveryKeySettings = () => {
   return (
     <div className="flex flex-col items-start gap-3">
       {recovery.saved ? null : <p className="text-sm text-muted">{t('e2ee.recovery.notSaved')}</p>}
-      {shown ? <RecoveryKeyText value={recovery.key} /> : null}
+      <div className="flex items-center gap-2">
+        {/* Masked until asked for: anyone glancing at the screen shouldn't read it. */}
+        <RecoveryKeyText value={shown ? recovery.key : recovery.key.replace(/[^-]/g, '•')} />
+        <button
+          type="button"
+          aria-label={shown ? t('e2ee.recovery.hide') : t('e2ee.recovery.show')}
+          aria-pressed={shown}
+          onClick={() => setShown((value) => !value)}
+          className="rounded p-2 text-muted hover:bg-hover hover:text-text"
+        >
+          {shown ? (
+            <EyeOff aria-hidden className="size-5" />
+          ) : (
+            <Eye aria-hidden className="size-5" />
+          )}
+        </button>
+      </div>
       <div className="flex flex-wrap gap-2">
-        {shown ? null : (
-          <Button variant="secondary" fullWidth={false} onClick={() => setShown(true)}>
-            {t('e2ee.recovery.show')}
-          </Button>
-        )}
+        <Button
+          variant="secondary"
+          fullWidth={false}
+          onClick={() =>
+            void navigator.clipboard
+              ?.writeText(recovery.key as string)
+              .then(() => setCopied(true))
+              .catch(() => undefined)
+          }
+        >
+          {copied ? t('e2ee.recovery.copied') : t('e2ee.recovery.copy')}
+        </Button>
         <Button
           variant="secondary"
           fullWidth={false}
