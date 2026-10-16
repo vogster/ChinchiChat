@@ -21,6 +21,7 @@
     "notification:default",
     "opener:default",
     "process:default",
+    "updater:default",
     "autostart:default",
     "global-shortcut:allow-register",
     "global-shortcut:allow-unregister",
@@ -28,9 +29,15 @@
     {
       "identifier": "http:default",
       "allow": [
-        { "url": "https://**" },
-        { "url": "http://localhost:*" },
-        { "url": "http://127.0.0.1:*" }
+        {
+          "url": "https://**"
+        },
+        {
+          "url": "http://localhost:*"
+        },
+        {
+          "url": "http://127.0.0.1:*"
+        }
       ]
     }
   ]

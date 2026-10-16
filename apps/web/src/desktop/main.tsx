@@ -3,7 +3,9 @@ import '../styles.css'
 import { getVersion } from '@tauri-apps/api/app'
 import { getCurrentWindow } from '@tauri-apps/api/window'
 import { fetch as tauriFetch } from '@tauri-apps/plugin-http'
+import { relaunch } from '@tauri-apps/plugin-process'
 import { load } from '@tauri-apps/plugin-store'
+import { check } from '@tauri-apps/plugin-updater'
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 
@@ -14,6 +16,7 @@ import { createDesktopSettings } from './settings'
 import { mirrorUnreadBadge } from './shell'
 import { createTauriShell, loadShellPreferences } from './tauri-shell'
 import { installTray } from './tray'
+import { checkForUpdate } from './updater'
 
 const rootElement = document.getElementById('root')
 if (!rootElement) throw new Error('Root element #root not found')
@@ -31,6 +34,25 @@ const boot = async () => {
     { open: i18n.t('desktop.tray.open'), quit: i18n.t('desktop.tray.quit') },
     () => preferences.closeToTray,
   )
+
+  // A moment after the window is up, in release builds only (dev builds have no signature).
+  if (import.meta.env.PROD) {
+    setTimeout(() => {
+      void checkForUpdate({
+        check,
+        relaunch,
+        confirm: async (next, notes) =>
+          window.confirm(
+            i18n.t('desktop.update.prompt', { version: next }) +
+              (notes
+                ? `
+
+${notes}`
+                : ''),
+          ),
+      })
+    }, 5_000)
+  }
 
   createRoot(rootElement).render(
     <StrictMode>

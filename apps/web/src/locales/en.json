@@ -1413,6 +1413,9 @@
     "tray": {
       "open": "Open Chinchi",
       "quit": "Quit"
+    },
+    "update": {
+      "prompt": "Chinchi {{version}} is out. Install it now? The app will restart."
     }
   }
 }

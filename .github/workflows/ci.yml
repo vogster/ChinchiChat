@@ -161,3 +161,22 @@ jobs:
       - name: Stop
         if: always()
         run: docker compose down -v
+
+  # The Rust shell compiles (the web entry is covered by the web tests and typecheck).
+  desktop:
+    name: Desktop shell (cargo check)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: dtolnay/rust-toolchain@b725eda525362e7cf34af9a7243cac1e3f01a7ec # stable
+      - name: Linux dependencies of Tauri
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev build-essential curl wget file libxdo-dev \
+            libssl-dev libayatana-appindicator3-dev librsvg2-dev
+      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2
+        with:
+          workspaces: apps/desktop/src-tauri
+      - run: cargo check --locked
+        working-directory: apps/desktop/src-tauri

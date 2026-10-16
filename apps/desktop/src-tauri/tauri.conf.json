@@ -52,6 +52,13 @@
     ],
     "macOS": {
       "entitlements": "Entitlements.plist"
+    },
+    "createUpdaterArtifacts": true
+  },
+  "plugins": {
+    "updater": {
+      "endpoints": ["https://github.com/vogster/ChinchiChat/releases/latest/download/latest.json"],
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDc2OTIyRDA5M0JFNjA0OEMKUldTTUJPWTdDUzJTZGtxMUkybVpvaHJWNFVWTmVLcDJDNWszWmFZMkZyQjVLYzdMWW5qbnNjRFMK"
     }
   }
 }

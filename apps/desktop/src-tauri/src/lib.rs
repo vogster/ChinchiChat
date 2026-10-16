@@ -1,5 +1,5 @@
 //! The Chinchi desktop shell: a Tauri 2 window around the web app, plus what a browser tab
-//! cannot do (store, notifications, global shortcuts, autostart, the tray).
+//! cannot do (store, notifications, global shortcuts, autostart, the tray, updates).
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -13,14 +13,14 @@ pub fn run() {
         .setup(|app| {
             #[cfg(desktop)]
             {
-                use tauri::Manager;
                 app.handle()
                     .plugin(tauri_plugin_global_shortcut::Builder::new().build())?;
                 app.handle().plugin(tauri_plugin_autostart::init(
                     tauri_plugin_autostart::MacosLauncher::LaunchAgent,
                     None,
                 ))?;
-                let _ = app.get_webview_window("main");
+                app.handle()
+                    .plugin(tauri_plugin_updater::Builder::new().build())?;
             }
             if cfg!(debug_assertions) {
                 app.handle().plugin(
