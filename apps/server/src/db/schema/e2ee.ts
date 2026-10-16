@@ -4,6 +4,7 @@ import {
   index,
   pgEnum,
   pgTable,
+  primaryKey,
   text,
   timestamp,
   uniqueIndex,
@@ -12,6 +13,7 @@ import {
 
 import { snowflake } from '../columns'
 import { channels } from './guilds'
+import { messages } from './messages'
 import { users } from './users'
 
 /** A device taking part in encrypted conversations; its signature key is its MLS identity. */
@@ -88,4 +90,35 @@ export const e2eeHandshakes = pgTable(
     payload: text('payload').notNull(),
   },
   (table) => [index('e2ee_handshakes_channel_id_idx').on(table.channelId, table.id)],
+)
+
+/** A user's history backup: the user key encrypted with a key derived from the recovery key. */
+export const e2eeKeyBackups = pgTable('e2ee_key_backups', {
+  userId: snowflake('user_id')
+    .primaryKey()
+    .references(() => users.id, { onDelete: 'cascade' }),
+  /** Entries of other versions belong to an older recovery key and are dropped. */
+  version: snowflake('version').notNull(),
+  userKey: text('user_key').notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+})
+
+/** One backed-up message: what the user read, encrypted with the backup key. */
+export const e2eeBackupEntries = pgTable(
+  'e2ee_backup_entries',
+  {
+    userId: snowflake('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    /** Gone with the message: a deleted message does not live on in backups. */
+    messageId: snowflake('message_id')
+      .notNull()
+      .references(() => messages.id, { onDelete: 'cascade' }),
+    channelId: snowflake('channel_id').notNull(),
+    payload: text('payload').notNull(),
+  },
+  (table) => [
+    primaryKey({ columns: [table.userId, table.messageId] }),
+    index('e2ee_backup_entries_channel_idx').on(table.userId, table.channelId, table.messageId),
+  ],
 )

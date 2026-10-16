@@ -183,6 +183,10 @@ const DATA: Record<string, unknown> = {
   devices: { devices: [] },
   userKey: { userKey: { userId: '2', publicKey: 'AAAA', createdAt: '2026-10-14T12:00:00.000Z' } },
   noUserKey: { userKey: null },
+  backup: {
+    backup: { version: '9', userKey: 'AAAA', createdAt: '2026-10-14T12:00:00.000Z' },
+  },
+  backupEntries: { entries: [{ messageId: '3', channelId: '4', payload: 'AAAA' }] },
   keyPackageCount: { count: 3 },
   claimed: { keyPackages: [{ deviceId: '7', keyPackageId: '8', package: 'AAAA' }] },
   handshakes: { handshakes: [] },
@@ -240,6 +244,29 @@ const cases: Case[] = [
     'PUT',
     '/users/@me/e2ee/user-key',
     'userKey',
+  ],
+  ['e2ee.backup', (api) => api.e2ee.backup(), 'GET', '/users/@me/e2ee/backup', 'backup'],
+  [
+    'e2ee.createBackup',
+    (api) => api.e2ee.createBackup({ userKey: 'AAAA' }),
+    'PUT',
+    '/users/@me/e2ee/backup',
+    'backup',
+  ],
+  [
+    'e2ee.putBackupEntries',
+    (api) =>
+      api.e2ee.putBackupEntries({ version: '9', entries: [{ messageId: '3', payload: 'AAAA' }] }),
+    'POST',
+    '/users/@me/e2ee/backup/entries',
+    null,
+  ],
+  [
+    'e2ee.backupEntries',
+    (api) => api.e2ee.backupEntries({ channelId: '4', after: '2', limit: 50 }),
+    'GET',
+    '/users/@me/e2ee/backup/entries?channelId=4&after=2&limit=50',
+    'backupEntries',
   ],
   [
     'e2ee.signDevice',

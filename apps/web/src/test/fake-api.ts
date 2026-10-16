@@ -34,7 +34,9 @@ import type {
   UpdateNotificationSettingRequest,
   UserProfile,
   ClaimedKeyPackage,
+  BackupEntry,
   Device,
+  KeyBackup,
   UserKey,
   Handshake,
 } from '@chinchi/shared'
@@ -606,6 +608,12 @@ export const createFakeApi = ({ user = null, registrationMode = 'open' }: FakeAp
         },
       })),
       signDevice: vi.fn(async (_deviceId: string, _signature: string) => undefined),
+      backup: vi.fn(async () => ({ backup: null as KeyBackup | null })),
+      createBackup: vi.fn(async (body: { userKey: string }) => ({
+        backup: { version: '900', userKey: body.userKey, createdAt: '2026-10-16T10:00:00.000Z' },
+      })),
+      putBackupEntries: vi.fn(async () => undefined),
+      backupEntries: vi.fn(async () => ({ entries: [] as BackupEntry[] })),
       uploadKeyPackages: vi.fn(async () => undefined),
       countKeyPackages: vi.fn(async () => ({ count: 0 })),
       claimKeyPackages: vi.fn(async (_userId: string) => ({

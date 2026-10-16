@@ -24,6 +24,7 @@ import { createAttachmentRepository } from './modules/attachments/attachment.rep
 import { createDataExport } from './modules/export/data-export'
 import { createExportRepository } from './modules/export/export.repository'
 import { exportRoutes } from './modules/export/export.routes'
+import { backupRoutes } from './modules/e2ee/backup.routes'
 import { e2eeRoutes } from './modules/e2ee/e2ee.routes'
 import { dmsRoutes } from './modules/dms/dms.routes'
 import { voiceRoutes } from './modules/voice/voice.routes'
@@ -322,6 +323,7 @@ export const buildApp = (
       api.register(notificationsRoutes, { notificationService: services.notification })
       if (presence) api.register(customStatusRoutes, { presence })
       api.register(e2eeRoutes, { e2eeService: services.e2ee })
+      api.register(backupRoutes, { backupService: services.backup })
       api.register(exportRoutes, {
         dataExport: createDataExport({
           exports: createExportRepository(db),

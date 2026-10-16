@@ -57,6 +57,8 @@ import { createMessageService } from './modules/messages/message.service'
 import { createNotificationRepository } from './modules/notifications/notification.repository'
 import { createNotificationService } from './modules/notifications/notification.service'
 import { createE2eeRepository } from './modules/e2ee/e2ee.repository'
+import { createBackupRepository } from './modules/e2ee/backup.repository'
+import { createBackupService } from './modules/e2ee/backup.service'
 import { createE2eeService } from './modules/e2ee/e2ee.service'
 import { createReactionRepository } from './modules/messages/reaction.repository'
 import { createReactionService } from './modules/messages/reaction.service'
@@ -542,6 +544,7 @@ export const createServices = (
       events,
       nextId,
     }),
+    backup: createBackupService({ backups: createBackupRepository(db), nextId }),
     notification: createNotificationService({
       settings: notificationSettings,
       guilds,

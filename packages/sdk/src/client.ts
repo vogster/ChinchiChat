@@ -17,7 +17,9 @@ import {
   userProfileSchema,
   claimedKeyPackageSchema,
   customStatusSchema,
+  backupEntrySchema,
   deviceSchema,
+  keyBackupSchema,
   userKeySchema,
   handshakeSchema,
   notificationSettingSchema,
@@ -88,8 +90,11 @@ import type {
   SetCustomStatusRequest,
   ListHandshakesQuery,
   PostCommitRequest,
+  CreateKeyBackupRequest,
+  ListBackupEntriesQuery,
   RegisterDeviceRequest,
   SetUserKeyRequest,
+  UploadBackupEntriesRequest,
   UploadKeyPackagesRequest,
 } from '@chinchi/shared'
 
@@ -683,6 +688,32 @@ export const createApiClient = (options: HttpOptions) => {
           path: '/users/@me/e2ee/user-key',
           body,
           data: z.object({ userKey: userKeySchema }),
+        }),
+      /** My history backup (the user key encrypted for the recovery key), or null. */
+      backup: () =>
+        request({
+          method: 'GET',
+          path: '/users/@me/e2ee/backup',
+          data: z.object({ backup: keyBackupSchema.nullable() }),
+        }),
+      createBackup: (body: CreateKeyBackupRequest) =>
+        request({
+          method: 'PUT',
+          path: '/users/@me/e2ee/backup',
+          body,
+          data: z.object({ backup: keyBackupSchema }),
+        }),
+      putBackupEntries: (body: UploadBackupEntriesRequest) =>
+        request({ method: 'POST', path: '/users/@me/e2ee/backup/entries', body }),
+      backupEntries: ({ channelId, after, limit }: ListBackupEntriesQuery) =>
+        request({
+          method: 'GET',
+          path: `/users/@me/e2ee/backup/entries?${new URLSearchParams({
+            channelId,
+            ...(after ? { after } : {}),
+            ...(limit ? { limit: String(limit) } : {}),
+          }).toString()}`,
+          data: z.object({ entries: z.array(backupEntrySchema) }),
         }),
       /** Vouches for one of my devices with my user key. */
       signDevice: (deviceId: Snowflake, signature: string) =>
