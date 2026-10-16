@@ -32,9 +32,9 @@ node scripts/demo-screenshots.mjs <суффикс>       # скриншоты RE
 
 ## Структура
 
-- `apps/server` — Fastify + zod type provider, Drizzle + postgres.js. Модули по доменам в `src/modules/<domain>/`.
+- `apps/server` — Fastify + zod type provider, Drizzle + postgres.js. Модули по доменам в `src/modules/<domain>/`; сборка зависимостей — `src/services.ts` плюс `src/services/{account,e2ee,link-previews,conversations,integrations}.ts` по областям.
 - `apps/web` — React 19 + Vite + Tailwind 4 + TanStack Router (file-based, `src/routes/`) и Query. `src/routeTree.gen.ts` генерируется плагином и коммитится.
-- `packages/sdk` — REST-клиент (`createApiClient`), общий для всех клиентов. Ошибки — `ApiError` с `code`.
+- `packages/sdk` — REST-клиент (`createApiClient`), общий для всех клиентов: `client.ts` только собирает группы из доменных модулей (`auth.ts`, `admin.ts`, `guilds.ts`, `messages.ts`, `e2ee.ts`, `social.ts`, `bots.ts`, …); `id()` и `queryString()` — в `url.ts`. Ошибки — `ApiError` с `code`.
 - `packages/markdown` — парсер markdown сообщений в AST (`parseMarkdown`), `collectMentions`, `isEmojiOnly`. Только данные, без HTML: клиенты рендерят AST своими компонентами.
 - `packages/shared` — zod-схемы и типы для сервера и клиентов (Snowflake ID и т.д.). Экспортирует TS-исходники.
 - `packages/config` — общие tsconfig, eslint, prettier, vitest.
@@ -45,14 +45,16 @@ node scripts/demo-screenshots.mjs <суффикс>       # скриншоты RE
 
 - ID — Snowflake, в JS всегда строка, в Postgres `bigint` (колонка `snowflake()` из `src/db/columns.ts`).
 - API под префиксом `/api/v1` (кроме `/health`, `/ready`).
-- HTTP-ответы: `{ success: true, data }` / `{ success: false, code, error, details? }`. `code` — стабильный машиночитаемый код (`USERNAME_TAKEN`, `INVALID_CREDENTIALS`, ...), клиенты переводят по нему. Ошибки для клиента — через `HttpError` (`src/http/http-error.ts`); 5xx не раскрывают детали.
-- Аутентификация: `requireAuth(request)` в обработчике. Сессия — cookie `chinchi_session` (web) или `Authorization: Bearer` (native). Изменяющие запросы без Bearer проходят проверку Origin (CSRF).
+- HTTP-ответы: `{ success: true, data }` (схема ответа — `ok(schema)` из `src/http/responses.ts`) / `{ success: false, code, error, details? }`. `code` — стабильный машиночитаемый код (`USERNAME_TAKEN`, `INVALID_CREDENTIALS`, ...), клиенты переводят по нему. Ошибки для клиента — через `HttpError` (`src/http/http-error.ts`); 5xx не раскрывают детали.
+- Аутентификация: `requireAuth(request)` в обработчике; `requireHuman` — не для ботов; `requireVerifiedHuman` — для действий, которыми достают других людей (создать сервер, принять инвайт, открыть ЛС, добавить в друзья): 403 `EMAIL_NOT_VERIFIED`, пока включена настройка инстанса `requireVerifiedEmail`. Сессия — cookie `chinchi_session` (web) или `Authorization: Bearer` (native). Изменяющие запросы без Bearer проходят проверку Origin (CSRF).
 - Конфиг только через `loadConfig()` (zod), ошибки называют переменную, но не её значение.
-- Иммутабельность, маленькие файлы (<400 строк), без `console.log` (eslint `no-console`), логирование через pino.
+- Иммутабельность, маленькие файлы (<400 строк), без `console.log` (eslint `no-console`), логирование через pino. Порядок импортов проверяет eslint (`simple-import-sort`: пакеты, свои файлы, блок `import type`) — `eslint --fix` расставляет сам.
 - Зависимости фиксируются точными версиями (без `^`).
 - Интеграционные тесты — `*.int.test.ts`; Postgres и Valkey поднимаются Testcontainers'ом один раз на прогон. Приложение для них — `createTestApp()` из `apps/server/test/test-app.ts`, сброс состояния — `resetState()`. Файлы выполняются последовательно (общая БД).
 - Fastify-плагины, которые должны действовать на всё приложение (хуки, декораторы), оборачивай в `fastify-plugin` — иначе они инкапсулируются и молча ничего не делают.
-- Лимиты запросов задаются в `src/http/rate-limit.ts`, для маршрута — через `config: { rateLimit: ... }`.
+- Лимиты запросов задаются в `src/http/rate-limit.ts`, для маршрута — через `config: { rateLimit: ... }`; на пользователя — `perUserRateLimit(scope, max)`. При недоступном Valkey лимиты fail-open, кроме помеченных `...FAIL_CLOSED` (вход, регистрация, сброс пароля, смена почты → `503 RATE_LIMIT_UNAVAILABLE`); маршрут, который проверяет пароль или шлёт письмо, должен быть fail-closed. Ошибки хранилища считает `chinchi_rate_limit_store_errors_total`.
+- Секреты, которые нельзя хэшировать (TOTP), хранятся через `createSecretBox(config.secretsKey)` (`src/modules/auth/secret-box.ts`, AES-256-GCM, формат `enc1:`); без `SECRETS_KEY` — открытым текстом, перешифровка ленивая.
+- Маршруты `/admin/*` проверяют администратора в `onRequest`, до валидации (внутри `adminRoutes` это делает хук плагина, снаружи — `onRequest: adminOnly`); табличный тест `admin-routes-guard.int.test.ts` собирает все такие маршруты и требует 403/401, так что новый маршрут под `/admin` без проверки его завалит.
 
 ## Подводные камни
 
@@ -60,7 +62,8 @@ node scripts/demo-screenshots.mjs <суффикс>       # скриншоты RE
 - **pnpm 11** не ставит пакеты моложе суток (`minimumReleaseAge`) и блокирует install-скрипты. Разрешения — в `allowBuilds` в `pnpm-workspace.yaml`. Не добавляй `minimumReleaseAgeExclude`, бери предыдущую версию.
 - **turbo** сам пишет AGENTS.md при обнаружении агента — отключено через `"agentGuidance": false` в `turbo.json`.
 - **zod 4**: проверки в цепочке выполняются все, даже после провала предыдущей. Если `refine` зависит от формата — объединяй проверки в один `refine`.
-- **Миграции**: путь к `drizzle/` передаёт вызывающий (`src/server.ts`, `test/database.ts`), потому что модуль лежит на разной глубине в `src/` и в бандле `dist/`.
+- **Миграции**: `runMigrations(databaseUrl, folder)` открывает собственное соединение и держит `pg_advisory_lock`, чтобы несколько процессов сервера стартовали одновременно; путь к `drizzle/` передаёт вызывающий (`src/server.ts`, `test/database.ts`), потому что модуль лежит на разной глубине в `src/` и в бандле `dist/`. Drizzle не умеет `migrate()` внутри чужой транзакции или на зарезервированном соединении postgres.js — поэтому отдельный клиент с `max: 1`.
+- **CSP**: `style-src 'self'` без `'unsafe-inline'` — React задаёт стили через CSSOM, который CSP не ограничивает, но `<style>`-элементы и `style="…"` в разметке (`dangerouslySetInnerHTML`) будут заблокированы. Политика живёт в `deploy/Caddyfile` и дублируется в `apps/web/vite.config.ts` для e2e — меняй обе.
 - **Tailwind**: не смешивай утилиты одного CSS-свойства в одном элементе (`bg-elevated` + `bg-accent`) — побеждает порядок в CSS, а не порядок классов. Состояния — через варианты (`hover:`, `data-[status=active]:`). Цвета — только семантические токены (`bg-main`, `text-muted`), заданы в `apps/web/src/styles.css`.
 - **Авторизация в серверах** — только через `createGuildAccess` (`requireMember` / `requirePermission` / `requireOwner` / `requireChannel`); не участникам и тем, кто не видит канал, отвечаем 404 (`UNKNOWN_GUILD`/`UNKNOWN_CHANNEL`), чтобы id нельзя было перебирать. Каналы наружу отдаём через `views` (скрытые отфильтрованы).
 - **Права** считает только `@chinchi/shared` (`computeBasePermissions` / `computeChannelPermissions` / `canManageRole`) — и сервер, и web (`useGuildPermissions`). Выдавать можно только свои права (владелец и Administrator — любые); роли — только ниже своей высшей. Любое событие gateway, зависящее от канала, проходит через `applyGuildEvent` (`apps/server/src/gateway/visibility.ts`).
@@ -90,5 +93,7 @@ node scripts/demo-screenshots.mjs <суффикс>       # скриншоты RE
 - **AWS SDK**: клиенты S3 создаются с `requestChecksumCalculation: 'WHEN_REQUIRED'`, иначе в presigned URL попадают checksum-заголовки, которых браузер не пришлёт. Версии SDK выходят ежедневно — бери ту, что старше суток (`minimumReleaseAge`).
 - **SMTP Mailpit в dev — порт 2525**, не 1025: на macOS 1025 может быть занят (FinderSync), и письма молча уходят в никуда (`Greeting never received`).
 - **Сырые параметры в `sql\`...\``** не проходят маппинг Drizzle: `Date`передавай как`${date.toISOString()}::timestamptz`.
+- **Токены из писем** приходят во фрагменте URL (`#token=`), не в query: в вебе читай через `useLinkToken`, в тестах — `outbox.tokenFrom(mail, path)` / `tokenFromEmail` (они понимают оба варианта).
+- **Property-тесты** (`fast-check`) есть у парсера markdown и `stripMetadata`: меняя их, прогоняй `*.property.test.ts` — они ловят то, чего нет в примерах.
 - **Почта отправляется в фоне** (`dispatch` в `account-email.service.ts`); в тестах используй `createOutbox()` из `apps/server/test/outbox.ts` и `waitForMessage`.
 - **Docker на macOS (OrbStack)**: если нет `/var/run/docker.sock`, задай `DOCKER_HOST=unix://$HOME/.orbstack/run/docker.sock` — иначе Testcontainers не найдёт Docker.
