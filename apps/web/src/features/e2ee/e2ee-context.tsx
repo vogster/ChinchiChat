@@ -10,12 +10,22 @@ import { createIndexedDbStore } from './store'
 
 import type { E2eeClient } from './client'
 import type { ApiClient } from '@chinchi/sdk'
+import type { DeviceApproval } from '@chinchi/shared'
 import type { ReactNode } from 'react'
 
 /** What the app uses of the client; tests put a fake behind it. */
 export type E2eeClientLike = Pick<
   E2eeClient,
-  'ready' | 'open' | 'send' | 'edit' | 'read' | 'devicesChanged' | 'callKey' | 'safety' | 'recovery'
+  | 'ready'
+  | 'open'
+  | 'send'
+  | 'edit'
+  | 'read'
+  | 'devicesChanged'
+  | 'callKey'
+  | 'safety'
+  | 'recovery'
+  | 'approvals'
 >
 
 export type E2eeClientFactory = (userId: string, api: ApiClient) => E2eeClientLike
@@ -64,6 +74,8 @@ export const E2eeProvider = ({ children }: { children: ReactNode }) => {
           setRevision((value) => value + 1)
         } else if (type === 'E2EE_HANDSHAKE') {
           setRevision((value) => value + 1)
+        } else if (type === 'E2EE_APPROVAL_UPDATE') {
+          void client?.approvals.handle(data as DeviceApproval).catch(() => undefined)
         }
       }),
     [gateway, client],

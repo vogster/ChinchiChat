@@ -1,6 +1,7 @@
 import { Outlet, createFileRoute } from '@tanstack/react-router'
 
 import { requireUser } from '../features/auth/require-user'
+import { ApprovalDialog } from '../features/e2ee/approval-dialog'
 import { E2eeProvider } from '../features/e2ee/e2ee-context'
 import { UnreadBadge } from '../features/notifications/unread-badge'
 import { GatewayProvider } from '../features/realtime/gateway-context'
@@ -15,6 +16,7 @@ export const Route = createFileRoute('/_app')({
   component: () => (
     <GatewayProvider>
       <E2eeProvider>
+        <ApprovalDialog />
         <UnreadBadge />
         <VoiceProvider>
           <Outlet />

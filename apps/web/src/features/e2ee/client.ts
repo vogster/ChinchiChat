@@ -17,6 +17,7 @@ import {
 
 import { decodePayload, encodePayload, fromBase64, toBase64 } from './codec'
 import { createCrossSigning } from './cross-signing'
+import { createDeviceApproval } from './device-approval'
 import { createHistoryBackup } from './history-backup'
 import { createSafety } from './safety'
 
@@ -46,6 +47,7 @@ export interface E2eeApi {
     | 'createBackup'
     | 'putBackupEntries'
     | 'backupEntries'
+    | 'approvals'
   >
   readonly messages: {
     create(
@@ -626,6 +628,9 @@ export const createE2eeClient = ({ api, store, userId, deviceName }: E2eeClientO
         return result
       },
     },
+
+    /** Approving this device from another of the user's, or another device from this one. */
+    approvals: createDeviceApproval({ api, ready, crossSigning, backup }),
 
     /** Sends the history backup what is waiting (tests; the client does it on its own). */
     flushBackup: () => backup.flush(),

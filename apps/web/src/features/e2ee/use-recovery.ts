@@ -51,6 +51,7 @@ export const useRecovery = (enabled = true) => {
 
   return {
     loaded: data !== undefined,
+    refresh,
     key: data?.key ?? null,
     saved: data?.saved ?? true,
     markSaved: async () => {

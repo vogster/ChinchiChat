@@ -336,3 +336,68 @@ test('a new browser gets the old messages back with the recovery key', async ({ 
   await fresh.context.close()
   await bob.context.close()
 })
+
+test('a new browser is approved from an old one by comparing emoji', async ({ browser }) => {
+  const laptop = await openAs(browser)
+  const bob = await openAs(browser)
+  const aliceUser = newUser()
+  const bobUser = newUser()
+  await registerAndOpenHome(laptop.page, aliceUser)
+  await registerAndOpenHome(bob.page, bobUser)
+  await befriend(laptop.page, bob.page, aliceUser.username, bobUser.username)
+
+  await laptop.page.reload()
+  await laptop.page.getByRole('tab', { name: 'Все' }).click()
+  await laptop.page
+    .getByRole('button', { name: new RegExp(`^${bobUser.username}`) })
+    .first()
+    .click()
+  await laptop.page.getByRole('button', { name: 'Зашифрованная беседа' }).click()
+  await saveRecoveryKey(laptop.page)
+  const composer = laptop.page.getByRole('textbox', { name: `Написать @${bobUser.username}` })
+  await composer.fill('Встречаемся у фонтана')
+  await composer.press('Enter')
+  await expect(laptop.page.getByText('Встречаемся у фонтана')).toBeVisible()
+  await laptop.page.goto('/')
+
+  // Alice signs in on her phone; the laptop stays open.
+  const phone = await openAs(browser)
+  await phone.page.goto('/login')
+  await phone.page
+    .getByLabel('Имя пользователя или email', { exact: true })
+    .fill(aliceUser.username)
+  await phone.page.getByLabel('Пароль', { exact: true }).fill(aliceUser.password)
+  await phone.page.getByRole('button', { name: 'Войти' }).click()
+  await phone.page
+    .getByRole('complementary', { name: 'Личные сообщения' })
+    .getByRole('link', { name: /зашифрованная беседа/ })
+    .click()
+  const banner = phone.page.getByRole('status', { name: 'Старые сообщения недоступны' })
+  await banner.getByRole('button', { name: 'Подтвердить с другого устройства' }).click()
+
+  // Both screens show the same four emoji; Alice says yes on the laptop.
+  const dialog = laptop.page.getByRole('dialog', { name: 'Новый вход' })
+  await expect(dialog).toContainText('Это вы?')
+  const onLaptop = dialog.getByRole('group', { name: 'Эмодзи для сравнения' })
+  const onPhone = banner.getByRole('group', { name: 'Эмодзи для сравнения' })
+  await expect(onLaptop).toBeVisible()
+  await expect(onPhone).toBeVisible()
+  expect(await onPhone.innerText()).toBe(await onLaptop.innerText())
+  await dialog.getByRole('button', { name: 'Да, эмодзи совпадают' }).click()
+  await expect(dialog).toBeHidden()
+
+  // The phone now reads the message from before it existed, and is vouched for.
+  await expect(banner).toBeHidden()
+  await phone.page.reload()
+  await expect(phone.page.getByText('Встречаемся у фонтана')).toBeVisible()
+  const signed = await phone.page.evaluate(async () => {
+    const response = await fetch('/api/v1/users/@me/devices')
+    const { data } = (await response.json()) as {
+      data: { devices: { userSignature: string | null }[] }
+    }
+    return data.devices.map((device) => Boolean(device.userSignature))
+  })
+  expect(signed).toEqual([true, true])
+
+  await Promise.all([laptop.context.close(), phone.context.close(), bob.context.close()])
+})

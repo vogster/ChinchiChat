@@ -3,6 +3,7 @@ import { ApiError } from '@chinchi/sdk'
 import { deviceStatement } from '@chinchi/shared'
 
 import { fromBase64 } from './codec'
+import { createFakeApprovals } from './fake-approvals'
 
 import type { E2eeApi } from './client'
 import type { ClaimedKeyPackage, Device, Handshake } from '@chinchi/shared'
@@ -28,6 +29,7 @@ export const createFakeDelivery = () => {
     attachmentIds: readonly string[]
   }[] = []
   /** History backups by user: the sealed user key, and entries by message id. */
+  const approvals = createFakeApprovals(devices, id)
   const backups = new Map<string, { version: string; userKey: string }>()
   const entries = new Map<string, Map<string, { channelId: string; payload: string }>>()
 
@@ -71,6 +73,7 @@ export const createFakeDelivery = () => {
   const apiFor = (userId: string): E2eeApi => ({
     e2ee: {
       ...backupApi(userId),
+      approvals: approvals.apiFor(userId),
       myDevices: async () => ({ devices: devices.filter((d) => d.userId === userId) }),
       devicesOf: async (otherId) => ({ devices: devices.filter((d) => d.userId === otherId) }),
       registerDevice: async (body) => {
@@ -211,5 +214,13 @@ export const createFakeDelivery = () => {
     },
   })
 
-  return { apiFor, messages, devices, handshakes, userKeys, backups }
+  return {
+    apiFor,
+    messages,
+    devices,
+    handshakes,
+    userKeys,
+    backups,
+    approvalEvents: approvals.events,
+  }
 }

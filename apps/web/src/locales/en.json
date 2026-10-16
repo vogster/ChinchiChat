@@ -1280,6 +1280,18 @@
       "notSaved": "You haven't marked the key as saved yet. Download it and keep it apart from your devices.",
       "show": "Show key",
       "settingsHint": "Brings back your encrypted conversations if all your devices are lost."
+    },
+    "approval": {
+      "title": "New sign-in",
+      "question": "New sign-in: {{device}}. Is this you?",
+      "emojiLabel": "Emoji to compare",
+      "compareHint": "If the new device shows the same emoji in the same order, it's you. Otherwise press “No”.",
+      "preparing": "Preparing the emoji to compare…",
+      "yes": "Yes, the emoji match",
+      "no": "No, this isn't me",
+      "request": "Approve from another device",
+      "waiting": "Open Chinchi on another of your devices and press “Yes” there. The emoji on both screens should match:",
+      "declined": "The sign-in wasn't approved. Try again or enter your recovery key."
     }
   }
 }

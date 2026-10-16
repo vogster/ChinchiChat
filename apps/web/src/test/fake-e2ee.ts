@@ -3,6 +3,7 @@ import { vi } from 'vitest'
 import { decodePayload, encodePayload, fromBase64, toBase64 } from '../features/e2ee/codec'
 
 import type { EncryptedFile } from '../features/e2ee/codec'
+import type { ApprovalView } from '../features/e2ee/device-approval'
 import type { UseKeyResult } from '../features/e2ee/history-backup'
 import type { SafetyStatus } from '../features/e2ee/safety'
 import type {
@@ -14,6 +15,7 @@ import type {
 } from '../features/e2ee/client'
 import type { E2eeClientFactory } from '../features/e2ee/e2ee-context'
 import type { ApiClient } from '@chinchi/sdk'
+import type { DeviceApproval } from '@chinchi/shared'
 
 /** What the fake shows as this device's recovery key. */
 export const TEST_RECOVERY_KEY = 'ABCD-EFGH-JKMN-PQRS-TVWX-YZ01-2345-6789-ABCD-EFGH-JKMN-PQRS-TVWX'
@@ -28,7 +30,31 @@ export const fakeCiphertext = (text: string, files?: EncryptedFile[]) =>
 /** Stands in for the MLS client in UI tests (MLS itself is tested in features/e2ee). */
 export const createFakeE2ee = (status: ConversationStatus = 'ready') => {
   let api: ApiClient | null = null
+  let approvalViews: ApprovalView[] = []
+  const approvalListeners = new Set<() => void>()
   const client = {
+    approvals: {
+      request: vi.fn(async () => '950'),
+      handle: vi.fn(async (_approval: DeviceApproval) => undefined),
+      confirm: vi.fn(async (_approvalId: string) => undefined),
+      decline: vi.fn(async (_approvalId: string) => undefined),
+      dismiss: vi.fn((approvalId: string) => {
+        approvalViews = approvalViews.filter((view) => view.approvalId !== approvalId)
+        for (const listener of approvalListeners) listener()
+      }),
+      views: () => approvalViews,
+      subscribe: (listener: () => void) => {
+        approvalListeners.add(listener)
+        return () => {
+          approvalListeners.delete(listener)
+        }
+      },
+      /** Test helper: what the approval screens show now. */
+      emit: (views: ApprovalView[]) => {
+        approvalViews = views
+        for (const listener of approvalListeners) listener()
+      },
+    },
     ready: vi.fn(async () => '700'),
     open: vi.fn(async (_channel: EncryptedChannel) => status),
     send: vi.fn(
