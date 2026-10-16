@@ -7,6 +7,7 @@ import {
 import { z } from 'zod'
 
 import { toCurrentUser } from '../users/user.mapper'
+import { FAIL_CLOSED } from '../../http/rate-limit'
 import { requireAuth } from './auth.plugin'
 
 import type { AccountEmailService } from './account-email.service'
@@ -33,7 +34,7 @@ export const accountRoutes: FastifyPluginAsyncZod<AccountRoutesOptions> = async 
     '/auth/verify-email',
     {
       schema: { body: verifyEmailRequestSchema, response: { 200: userResponse } },
-      config: { rateLimit: { max: 20, timeWindow: HOUR_MS } },
+      config: { rateLimit: { max: 20, timeWindow: HOUR_MS, ...FAIL_CLOSED } },
     },
     async (request) => {
       const user = await accountEmails.verifyEmail(request.body.token)
@@ -45,7 +46,7 @@ export const accountRoutes: FastifyPluginAsyncZod<AccountRoutesOptions> = async 
     '/auth/verify-email/resend',
     {
       schema: { response: { 202: emptyResponse } },
-      config: { rateLimit: { max: 3, timeWindow: HOUR_MS } },
+      config: { rateLimit: { max: 3, timeWindow: HOUR_MS, ...FAIL_CLOSED } },
     },
     async (request, reply) => {
       await accountEmails.resendVerification(requireAuth(request).user)
@@ -57,7 +58,7 @@ export const accountRoutes: FastifyPluginAsyncZod<AccountRoutesOptions> = async 
     '/auth/password/forgot',
     {
       schema: { body: forgotPasswordRequestSchema, response: { 202: emptyResponse } },
-      config: { rateLimit: { max: 5, timeWindow: HOUR_MS } },
+      config: { rateLimit: { max: 5, timeWindow: HOUR_MS, ...FAIL_CLOSED } },
     },
     async (request, reply) => {
       // Respond before doing any work so timing does not reveal whether the account exists.
@@ -72,7 +73,7 @@ export const accountRoutes: FastifyPluginAsyncZod<AccountRoutesOptions> = async 
     '/auth/password/reset',
     {
       schema: { body: resetPasswordRequestSchema, response: { 200: emptyResponse } },
-      config: { rateLimit: { max: 10, timeWindow: HOUR_MS } },
+      config: { rateLimit: { max: 10, timeWindow: HOUR_MS, ...FAIL_CLOSED } },
     },
     async (request) => {
       await accountEmails.resetPassword(request.body.token, request.body.password)

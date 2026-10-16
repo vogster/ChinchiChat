@@ -1,4 +1,4 @@
-import { afterAll, beforeEach, describe, expect, it } from 'vitest'
+import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { WEB_ORIGIN, createTestApp, resetState } from '../../test/test-app'
 import { LOGIN_RATE_LIMIT, REGISTER_RATE_LIMIT } from './rate-limit'
@@ -39,6 +39,10 @@ const exhaust = async (attempts: number, send: (index: number) => Promise<unknow
 
 beforeEach(async () => {
   await resetState(first.db, first.redis)
+})
+
+afterEach(() => {
+  vi.restoreAllMocks()
 })
 
 afterAll(async () => {
@@ -82,6 +86,28 @@ describe('rate limiting', () => {
 
     expect(response.headers['x-ratelimit-limit']).toBe(String(LOGIN_RATE_LIMIT.max))
     expect(response.headers['x-ratelimit-remaining']).toBe(String(LOGIN_RATE_LIMIT.max - 1))
+  })
+
+  it('lets ordinary requests through when Valkey fails, but not sign-in, and counts the failures', async () => {
+    const broken = (...args: unknown[]) => {
+      const callback = args.at(-1) as (error: Error) => void
+      callback(new Error('ECONNREFUSED'))
+    }
+    vi.spyOn(
+      first.redis as unknown as { rateLimit: typeof broken },
+      'rateLimit',
+    ).mockImplementation(broken)
+
+    const open = await first.app.inject({ method: 'GET', url: '/api/v1/instance' })
+    expect(open.statusCode).toBe(200)
+
+    const closed = await login()
+    expect(closed.statusCode).toBe(503)
+    expect(closed.json()).toMatchObject({ success: false, code: 'RATE_LIMIT_UNAVAILABLE' })
+
+    expect(await first.app.metrics.registry.metrics()).toContain(
+      'chinchi_rate_limit_store_errors_total 2',
+    )
   })
 
   it('can be disabled for local testing', async () => {

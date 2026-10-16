@@ -282,7 +282,14 @@ export const buildApp = (
     await services.linkPreviews?.close()
   })
 
-  app.register(rateLimitPlugin, { enabled: config.rateLimitEnabled, redis })
+  app.register(rateLimitPlugin, {
+    enabled: config.rateLimitEnabled,
+    redis,
+    onStoreError: (error) => {
+      metrics.rateLimitStoreErrors.inc()
+      app.log.warn({ err: error }, 'Rate limit check failed: Valkey did not answer')
+    },
+  })
   app.register(cookie)
   app.register(authPlugin, {
     authService: services.auth,

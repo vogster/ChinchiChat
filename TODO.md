@@ -329,7 +329,7 @@
 - [x] Настройка инстанса «требовать подтверждённый email для серверов, инвайтов и ЛС», включена по умолчанию при открытой регистрации (`REQUIRE_VERIFIED_EMAIL`, в compose `on`; `requireVerifiedHuman` на создании сервера, приёме приглашения, открытии ЛС, добавлении в группу и заявке в друзья; `EMAIL_NOT_VERIFIED` → 403)
 - [ ] При блокировке входа по аккаунту (100 неудач) — письмо владельцу с одноразовой ссылкой входа
 - [ ] Токен сброса пароля во фрагменте URL (`#token=`), а не в query-string
-- [ ] Rate limit: метрика ошибок Valkey и алерт в дашборде (лимиты работают fail-open); для `/auth/*` рассмотреть fail-closed
+- [x] Rate limit: метрика ошибок Valkey (`chinchi_rate_limit_store_errors_total`), панель «Valkey в лимитах» и правила тревог Prometheus в `docker-compose.monitoring.yml`; вход, регистрация, сброс пароля и смена почты — fail-closed (`FAIL_CLOSED`, `503 RATE_LIMIT_UNAVAILABLE`), остальное fail-open
 - [ ] Advisory lock в `runMigrations` перед запуском нескольких процессов сервера; расписание и ротация бэкапов в документации
 - [ ] Качество: разбить `packages/sdk/src/client.ts` (1016 строк) по доменам, `message.service.ts`, `services.ts`, `channel.service.ts`; общие `perUserRateLimit` и `ok()` в `http/`; правило сортировки импортов в eslint
 - [ ] Тесты: табличный тест «каждый `/admin/*` отвечает 403 не админу» по `app.printRoutes()`; property-тесты (`fast-check`) для парсера markdown и `strip-metadata`; часть ручного `docs/security-checklist.md` (заголовки, cookie-флаги, 404 для чужих id) — в e2e

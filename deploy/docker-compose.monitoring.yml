@@ -16,6 +16,8 @@ services:
     configs:
       - source: prometheus
         target: /etc/prometheus/prometheus.yml
+      - source: prometheus-alerts
+        target: /etc/prometheus/alerts.yml
     volumes:
       - prometheus-data:/prometheus
     depends_on:
@@ -48,10 +50,41 @@ configs:
     content: |
       global:
         scrape_interval: 15s
+      rule_files:
+        - /etc/prometheus/alerts.yml
       scrape_configs:
         - job_name: chinchi-server
           static_configs:
             - targets: ['server:9464']
+  # Alerts show up on Prometheus's own /alerts page (and in Grafana's alert list); wire an
+  # Alertmanager under `alerting:` to have them delivered.
+  prometheus-alerts:
+    content: |
+      groups:
+        - name: chinchi
+          rules:
+            - alert: ChinchiServerDown
+              expr: up{job="chinchi-server"} == 0
+              for: 2m
+              labels:
+                severity: critical
+              annotations:
+                summary: Сервер Chinchi не отдаёт метрики
+                description: Prometheus не может опросить server:9464 уже 2 минуты.
+            - alert: ChinchiRateLimitStoreErrors
+              expr: sum(increase(chinchi_rate_limit_store_errors_total[5m])) > 0
+              labels:
+                severity: warning
+              annotations:
+                summary: Valkey не отвечает на проверки лимитов запросов
+                description: Обычные маршруты работают без лимитов, вход и регистрация отвечают 503. Проверьте контейнер valkey.
+            - alert: ChinchiHttp5xx
+              expr: sum(rate(chinchi_http_request_duration_seconds_count{status_code=~"5.."}[5m])) / clamp_min(sum(rate(chinchi_http_request_duration_seconds_count[5m])), 1e-9) > 0.05
+              for: 5m
+              labels:
+                severity: warning
+              annotations:
+                summary: Больше 5% запросов к API заканчиваются ошибкой 5xx
   grafana-datasource:
     content: |
       apiVersion: 1

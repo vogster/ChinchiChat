@@ -49,6 +49,11 @@ export const createMetrics = () => {
     labelNames: ['kind', 'outcome'] as const,
     registers: [registry],
   })
+  const rateLimitStoreErrors = new Counter({
+    name: 'chinchi_rate_limit_store_errors_total',
+    help: 'Rate-limit checks that failed because Valkey did not answer (fail-open routes ran unchecked)',
+    registers: [registry],
+  })
 
   return {
     registry,
@@ -58,6 +63,7 @@ export const createMetrics = () => {
     gatewayReady,
     eventsPublished,
     jobs,
+    rateLimitStoreErrors,
   }
 }
 
