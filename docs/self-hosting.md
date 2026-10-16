@@ -50,7 +50,7 @@ docker compose pull && docker compose up -d
 Для разработчиков и тех, кто не хочет готовых образов:
 
 ```bash
-git clone https://github.com/vogster/ChinchiChat.git && cd chinchi.chat
+git clone https://github.com/vogster/ChinchiChat.git && cd ChinchiChat
 cp deploy/.env.example deploy/.env   # и заполнить
 docker compose -f deploy/docker-compose.yml -f deploy/docker-compose.build.yml up -d --build
 ```
