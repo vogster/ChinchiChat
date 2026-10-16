@@ -1,10 +1,11 @@
 import { commandSchema, messageSchema } from '@chinchi/shared'
 import { z } from 'zod'
 
+import { id } from './url'
+
 import type { Http } from './http'
 import type { CommandDefinition, InvokeCommandRequest, Snowflake } from '@chinchi/shared'
 
-const id = (value: string) => encodeURIComponent(value)
 const commandList = z.object({ commands: z.array(commandSchema) })
 
 /** Slash commands: bots register and answer them, people run them. */

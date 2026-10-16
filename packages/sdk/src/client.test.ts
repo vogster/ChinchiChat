@@ -101,7 +101,11 @@ describe('createApiClient', () => {
       'https://chat.example.com/api/v1/admin/users?query=bob+smith&before=99',
     )
 
-    const settings = { registrationMode: 'invite', maxGuildsPerUser: 5 }
+    const settings = {
+      registrationMode: 'invite',
+      maxGuildsPerUser: 5,
+      requireVerifiedEmail: false,
+    }
     const update = setup(jsonResponse(200, { success: true, data: { settings } }))
     expect(await update.api.admin.updateSettings({ registrationMode: 'invite' })).toEqual({
       settings,
@@ -145,7 +149,13 @@ describe('createApiClient', () => {
         return empty({ automod: { blockedWords: [], antiSpam: false, maxMentions: null } })
       }
       if (url.endsWith('/settings')) {
-        return empty({ settings: { registrationMode: 'open', maxGuildsPerUser: null } })
+        return empty({
+          settings: {
+            registrationMode: 'open',
+            maxGuildsPerUser: null,
+            requireVerifiedEmail: false,
+          },
+        })
       }
       if (url.includes('/reports')) return empty({ reports: [] })
       if (url.includes('/admin/users')) return empty({ users: [] })
