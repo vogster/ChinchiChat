@@ -17,6 +17,7 @@ import {
 
 import { decodePayload, encodePayload, fromBase64, toBase64 } from './codec'
 import { createCrossSigning } from './cross-signing'
+import { createHistoryBackup } from './history-backup'
 import { createSafety } from './safety'
 
 import type { EncryptedFile, EncryptedPayload } from './codec'
@@ -41,6 +42,10 @@ export interface E2eeApi {
     | 'userKey'
     | 'setUserKey'
     | 'signDevice'
+    | 'backup'
+    | 'createBackup'
+    | 'putBackupEntries'
+    | 'backupEntries'
   >
   readonly messages: {
     create(
@@ -259,6 +264,12 @@ export const createE2eeClient = ({ api, store, userId, deviceName }: E2eeClientO
   }
 
   const crossSigning = createCrossSigning({ api, store, userId })
+  const backup = createHistoryBackup({ api, store, crossSigning })
+  /** Backs a message up, sending soon (several messages read together go in one upload). */
+  const keep = (messageId: string, payload: EncryptedPayload) => {
+    backup.add(messageId, payload)
+    queueMicrotask(() => void backup.flush().catch(() => undefined))
+  }
 
   /** The device, registered and (where this browser can) vouched for by the user key. */
   const setUp = async (): Promise<DeviceKeys> => {
@@ -266,6 +277,7 @@ export const createE2eeClient = ({ api, store, userId, deviceName }: E2eeClientO
     const listed = (await devicesOf(userId)).find((d) => d.id === keys.identity.deviceId)
     try {
       await crossSigning.ensure(keys, Boolean(listed?.userSignature))
+      await backup.ensure()
     } catch {
       // Not fatal: the device works unsigned and is approved later.
     }
@@ -529,6 +541,7 @@ export const createE2eeClient = ({ api, store, userId, deviceName }: E2eeClientO
           ...(reply ? { replyTo: reply.messageId, replyMention: reply.mention } : {}),
         })
         await store.set(`plain:${message.id}`, payload)
+        keep(message.id, payload)
         return message
       }),
 
@@ -564,6 +577,9 @@ export const createE2eeClient = ({ api, store, userId, deviceName }: E2eeClientO
           await sync(channel.id, keys)
           payload = await attempt().catch(() => null)
         }
+        if (payload) keep(message.id, payload)
+        // Sent before this device joined (or lost with it): the history backup may have it.
+        payload ??= await backup.restore(channel.id, message.id).catch(() => null)
         if (payload) await store.set(plainKey(message), payload)
         return payload
       }),
@@ -584,6 +600,7 @@ export const createE2eeClient = ({ api, store, userId, deviceName }: E2eeClientO
           ciphertext: toBase64(result.ciphertext),
         })
         await store.set(plainKey(message), payload)
+        keep(messageId, payload)
         return message
       }),
 
@@ -597,6 +614,21 @@ export const createE2eeClient = ({ api, store, userId, deviceName }: E2eeClientO
           key: await exportSecret(conversation, CALL_KEY_LABEL),
         }
       }),
+
+    /** The recovery key: shown to save, typed on a new device to get history and trust back. */
+    recovery: {
+      key: backup.key,
+      saved: backup.saved,
+      markSaved: backup.markSaved,
+      useKey: async (text: string) => {
+        const result = await backup.useKey(text, await ready())
+        if (result === 'ok') devicesByUser.delete(userId)
+        return result
+      },
+    },
+
+    /** Sends the history backup what is waiting (tests; the client does it on its own). */
+    flushBackup: () => backup.flush(),
 
     /** Safety codes and new-device warnings. */
     safety: createSafety({

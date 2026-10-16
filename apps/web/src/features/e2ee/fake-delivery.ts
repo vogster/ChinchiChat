@@ -27,9 +27,50 @@ export const createFakeDelivery = () => {
     ciphertext: string
     attachmentIds: readonly string[]
   }[] = []
+  /** History backups by user: the sealed user key, and entries by message id. */
+  const backups = new Map<string, { version: string; userKey: string }>()
+  const entries = new Map<string, Map<string, { channelId: string; payload: string }>>()
+
+  const backupApi = (
+    userId: string,
+  ): Pick<E2eeApi['e2ee'], 'backup' | 'createBackup' | 'putBackupEntries' | 'backupEntries'> => ({
+    backup: async () => {
+      const found = backups.get(userId)
+      return { backup: found ? { ...found, createdAt: new Date().toISOString() } : null }
+    },
+    createBackup: async ({ userKey, replace }) => {
+      if (backups.has(userId) && !replace) {
+        throw new ApiError(409, 'BACKUP_EXISTS', 'This user already has a backup')
+      }
+      const backup = { version: id(), userKey }
+      backups.set(userId, backup)
+      entries.set(userId, new Map())
+      return { backup: { ...backup, createdAt: new Date().toISOString() } }
+    },
+    putBackupEntries: async ({ version, entries: added }) => {
+      if (backups.get(userId)?.version !== version) {
+        throw new ApiError(409, 'STALE_BACKUP', 'The backup was replaced')
+      }
+      const mine = entries.get(userId) ?? new Map()
+      for (const entry of added) {
+        const message = messages.find((m) => m.id === entry.messageId)
+        if (!message) throw new ApiError(404, 'UNKNOWN_MESSAGE', 'Unknown message')
+        mine.set(entry.messageId, { channelId: message.channelId, payload: entry.payload })
+      }
+      entries.set(userId, mine)
+    },
+    backupEntries: async ({ channelId, after, limit = 200 }) => ({
+      entries: [...(entries.get(userId) ?? new Map()).entries()]
+        .filter(([messageId, e]) => e.channelId === channelId && (!after || messageId > after))
+        .sort(([a], [b]) => a.localeCompare(b))
+        .slice(0, Number(limit))
+        .map(([messageId, e]) => ({ messageId, channelId: e.channelId, payload: e.payload })),
+    }),
+  })
 
   const apiFor = (userId: string): E2eeApi => ({
     e2ee: {
+      ...backupApi(userId),
       myDevices: async () => ({ devices: devices.filter((d) => d.userId === userId) }),
       devicesOf: async (otherId) => ({ devices: devices.filter((d) => d.userId === otherId) }),
       registerDevice: async (body) => {
@@ -170,5 +211,5 @@ export const createFakeDelivery = () => {
     },
   })
 
-  return { apiFor, messages, devices, handshakes, userKeys }
+  return { apiFor, messages, devices, handshakes, userKeys, backups }
 }

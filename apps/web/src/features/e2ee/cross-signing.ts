@@ -67,6 +67,12 @@ export const createCrossSigning = ({ api, store, userId }: CrossSigningDeps) => 
     },
 
     held: () => store.get<StoredUserKey>(USER_KEY),
+
+    /** Takes the user key (from the recovery key or another device) and vouches for this one. */
+    adopt: async (userKey: StoredUserKey, keys: DeviceKeys): Promise<void> => {
+      await store.set(USER_KEY, userKey)
+      await sign(userKey.privateKey, keys)
+    },
   }
 }
 
