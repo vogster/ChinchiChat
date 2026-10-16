@@ -176,6 +176,22 @@ jobs:
           sudo apt-get install -y libwebkit2gtk-4.1-dev build-essential curl wget file libxdo-dev \
             libssl-dev libayatana-appindicator3-dev librsvg2-dev patchelf
       - run: pnpm install --frozen-lockfile
+      # Without the updater key the installers are still built and published, only without
+      # update packages and latest.json: the app then finds no update and goes on as it is.
+      - name: Decide whether updates can be signed
+        id: signing
+        shell: bash
+        env:
+          KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+        run: |
+          if [ -n "$KEY" ]; then
+            echo "signed=true" >> "$GITHUB_OUTPUT"
+            echo "{}" > apps/desktop/src-tauri/tauri.release.conf.json
+          else
+            echo "::warning::TAURI_SIGNING_PRIVATE_KEY is not set: building without update packages"
+            echo "signed=false" >> "$GITHUB_OUTPUT"
+            echo '{"bundle":{"createUpdaterArtifacts":false}}' > apps/desktop/src-tauri/tauri.release.conf.json
+          fi
       - uses: tauri-apps/tauri-action@1deb371b0cd8bd54025b384f1cd735e725c4060f # action-v1.0.0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -188,6 +204,6 @@ jobs:
           releaseName: Chinchi ${{ github.ref_name }}
           releaseDraft: false
           prerelease: false
-          includeUpdaterJson: true
+          includeUpdaterJson: ${{ steps.signing.outputs.signed == 'true' }}
           updaterJsonKeepUniversal: true
-          args: ${{ matrix.args }}
+          args: --config src-tauri/tauri.release.conf.json ${{ matrix.args }}
