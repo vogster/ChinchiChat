@@ -120,6 +120,16 @@ describe('handshake', () => {
     expect((await socket.closed).code).toBe(4003)
   })
 
+  it('lets a native shell in from its own origin when it brings a token, not a cookie', async () => {
+    // Desktop webviews send an Origin of their own (tauri://localhost, http://tauri.localhost);
+    // without a cookie there is nothing to hijack, and IDENTIFY still has to carry a token.
+    const socket = keep(await connectGateway(app, { origin: 'http://tauri.localhost' }))
+    socket.send({ op: 2, d: { token: owner.cookie } })
+
+    const ready = await socket.dispatch<{ user: { id: string } }>('READY')
+    expect(ready.user.id).toBe(owner.id)
+  })
+
   it('refuses cookie connections from foreign or missing origins (cross-site WebSocket hijacking)', async () => {
     await expect(
       connectGateway(app, { cookie: member.cookie, origin: 'https://evil.example' }),

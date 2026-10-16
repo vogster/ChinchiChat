@@ -41,6 +41,10 @@ jobs:
               exit 1
             }
           done
+          grep -q "\"version\": \"$version\"" apps/desktop/src-tauri/tauri.conf.json || {
+            echo "apps/desktop/src-tauri/tauri.conf.json is not at version $version" >&2
+            exit 1
+          }
 
       - name: Log in to GitHub Container Registry
         run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
@@ -130,3 +134,76 @@ jobs:
             dist/backup.sh dist/restore.sh \
             dist/docker-compose.monitoring.yml dist/chinchi-dashboard.json \
             --title "Chinchi $GITHUB_REF_NAME" "$@"
+
+  # The desktop app for each platform, uploaded to the same release with the updater's
+  # latest.json (tauri-action merges the platforms into one file). Unsigned by the OS vendors:
+  # Windows and macOS warn on first launch until there is a code-signing certificate. Updates
+  # are signed with the updater key (TAURI_SIGNING_PRIVATE_KEY), which is what the app checks.
+  desktop:
+    name: Desktop (${{ matrix.name }})
+    needs: release
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: linux-x64
+            runner: ubuntu-24.04
+            args: ''
+            targets: ''
+          - name: windows-x64
+            runner: windows-latest
+            args: ''
+            targets: ''
+          - name: macos-universal
+            runner: macos-latest
+            args: --target universal-apple-darwin
+            targets: aarch64-apple-darwin,x86_64-apple-darwin
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - uses: dtolnay/rust-toolchain@b725eda525362e7cf34af9a7243cac1e3f01a7ec # stable
+        with:
+          targets: ${{ matrix.targets }}
+      - name: Linux dependencies of Tauri
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev build-essential curl wget file libxdo-dev \
+            libssl-dev libayatana-appindicator3-dev librsvg2-dev patchelf
+      - run: pnpm install --frozen-lockfile
+      # Without the updater key the installers are still built and published, only without
+      # update packages and latest.json: the app then finds no update and goes on as it is.
+      - name: Decide whether updates can be signed
+        id: signing
+        shell: bash
+        env:
+          KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+        run: |
+          if [ -n "$KEY" ]; then
+            echo "signed=true" >> "$GITHUB_OUTPUT"
+            echo "{}" > apps/desktop/src-tauri/tauri.release.conf.json
+          else
+            echo "::warning::TAURI_SIGNING_PRIVATE_KEY is not set: building without update packages"
+            echo "signed=false" >> "$GITHUB_OUTPUT"
+            echo '{"bundle":{"createUpdaterArtifacts":false}}' > apps/desktop/src-tauri/tauri.release.conf.json
+          fi
+      - uses: tauri-apps/tauri-action@1deb371b0cd8bd54025b384f1cd735e725c4060f # action-v1.0.0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+        with:
+          projectPath: apps/desktop
+          tauriScript: pnpm tauri
+          tagName: ${{ github.ref_name }}
+          releaseName: Chinchi ${{ github.ref_name }}
+          releaseDraft: false
+          prerelease: false
+          includeUpdaterJson: ${{ steps.signing.outputs.signed == 'true' }}
+          updaterJsonKeepUniversal: true
+          args: --config src-tauri/tauri.release.conf.json ${{ matrix.args }}

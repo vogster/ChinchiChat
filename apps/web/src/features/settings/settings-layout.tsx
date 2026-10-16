@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 
 import { settingsNavItemClass, SettingsShell } from '../../components/layout/settings-shell'
 import { useCurrentUser, useLogout } from '../auth/use-auth-actions'
+import { useShell } from '../shell/shell-context'
 
 import type { ReactNode } from 'react'
 
@@ -22,6 +23,7 @@ export const SettingsLayout = ({ children }: { children: ReactNode }) => {
   const { t } = useTranslation()
   const logout = useLogout()
   const me = useCurrentUser()
+  const shell = useShell()
 
   return (
     <SettingsShell
@@ -35,6 +37,11 @@ export const SettingsLayout = ({ children }: { children: ReactNode }) => {
               {t(`settings.nav.${item.key}`)}
             </Link>
           ))}
+          {shell ? (
+            <Link to="/settings/app" className={settingsNavItemClass}>
+              {t('settings.nav.app')}
+            </Link>
+          ) : null}
           {me?.isAdmin ? (
             <>
               <hr className="mx-2 hidden border-border md:my-2 md:block" />

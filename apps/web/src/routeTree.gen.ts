@@ -26,6 +26,7 @@ import { Route as AdminUsersRouteImport } from './routes/admin/users'
 import { Route as InviteCodeRouteImport } from './routes/invite/$code'
 import { Route as SettingsIndexRouteImport } from './routes/settings/index'
 import { Route as SettingsAccountRouteImport } from './routes/settings/account'
+import { Route as SettingsAppRouteImport } from './routes/settings/app'
 import { Route as SettingsAppearanceRouteImport } from './routes/settings/appearance'
 import { Route as SettingsBotsRouteImport } from './routes/settings/bots'
 import { Route as SettingsLanguageRouteImport } from './routes/settings/language'
@@ -131,6 +132,11 @@ const SettingsIndexRoute = SettingsIndexRouteImport.update({
 const SettingsAccountRoute = SettingsAccountRouteImport.update({
   id: '/account',
   path: '/account',
+  getParentRoute: () => SettingsRoute,
+} as any)
+const SettingsAppRoute = SettingsAppRouteImport.update({
+  id: '/app',
+  path: '/app',
   getParentRoute: () => SettingsRoute,
 } as any)
 const SettingsAppearanceRoute = SettingsAppearanceRouteImport.update({
@@ -277,6 +283,7 @@ export interface FileRoutesByFullPath {
   '/admin/users': typeof AdminUsersRoute
   '/invite/$code': typeof InviteCodeRoute
   '/settings/account': typeof SettingsAccountRoute
+  '/settings/app': typeof SettingsAppRoute
   '/settings/appearance': typeof SettingsAppearanceRoute
   '/settings/bots': typeof SettingsBotsRoute
   '/settings/language': typeof SettingsLanguageRoute
@@ -315,6 +322,7 @@ export interface FileRoutesByTo {
   '/admin/users': typeof AdminUsersRoute
   '/invite/$code': typeof InviteCodeRoute
   '/settings/account': typeof SettingsAccountRoute
+  '/settings/app': typeof SettingsAppRoute
   '/settings/appearance': typeof SettingsAppearanceRoute
   '/settings/bots': typeof SettingsBotsRoute
   '/settings/language': typeof SettingsLanguageRoute
@@ -355,6 +363,7 @@ export interface FileRoutesById {
   '/admin/users': typeof AdminUsersRoute
   '/invite/$code': typeof InviteCodeRoute
   '/settings/account': typeof SettingsAccountRoute
+  '/settings/app': typeof SettingsAppRoute
   '/settings/appearance': typeof SettingsAppearanceRoute
   '/settings/bots': typeof SettingsBotsRoute
   '/settings/language': typeof SettingsLanguageRoute
@@ -398,6 +407,7 @@ export interface FileRouteTypes {
     | '/admin/users'
     | '/invite/$code'
     | '/settings/account'
+    | '/settings/app'
     | '/settings/appearance'
     | '/settings/bots'
     | '/settings/language'
@@ -436,6 +446,7 @@ export interface FileRouteTypes {
     | '/admin/users'
     | '/invite/$code'
     | '/settings/account'
+    | '/settings/app'
     | '/settings/appearance'
     | '/settings/bots'
     | '/settings/language'
@@ -475,6 +486,7 @@ export interface FileRouteTypes {
     | '/admin/users'
     | '/invite/$code'
     | '/settings/account'
+    | '/settings/app'
     | '/settings/appearance'
     | '/settings/bots'
     | '/settings/language'
@@ -633,6 +645,13 @@ declare module '@tanstack/react-router' {
       path: '/account'
       fullPath: '/settings/account'
       preLoaderRoute: typeof SettingsAccountRouteImport
+      parentRoute: typeof SettingsRoute
+    }
+    '/settings/app': {
+      id: '/settings/app'
+      path: '/app'
+      fullPath: '/settings/app'
+      preLoaderRoute: typeof SettingsAppRouteImport
       parentRoute: typeof SettingsRoute
     }
     '/settings/appearance': {
@@ -896,6 +915,7 @@ const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
 
 interface SettingsRouteChildren {
   SettingsAccountRoute: typeof SettingsAccountRoute
+  SettingsAppRoute: typeof SettingsAppRoute
   SettingsAppearanceRoute: typeof SettingsAppearanceRoute
   SettingsBotsRoute: typeof SettingsBotsRoute
   SettingsLanguageRoute: typeof SettingsLanguageRoute
@@ -909,6 +929,7 @@ interface SettingsRouteChildren {
 
 const SettingsRouteChildren: SettingsRouteChildren = {
   SettingsAccountRoute: SettingsAccountRoute,
+  SettingsAppRoute: SettingsAppRoute,
   SettingsAppearanceRoute: SettingsAppearanceRoute,
   SettingsBotsRoute: SettingsBotsRoute,
   SettingsLanguageRoute: SettingsLanguageRoute,

@@ -44,3 +44,9 @@ deploy/data/
 # TanStack Router plugin scratch files
 .tanstack/
 load/.data/
+
+# Desktop (Tauri)
+apps/web/dist-desktop/
+apps/desktop/src-tauri/target/
+apps/desktop/src-tauri/gen/
+apps/desktop/src-tauri/tauri.release.conf.json

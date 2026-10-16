@@ -35,6 +35,8 @@ export interface VoiceControls extends VoiceSession {
   readonly join: (guildId: Snowflake | null, channelId: Snowflake) => Promise<void>
   readonly leave: () => Promise<void>
   readonly toggleMute: () => void
+  /** Mutes or unmutes outright (push-to-talk); unmuting while deafened undeafens too. */
+  readonly setMute: (muted: boolean) => void
   readonly toggleDeaf: () => void
   readonly toggleCamera: () => void
   readonly toggleScreen: () => void
@@ -201,6 +203,15 @@ export const VoiceProvider = ({ children }: { children: ReactNode }) => {
     applySelf(!selfMute, selfDeaf)
   }, [applySelf])
 
+  const setMute = useCallback(
+    (muted: boolean) => {
+      const { selfMute, selfDeaf } = latest.current
+      if (muted === selfMute && (muted || !selfDeaf)) return
+      applySelf(muted, muted ? selfDeaf : false)
+    },
+    [applySelf],
+  )
+
   const toggleDeaf = useCallback(() => {
     const { selfMute, selfDeaf } = latest.current
     applySelf(selfMute, !selfDeaf)
@@ -259,11 +270,12 @@ export const VoiceProvider = ({ children }: { children: ReactNode }) => {
       join,
       leave,
       toggleMute,
+      setMute,
       toggleDeaf,
       toggleCamera: () => toggleMedia('camera'),
       toggleScreen: () => toggleMedia('screen'),
     }),
-    [session, join, leave, toggleMute, toggleDeaf, toggleMedia],
+    [session, join, leave, toggleMute, setMute, toggleDeaf, toggleMedia],
   )
   return <VoiceContext.Provider value={value}>{children}</VoiceContext.Provider>
 }

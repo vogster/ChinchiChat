@@ -12,18 +12,21 @@ import { createFakeGateway } from './fake-gateway'
 import { createFakeVoice } from './fake-voice'
 
 import type { ConversationStatus } from '../features/e2ee/client'
+import type { Shell } from '../features/shell/shell-context'
 import type { FakeApi, FakeApiOptions } from './fake-api'
 
 export interface RenderAppOptions extends FakeApiOptions {
   readonly api?: FakeApi
   /** What the fake encryption client says when a conversation is opened. */
   readonly e2eeStatus?: ConversationStatus
+  /** A desktop shell around the app (see createFakeShell); none by default, like a browser. */
+  readonly shell?: Shell
 }
 
 /** Renders the whole app (router, guards, providers) at `path` against a fake API. */
 export const renderApp = (
   path = '/',
-  { api: givenApi, e2eeStatus, ...apiOptions }: RenderAppOptions = {},
+  { api: givenApi, e2eeStatus, shell, ...apiOptions }: RenderAppOptions = {},
 ) => {
   initI18n('ru')
   const api = givenApi ?? createFakeApi(apiOptions)
@@ -47,6 +50,7 @@ export const renderApp = (
       gateway={gateway.factory}
       voice={voice.factory}
       e2ee={e2ee.factory}
+      shell={shell ?? null}
     />,
   )
   return { api, router, queryClient, gateway, voice, e2ee: e2ee.client, user: userEvent.setup() }

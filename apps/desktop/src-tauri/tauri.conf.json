@@ -1,0 +1,64 @@
+{
+  "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
+  "productName": "Chinchi",
+  "version": "0.15.0",
+  "identifier": "chat.chinchi.desktop",
+  "build": {
+    "frontendDist": "../../web/dist-desktop",
+    "devUrl": "http://localhost:5174/desktop.html",
+    "beforeDevCommand": "pnpm --filter @chinchi/web dev:desktop",
+    "beforeBuildCommand": "pnpm --filter @chinchi/web build:desktop"
+  },
+  "app": {
+    "windows": [
+      {
+        "label": "main",
+        "title": "Chinchi",
+        "width": 1200,
+        "height": 800,
+        "minWidth": 800,
+        "minHeight": 560,
+        "resizable": true,
+        "fullscreen": false
+      }
+    ],
+    "security": {
+      "csp": {
+        "default-src": "'self'",
+        "script-src": "'self'",
+        "style-src": "'self'",
+        "img-src": "'self' https: http://localhost:* http://127.0.0.1:* data: blob:",
+        "media-src": "'self' https: http://localhost:* http://127.0.0.1:* blob:",
+        "connect-src": "'self' ipc: http://ipc.localhost https: wss: http://localhost:* http://127.0.0.1:* ws://localhost:* ws://127.0.0.1:*",
+        "font-src": "'self'",
+        "worker-src": "'self' blob:",
+        "frame-ancestors": "'none'",
+        "object-src": "'none'"
+      },
+      "devCsp": "default-src 'self' http://localhost:5174 ws://localhost:5174; script-src 'self' 'unsafe-inline' http://localhost:5174; style-src 'self' 'unsafe-inline' http://localhost:5174; img-src 'self' https: http://localhost:* http://127.0.0.1:* data: blob:; media-src 'self' https: http://localhost:* blob:; connect-src 'self' ipc: http://ipc.localhost https: wss: http://localhost:* http://127.0.0.1:* ws://localhost:* ws://127.0.0.1:*; worker-src 'self' blob: http://localhost:5174"
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": "all",
+    "category": "SocialNetworking",
+    "shortDescription": "Chinchi: self-hosted chat, voice and video",
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ],
+    "macOS": {
+      "entitlements": "Entitlements.plist"
+    },
+    "createUpdaterArtifacts": true
+  },
+  "plugins": {
+    "updater": {
+      "endpoints": ["https://github.com/vogster/ChinchiChat/releases/latest/download/latest.json"],
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDc2OTIyRDA5M0JFNjA0OEMKUldTTUJPWTdDUzJTZGtxMUkybVpvaHJWNFVWTmVLcDJDNWszWmFZMkZyQjVLYzdMWW5qbnNjRFMK"
+    }
+  }
+}

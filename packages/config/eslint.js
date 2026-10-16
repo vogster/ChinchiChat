@@ -8,7 +8,13 @@ import tseslint from 'typescript-eslint'
 
 export const base = tseslint.config(
   {
-    ignores: ['**/dist/**', '**/coverage/**', '**/node_modules/**', '**/.turbo/**'],
+    ignores: [
+      '**/dist/**',
+      '**/dist-desktop/**',
+      '**/coverage/**',
+      '**/node_modules/**',
+      '**/.turbo/**',
+    ],
   },
   js.configs.recommended,
   ...tseslint.configs.strict,
