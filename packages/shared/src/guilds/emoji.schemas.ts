@@ -16,9 +16,9 @@ export const emojiNameSchema = z
 /** How a server emoji appears in message text. */
 export const CUSTOM_EMOJI_PATTERN = /^<(a?):([A-Za-z0-9_]{2,32}):([1-9]\d{0,18})>$/
 
-/** `<:name:id>` for a server emoji, as written in messages and reactions. */
-export const customEmojiText = (emoji: { name: string; id: string }) =>
-  `<:${emoji.name}:${emoji.id}>`
+/** `<:name:id>` (`<a:name:id>` animated) for a server emoji, as in messages and reactions. */
+export const customEmojiText = (emoji: { name: string; id: string; animated?: boolean }) =>
+  `<${emoji.animated ? 'a' : ''}:${emoji.name}:${emoji.id}>`
 
 /** The id of a server emoji written as `<:name:id>`, or null for anything else. */
 export const customEmojiId = (text: string): string | null =>
@@ -29,6 +29,8 @@ export const guildEmojiSchema = z.object({
   name: z.string(),
   /** API path of the image (public, cacheable). */
   url: z.string(),
+  /** The picture moves (animated WebP). */
+  animated: z.boolean(),
 })
 
 export const createEmojiQuerySchema = z.object({ name: emojiNameSchema })

@@ -29,6 +29,7 @@ export const toGuildEmoji = (row: EmojiRow): GuildEmoji => ({
   id: row.id,
   name: row.name,
   url: customEmojiUrl(row.id),
+  animated: row.animated,
 })
 
 const unknownEmoji = () => new HttpError(404, 'UNKNOWN_EMOJI', 'Unknown emoji')
@@ -99,12 +100,19 @@ export const createEmojiService = ({
       const target = requireStorage()
       if (!detectImageType(input))
         throw badRequest('INVALID_IMAGE', 'The file is not a supported image')
-      const image = await limit(() =>
+      const { image, animated } = await limit(() =>
         createEmojiImage(input).catch(() => {
           throw badRequest('INVALID_IMAGE', 'The file is not a supported image')
         }),
       )
-      const row: EmojiRow = { id: nextId(), guildId, name, createdBy: userId, createdAt: now() }
+      const row: EmojiRow = {
+        id: nextId(),
+        guildId,
+        name,
+        animated,
+        createdBy: userId,
+        createdAt: now(),
+      }
       // The picture first: a row never points at a missing object. If the row then can't be
       // written, the object goes (best effort).
       await target.put(emojiKey(row), image, 'image/webp')

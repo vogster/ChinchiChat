@@ -13,6 +13,20 @@ let member: TestActor
 let guild: Awaited<ReturnType<typeof createGuild>>
 let textId: string
 let png: Buffer
+let gif: Buffer
+
+/** A 3-frame animated GIF, each frame a different colour. */
+const animatedGif = () => {
+  const [width, height, frames] = [40, 20, 3]
+  const raw = Buffer.alloc(width * height * frames * 4)
+  for (let pixel = 0; pixel < width * height * frames; pixel++) {
+    raw[pixel * 4 + Math.floor(pixel / (width * height))] = 255
+    raw[pixel * 4 + 3] = 255
+  }
+  return sharp(raw, { raw: { width, height: height * frames, channels: 4, pageHeight: height } })
+    .gif({ loop: 0, delay: [100, 100, 100] })
+    .toBuffer()
+}
 
 const upload = (actor: TestActor, name: string, body: Buffer = png, contentType = 'image/png') =>
   app.inject({
@@ -46,6 +60,7 @@ beforeAll(async () => {
   png = await sharp({ create: { width: 300, height: 200, channels: 4, background: '#f80c' } })
     .png()
     .toBuffer()
+  gif = await animatedGif()
 })
 
 beforeEach(async () => {
@@ -67,7 +82,11 @@ describe('server emoji', () => {
     const created = await upload(owner, 'party_cat')
     expect(created.statusCode).toBe(201)
     const emoji = created.json().data.emoji
-    expect(emoji).toMatchObject({ name: 'party_cat', url: `/api/v1/emojis/${emoji.id}.webp` })
+    expect(emoji).toMatchObject({
+      name: 'party_cat',
+      url: `/api/v1/emojis/${emoji.id}.webp`,
+      animated: false,
+    })
     expect(await emojisOf(member)).toEqual([emoji])
     expect(events.published).toContainEqual(
       expect.objectContaining({
@@ -81,6 +100,20 @@ describe('server emoji', () => {
     const fetched = await fetch(image.headers.location as string)
     const meta = await sharp(new Uint8Array(await fetched.arrayBuffer())).metadata()
     expect(meta).toMatchObject({ format: 'webp', width: 128, height: 128 })
+  })
+
+  it('keep their animation, as animated WebP', async () => {
+    const created = await upload(owner, 'dance', gif, 'image/gif')
+    expect(created.statusCode).toBe(201)
+    const emoji = created.json().data.emoji
+    expect(emoji.animated).toBe(true)
+
+    const image = await app.inject({ method: 'GET', url: emoji.url })
+    const fetched = await fetch(image.headers.location as string)
+    const meta = await sharp(new Uint8Array(await fetched.arrayBuffer()), {
+      pages: -1,
+    }).metadata()
+    expect(meta).toMatchObject({ format: 'webp', width: 128, pageHeight: 128, pages: 3 })
   })
 
   it('refuse members without the right, taken names and non-images', async () => {
@@ -137,6 +170,11 @@ describe('reacting with server emoji', () => {
         payload: png,
       })
     ).json().data.emoji.id
+    const dance = (await upload(owner, 'dance', gif, 'image/gif')).json().data.emoji
+    expect((await react(`<:dance:${dance.id}>`)).statusCode).toBe(204)
+    const [again] = (await api(member, 'GET', `/channels/${textId}/messages`)).json().data.messages
+    expect(again.reactions).toContainEqual({ emoji: `<a:dance:${dance.id}>`, count: 1, me: true })
+
     const foreign = await react(`<:dog:${foreignId}>`)
     expect(foreign.statusCode).toBe(400)
     expect(foreign.json().code).toBe('UNKNOWN_EMOJI')

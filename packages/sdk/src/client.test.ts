@@ -220,7 +220,7 @@ describe('createApiClient', () => {
   })
 
   it('uploads, renames and deletes server emoji', async () => {
-    const emoji = { id: '9', name: 'cat', url: '/api/v1/emojis/9.webp' }
+    const emoji = { id: '9', name: 'cat', url: '/api/v1/emojis/9.webp', animated: false }
     const create = setup(jsonResponse(201, { success: true, data: { emoji } }))
     const image = new Blob([new Uint8Array([1, 2, 3])], { type: 'image/png' })
     expect(await create.api.emojis.create('5', 'cat', image)).toEqual({ emoji })

@@ -1101,12 +1101,13 @@
     "name": "Name",
     "nameRule": "2–32 latin letters, digits or “_”",
     "upload": "Upload emoji",
-    "hint": "PNG, JPEG, GIF or WebP up to 512 KB; fitted into a 128×128 square.",
+    "hint": "PNG, JPEG, GIF or WebP up to 512 KB; fitted into a 128×128 square; GIF and WebP animations are kept.",
     "tooBig": "The picture must be 512 KB or smaller.",
     "empty": "This server has no emoji of its own yet",
     "list": "Server emoji",
     "delete": "Delete {{name}}",
-    "deleteShort": "Delete"
+    "deleteShort": "Delete",
+    "animated": "Animated"
   },
   "webhooks": {
     "badge": "Webhook",

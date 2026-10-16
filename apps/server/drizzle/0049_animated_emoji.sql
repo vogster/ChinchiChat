@@ -1,0 +1,1 @@
+ALTER TABLE "guild_emojis" ADD COLUMN "animated" boolean DEFAULT false NOT NULL;

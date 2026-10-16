@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 
 import { expandCustomEmoji } from './expand-custom-emoji'
 
-const cat = { id: '600', name: 'Cat', url: '' }
+const cat = { id: '600', name: 'Cat', url: '', animated: false }
 
 describe('expandCustomEmoji', () => {
   it('writes known :names: as server emoji', () => {

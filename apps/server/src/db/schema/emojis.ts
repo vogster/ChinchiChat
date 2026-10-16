@@ -1,5 +1,5 @@
 import { sql } from 'drizzle-orm'
-import { index, pgTable, timestamp, uniqueIndex, varchar } from 'drizzle-orm/pg-core'
+import { boolean, index, pgTable, timestamp, uniqueIndex, varchar } from 'drizzle-orm/pg-core'
 
 import { snowflake } from '../columns'
 import { guilds } from './guilds'
@@ -14,6 +14,8 @@ export const guildEmojis = pgTable(
       .notNull()
       .references(() => guilds.id, { onDelete: 'cascade' }),
     name: varchar('name', { length: 32 }).notNull(),
+    /** Stored as animated WebP. */
+    animated: boolean('animated').notNull().default(false),
     createdBy: snowflake('created_by').references(() => users.id, { onDelete: 'set null' }),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   },

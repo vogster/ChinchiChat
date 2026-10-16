@@ -97,21 +97,39 @@ export const createBannerImage = async (input: Uint8Array): Promise<Uint8Array> 
 /** Side of a server emoji image. */
 export const EMOJI_IMAGE_SIDE = 128
 
+/** Frames an animated server emoji keeps; longer animations are cut. */
+export const EMOJI_MAX_FRAMES = 100
+
+export interface EmojiImage {
+  /** WebP: still, or animated when the upload was. */
+  readonly image: Uint8Array
+  readonly animated: boolean
+}
+
 /**
  * A server emoji: the whole picture fitted into a transparent 128px square (never cropped),
- * WebP. First frame only for animations.
+ * WebP. Animated GIF and WebP stay animated (up to EMOJI_MAX_FRAMES frames).
  */
-export const createEmojiImage = async (input: Uint8Array): Promise<Uint8Array> => {
-  const { image } = await open(input, PROFILE_MAX_INPUT_PIXELS)
+export const createEmojiImage = async (input: Uint8Array): Promise<EmojiImage> => {
+  const { image: still, metadata } = await open(input, PROFILE_MAX_INPUT_PIXELS)
+  const frames = Math.min(metadata.pages ?? 1, EMOJI_MAX_FRAMES)
+  const animated = frames > 1 && (metadata.format === 'gif' || metadata.format === 'webp')
+  // Every frame gets decoded, so the pixel budget covers all of them, not just the first.
+  const framePixels = metadata.width * (metadata.pageHeight ?? metadata.height)
+  if (animated && framePixels * frames > PROFILE_MAX_INPUT_PIXELS) {
+    throw new Error('Animation too large')
+  }
+  const image = animated
+    ? sharp(input, { limitInputPixels: PROFILE_MAX_INPUT_PIXELS, pages: frames, failOn: 'error' })
+    : still.rotate()
   const output = await image
-    .rotate()
     .resize({
       width: EMOJI_IMAGE_SIDE,
       height: EMOJI_IMAGE_SIDE,
       fit: 'contain',
       background: { r: 0, g: 0, b: 0, alpha: 0 },
     })
-    .webp({ quality: 90 })
+    .webp({ quality: animated ? 80 : 90 })
     .toBuffer()
-  return new Uint8Array(output)
+  return { image: new Uint8Array(output), animated }
 }

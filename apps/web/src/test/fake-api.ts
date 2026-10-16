@@ -405,10 +405,10 @@ export const createFakeApi = ({ user = null, registrationMode = 'open' }: FakeAp
     },
     emojis: {
       create: vi.fn(async (_guildId: string, name: string) => ({
-        emoji: { id: '600', name, url: '/api/v1/emojis/600.webp' },
+        emoji: { id: '600', name, url: '/api/v1/emojis/600.webp', animated: false },
       })),
       rename: vi.fn(async (_guildId: string, emojiId: string, name: string) => ({
-        emoji: { id: emojiId, name, url: `/api/v1/emojis/${emojiId}.webp` },
+        emoji: { id: emojiId, name, url: `/api/v1/emojis/${emojiId}.webp`, animated: false },
       })),
       delete: vi.fn(async () => undefined),
     },

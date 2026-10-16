@@ -88,6 +88,14 @@ export const EmojisSection = ({ guild }: { guild: GuildDetail }) => {
             <li key={emoji.id} className="flex items-center gap-3 rounded-md bg-main p-2">
               <CustomEmoji id={emoji.id} name={emoji.name} className="size-8" />
               <span className="flex-1 truncate font-mono text-sm">:{emoji.name}:</span>
+              {emoji.animated ? (
+                <span
+                  title={t('emojis.animated')}
+                  className="rounded bg-elevated px-1.5 py-0.5 text-xs font-semibold text-muted"
+                >
+                  GIF
+                </span>
+              ) : null}
               <Button
                 variant="secondary"
                 fullWidth={false}

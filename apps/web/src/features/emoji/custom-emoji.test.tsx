@@ -5,7 +5,8 @@ import { createFakeApi, testGuild, testHistory, testMessage, testUser } from '..
 import { renderApp } from '../../test/render-app'
 
 const GENERAL_URL = `/channels/${testGuild.id}/503`
-const cat = { id: '600', name: 'cat', url: '/api/v1/emojis/600.webp' }
+const cat = { id: '600', name: 'cat', url: '/api/v1/emojis/600.webp', animated: false }
+const dance = { id: '602', name: 'dance', url: '/api/v1/emojis/602.webp', animated: true }
 
 const withEmoji = () => {
   const api = createFakeApi({ user: testUser })
@@ -55,7 +56,7 @@ describe('server emoji', () => {
   it('are managed in the server settings', async () => {
     const api = withEmoji()
     api.emojis.create.mockResolvedValue({
-      emoji: { id: '601', name: 'party', url: '/api/v1/emojis/601.webp' },
+      emoji: { id: '601', name: 'party', url: '/api/v1/emojis/601.webp', animated: false },
     })
     const { user } = renderApp(`/server-settings/${testGuild.id}/emojis`, { api })
 
@@ -69,5 +70,27 @@ describe('server emoji', () => {
 
     await user.click(within(list).getByRole('button', { name: 'Удалить :cat:' }))
     await waitFor(() => expect(api.emojis.delete).toHaveBeenCalledWith(testGuild.id, '600'))
+  })
+
+  it('keep animated ones animated: written <a:name:id>, marked in the settings', async () => {
+    const api = createFakeApi({ user: testUser })
+    api.guilds.get.mockResolvedValue({ guild: { ...testGuild, emojis: [cat, dance] } })
+    const { user } = renderApp(GENERAL_URL, { api })
+
+    const composer = await screen.findByRole('textbox', { name: 'Сообщение в #общий' })
+    await user.type(composer, ':dance:{Enter}')
+    await waitFor(() =>
+      expect(api.messages.create).toHaveBeenCalledWith(
+        '503',
+        expect.objectContaining({ content: '<a:dance:602>' }),
+      ),
+    )
+
+    renderApp(`/server-settings/${testGuild.id}/emojis`, { api })
+    const list = await screen.findByRole('list', { name: 'Эмодзи сервера' })
+    const row = within(list).getByText(':dance:').closest('li') as HTMLElement
+    expect(within(row).getByText('GIF')).toBeVisible()
+    const still = within(list).getByText(':cat:').closest('li') as HTMLElement
+    expect(within(still).queryByText('GIF')).toBeNull()
   })
 })

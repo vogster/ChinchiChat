@@ -12,6 +12,7 @@ describe('server emoji', () => {
 
   it('are written <:name:id>', () => {
     expect(customEmojiText({ name: 'cat', id: '123' })).toBe('<:cat:123>')
+    expect(customEmojiText({ name: 'dance', id: '9', animated: true })).toBe('<a:dance:9>')
     expect(customEmojiId('<:cat:123>')).toBe('123')
     expect(customEmojiId('<a:dance:9>')).toBe('9')
     expect(customEmojiId('😀')).toBeNull()

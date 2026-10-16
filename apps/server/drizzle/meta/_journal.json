@@ -344,6 +344,13 @@
       "when": 1792124354965,
       "tag": "0048_forwarded_messages",
       "breakpoints": true
+    },
+    {
+      "idx": 49,
+      "version": "7",
+      "when": 1792125838552,
+      "tag": "0049_animated_emoji",
+      "breakpoints": true
     }
   ]
 }
