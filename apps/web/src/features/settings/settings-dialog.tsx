@@ -76,12 +76,12 @@ export const SettingsDialog = () => {
           aria-describedby={undefined}
           className="fixed inset-0 z-40 flex flex-col overflow-hidden bg-main text-text shadow-2xl focus:outline-none md:inset-auto md:top-1/2 md:left-1/2 md:h-[min(85vh,56rem)] md:w-[min(72rem,calc(100%-4rem))] md:-translate-x-1/2 md:-translate-y-1/2 md:flex-row md:rounded-lg"
         >
-          <aside className="shrink-0 bg-sidebar md:w-56 md:overflow-y-auto md:py-8 md:pl-4">
+          <aside className="shrink-0 bg-sidebar pr-14 md:w-56 md:overflow-y-auto md:py-8 md:pr-0 md:pl-4">
             <nav aria-label={t('settings.title')} className="flex flex-col">
               <RadixDialog.Title className="hidden truncate px-2.5 pb-1 text-xs font-bold tracking-wide text-muted uppercase md:block">
                 {t('settings.title')}
               </RadixDialog.Title>
-              <div className="flex gap-1 overflow-x-auto p-2 pr-14 md:flex-col md:overflow-visible md:p-0 md:pr-2">
+              <div className="flex gap-1 overflow-x-auto p-2 md:flex-col md:overflow-visible md:p-0 md:pr-2">
                 <SettingsNav current={settings} />
               </div>
             </nav>
