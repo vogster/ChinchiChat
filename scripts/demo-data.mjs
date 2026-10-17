@@ -69,7 +69,7 @@ const verifyEmail = async (email) => {
     const { messages } = await (await fetch(`${MAILPIT}/search?query=${query}`)).json()
     if (messages.length > 0) {
       const { Text } = await (await fetch(`${MAILPIT}/message/${messages[0].ID}`)).json()
-      const token = /verify-email\?token=([A-Za-z0-9_-]+)/.exec(Text)?.[1]
+      const token = /verify-email[?#]token=([A-Za-z0-9_-]+)/.exec(Text)?.[1]
       if (token) return call(null, 'POST', '/auth/verify-email', { token })
     }
     await sleep(500)
