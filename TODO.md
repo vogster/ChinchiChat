@@ -359,7 +359,7 @@
 - [ ] [#10](https://github.com/vogster/ChinchiChat/issues/10) E2EE: плашка «устройство не подтверждено» не пропадает после подтверждения
 - [ ] [#11](https://github.com/vogster/ChinchiChat/issues/11) Настройки → Администрирование: кнопка «Назад» вместо крестика
 - [ ] [#12](https://github.com/vogster/ChinchiChat/issues/12) ЛС: плашка «1 новое сообщение» не реагирует на «Перейти» и не исчезает
-- [ ] [#13](https://github.com/vogster/ChinchiChat/issues/13) Попап выбора эмодзи для реакции уезжает влево при выборе
+- [x] [#13](https://github.com/vogster/ChinchiChat/issues/13) Попап выбора эмодзи для реакции уезжает влево при выборе
 - [ ] [#14](https://github.com/vogster/ChinchiChat/issues/14) 2FA: кнопка «Скачать» для резервных кодов
 - [ ] [#15](https://github.com/vogster/ChinchiChat/issues/15) Настройки пользователя — модальное окно вместо полноэкранной страницы
 - [ ] [#16](https://github.com/vogster/ChinchiChat/issues/16) Возможность удалять (скрывать) личные чаты

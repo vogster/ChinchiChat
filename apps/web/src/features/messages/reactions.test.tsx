@@ -67,6 +67,20 @@ describe('reactions', () => {
     expect(reactionButton('😂')).toHaveAccessibleName('😂: 1, вы среди них')
   })
 
+  it('keeps the toolbar, the picker’s anchor, shown while the picker is open', async () => {
+    const { user } = renderApp(CHANNEL_URL, { api: withReactions() })
+    await screen.findByText('праздник')
+
+    await user.hover(row())
+    const toolbar = within(row()).getByRole('toolbar')
+    await user.click(within(toolbar).getByRole('button', { name: 'Добавить реакцию' }))
+    await screen.findByRole('dialog', { name: 'Добавить реакцию' })
+    // The panel lives in a portal: moving into it leaves the message's hover and focus.
+    await user.unhover(row())
+
+    expect(toolbar).toHaveAttribute('data-open')
+  })
+
   it('follows reactions of others live, without double-counting my own', async () => {
     const api = withReactions()
     const { user, gateway } = renderApp(CHANNEL_URL, { api })

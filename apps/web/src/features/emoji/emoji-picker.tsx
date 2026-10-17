@@ -23,6 +23,7 @@ export interface EmojiPickerProps {
   readonly trigger: ReactNode
   readonly triggerClassName?: string
   readonly onSelect: (emoji: string) => void
+  readonly onOpenChange?: (open: boolean) => void
   /** A row of one-click choices above the full list. */
   readonly quick?: readonly QuickEmoji[]
   /** The server's own emoji, listed first under its name. */
@@ -38,11 +39,16 @@ export const EmojiPicker = ({
   trigger,
   triggerClassName = '',
   onSelect,
+  onOpenChange,
   quick = [],
   custom = null,
 }: EmojiPickerProps) => {
   const { t, i18n } = useTranslation()
-  const [open, setOpen] = useState(false)
+  const [open, setOpenState] = useState(false)
+  const setOpen = (next: boolean) => {
+    setOpenState(next)
+    onOpenChange?.(next)
+  }
   const [query, setQuery] = useState('')
   const [group, setGroup] = useState<number>(EMOJI_GROUPS[0].id)
   const { data: entries = [], isPending } = useQuery({

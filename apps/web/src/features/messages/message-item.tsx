@@ -157,6 +157,8 @@ export const MessageItem = ({
   // Encrypted messages stay in their conversation: the server can't copy what it can't read.
   const canForward = !message.pending && !message.system && !message.ciphertext
   const [forwarding, setForwarding] = useState(false)
+  // The picker opens in a portal: hovering it would otherwise hide its own anchor.
+  const [picking, setPicking] = useState(false)
   const showActions =
     !message.pending &&
     !editing &&
@@ -350,7 +352,8 @@ export const MessageItem = ({
         <div
           role="toolbar"
           aria-label={t('messages.actions')}
-          className="absolute -top-3 right-4 hidden rounded-md border border-border bg-main shadow group-focus-within:flex group-hover:flex"
+          data-open={picking ? '' : undefined}
+          className="absolute -top-3 right-4 hidden rounded-md border border-border bg-main shadow group-focus-within:flex group-hover:flex data-open:flex"
         >
           {canReact ? (
             <EmojiPicker
@@ -358,6 +361,7 @@ export const MessageItem = ({
               trigger={<SmilePlus aria-hidden className="size-4" />}
               triggerClassName="p-1.5 text-muted hover:text-text"
               onSelect={onToggleReaction}
+              onOpenChange={setPicking}
               custom={customEmojis ?? null}
               quick={QUICK_REACTIONS.map((emoji) => ({
                 emoji,
