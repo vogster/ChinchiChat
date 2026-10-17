@@ -62,6 +62,35 @@ describe('profile card', () => {
     await waitFor(() => expect(router.state.location.pathname).toBe(`/channels/@me/${testDm.id}`))
   })
 
+  it('does not offer to message them from the DM you already share', async () => {
+    const api = createFakeApi({ user: testUser })
+    api.dms.list.mockResolvedValue({ channels: [testDm] })
+    const { user } = renderApp(`/channels/@me/${testDm.id}`, { api })
+
+    const history = await screen.findByRole('list', { name: 'Переписка с Боб' })
+    await user.click(
+      (await within(history).findAllByRole('button', { name: 'Боб' }))[0] as HTMLElement,
+    )
+
+    const profile = await card('Боб')
+    expect(
+      await within(profile).findByRole('button', { name: /Зашифрованная беседа/ }),
+    ).toBeVisible()
+    expect(within(profile).queryByRole('button', { name: 'Написать' })).toBeNull()
+  })
+
+  it('in an encrypted DM, offers the plain one but not another encrypted one', async () => {
+    const api = createFakeApi({ user: testUser })
+    api.dms.list.mockResolvedValue({ channels: [{ ...testDm, encrypted: true }] })
+    const { user } = renderApp(`/channels/@me/${testDm.id}`, { api })
+
+    await user.click((await screen.findAllByRole('button', { name: 'Боб' })).at(-1) as HTMLElement)
+
+    const profile = await card('Боб')
+    expect(await within(profile).findByRole('button', { name: 'Написать' })).toBeVisible()
+    expect(within(profile).queryByRole('button', { name: /Зашифрованная беседа/ })).toBeNull()
+  })
+
   it('offers to add strangers as friends, and to block them', async () => {
     const api = createFakeApi({ user: testUser })
     api.users.profile.mockImplementation(async (userId: string) => ({

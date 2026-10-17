@@ -10,6 +10,7 @@ import { PresenceDot } from '../../components/ui/presence-dot'
 import { useApi } from '../../lib/api-context'
 import { useCurrentUser } from '../auth/use-auth-actions'
 import { useOpenDm } from '../dms/use-dm-actions'
+import { useOpenDmWith } from '../dms/use-open-dm-with'
 import { BetaBadge } from '../e2ee/beta-badge'
 import { useRelationshipActions } from '../friends/use-relationship-actions'
 import { guildQueryOptions, guildsQueryOptions } from '../guilds/queries'
@@ -50,6 +51,8 @@ const ProfileActions = ({
   const queryClient = useQueryClient()
   const me = useCurrentUser()
   const openDm = useOpenDm()
+  // Opened from your DM with them: the matching button would lead right back here.
+  const shared = useOpenDmWith(profile.user.id)
   const actions = useRelationshipActions()
   const { permissions, outranks } = useOutranks(guildId)
   const self = profile.user.id === me?.id
@@ -84,12 +87,12 @@ const ProfileActions = ({
   const { relationship } = profile
   return (
     <div className="flex flex-col gap-2">
-      {relationship !== 'blocked' ? (
+      {relationship !== 'blocked' && (!shared || shared.encrypted) ? (
         <Button onClick={() => openDm.mutate([profile.user.id])} pending={openDm.isPending}>
           {t('friends.message')}
         </Button>
       ) : null}
-      {relationship !== 'blocked' ? (
+      {relationship !== 'blocked' && !shared?.encrypted ? (
         <Button
           variant="secondary"
           onClick={() => openDm.mutate({ ids: [profile.user.id], encrypted: true })}
