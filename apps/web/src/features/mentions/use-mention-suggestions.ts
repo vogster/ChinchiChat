@@ -1,9 +1,22 @@
 import { useState } from 'react'
 
-import { applyMention, findMentionQuery, matchMentions } from './mention-query'
+import { applyMention, encodeMentions, findMentionQuery, matchMentions } from './mention-query'
 
-import type { MentionCandidate } from './mention-query'
+import type { MentionCandidate, PickedMention } from './mention-query'
 import type { KeyboardEvent, RefObject } from 'react'
+
+/** Two people shown alike would be one name in the text box: theirs falls back to the username. */
+const uniqueDisplay = (
+  candidate: MentionCandidate,
+  candidates: readonly MentionCandidate[],
+): MentionCandidate => {
+  const clash = candidates.some(
+    (other) => other.display === candidate.display && other.text !== candidate.text,
+  )
+  return clash && candidate.kind === 'user' && candidate.detail
+    ? { ...candidate, display: `@${candidate.detail}` }
+    : candidate
+}
 
 /**
  * Mention suggestions for a textarea: what is typed after `@` or `#` before the caret, the
@@ -24,6 +37,8 @@ export const useMentionSuggestions = ({
   const [active, setActive] = useState(0)
   /** Esc hides the list until the text changes. */
   const [dismissed, setDismissed] = useState<string | null>(null)
+  /** Picked mentions show as names; `encode` turns them back into tokens for sending. */
+  const [picked, setPicked] = useState<readonly PickedMention[]>([])
 
   const query = candidates && dismissed !== value ? findMentionQuery(value, caret) : null
   const matches = query && candidates ? matchMentions(candidates, query) : []
@@ -37,7 +52,11 @@ export const useMentionSuggestions = ({
 
   const pick = (candidate: MentionCandidate) => {
     if (!query) return
-    const next = applyMention(value, query, candidate)
+    const next = applyMention(value, query, uniqueDisplay(candidate, candidates ?? []))
+    setPicked((current) => [
+      ...current.filter((mention) => mention.display !== next.picked.display),
+      next.picked,
+    ])
     onChange(next.value)
     setCaret(next.caret)
     requestAnimationFrame(() => {
@@ -64,5 +83,8 @@ export const useMentionSuggestions = ({
     return true
   }
 
-  return { matches, active: index, track, pick, onKey }
+  const encode = (text: string) => encodeMentions(text, picked)
+  const reset = () => setPicked([])
+
+  return { matches, active: index, track, pick, onKey, encode, reset }
 }

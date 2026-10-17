@@ -4,6 +4,8 @@ export interface MentionCandidate {
   readonly kind: 'user' | 'role' | 'everyone' | 'channel'
   /** What goes into the message: `<@id>`, `<@&id>`, `<#id>`, `@everyone`. */
   readonly text: string
+  /** What the writer sees in the text box instead: `@name`, `#channel`. */
+  readonly display: string
   /** How it is shown in the list. */
   readonly label: string
   /** A hint after the label: the username, "role", the channel's category. */
@@ -64,15 +66,45 @@ export const matchMentions = (
   return [...starts, ...contains].slice(0, MAX_MENTION_SUGGESTIONS)
 }
 
-/** The text with the typed query replaced by the mention, and where the caret goes next. */
+/** A mention picked from the list: its readable name in the text box and its token. */
+export interface PickedMention {
+  readonly display: string
+  readonly text: string
+}
+
+/** The text with the typed query replaced by the mention's name, and where the caret goes next. */
 export const applyMention = (
   value: string,
   { start, end }: MentionQuery,
-  candidate: MentionCandidate,
-): { value: string; caret: number } => {
-  const inserted = `${candidate.text} `
+  candidate: Pick<MentionCandidate, 'display' | 'text'>,
+): { value: string; caret: number; picked: PickedMention } => {
+  const inserted = `${candidate.display} `
   return {
     value: value.slice(0, start) + inserted + value.slice(end).replace(/^ /, ''),
     caret: start + inserted.length,
+    picked: { display: candidate.display, text: candidate.text },
   }
+}
+
+const CODE = /(```[\s\S]*?```|`[^`\n]*`)/u
+const escapeRegExp = (text: string) => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+
+/**
+ * The text as it is sent: every picked name, still whole and on its own, becomes its token.
+ * Names typed by hand, edited ones and those inside code stay as written.
+ */
+export const encodeMentions = (value: string, picked: readonly PickedMention[]): string => {
+  const tokens = new Map(picked.map((mention) => [mention.display, mention.text]))
+  if (tokens.size === 0) return value
+  // Longest first: "@Борис Петров" before "@Борис".
+  const names = [...tokens.keys()].toSorted((a, b) => b.length - a.length).map(escapeRegExp)
+  const pattern = new RegExp(`(^|[^\\p{L}\\p{N}_@#])(${names.join('|')})(?![\\p{L}\\p{N}_])`, 'gu')
+  return value
+    .split(CODE)
+    .map((part, index) =>
+      index % 2 === 1
+        ? part
+        : part.replace(pattern, (_, before: string, name: string) => before + tokens.get(name)),
+    )
+    .join('')
 }

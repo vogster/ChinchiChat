@@ -162,8 +162,9 @@ export const Composer = ({
     if (runCommand()) return
     const empty = value.trim() === '' && (attach?.count ?? 0) === 0
     if (empty || value.length > MESSAGE_MAX_LENGTH || (slowmode?.wait ?? 0) > 0) return
-    onSend(value)
+    onSend(mention.encode(value))
     setValue('')
+    mention.reset()
   }
 
   /** Arrows move through the suggested commands; Enter or Tab picks one. */

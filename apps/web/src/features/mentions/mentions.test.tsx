@@ -1,7 +1,7 @@
 import { screen, waitFor, within } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 
-import { createFakeApi, testDm, testGuild, testUser } from '../../test/fake-api'
+import { createFakeApi, testDm, testGuild, testMembers, testUser } from '../../test/fake-api'
 import { renderApp } from '../../test/render-app'
 
 const CHANNEL_URL = `/channels/${testGuild.id}/503`
@@ -23,13 +23,55 @@ describe('mention suggestions', () => {
     )
     await user.keyboard('{Enter}')
 
-    expect(box).toHaveValue('Привет <@200> ')
+    expect(box).toHaveValue('Привет @Боб ')
     expect(screen.queryByRole('listbox', { name: 'Упоминания' })).not.toBeInTheDocument()
     await user.type(box, 'как дела?{Enter}')
     await waitFor(() =>
       expect(api.messages.create).toHaveBeenCalledWith(
         '503',
         expect.objectContaining({ content: 'Привет <@200> как дела?' }),
+      ),
+    )
+  })
+
+  it('sends the name as plain text once it has been edited', async () => {
+    const api = createFakeApi({ user: testUser })
+    const { user } = renderApp(CHANNEL_URL, { api })
+    const box = await composer()
+
+    await user.type(box, '@бо')
+    await user.keyboard('{Enter}')
+    await user.type(box, '{Backspace}{Backspace}ыч{Enter}')
+
+    await waitFor(() =>
+      expect(api.messages.create).toHaveBeenCalledWith(
+        '503',
+        expect.objectContaining({ content: '@Боыч' }),
+      ),
+    )
+  })
+
+  it('tells apart two people with the same name by their username', async () => {
+    const api = createFakeApi({ user: testUser })
+    const namesake = {
+      ...(testMembers[1] as (typeof testMembers)[number]),
+      user: { id: '201', username: 'bobby', displayName: 'Боб', avatarUrl: null },
+    }
+    api.guilds.members.mockResolvedValue({ members: [...testMembers, namesake] })
+    const { user } = renderApp(CHANNEL_URL, { api })
+    const box = await composer()
+
+    await user.type(box, '@bobb')
+    await user.keyboard('{Enter}')
+    expect(box).toHaveValue('@bobby ')
+    await user.type(box, '@бо')
+    await user.keyboard('{Enter}')
+    await user.keyboard('{Enter}')
+
+    await waitFor(() =>
+      expect(api.messages.create).toHaveBeenCalledWith(
+        '503',
+        expect.objectContaining({ content: '<@201> <@200> ' }),
       ),
     )
   })
@@ -59,7 +101,7 @@ describe('mention suggestions', () => {
     expect(within(list).queryByRole('option', { name: /Общий/ })).not.toBeInTheDocument()
     await user.click(within(list).getByRole('option', { name: /мемы/ }))
 
-    expect(box).toHaveValue('см. <#504> ')
+    expect(box).toHaveValue('см. #мемы ')
   })
 
   it('offer the people of a DM', async () => {
@@ -71,6 +113,6 @@ describe('mention suggestions', () => {
     await user.type(box, '@')
     await user.keyboard('{Tab}')
 
-    expect(box).toHaveValue(`<@${testDm.recipients[0]?.id}> `)
+    expect(box).toHaveValue('@Боб ')
   })
 })
