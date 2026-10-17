@@ -1314,6 +1314,8 @@
       "invalid": "That doesn't look like a recovery key — check you typed all of it.",
       "wrong": "This key doesn't match this account.",
       "failed": "That didn't work — try again.",
+      "hideMissing": "Hide this notice",
+      "showMissing": "Why old messages are unavailable",
       "missingLabel": "Old messages unavailable",
       "missing": "Messages from before this device joined aren't available on it. Your recovery key brings them back.",
       "enter": "Enter recovery key",

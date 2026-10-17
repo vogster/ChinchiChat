@@ -1,4 +1,4 @@
-import { KeyRound } from 'lucide-react'
+import { KeyRound, X } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
@@ -6,6 +6,7 @@ import { Button } from '../../components/ui/button'
 import { ApprovalEmoji } from './approval-dialog'
 import { EnterRecoveryKeyDialog, SaveRecoveryKeyDialog } from './recovery-dialogs'
 import { useApprovals } from './use-approvals'
+import { useMissingHistoryHint } from './use-missing-history-hint'
 import { recoveryReminderSnoozed, snoozeRecoveryReminder, useRecovery } from './use-recovery'
 
 import type { ApprovalView } from './device-approval'
@@ -33,6 +34,7 @@ export const RecoveryPrompt = ({ ready }: { ready: boolean }) => {
   const { views, approvals } = useApprovals()
   const [snoozed, setSnoozed] = useState(recoveryReminderSnoozed)
   const [entering, setEntering] = useState(false)
+  const hint = useMissingHistoryHint()
   const approval = views.find((view) => view.role === 'new')
   const { refresh } = recovery
 
@@ -58,6 +60,11 @@ export const RecoveryPrompt = ({ ready }: { ready: boolean }) => {
   }
 
   const asking = approval && approval.state !== 'declined'
+  if (hint.hidden && !asking) {
+    return entering ? (
+      <EnterRecoveryKeyDialog recovery={recovery} onOpenChange={setEntering} />
+    ) : null
+  }
   return (
     <>
       <div
@@ -66,21 +73,70 @@ export const RecoveryPrompt = ({ ready }: { ready: boolean }) => {
         className="mx-4 mt-2 flex items-start gap-3 rounded-md border border-border bg-elevated px-3 py-2 text-sm"
       >
         <KeyRound aria-hidden className="mt-0.5 size-4 shrink-0 text-muted" />
-        <div className="min-w-0 flex-1">
+        <div className="flex min-w-0 flex-1 flex-col gap-2">
           {approval ? <ApprovalProgress view={approval} /> : <p>{t('e2ee.recovery.missing')}</p>}
-        </div>
-        <div className="flex shrink-0 flex-wrap justify-end gap-2">
-          {asking || !approvals ? null : (
-            <Button variant="secondary" onClick={() => void approvals.request()}>
-              {t('e2ee.approval.request')}
+          <div className="flex flex-wrap gap-2">
+            {asking || !approvals ? null : (
+              <Button
+                variant="secondary"
+                fullWidth={false}
+                onClick={() => void approvals.request()}
+              >
+                {t('e2ee.approval.request')}
+              </Button>
+            )}
+            <Button variant="secondary" fullWidth={false} onClick={() => setEntering(true)}>
+              {t('e2ee.recovery.enter')}
             </Button>
-          )}
-          <Button variant="secondary" onClick={() => setEntering(true)}>
-            {t('e2ee.recovery.enter')}
-          </Button>
+          </div>
         </div>
+        {asking ? null : (
+          // Lost key: no point repeating it. The chat header keeps a way back.
+          <button
+            type="button"
+            aria-label={t('e2ee.recovery.hideMissing')}
+            title={t('e2ee.recovery.hideMissing')}
+            onClick={() => {
+              if (approval) approvals?.dismiss(approval.approvalId)
+              hint.hide()
+            }}
+            className="shrink-0 rounded p-1 text-muted hover:text-text"
+          >
+            <X aria-hidden className="size-4" />
+          </button>
+        )}
       </div>
       {entering ? <EnterRecoveryKeyDialog recovery={recovery} onOpenChange={setEntering} /> : null}
     </>
+  )
+}
+
+/**
+ * In the chat header, once the notice above was hidden: the same explanation and actions come
+ * back from here.
+ */
+export const MissingHistoryButton = ({
+  ready,
+  className,
+}: {
+  ready: boolean
+  className: string
+}) => {
+  const { t } = useTranslation()
+  const recovery = useRecovery(ready)
+  const hint = useMissingHistoryHint()
+  const { views } = useApprovals()
+  const asking = views.some((view) => view.role === 'new' && view.state !== 'declined')
+  if (!recovery.loaded || recovery.key || !hint.hidden || asking) return null
+  return (
+    <button
+      type="button"
+      aria-label={t('e2ee.recovery.showMissing')}
+      title={t('e2ee.recovery.showMissing')}
+      onClick={hint.show}
+      className={className}
+    >
+      <KeyRound aria-hidden className="size-5" />
+    </button>
   )
 }

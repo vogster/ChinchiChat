@@ -22,7 +22,7 @@ import { useCurrentUser } from '../auth/use-auth-actions'
 import { BetaBadge } from '../e2ee/beta-badge'
 import { EncryptionNotice, EncryptionStatus } from '../e2ee/encryption-notice'
 import { LocalSearchPanel } from '../e2ee/local-search-panel'
-import { RecoveryPrompt } from '../e2ee/recovery-prompt'
+import { MissingHistoryButton, RecoveryPrompt } from '../e2ee/recovery-prompt'
 import { SafetyDialog } from '../e2ee/safety-dialog'
 import { SafetyWarning } from '../e2ee/safety-warning'
 import { useEncryptedChannel, useEncryptedConversation } from '../e2ee/use-encrypted-conversation'
@@ -93,6 +93,7 @@ export const DmView = ({ channel }: { channel: PrivateChannel }) => {
   const encryption = useEncryptedChannel(channel, me?.id)
   const encrypted = useEncryptedConversation(encryption)
   const safety = useSafety(encryption, encrypted.state === 'ready')
+  const keysReady = encrypted.state === 'ready' || encrypted.state === 'waiting'
   const canAttach = pending.enabled
 
   const isGroup = channel.type === 'group_dm'
@@ -179,6 +180,7 @@ export const DmView = ({ channel }: { channel: PrivateChannel }) => {
           </>
         ) : null}
         <span className={`${encryption ? '' : 'ml-auto '}flex gap-1`}>
+          {encryption ? <MissingHistoryButton ready={keysReady} className={headerButton} /> : null}
           {encryption ? (
             <button
               type="button"
@@ -348,9 +350,7 @@ export const DmView = ({ channel }: { channel: PrivateChannel }) => {
               <Alert tone="error">{pending.error}</Alert>
             </div>
           ) : null}
-          {encryption ? (
-            <RecoveryPrompt ready={encrypted.state === 'ready' || encrypted.state === 'waiting'} />
-          ) : null}
+          {encryption ? <RecoveryPrompt ready={keysReady} /> : null}
           {encryption && me ? (
             <SafetyWarning
               safety={safety}

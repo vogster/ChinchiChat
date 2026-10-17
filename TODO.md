@@ -365,7 +365,7 @@
 - [ ] [#16](https://github.com/vogster/ChinchiChat/issues/16) Возможность удалять (скрывать) личные чаты
 - [x] [#17](https://github.com/vogster/ChinchiChat/issues/17) ЛС: кнопка «Написать» в карточке профиля собеседника ничего не делает
 - [x] [#18](https://github.com/vogster/ChinchiChat/issues/18) Упоминание через @ вставляет в поле сырой токен <@id>
-- [ ] [#19](https://github.com/vogster/ChinchiChat/issues/19) E2EE: дать скрыть плашку «Сообщения до подключения этого устройства недоступны»
+- [x] [#19](https://github.com/vogster/ChinchiChat/issues/19) E2EE: дать скрыть плашку «Сообщения до подключения этого устройства недоступны» (скрытие запоминается на устройстве, вернуть — иконкой ключа в шапке беседы)
 - [ ] [#20](https://github.com/vogster/ChinchiChat/issues/20) Сообщения от неподтверждённого аккаунта не помечаются у собеседника
 - [x] [#21](https://github.com/vogster/ChinchiChat/issues/21) Настройки канала: в списке медленного режима показывается {{seconds}}
 - [ ] [#22](https://github.com/vogster/ChinchiChat/issues/22) Проверить работу каналов объявлений (публикация в подписанные каналы)
