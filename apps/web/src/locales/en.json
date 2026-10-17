@@ -47,6 +47,8 @@
     "save": "Save",
     "leave": "Leave group",
     "leaveText": "You can only come back if someone adds you again.",
+    "actions": "Actions: {{name}}",
+    "hide": "Hide",
     "remove": "Remove",
     "blocked": "You blocked this user. Unblock them to send a message.",
     "notFound": "Conversation not found",

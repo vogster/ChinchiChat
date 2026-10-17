@@ -12,6 +12,7 @@ import { formatMentionCount, useMentionCounts } from '../messages/mentions'
 import { isUnread, useReadStates } from '../messages/use-messages'
 import { CreateGroupDialog } from './dialogs/create-group-dialog'
 import { privateChannelName } from './dm-names'
+import { DmRowMenu } from './dm-row-menu'
 import { dmsQueryOptions } from './queries'
 
 import type { PrivateChannel } from '@chinchi/shared'
@@ -33,7 +34,7 @@ const DmRow = ({ channel }: { channel: PrivateChannel }) => {
   ].filter(Boolean)
 
   return (
-    <li>
+    <li className="group relative">
       <Link
         to="/channels/@me/$channelId"
         params={{ channelId: channel.id }}
@@ -56,12 +57,13 @@ const DmRow = ({ channel }: { channel: PrivateChannel }) => {
         {mentions > 0 ? (
           <span
             aria-hidden
-            className="ml-auto rounded-full bg-danger px-1.5 text-xs leading-4 font-bold text-danger-contrast"
+            className="ml-auto rounded-full bg-danger px-1.5 text-xs leading-4 font-bold text-danger-contrast group-focus-within:invisible group-hover:invisible"
           >
             {formatMentionCount(mentions)}
           </span>
         ) : null}
       </Link>
+      <DmRowMenu channel={channel} name={name} />
     </li>
   )
 }

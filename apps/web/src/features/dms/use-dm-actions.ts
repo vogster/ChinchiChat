@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { useNavigate } from '@tanstack/react-router'
+import { useNavigate, useParams } from '@tanstack/react-router'
 
 import { useApi } from '../../lib/api-context'
 import { removePrivateChannel, upsertPrivateChannel } from './dm-cache'
@@ -53,6 +53,21 @@ export const useRemoveFromGroup = (channel: PrivateChannel) => {
 }
 
 /** Leaving drops the group from the list at once and goes home. */
+/** Takes the DM off my list until its next message; leaves it if it is the one on screen. */
+export const useHideDm = (channelId: Snowflake) => {
+  const api = useApi()
+  const queryClient = useQueryClient()
+  const navigate = useNavigate()
+  const { channelId: shown } = useParams({ strict: false })
+  return useMutation({
+    mutationFn: () => api.dms.hide(channelId),
+    onSuccess: async () => {
+      removePrivateChannel(queryClient, channelId)
+      if (shown === channelId) await navigate({ to: '/' })
+    },
+  })
+}
+
 export const useLeaveGroup = (channelId: Snowflake, myId: Snowflake | undefined) => {
   const api = useApi()
   const queryClient = useQueryClient()

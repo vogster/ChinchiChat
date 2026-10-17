@@ -731,6 +731,7 @@ export const createFakeApi = ({ user = null, registrationMode = 'open' }: FakeAp
       })),
       addRecipient: vi.fn(async () => undefined),
       removeRecipient: vi.fn(async () => undefined),
+      hide: vi.fn(async () => undefined),
     },
     pins: {
       list: vi.fn(async () => ({ messages: [] as Message[] })),
