@@ -87,4 +87,20 @@ describe('approving a new device', () => {
       ).not.toBeInTheDocument(),
     )
   })
+
+  it('in another tab of the new device: the banner goes once the device is approved', async () => {
+    const { gateway, e2ee } = renderApp(DM_PATH, { api: withEncryptedDm() })
+    e2ee.recovery.key.mockResolvedValue(null)
+    await screen.findByRole('status', { name: 'Старые сообщения недоступны' })
+
+    // The tab that asked got the keys; this one only hears that the device is approved now.
+    e2ee.recovery.key.mockResolvedValue(TEST_RECOVERY_KEY)
+    act(() => gateway.emit('E2EE_DEVICES_UPDATE', { userId: testUser.id }))
+
+    await waitFor(() =>
+      expect(
+        screen.queryByRole('status', { name: 'Старые сообщения недоступны' }),
+      ).not.toBeInTheDocument(),
+    )
+  })
 })

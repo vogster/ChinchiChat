@@ -88,4 +88,59 @@ describe('history backup', () => {
     expect(await fresh.recovery.useKey('ABCD-1234')).toBe('invalid')
     expect(await fresh.recovery.useKey(wrongKey)).toBe('wrong')
   })
+
+  it('holds the recovery key before the server announces the device as approved', async () => {
+    const { client, delivery } = setup()
+    const laptop = client(ALICE, 'Ноутбук')
+    await laptop.ready()
+    const key = (await laptop.recovery.key()) as string
+
+    // Other tabs of this browser look for the key when the approval is announced.
+    const store = createMemoryStore()
+    const api = delivery.apiFor(ALICE)
+    let keyWhenSigned: string | null = null
+    const fresh = createE2eeClient({
+      api: {
+        ...api,
+        e2ee: {
+          ...api.e2ee,
+          signDevice: async (deviceId, signature) => {
+            keyWhenSigned = (await store.get<{ key: string }>('recovery'))?.key ?? null
+            return api.e2ee.signDevice(deviceId, signature)
+          },
+        },
+      },
+      store,
+      userId: ALICE,
+      deviceName: 'Новый браузер',
+    })
+
+    expect(await fresh.recovery.useKey(key)).toBe('ok')
+    expect(keyWhenSigned).toBe(key)
+  })
+
+  it('forgets the recovery key again when the device could not be approved', async () => {
+    const { client, delivery } = setup()
+    const laptop = client(ALICE, 'Ноутбук')
+    await laptop.ready()
+    const key = (await laptop.recovery.key()) as string
+    const api = delivery.apiFor(ALICE)
+    const fresh = createE2eeClient({
+      api: {
+        ...api,
+        e2ee: {
+          ...api.e2ee,
+          signDevice: async () => {
+            throw new Error('offline')
+          },
+        },
+      },
+      store: createMemoryStore(),
+      userId: ALICE,
+      deviceName: 'Новый браузер',
+    })
+
+    await expect(fresh.recovery.useKey(key)).rejects.toThrow('offline')
+    expect(await fresh.recovery.key()).toBeNull()
+  })
 })

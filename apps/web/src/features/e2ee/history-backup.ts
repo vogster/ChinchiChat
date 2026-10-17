@@ -163,12 +163,19 @@ export const createHistoryBackup = ({ api, store, crossSigning }: HistoryBackupD
       ])
       const userKey = backup ? await openUserKey(keys, backup.userKey) : null
       if (!backup || !userKey || userKey.publicKey !== current?.publicKey) return 'wrong'
-      await crossSigning.adopt(userKey, device)
+      // Kept first: adopting announces the device as approved, and other tabs of this browser
+      // look for the key as soon as they hear it.
       await store.set(RECOVERY, {
         key: formatRecoveryKey(raw),
         version: backup.version,
         saved: true,
       } satisfies StoredRecovery)
+      try {
+        await crossSigning.adopt(userKey, device)
+      } catch (error) {
+        await store.delete(RECOVERY)
+        throw error
+      }
       return 'ok'
     },
 

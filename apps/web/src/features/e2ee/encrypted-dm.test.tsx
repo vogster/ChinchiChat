@@ -69,6 +69,25 @@ describe('encrypted conversations', () => {
     expect(e2ee.open).toHaveBeenCalledWith({ id: encryptedDm.id, memberIds: [testUser.id, '200'] })
   })
 
+  it('read again what this device could not once its keys change (approved elsewhere)', async () => {
+    const { gateway, e2ee } = renderApp(URL, { api: withEncryptedDm() })
+    const unreadable = '1 сообщение отправлено до подключения этого устройства и недоступно на нём'
+    expect(await screen.findByText(unreadable)).toBeVisible()
+
+    // The history backup opens now: the old message is there.
+    e2ee.read.mockImplementation(async (_channel, message) => ({
+      payload: {
+        v: 1,
+        text: message.id === '1300' ? 'Старый секрет' : 'Секретная встреча в пятницу',
+      },
+      sender: { kind: 'verified' },
+    }))
+    act(() => gateway.emit('E2EE_DEVICES_UPDATE', { userId: testUser.id }))
+
+    expect(await screen.findByText('Старый секрет')).toBeVisible()
+    expect(screen.queryByText(unreadable)).not.toBeInTheDocument()
+  })
+
   it('show who really signed a message when the server names someone else', async () => {
     const api = createFakeApi({ user: testUser })
     api.dms.list.mockResolvedValue({ channels: [encryptedDm] })

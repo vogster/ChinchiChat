@@ -1,8 +1,8 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { useCallback } from 'react'
+import { useCallback, useEffect } from 'react'
 
 import { useCurrentUser } from '../auth/use-auth-actions'
-import { useAnyE2eeClient } from './e2ee-context'
+import { useAnyE2eeClient, useE2ee } from './e2ee-context'
 
 import type { UseKeyResult } from './history-backup'
 
@@ -48,6 +48,12 @@ export const useRecovery = (enabled = true) => {
     () => queryClient.invalidateQueries({ queryKey: recoveryKey }),
     [queryClient],
   )
+  const { revision } = useE2ee()
+
+  // Devices changed: this one may have been approved in another tab, which kept the key here.
+  useEffect(() => {
+    if (revision > 0) void refresh()
+  }, [revision, refresh])
 
   return {
     loaded: data !== undefined,

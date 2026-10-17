@@ -21,14 +21,22 @@ export const useDecryptedMessages = (
   messages: readonly MessageItem[],
 ): readonly MessageItem[] => {
   const { t } = useTranslation()
-  const { client } = useE2ee()
+  const { client, revision } = useE2ee()
   const [read, setRead] = useState<ReadonlyMap<string, ReadMessage | null>>(new Map())
   // Asked already (answers may still be on their way): each message is read once.
   const asked = useRef(new Set<string>())
+  // Read as unreadable: asked again when the keys change (the device was approved meanwhile).
+  const unreadable = useRef(new Set<string>())
+  const seenRevision = useRef(revision)
   const reactionsOf = useDecryptedReactions(channel, messages)
 
   useEffect(() => {
     if (!channel || !client) return
+    if (seenRevision.current !== revision) {
+      seenRevision.current = revision
+      for (const key of unreadable.current) asked.current.delete(key)
+      unreadable.current.clear()
+    }
     for (const message of messages) {
       const key = keyOf(message)
       if (!message.ciphertext || message.pending || asked.current.has(key)) continue
@@ -43,10 +51,11 @@ export const useDecryptedMessages = (
         })
         .catch(() => null)
         .then((result) => {
+          if (!result) unreadable.current.add(key)
           setRead((known) => new Map(known).set(key, result))
         })
     }
-  }, [channel, client, messages])
+  }, [channel, client, messages, revision])
 
   if (!channel) return messages
   /** The server can't quote an encrypted message: the quote comes from what was decrypted here. */
