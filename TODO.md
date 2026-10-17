@@ -352,7 +352,28 @@
 
 ---
 
-## 👉 Фаза 23 — Mobile (Expo, v0.16)
+## 👉 Багфиксы v0.15.x
+
+Первый ручной прогон приложения после v0.15; подробности — в issues.
+
+- [ ] [#10](https://github.com/vogster/ChinchiChat/issues/10) E2EE: плашка «устройство не подтверждено» не пропадает после подтверждения
+- [ ] [#11](https://github.com/vogster/ChinchiChat/issues/11) Настройки → Администрирование: кнопка «Назад» вместо крестика
+- [ ] [#12](https://github.com/vogster/ChinchiChat/issues/12) ЛС: плашка «1 новое сообщение» не реагирует на «Перейти» и не исчезает
+- [ ] [#13](https://github.com/vogster/ChinchiChat/issues/13) Попап выбора эмодзи для реакции уезжает влево при выборе
+- [ ] [#14](https://github.com/vogster/ChinchiChat/issues/14) 2FA: кнопка «Скачать» для резервных кодов
+- [ ] [#15](https://github.com/vogster/ChinchiChat/issues/15) Настройки пользователя — модальное окно вместо полноэкранной страницы
+- [ ] [#16](https://github.com/vogster/ChinchiChat/issues/16) Возможность удалять (скрывать) личные чаты
+- [ ] [#17](https://github.com/vogster/ChinchiChat/issues/17) ЛС: кнопка «Написать» в карточке профиля собеседника ничего не делает
+- [ ] [#18](https://github.com/vogster/ChinchiChat/issues/18) Упоминание через @ вставляет в поле сырой токен <@id>
+- [ ] [#19](https://github.com/vogster/ChinchiChat/issues/19) E2EE: дать скрыть плашку «Сообщения до подключения этого устройства недоступны»
+- [ ] [#20](https://github.com/vogster/ChinchiChat/issues/20) Сообщения от неподтверждённого аккаунта не помечаются у собеседника
+- [ ] [#21](https://github.com/vogster/ChinchiChat/issues/21) Настройки канала: в списке медленного режима показывается {{seconds}}
+- [ ] [#22](https://github.com/vogster/ChinchiChat/issues/22) Проверить работу каналов объявлений (публикация в подписанные каналы)
+- [ ] [#23](https://github.com/vogster/ChinchiChat/issues/23) Нет уведомления о входящем запросе в друзья
+
+---
+
+## Фаза 23 — Mobile (Expo, v0.16)
 
 - [ ] Expo-приложение, переиспользование `sdk`, `state`, `markdown`
 - [ ] Spike: `@livekit/react-native` на iOS и Android
