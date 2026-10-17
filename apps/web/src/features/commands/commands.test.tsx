@@ -51,6 +51,19 @@ describe('slash commands', () => {
     expect(await composer()).toHaveValue('')
   })
 
+  it('picks up commands a bot registered while the channel was open', async () => {
+    const api = createFakeApi({ user: testUser })
+    api.commands.guild.mockResolvedValue({ commands: [] })
+    const { user } = renderApp(CHANNEL_URL, { api })
+    await screen.findByText('Как дела?')
+    await waitFor(() => expect(api.commands.guild).toHaveBeenCalled())
+
+    api.commands.guild.mockResolvedValue({ commands: [roll] })
+    await user.type(await composer(), '/r')
+
+    expect(await screen.findByRole('option', { name: /\/roll/ })).toBeVisible()
+  })
+
   it('passes a picked mention to the command as its token', async () => {
     const { api, user } = setup()
 

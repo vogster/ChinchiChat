@@ -9,7 +9,7 @@ export const guildCommandsKey = (guildId: Snowflake) => ['guilds', guildId, 'com
 /** Slash commands of the bots on a server, and running one in a channel. */
 export const useGuildCommands = (guildId: Snowflake, channelId: Snowflake) => {
   const api = useApi()
-  const { data: commands = [] } = useQuery({
+  const { data: commands = [], refetch } = useQuery({
     queryKey: guildCommandsKey(guildId),
     queryFn: async () => (await api.commands.guild(guildId)).commands,
     // Bots register commands at any time: fetch afresh whenever a channel opens.
@@ -19,5 +19,5 @@ export const useGuildCommands = (guildId: Snowflake, channelId: Snowflake) => {
     mutationFn: (input: { commandId: Snowflake; options: Record<string, string> }) =>
       api.interactions.invoke(channelId, input),
   })
-  return { commands, invoke }
+  return { commands, invoke, refresh: () => void refetch() }
 }

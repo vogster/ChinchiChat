@@ -10,26 +10,31 @@ test('change display name and password from settings', async ({ page }) => {
   await page.getByLabel('Пароль', { exact: true }).fill(user.password)
   await page.getByRole('button', { name: 'Продолжить' }).click()
 
+  // The settings open in a window over the chat.
   await page.getByRole('link', { name: 'Настройки пользователя' }).click()
-  await expect(page.getByRole('heading', { name: 'Моя учётная запись' })).toBeVisible()
-  await expect(page.getByText(user.email)).toBeVisible()
+  const settings = page.getByRole('dialog', { name: 'Настройки пользователя' })
+  await expect(settings.getByRole('heading', { name: 'Моя учётная запись' })).toBeVisible()
+  await expect(settings.getByText(user.email, { exact: true })).toBeVisible()
 
-  await page.getByRole('link', { name: 'Профиль' }).click()
-  await page.getByLabel('Отображаемое имя').fill('E2E Тестер')
-  await page.getByRole('button', { name: 'Сохранить' }).click()
-  await expect(page.getByText('Сохранено')).toBeVisible()
+  await settings.getByRole('link', { name: 'Профиль' }).click()
+  await settings.getByLabel('Отображаемое имя').fill('E2E Тестер')
+  await settings.getByRole('button', { name: 'Сохранить' }).click()
+  await expect(settings.getByText('Сохранено')).toBeVisible()
 
-  await page.getByRole('link', { name: 'Моя учётная запись' }).click()
-  await page.getByLabel('Текущий пароль').fill(user.password)
-  await page.getByLabel('Новый пароль', { exact: true }).fill('changed-password-123')
-  await page.getByLabel('Повторите новый пароль').fill('changed-password-123')
-  await page.getByRole('button', { name: 'Сменить пароль' }).click()
-  await expect(page.getByText(/Пароль изменён/)).toBeVisible()
+  await settings.getByRole('link', { name: 'Моя учётная запись' }).click()
+  await settings.getByLabel('Текущий пароль').fill(user.password)
+  await settings.getByLabel('Новый пароль', { exact: true }).fill('changed-password-123')
+  await settings.getByLabel('Повторите новый пароль').fill('changed-password-123')
+  await settings.getByRole('button', { name: 'Сменить пароль' }).click()
+  await expect(settings.getByText(/Пароль изменён/)).toBeVisible()
 
-  await page.getByRole('link', { name: 'Устройства' }).click()
-  await expect(page.getByText('Это устройство')).toBeVisible()
+  await settings.getByRole('link', { name: 'Устройства' }).click()
+  await expect(
+    settings.getByRole('list', { name: 'Устройства' }).getByText('Это устройство'),
+  ).toBeVisible()
 
   await page.keyboard.press('Escape')
+  await expect(settings).toBeHidden()
   const panel = page.getByRole('region', { name: 'Текущий пользователь' })
   await expect(panel).toContainText('E2E Тестер')
 

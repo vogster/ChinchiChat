@@ -81,7 +81,7 @@ export const ChannelChat = ({
   const typing = useTypingNotifier(channel.id)
   const react = useToggleReaction(channel.id)
   const pin = usePinMessage(channel.id)
-  const { commands, invoke } = useGuildCommands(guild.id, channel.id)
+  const { commands, invoke, refresh } = useGuildCommands(guild.id, channel.id)
   const pending = usePendingFiles()
   const slowmode = useSlowmode(channel, permissions)
   const canAttach = pending.enabled && can(permissions, Permission.AttachFiles)
@@ -203,14 +203,11 @@ export const ChannelChat = ({
             onTyping={typing.typed}
             onEditLast={editLast}
             slowmode={slowmode}
-            commands={
-              commands.length > 0
-                ? {
-                    list: commands,
-                    onRun: (commandId, options) => invoke.mutate({ commandId, options }),
-                  }
-                : null
-            }
+            commands={{
+              list: commands,
+              onRun: (commandId, options) => invoke.mutate({ commandId, options }),
+              refresh,
+            }}
             customEmojis={
               guild.emojis.length > 0 ? { title: guild.name, emojis: guild.emojis } : null
             }

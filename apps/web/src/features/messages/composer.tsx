@@ -42,6 +42,8 @@ export interface ComposerProps {
 export interface ComposerCommands {
   readonly list: readonly Command[]
   readonly onRun: (commandId: string, options: Record<string, string>) => void
+  /** Asks for the list again: a bot may have registered commands since the channel opened. */
+  readonly refresh?: () => void
 }
 
 export interface ComposerAttach {
@@ -135,6 +137,8 @@ export const Composer = ({
   }, [value])
 
   const change = (next: string) => {
+    // Entering a command (typed or pasted): a bot may have registered new ones meanwhile.
+    if (next.startsWith('/') && !value.startsWith('/')) commands?.refresh?.()
     setValue(next)
     setMissing([])
     setActive(0)
