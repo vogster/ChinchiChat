@@ -21,6 +21,7 @@ import { createChannelEvents } from './modules/channels/channel-events'
 import { createThreadService } from './modules/channels/thread.service'
 import { createDmRepository } from './modules/dms/dm.repository'
 import { createDmService } from './modules/dms/dm.service'
+import { createDmVisibility } from './modules/dms/dm-visibility'
 import { createGroupDmService } from './modules/dms/group-dm.service'
 import { createEmojiRepository, emojiKey } from './modules/emojis/emoji.service'
 import { createGuildRepository } from './modules/guilds/guild.repository'
@@ -130,8 +131,25 @@ export const createServices = (
   })
   const relationships = createRelationshipRepository(db)
   const dmRows = createDmRepository(db)
-  const dm = createDmService({ dms: dmRows, users, guilds, relationships, events, nextId })
-  const channelEvents = createChannelEvents({ events, recipientIds: dmRows.recipientIds })
+  const dmVisibility = createDmVisibility({
+    dms: dmRows,
+    readStates: createReadStateRepository(db),
+    events,
+  })
+  const dm = createDmService({
+    dms: dmRows,
+    users,
+    guilds,
+    relationships,
+    events,
+    nextId,
+    visibility: dmVisibility,
+  })
+  const channelEvents = createChannelEvents({
+    events,
+    recipientIds: dmRows.recipientIds,
+    beforeDmMessage: dmVisibility.revealForMessage,
+  })
   const profileEvents = createProfileEvents({ events, guilds, relationships, dms: dmRows })
 
   const { loginThrottle, mfa, auth, accountEmails } = createAccountServices({
@@ -429,6 +447,7 @@ export const createServices = (
       sharesGuild: guilds.sharesGuild,
     }),
     dm,
+    dmVisibility,
     voice,
     ...createE2eeServices({
       db,

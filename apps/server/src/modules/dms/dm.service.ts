@@ -10,6 +10,7 @@ import type { GuildRepository } from '../guilds/guild.repository'
 import type { RelationshipRepository } from '../relationships/relationship.repository'
 import type { UserRepository, UserRow } from '../users/user.repository'
 import type { DmRepository } from './dm.repository'
+import type { DmVisibility } from './dm-visibility'
 import type { PrivateChannel, Snowflake } from '@chinchi/shared'
 
 /** What members of a DM may do: talk, never moderate or ping everyone. */
@@ -40,6 +41,7 @@ export interface DmServiceDeps {
   readonly relationships: RelationshipRepository
   readonly events: EventBus
   readonly nextId: () => Snowflake
+  readonly visibility: Pick<DmVisibility, 'reopen'>
 }
 
 export const cannotMessage = () =>
@@ -52,6 +54,7 @@ export const createDmService = ({
   relationships,
   events,
   nextId,
+  visibility,
 }: DmServiceDeps) => {
   /**
    * Whether two people may talk 1:1: friends always; people who share a server only if both take
@@ -119,6 +122,7 @@ export const createDmService = ({
 
       const { channel, created } = await dms.openDm(nextId(), me.id, target.id)
       const { members, view } = await describeFor(channel, me.id)
+      if (!created) await visibility.reopen(channel.id, me.id)
       if (created) {
         await Promise.all(
           members.map((member) =>
@@ -143,7 +147,10 @@ export const createDmService = ({
         encrypted: true,
       })
       const { members, view } = await describeFor(channel, me.id)
-      if (!created) return view
+      if (!created) {
+        await visibility.reopen(channel.id, me.id)
+        return view
+      }
       await Promise.all(
         members.map((member) =>
           events.publish({

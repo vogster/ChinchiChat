@@ -83,6 +83,9 @@ export const createSocialApi = (request: Http) => ({
       }),
     addRecipient: (channelId: Snowflake, userId: Snowflake) =>
       request({ method: 'PUT', path: `/channels/${id(channelId)}/recipients/${id(userId)}` }),
+    /** Hides the DM from your own list; the next message (or opening it) brings it back. */
+    hide: (channelId: Snowflake) =>
+      request({ method: 'DELETE', path: `/users/@me/channels/${id(channelId)}` }),
     /** The owner removes someone; your own id leaves the group. */
     removeRecipient: (channelId: Snowflake, userId: Snowflake) =>
       request({ method: 'DELETE', path: `/channels/${id(channelId)}/recipients/${id(userId)}` }),

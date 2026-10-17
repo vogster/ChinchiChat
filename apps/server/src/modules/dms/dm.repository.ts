@@ -1,4 +1,4 @@
-import { and, desc, eq, inArray, isNull, sql } from 'drizzle-orm'
+import { and, desc, eq, gt, inArray, isNotNull, isNull, or, sql } from 'drizzle-orm'
 
 import { channelRecipients, channels, readStates, users } from '../../db/schema'
 
@@ -53,7 +53,17 @@ export const createDmRepository = (db: DbExecutor) => ({
       .select({ channel: channels })
       .from(channelRecipients)
       .innerJoin(channels, eq(channels.id, channelRecipients.channelId))
-      .where(and(eq(channelRecipients.userId, userId), isNull(channels.guildId)))
+      .where(
+        and(
+          eq(channelRecipients.userId, userId),
+          isNull(channels.guildId),
+          // Hidden ones come back once a newer message arrives.
+          or(
+            isNull(channelRecipients.hiddenThrough),
+            gt(channels.lastMessageId, channelRecipients.hiddenThrough),
+          ),
+        ),
+      )
       .orderBy(sql`${channels.lastMessageId} desc nulls last`, desc(channels.id))
     return rows.map((row) => row.channel)
   },
@@ -229,6 +239,39 @@ export const createDmRepository = (db: DbExecutor) => ({
       const [existing] = await tx.select().from(channels).where(eq(channels.dmKey, dmKey))
       return { channel: existing as AnyChannelRow, created: false }
     })
+  },
+
+  /**
+   * Hides a private channel from one member's list up to its latest message (the channel's own
+   * id when it has none). Null when the user is not in such a channel.
+   */
+  async hide(channelId: Snowflake, userId: Snowflake): Promise<Snowflake | null> {
+    const latest = db
+      .select({ through: sql`coalesce(${channels.lastMessageId}, ${channels.id})` })
+      .from(channels)
+      .where(and(eq(channels.id, channelId), isNull(channels.guildId)))
+    const [row] = await db
+      .update(channelRecipients)
+      .set({ hiddenThrough: sql`(${latest})` })
+      .where(and(eq(channelRecipients.channelId, channelId), eq(channelRecipients.userId, userId)))
+      .returning({ hiddenThrough: channelRecipients.hiddenThrough })
+    return row?.hiddenThrough ?? null
+  },
+
+  /** Shows the channel again to whoever hid it (all members, or one); returns who that was. */
+  async unhide(channelId: Snowflake, userId?: Snowflake): Promise<Snowflake[]> {
+    const rows = await db
+      .update(channelRecipients)
+      .set({ hiddenThrough: null })
+      .where(
+        and(
+          eq(channelRecipients.channelId, channelId),
+          isNotNull(channelRecipients.hiddenThrough),
+          userId === undefined ? undefined : eq(channelRecipients.userId, userId),
+        ),
+      )
+      .returning({ userId: channelRecipients.userId })
+    return rows.map((row) => row.userId)
   },
 })
 

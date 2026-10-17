@@ -135,6 +135,8 @@ export const channelRecipients = pgTable(
       .notNull()
       .references(() => users.id, { onDelete: 'cascade' }),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    /** Hidden from this person's list up to this message; a newer one shows it again. */
+    hiddenThrough: snowflake('hidden_through'),
   },
   (table) => [
     primaryKey({ columns: [table.channelId, table.userId] }),

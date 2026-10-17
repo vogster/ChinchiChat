@@ -11,12 +11,14 @@ import { ok } from '../../http/responses'
 import { requireHuman, requireVerifiedHuman } from '../auth/auth.plugin'
 
 import type { DmService } from './dm.service'
+import type { DmVisibility } from './dm-visibility'
 import type { GroupDmService } from './group-dm.service'
 import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod'
 
 export interface DmsRoutesOptions {
   readonly dmService: DmService
   readonly groupDmService: GroupDmService
+  readonly dmVisibility: DmVisibility
 }
 
 const one = ok(z.object({ channel: privateChannelSchema }))
@@ -36,7 +38,7 @@ const CHANGE_RATE_LIMIT = Object.freeze({ ...OPEN_RATE_LIMIT, max: 30 })
 
 export const dmsRoutes: FastifyPluginAsyncZod<DmsRoutesOptions> = async (
   app,
-  { dmService, groupDmService },
+  { dmService, groupDmService, dmVisibility },
 ) => {
   app.get(
     '/users/@me/channels',
@@ -87,6 +89,19 @@ export const dmsRoutes: FastifyPluginAsyncZod<DmsRoutesOptions> = async (
         request.body.name,
       )
       return { success: true as const, data: { channel } }
+    },
+  )
+
+  // Hides the DM from your own list ("close"); the next message brings it back.
+  app.delete(
+    '/users/@me/channels/:channelId',
+    {
+      schema: { params: z.object({ channelId: snowflakeSchema }) },
+      config: { rateLimit: CHANGE_RATE_LIMIT },
+    },
+    async (request, reply) => {
+      await dmVisibility.hide(requireHuman(request).user.id, request.params.channelId)
+      return reply.status(204).send()
     },
   )
 

@@ -348,7 +348,11 @@ export const buildApp = (
           log: app.log,
         }),
       })
-      api.register(dmsRoutes, { dmService: services.dm, groupDmService: services.groupDm })
+      api.register(dmsRoutes, {
+        dmService: services.dm,
+        groupDmService: services.groupDm,
+        dmVisibility: services.dmVisibility,
+      })
       api.register(mediaRoutes, { mediaService: services.media })
       api.register(rolesRoutes, { roleService: services.role })
       api.register(instanceRoutes, {

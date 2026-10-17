@@ -1,0 +1,1 @@
+ALTER TABLE "channel_recipients" ADD COLUMN "hidden_through" bigint;

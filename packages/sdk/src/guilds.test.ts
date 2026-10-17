@@ -623,6 +623,7 @@ const cases: Case[] = [
     '/channels/20/recipients/5',
     null,
   ],
+  ['dms.hide', (api) => api.dms.hide('20'), 'DELETE', '/users/@me/channels/20', null],
   ['pins.list', (api) => api.pins.list('3'), 'GET', '/channels/3/pins', 'messages'],
   ['pins.pin', (api) => api.pins.pin('3', '9'), 'PUT', '/channels/3/pins/9', null],
   ['pins.unpin', (api) => api.pins.unpin('3', '9'), 'DELETE', '/channels/3/pins/9', null],
