@@ -1,5 +1,5 @@
 import { useNavigate } from '@tanstack/react-router'
-import { X } from 'lucide-react'
+import { ArrowLeft, X } from 'lucide-react'
 import { useEffect } from 'react'
 
 import type { ReactNode } from 'react'
@@ -12,6 +12,8 @@ export interface SettingsShellProps {
   readonly closeLabel: string
   /** Where Escape and the close button lead. */
   readonly closeTo: string
+  /** A section inside other settings goes back to them rather than closing everything. */
+  readonly closeKind?: 'close' | 'back'
   readonly nav: ReactNode
   readonly children: ReactNode
 }
@@ -21,6 +23,7 @@ export const SettingsShell = ({
   title,
   closeLabel,
   closeTo,
+  closeKind = 'close',
   nav,
   children,
 }: SettingsShellProps) => {
@@ -62,7 +65,11 @@ export const SettingsShell = ({
           title={closeLabel}
           className="absolute top-4 right-4 flex size-9 items-center justify-center rounded-full border-2 border-muted text-muted hover:border-text hover:text-text md:top-14 md:right-10"
         >
-          <X aria-hidden className="size-5" />
+          {closeKind === 'back' ? (
+            <ArrowLeft aria-hidden className="size-5" />
+          ) : (
+            <X aria-hidden className="size-5" />
+          )}
         </a>
       </main>
     </div>

@@ -20,6 +20,18 @@ describe('instance administration', () => {
     expect(api.admin.users).not.toHaveBeenCalled()
   })
 
+  it('goes back to the settings it was opened from, not closing everything', async () => {
+    const { user, router } = renderApp('/admin/users', {
+      api: createFakeApi({ user: admin }),
+    })
+
+    const back = await screen.findByRole('link', { name: 'Назад к настройкам' })
+    expect(screen.queryByRole('link', { name: /^Закрыть/ })).not.toBeInTheDocument()
+    await user.click(back)
+
+    await waitFor(() => expect(router.state.location.pathname).toBe('/settings/account'))
+  })
+
   it('opens from the settings and suspends a user', async () => {
     const api = createFakeApi({ user: admin })
     const { user } = renderApp('/settings/account', { api })

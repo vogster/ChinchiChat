@@ -974,8 +974,8 @@
     "leave": "Leave"
   },
   "admin": {
+    "back": "Back to settings",
     "title": "Administration",
-    "close": "Close administration",
     "noAccess": "This section is for instance admins only.",
     "nav": {
       "users": "Users",

@@ -21,8 +21,9 @@ export const AdminLayout = ({ children }: { children: ReactNode }) => {
   return (
     <SettingsShell
       title={t('admin.title')}
-      closeLabel={t('admin.close')}
+      closeLabel={t('admin.back')}
       closeTo="/settings/account"
+      closeKind="back"
       nav={
         me?.isAdmin
           ? NAV.map((item) => (
