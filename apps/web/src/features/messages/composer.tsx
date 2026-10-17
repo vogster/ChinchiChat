@@ -147,7 +147,7 @@ export const Composer = ({
 
   /** A known `/command` runs instead of being sent; true when it took the text. */
   const runCommand = (): boolean => {
-    const parsed = commands ? parseCommand(value, commands.list) : null
+    const parsed = commands ? parseCommand(mention.encode(value), commands.list) : null
     if (!commands || !parsed) return false
     if (parsed.missing.length > 0) {
       setMissing(parsed.missing)
@@ -155,6 +155,7 @@ export const Composer = ({
     }
     commands.onRun(parsed.command.id, parsed.options)
     change('')
+    mention.reset()
     return true
   }
 

@@ -51,6 +51,22 @@ describe('slash commands', () => {
     expect(await composer()).toHaveValue('')
   })
 
+  it('passes a picked mention to the command as its token', async () => {
+    const { api, user } = setup()
+
+    await user.type(await composer(), '/roll @бо')
+    await user.keyboard('{Enter}')
+    expect(await composer()).toHaveValue('/roll @Боб ')
+    await user.keyboard('{Enter}')
+
+    await waitFor(() =>
+      expect(api.interactions.invoke).toHaveBeenCalledWith('503', {
+        commandId: '77',
+        options: { sides: '<@200>' },
+      }),
+    )
+  })
+
   it('picks commands from the keyboard', async () => {
     const { user } = setup()
 
