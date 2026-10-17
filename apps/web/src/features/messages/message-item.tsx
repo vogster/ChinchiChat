@@ -286,7 +286,9 @@ export const MessageItem = ({
               {formatMessageTime(message.createdAt, i18n.language)}
             </time>
             {message.published ? (
-              <span className="text-xs text-muted">{t('announcements.published')}</span>
+              <span title={t('announcements.publishedHint')} className="text-xs text-muted">
+                {t('announcements.published')}
+              </span>
             ) : null}
           </div>
         )}

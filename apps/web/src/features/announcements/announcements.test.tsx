@@ -31,6 +31,22 @@ describe('announcement channels', () => {
     )
   })
 
+  it('say where to follow and how to publish', async () => {
+    const api = createFakeApi({ user: testUser })
+    api.guilds.get.mockResolvedValue(announcing())
+    const { user } = renderApp(GENERAL_URL, { api })
+
+    // Following is a labelled button in the header, not a bare icon.
+    expect(await screen.findByRole('button', { name: 'Подписаться на канал' })).toHaveTextContent(
+      'Подписаться',
+    )
+    await user.click(screen.getByRole('button', { name: 'Настроить канал общий' }))
+    const dialog = await screen.findByRole('dialog', { name: 'Настройки канала' })
+    const hint = within(dialog).getByText(/подписанные на этот/)
+    expect(hint).toHaveTextContent('«Подписаться»')
+    expect(hint).toHaveTextContent('«Опубликовать»')
+  })
+
   it('publish a message to the channels that follow them', async () => {
     const api = createFakeApi({ user: testUser })
     api.guilds.get.mockResolvedValue(announcing())
@@ -50,6 +66,10 @@ describe('announcement channels', () => {
     await user.hover(row('Уже разослано'))
     expect(within(row('Уже разослано')).queryByRole('button', { name: 'Опубликовать' })).toBeNull()
     expect(within(row('Уже разослано')).getByText('опубликовано')).toBeVisible()
+    expect(within(row('Уже разослано')).getByText('опубликовано')).toHaveAttribute(
+      'title',
+      'Копия отправлена в каналы, подписанные на этот',
+    )
   })
 
   it('are followed into a channel of another server', async () => {

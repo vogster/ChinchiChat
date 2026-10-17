@@ -457,7 +457,7 @@
     "nsfw": "Age-restricted channel (18+)",
     "nsfwHint": "People are asked before the channel is shown.",
     "announcement": "Announcement channel",
-    "announcementHint": "Messages can be published: copies go to channels following this one (on other servers too)."
+    "announcementHint": "Messages can be published: copies go to the channels that follow this one, on other servers too. To follow it into your channel, use “Follow” in the channel header. To send a message out, use “Publish” in its menu."
   },
   "invite": {
     "title": "Invite friends to {{name}}",
@@ -1184,6 +1184,7 @@
   },
   "announcements": {
     "followButton": "Follow channel",
+    "followShort": "Follow",
     "followTitle": "Follow #{{name}}",
     "followHint": "Messages published here will arrive in the chosen channel. You need to manage that channel.",
     "guild": "Server",
@@ -1194,7 +1195,8 @@
     "follow": "Follow",
     "followed": "Done: new announcements will arrive in the chosen channel.",
     "publish": "Publish",
-    "published": "published"
+    "published": "published",
+    "publishedHint": "A copy went to the channels that follow this one"
   },
   "notifications": {
     "title": "Notifications: {{name}}",

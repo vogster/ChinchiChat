@@ -119,9 +119,10 @@ export const ChannelView = ({
             aria-label={t('announcements.followButton')}
             title={t('announcements.followButton')}
             onClick={() => setFollowing(true)}
-            className="rounded p-1.5 text-muted hover:text-text"
+            className="flex items-center gap-1.5 rounded px-2 py-1.5 text-sm font-medium text-muted hover:bg-hover hover:text-text"
           >
             <Rss aria-hidden className="size-5" />
+            <span className="hidden sm:inline">{t('announcements.followShort')}</span>
           </button>
         ) : null}
         <button
