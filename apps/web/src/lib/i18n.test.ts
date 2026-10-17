@@ -39,12 +39,32 @@ describe('locales', () => {
   it('has no empty translations', () => {
     const empty = [ru, en].flatMap((locale) =>
       keysOf(locale).filter((key) => {
-        const value = key
-          .split('.')
-          .reduce<unknown>((node, part) => (node as Record<string, unknown>)[part], locale)
+        const value = valueAt(locale, key)
         return typeof value !== 'string' || value.trim() === ''
       }),
     )
     expect(empty).toEqual([])
   })
+
+  it('ru and en interpolate the same variables', () => {
+    const variablesOf = (locale: unknown) => {
+      const byBase = new Map<string, Set<string>>()
+      for (const key of keysOf(locale)) {
+        const base = key.replace(PLURAL_SUFFIX, '')
+        const found = byBase.get(base) ?? new Set<string>()
+        for (const match of String(valueAt(locale, key)).matchAll(/{{\s*(\w+)\s*}}/g)) {
+          found.add(match[1] ?? '')
+        }
+        byBase.set(base, found)
+      }
+      return Object.fromEntries([...byBase].map(([base, found]) => [base, [...found].sort()]))
+    }
+    expect(variablesOf(ru)).toEqual(variablesOf(en))
+  })
 })
+
+function valueAt(locale: unknown, key: string): unknown {
+  return key
+    .split('.')
+    .reduce<unknown>((node, part) => (node as Record<string, unknown>)[part], locale)
+}

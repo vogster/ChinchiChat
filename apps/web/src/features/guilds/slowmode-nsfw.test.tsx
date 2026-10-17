@@ -40,6 +40,21 @@ describe('channel settings', () => {
       expect(api.channels.update).toHaveBeenCalledWith('504', { rateLimitPerUser: 30, nsfw: true }),
     )
   })
+
+  it('names the slowmode steps with the right plural forms', async () => {
+    const api = createFakeApi({ user: testUser })
+    const { user } = renderApp(MEMES_URL, { api })
+
+    await user.click(await screen.findByRole('button', { name: 'Настроить канал мемы' }))
+    const dialog = await screen.findByRole('dialog', { name: 'Настройки канала' })
+    const select = within(dialog).getByLabelText('Медленный режим', { exact: true })
+    const labels = within(select)
+      .getAllByRole('option')
+      .map((option) => option.textContent)
+
+    expect(labels).toEqual(expect.arrayContaining(['5 секунд', '1 минута', '2 минуты', '6 часов']))
+    expect(labels.join()).not.toContain('{{')
+  })
 })
 
 describe('slowmode', () => {

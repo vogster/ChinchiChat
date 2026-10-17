@@ -965,9 +965,9 @@
     }
   },
   "time": {
-    "seconds_one": "{{seconds}} секунда",
-    "seconds_few": "{{seconds}} секунды",
-    "seconds_many": "{{seconds}} секунд",
+    "seconds_one": "{{count}} секунда",
+    "seconds_few": "{{count}} секунды",
+    "seconds_many": "{{count}} секунд",
     "minutes_one": "{{count}} минута",
     "minutes_few": "{{count}} минуты",
     "minutes_many": "{{count}} минут",
