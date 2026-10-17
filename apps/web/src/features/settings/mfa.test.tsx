@@ -25,7 +25,11 @@ describe('two-factor sign-in settings', () => {
     expect(api.mfa.enable).toHaveBeenCalledWith('123456')
     await user.click(within(dialog).getByRole('button', { name: 'Я сохранил коды' }))
 
-    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument())
+    await waitFor(() =>
+      expect(
+        screen.queryByRole('dialog', { name: 'Двухфакторная аутентификация' }),
+      ).not.toBeInTheDocument(),
+    )
     expect(await screen.findByText('Включена')).toBeVisible()
   })
 

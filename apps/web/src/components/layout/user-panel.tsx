@@ -10,6 +10,7 @@ import { usePresence } from '../../features/messages/use-presence'
 import { CustomStatusDialog } from '../../features/presence/custom-status-dialog'
 import { customStatusText, useCustomStatus } from '../../features/presence/use-custom-status'
 import { useGateway } from '../../features/realtime/gateway-context'
+import { withSettings } from '../../features/settings/settings-search'
 import { useVoice } from '../../features/voice/voice-context'
 import { VoicePanel } from '../../features/voice/voice-panel'
 import { Avatar } from '../ui/avatar'
@@ -114,7 +115,8 @@ export const UserPanel = () => {
           )}
         </button>
         <Link
-          to="/settings/account"
+          to="."
+          search={withSettings('account')}
           aria-label={t('userPanel.settings')}
           title={t('userPanel.settings')}
           className="rounded p-1.5 text-muted hover:bg-hover hover:text-text"

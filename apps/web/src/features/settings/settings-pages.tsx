@@ -1,0 +1,170 @@
+import { useTranslation } from 'react-i18next'
+
+import { useCurrentUser } from '../auth/use-auth-actions'
+import { AppSettings } from './app-settings'
+import { ChangePasswordForm } from './change-password-form'
+import { DataExport } from './data-export'
+import { DeleteAccount } from './delete-account'
+import { DesktopNotifications } from './desktop-notifications'
+import { DmPolicyPicker } from './dm-policy-picker'
+import { EncryptionDevices } from './encryption-devices'
+import { LanguagePicker } from './language-picker'
+import { MfaSettings } from './mfa-settings'
+import { ProfileForm } from './profile-form'
+import { RecoveryKeySettings } from './recovery-key-settings'
+import { SessionsList } from './sessions-list'
+import { SettingsCard, SettingsSection } from './settings-section'
+import { ThemePicker } from './theme-picker'
+import { VoiceDevices } from './voice-devices'
+
+export const AccountPage = () => {
+  const { t } = useTranslation()
+  const user = useCurrentUser()
+  if (!user) return null
+
+  return (
+    <SettingsSection title={t('settings.account.title')}>
+      <SettingsCard>
+        <dl className="grid gap-4 sm:grid-cols-2">
+          <div>
+            <dt className="text-xs font-bold tracking-wide text-muted uppercase">
+              {t('settings.account.username')}
+            </dt>
+            <dd className="mt-1">{user.username}</dd>
+          </div>
+          <div>
+            <dt className="text-xs font-bold tracking-wide text-muted uppercase">
+              {t('settings.account.email')}
+            </dt>
+            <dd className="mt-1 flex flex-wrap items-center gap-2">
+              <span className="break-all">{user.email}</span>
+              <span
+                className={`rounded px-1.5 py-0.5 text-[11px] font-semibold ${user.emailVerified ? 'bg-green-600 text-white' : 'bg-yellow-500 text-black'}`}
+              >
+                {user.emailVerified
+                  ? t('settings.account.verified')
+                  : t('settings.account.unverified')}
+              </span>
+            </dd>
+          </div>
+        </dl>
+      </SettingsCard>
+
+      <SettingsCard title={t('settings.account.passwordTitle')}>
+        <ChangePasswordForm />
+      </SettingsCard>
+
+      <SettingsCard title={t('settings.mfa.title')}>
+        <MfaSettings enabled={user.mfaEnabled} />
+      </SettingsCard>
+
+      <DataExport />
+
+      <DeleteAccount />
+    </SettingsSection>
+  )
+}
+
+export const ProfilePage = () => {
+  const { t } = useTranslation()
+  const user = useCurrentUser()
+  if (!user) return null
+
+  return (
+    <SettingsSection title={t('settings.profile.title')}>
+      <SettingsCard>
+        <ProfileForm user={user} />
+      </SettingsCard>
+    </SettingsSection>
+  )
+}
+
+export const PrivacyPage = () => {
+  const { t } = useTranslation()
+  return (
+    <SettingsSection title={t('settings.privacy.title')}>
+      <DmPolicyPicker />
+    </SettingsSection>
+  )
+}
+
+export const NotificationsPage = () => {
+  const { t } = useTranslation()
+  return (
+    <SettingsSection
+      title={t('notifications.desktop.title')}
+      subtitle={t('notifications.desktop.subtitle')}
+    >
+      <DesktopNotifications />
+    </SettingsSection>
+  )
+}
+
+export const VoicePage = () => {
+  const { t } = useTranslation()
+  return (
+    <SettingsSection title={t('settings.voice.title')} subtitle={t('settings.voice.subtitle')}>
+      <VoiceDevices />
+    </SettingsSection>
+  )
+}
+
+export const SessionsPage = () => {
+  const { t } = useTranslation()
+  return (
+    <div className="flex flex-col gap-12">
+      <SettingsSection
+        title={t('settings.sessions.title')}
+        subtitle={t('settings.sessions.subtitle')}
+      >
+        <SessionsList />
+      </SettingsSection>
+      <SettingsSection
+        title={t('settings.encryptionDevices.title')}
+        subtitle={t('settings.encryptionDevices.subtitle')}
+      >
+        <EncryptionDevices />
+      </SettingsSection>
+      <SettingsSection
+        title={t('e2ee.recovery.enterTitle')}
+        subtitle={t('e2ee.recovery.settingsHint')}
+      >
+        <RecoveryKeySettings />
+      </SettingsSection>
+    </div>
+  )
+}
+
+export const AppearancePage = () => {
+  const { t } = useTranslation()
+  return (
+    <SettingsSection
+      title={t('settings.appearance.title')}
+      subtitle={t('settings.appearance.subtitle')}
+    >
+      <ThemePicker />
+    </SettingsSection>
+  )
+}
+
+export const LanguagePage = () => {
+  const { t } = useTranslation()
+  return (
+    <SettingsSection
+      title={t('settings.language.title')}
+      subtitle={t('settings.language.subtitle')}
+    >
+      <LanguagePicker />
+    </SettingsSection>
+  )
+}
+
+/** Only the desktop app has these settings; the browser never links here. */
+export const AppPage = () => {
+  const { t } = useTranslation()
+  return (
+    <SettingsSection title={t('settings.app.title')} subtitle={t('settings.app.subtitle')}>
+      <AppSettings />
+    </SettingsSection>
+  )
+}

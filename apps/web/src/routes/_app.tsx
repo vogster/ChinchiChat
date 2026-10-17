@@ -5,14 +5,18 @@ import { ApprovalDialog } from '../features/e2ee/approval-dialog'
 import { E2eeProvider } from '../features/e2ee/e2ee-context'
 import { UnreadBadge } from '../features/notifications/unread-badge'
 import { GatewayProvider } from '../features/realtime/gateway-context'
+import { SettingsDialog } from '../features/settings/settings-dialog'
+import { settingsSearchSchema } from '../features/settings/settings-search'
 import { PushToTalk } from '../features/shell/push-to-talk'
 import { VoiceProvider } from '../features/voice/voice-context'
 
 /**
  * Everything under this layout requires a signed-in user and shares one gateway connection, so
- * moving between the chat and server settings does not reconnect (nor drop a voice call).
+ * moving between the chat and server settings does not reconnect (nor drop a voice call). The
+ * user settings open over any of these pages (`?settings=`) for the same reason.
  */
 export const Route = createFileRoute('/_app')({
+  validateSearch: settingsSearchSchema,
   beforeLoad: ({ context, location }) => requireUser(context, location.href),
   component: () => (
     <GatewayProvider>
@@ -22,6 +26,7 @@ export const Route = createFileRoute('/_app')({
         <VoiceProvider>
           <PushToTalk />
           <Outlet />
+          <SettingsDialog />
         </VoiceProvider>
       </E2eeProvider>
     </GatewayProvider>

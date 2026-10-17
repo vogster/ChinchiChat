@@ -159,6 +159,10 @@ describe('the recovery key', () => {
     await user.click(within(dialog).getByRole('button', { name: 'Сбросить' }))
 
     expect(e2ee.recovery.reset).toHaveBeenCalled()
-    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument())
+    await waitFor(() =>
+      expect(
+        screen.queryByRole('dialog', { name: 'Сбросить ключи шифрования?' }),
+      ).not.toBeInTheDocument(),
+    )
   })
 })

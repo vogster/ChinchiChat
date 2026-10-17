@@ -29,7 +29,8 @@ describe('instance administration', () => {
     expect(screen.queryByRole('link', { name: /^Закрыть/ })).not.toBeInTheDocument()
     await user.click(back)
 
-    await waitFor(() => expect(router.state.location.pathname).toBe('/settings/account'))
+    await waitFor(() => expect(router.state.location.search).toEqual({ settings: 'account' }))
+    expect(router.state.location.pathname).toBe('/')
   })
 
   it('opens from the settings and suspends a user', async () => {

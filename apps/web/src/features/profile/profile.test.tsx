@@ -127,7 +127,7 @@ describe('profile card', () => {
     const mine = await card('alice')
     expect(within(mine).getByRole('link', { name: 'Редактировать профиль' })).toHaveAttribute(
       'href',
-      '/settings/profile',
+      `${GENERAL_URL}?settings=profile`,
     )
     // Nobody moderates themselves, not even the owner.
     expect(within(mine).queryByRole('button', { name: 'Выгнать' })).toBeNull()

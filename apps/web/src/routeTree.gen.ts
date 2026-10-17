@@ -15,7 +15,6 @@ import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as RegisterRouteImport } from './routes/register'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
-import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as VerifyEmailRouteImport } from './routes/verify-email'
 import { Route as AppShellRouteImport } from './routes/_app/_shell'
 import { Route as AdminIndexRouteImport } from './routes/admin/index'
@@ -25,16 +24,7 @@ import { Route as AdminReportsRouteImport } from './routes/admin/reports'
 import { Route as AdminUsersRouteImport } from './routes/admin/users'
 import { Route as InviteCodeRouteImport } from './routes/invite/$code'
 import { Route as SettingsIndexRouteImport } from './routes/settings/index'
-import { Route as SettingsAccountRouteImport } from './routes/settings/account'
-import { Route as SettingsAppRouteImport } from './routes/settings/app'
-import { Route as SettingsAppearanceRouteImport } from './routes/settings/appearance'
-import { Route as SettingsBotsRouteImport } from './routes/settings/bots'
-import { Route as SettingsLanguageRouteImport } from './routes/settings/language'
-import { Route as SettingsNotificationsRouteImport } from './routes/settings/notifications'
-import { Route as SettingsPrivacyRouteImport } from './routes/settings/privacy'
-import { Route as SettingsProfileRouteImport } from './routes/settings/profile'
-import { Route as SettingsSessionsRouteImport } from './routes/settings/sessions'
-import { Route as SettingsVoiceRouteImport } from './routes/settings/voice'
+import { Route as SettingsSectionRouteImport } from './routes/settings/$section'
 import { Route as AppShellIndexRouteImport } from './routes/_app/_shell/index'
 import { Route as AppServerSettingsGuildIdRouteImport } from './routes/_app/server-settings/$guildId'
 import { Route as AppShellChannelsGuildIdRouteImport } from './routes/_app/_shell/channels/$guildId'
@@ -80,11 +70,6 @@ const ResetPasswordRoute = ResetPasswordRouteImport.update({
   path: '/reset-password',
   getParentRoute: () => rootRouteImport,
 } as any)
-const SettingsRoute = SettingsRouteImport.update({
-  id: '/settings',
-  path: '/settings',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const VerifyEmailRoute = VerifyEmailRouteImport.update({
   id: '/verify-email',
   path: '/verify-email',
@@ -125,59 +110,14 @@ const InviteCodeRoute = InviteCodeRouteImport.update({
   getParentRoute: () => rootRouteImport,
 } as any)
 const SettingsIndexRoute = SettingsIndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => SettingsRoute,
+  id: '/settings/',
+  path: '/settings/',
+  getParentRoute: () => rootRouteImport,
 } as any)
-const SettingsAccountRoute = SettingsAccountRouteImport.update({
-  id: '/account',
-  path: '/account',
-  getParentRoute: () => SettingsRoute,
-} as any)
-const SettingsAppRoute = SettingsAppRouteImport.update({
-  id: '/app',
-  path: '/app',
-  getParentRoute: () => SettingsRoute,
-} as any)
-const SettingsAppearanceRoute = SettingsAppearanceRouteImport.update({
-  id: '/appearance',
-  path: '/appearance',
-  getParentRoute: () => SettingsRoute,
-} as any)
-const SettingsBotsRoute = SettingsBotsRouteImport.update({
-  id: '/bots',
-  path: '/bots',
-  getParentRoute: () => SettingsRoute,
-} as any)
-const SettingsLanguageRoute = SettingsLanguageRouteImport.update({
-  id: '/language',
-  path: '/language',
-  getParentRoute: () => SettingsRoute,
-} as any)
-const SettingsNotificationsRoute = SettingsNotificationsRouteImport.update({
-  id: '/notifications',
-  path: '/notifications',
-  getParentRoute: () => SettingsRoute,
-} as any)
-const SettingsPrivacyRoute = SettingsPrivacyRouteImport.update({
-  id: '/privacy',
-  path: '/privacy',
-  getParentRoute: () => SettingsRoute,
-} as any)
-const SettingsProfileRoute = SettingsProfileRouteImport.update({
-  id: '/profile',
-  path: '/profile',
-  getParentRoute: () => SettingsRoute,
-} as any)
-const SettingsSessionsRoute = SettingsSessionsRouteImport.update({
-  id: '/sessions',
-  path: '/sessions',
-  getParentRoute: () => SettingsRoute,
-} as any)
-const SettingsVoiceRoute = SettingsVoiceRouteImport.update({
-  id: '/voice',
-  path: '/voice',
-  getParentRoute: () => SettingsRoute,
+const SettingsSectionRoute = SettingsSectionRouteImport.update({
+  id: '/settings/$section',
+  path: '/settings/$section',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const AppShellIndexRoute = AppShellIndexRouteImport.update({
   id: '/',
@@ -275,23 +215,13 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
   '/reset-password': typeof ResetPasswordRoute
-  '/settings': typeof SettingsRouteWithChildren
   '/verify-email': typeof VerifyEmailRoute
   '/admin/guilds': typeof AdminGuildsRoute
   '/admin/instance': typeof AdminInstanceRoute
   '/admin/reports': typeof AdminReportsRoute
   '/admin/users': typeof AdminUsersRoute
   '/invite/$code': typeof InviteCodeRoute
-  '/settings/account': typeof SettingsAccountRoute
-  '/settings/app': typeof SettingsAppRoute
-  '/settings/appearance': typeof SettingsAppearanceRoute
-  '/settings/bots': typeof SettingsBotsRoute
-  '/settings/language': typeof SettingsLanguageRoute
-  '/settings/notifications': typeof SettingsNotificationsRoute
-  '/settings/privacy': typeof SettingsPrivacyRoute
-  '/settings/profile': typeof SettingsProfileRoute
-  '/settings/sessions': typeof SettingsSessionsRoute
-  '/settings/voice': typeof SettingsVoiceRoute
+  '/settings/$section': typeof SettingsSectionRoute
   '/admin/': typeof AdminIndexRoute
   '/settings/': typeof SettingsIndexRoute
   '/server-settings/$guildId': typeof AppServerSettingsGuildIdRouteWithChildren
@@ -321,16 +251,7 @@ export interface FileRoutesByTo {
   '/admin/reports': typeof AdminReportsRoute
   '/admin/users': typeof AdminUsersRoute
   '/invite/$code': typeof InviteCodeRoute
-  '/settings/account': typeof SettingsAccountRoute
-  '/settings/app': typeof SettingsAppRoute
-  '/settings/appearance': typeof SettingsAppearanceRoute
-  '/settings/bots': typeof SettingsBotsRoute
-  '/settings/language': typeof SettingsLanguageRoute
-  '/settings/notifications': typeof SettingsNotificationsRoute
-  '/settings/privacy': typeof SettingsPrivacyRoute
-  '/settings/profile': typeof SettingsProfileRoute
-  '/settings/sessions': typeof SettingsSessionsRoute
-  '/settings/voice': typeof SettingsVoiceRoute
+  '/settings/$section': typeof SettingsSectionRoute
   '/admin': typeof AdminIndexRoute
   '/settings': typeof SettingsIndexRoute
   '/server-settings/$guildId/audit-log': typeof AppServerSettingsGuildIdAuditLogRoute
@@ -354,7 +275,6 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
   '/reset-password': typeof ResetPasswordRoute
-  '/settings': typeof SettingsRouteWithChildren
   '/verify-email': typeof VerifyEmailRoute
   '/_app/_shell': typeof AppShellRouteWithChildren
   '/admin/guilds': typeof AdminGuildsRoute
@@ -362,16 +282,7 @@ export interface FileRoutesById {
   '/admin/reports': typeof AdminReportsRoute
   '/admin/users': typeof AdminUsersRoute
   '/invite/$code': typeof InviteCodeRoute
-  '/settings/account': typeof SettingsAccountRoute
-  '/settings/app': typeof SettingsAppRoute
-  '/settings/appearance': typeof SettingsAppearanceRoute
-  '/settings/bots': typeof SettingsBotsRoute
-  '/settings/language': typeof SettingsLanguageRoute
-  '/settings/notifications': typeof SettingsNotificationsRoute
-  '/settings/privacy': typeof SettingsPrivacyRoute
-  '/settings/profile': typeof SettingsProfileRoute
-  '/settings/sessions': typeof SettingsSessionsRoute
-  '/settings/voice': typeof SettingsVoiceRoute
+  '/settings/$section': typeof SettingsSectionRoute
   '/admin/': typeof AdminIndexRoute
   '/settings/': typeof SettingsIndexRoute
   '/_app/server-settings/$guildId': typeof AppServerSettingsGuildIdRouteWithChildren
@@ -399,23 +310,13 @@ export interface FileRouteTypes {
     | '/login'
     | '/register'
     | '/reset-password'
-    | '/settings'
     | '/verify-email'
     | '/admin/guilds'
     | '/admin/instance'
     | '/admin/reports'
     | '/admin/users'
     | '/invite/$code'
-    | '/settings/account'
-    | '/settings/app'
-    | '/settings/appearance'
-    | '/settings/bots'
-    | '/settings/language'
-    | '/settings/notifications'
-    | '/settings/privacy'
-    | '/settings/profile'
-    | '/settings/sessions'
-    | '/settings/voice'
+    | '/settings/$section'
     | '/admin/'
     | '/settings/'
     | '/server-settings/$guildId'
@@ -445,16 +346,7 @@ export interface FileRouteTypes {
     | '/admin/reports'
     | '/admin/users'
     | '/invite/$code'
-    | '/settings/account'
-    | '/settings/app'
-    | '/settings/appearance'
-    | '/settings/bots'
-    | '/settings/language'
-    | '/settings/notifications'
-    | '/settings/privacy'
-    | '/settings/profile'
-    | '/settings/sessions'
-    | '/settings/voice'
+    | '/settings/$section'
     | '/admin'
     | '/settings'
     | '/server-settings/$guildId/audit-log'
@@ -477,7 +369,6 @@ export interface FileRouteTypes {
     | '/login'
     | '/register'
     | '/reset-password'
-    | '/settings'
     | '/verify-email'
     | '/_app/_shell'
     | '/admin/guilds'
@@ -485,16 +376,7 @@ export interface FileRouteTypes {
     | '/admin/reports'
     | '/admin/users'
     | '/invite/$code'
-    | '/settings/account'
-    | '/settings/app'
-    | '/settings/appearance'
-    | '/settings/bots'
-    | '/settings/language'
-    | '/settings/notifications'
-    | '/settings/privacy'
-    | '/settings/profile'
-    | '/settings/sessions'
-    | '/settings/voice'
+    | '/settings/$section'
     | '/admin/'
     | '/settings/'
     | '/_app/server-settings/$guildId'
@@ -521,9 +403,10 @@ export interface RootRouteChildren {
   LoginRoute: typeof LoginRoute
   RegisterRoute: typeof RegisterRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
-  SettingsRoute: typeof SettingsRouteWithChildren
   VerifyEmailRoute: typeof VerifyEmailRoute
   InviteCodeRoute: typeof InviteCodeRoute
+  SettingsSectionRoute: typeof SettingsSectionRoute
+  SettingsIndexRoute: typeof SettingsIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -568,13 +451,6 @@ declare module '@tanstack/react-router' {
       path: '/reset-password'
       fullPath: '/reset-password'
       preLoaderRoute: typeof ResetPasswordRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/settings': {
-      id: '/settings'
-      path: '/settings'
-      fullPath: '/settings'
-      preLoaderRoute: typeof SettingsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/verify-email': {
@@ -635,80 +511,17 @@ declare module '@tanstack/react-router' {
     }
     '/settings/': {
       id: '/settings/'
-      path: '/'
+      path: '/settings'
       fullPath: '/settings/'
       preLoaderRoute: typeof SettingsIndexRouteImport
-      parentRoute: typeof SettingsRoute
+      parentRoute: typeof rootRouteImport
     }
-    '/settings/account': {
-      id: '/settings/account'
-      path: '/account'
-      fullPath: '/settings/account'
-      preLoaderRoute: typeof SettingsAccountRouteImport
-      parentRoute: typeof SettingsRoute
-    }
-    '/settings/app': {
-      id: '/settings/app'
-      path: '/app'
-      fullPath: '/settings/app'
-      preLoaderRoute: typeof SettingsAppRouteImport
-      parentRoute: typeof SettingsRoute
-    }
-    '/settings/appearance': {
-      id: '/settings/appearance'
-      path: '/appearance'
-      fullPath: '/settings/appearance'
-      preLoaderRoute: typeof SettingsAppearanceRouteImport
-      parentRoute: typeof SettingsRoute
-    }
-    '/settings/bots': {
-      id: '/settings/bots'
-      path: '/bots'
-      fullPath: '/settings/bots'
-      preLoaderRoute: typeof SettingsBotsRouteImport
-      parentRoute: typeof SettingsRoute
-    }
-    '/settings/language': {
-      id: '/settings/language'
-      path: '/language'
-      fullPath: '/settings/language'
-      preLoaderRoute: typeof SettingsLanguageRouteImport
-      parentRoute: typeof SettingsRoute
-    }
-    '/settings/notifications': {
-      id: '/settings/notifications'
-      path: '/notifications'
-      fullPath: '/settings/notifications'
-      preLoaderRoute: typeof SettingsNotificationsRouteImport
-      parentRoute: typeof SettingsRoute
-    }
-    '/settings/privacy': {
-      id: '/settings/privacy'
-      path: '/privacy'
-      fullPath: '/settings/privacy'
-      preLoaderRoute: typeof SettingsPrivacyRouteImport
-      parentRoute: typeof SettingsRoute
-    }
-    '/settings/profile': {
-      id: '/settings/profile'
-      path: '/profile'
-      fullPath: '/settings/profile'
-      preLoaderRoute: typeof SettingsProfileRouteImport
-      parentRoute: typeof SettingsRoute
-    }
-    '/settings/sessions': {
-      id: '/settings/sessions'
-      path: '/sessions'
-      fullPath: '/settings/sessions'
-      preLoaderRoute: typeof SettingsSessionsRouteImport
-      parentRoute: typeof SettingsRoute
-    }
-    '/settings/voice': {
-      id: '/settings/voice'
-      path: '/voice'
-      fullPath: '/settings/voice'
-      preLoaderRoute: typeof SettingsVoiceRouteImport
-      parentRoute: typeof SettingsRoute
+    '/settings/$section': {
+      id: '/settings/$section'
+      path: '/settings/$section'
+      fullPath: '/settings/$section'
+      preLoaderRoute: typeof SettingsSectionRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/_app/_shell/': {
       id: '/_app/_shell/'
@@ -913,38 +726,6 @@ const AdminRouteChildren: AdminRouteChildren = {
 
 const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
 
-interface SettingsRouteChildren {
-  SettingsAccountRoute: typeof SettingsAccountRoute
-  SettingsAppRoute: typeof SettingsAppRoute
-  SettingsAppearanceRoute: typeof SettingsAppearanceRoute
-  SettingsBotsRoute: typeof SettingsBotsRoute
-  SettingsLanguageRoute: typeof SettingsLanguageRoute
-  SettingsNotificationsRoute: typeof SettingsNotificationsRoute
-  SettingsPrivacyRoute: typeof SettingsPrivacyRoute
-  SettingsProfileRoute: typeof SettingsProfileRoute
-  SettingsSessionsRoute: typeof SettingsSessionsRoute
-  SettingsVoiceRoute: typeof SettingsVoiceRoute
-  SettingsIndexRoute: typeof SettingsIndexRoute
-}
-
-const SettingsRouteChildren: SettingsRouteChildren = {
-  SettingsAccountRoute: SettingsAccountRoute,
-  SettingsAppRoute: SettingsAppRoute,
-  SettingsAppearanceRoute: SettingsAppearanceRoute,
-  SettingsBotsRoute: SettingsBotsRoute,
-  SettingsLanguageRoute: SettingsLanguageRoute,
-  SettingsNotificationsRoute: SettingsNotificationsRoute,
-  SettingsPrivacyRoute: SettingsPrivacyRoute,
-  SettingsProfileRoute: SettingsProfileRoute,
-  SettingsSessionsRoute: SettingsSessionsRoute,
-  SettingsVoiceRoute: SettingsVoiceRoute,
-  SettingsIndexRoute: SettingsIndexRoute,
-}
-
-const SettingsRouteWithChildren = SettingsRoute._addFileChildren(
-  SettingsRouteChildren,
-)
-
 const rootRouteChildren: RootRouteChildren = {
   AppRoute: AppRouteWithChildren,
   AdminRoute: AdminRouteWithChildren,
@@ -952,9 +733,10 @@ const rootRouteChildren: RootRouteChildren = {
   LoginRoute: LoginRoute,
   RegisterRoute: RegisterRoute,
   ResetPasswordRoute: ResetPasswordRoute,
-  SettingsRoute: SettingsRouteWithChildren,
   VerifyEmailRoute: VerifyEmailRoute,
   InviteCodeRoute: InviteCodeRoute,
+  SettingsSectionRoute: SettingsSectionRoute,
+  SettingsIndexRoute: SettingsIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

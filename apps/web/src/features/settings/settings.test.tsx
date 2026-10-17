@@ -2,8 +2,10 @@ import { fireEvent, screen, waitFor, within } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { initI18n } from '../../lib/i18n'
-import { apiError, createFakeApi, testSessions, testUser } from '../../test/fake-api'
+import { apiError, createFakeApi, testGuild, testSessions, testUser } from '../../test/fake-api'
 import { renderApp } from '../../test/render-app'
+
+const GENERAL_URL = `/channels/${testGuild.id}/503`
 import { getVoicePreferences, resetVoicePreferences } from '../voice/voice-preferences'
 
 afterEach(() => {
@@ -15,34 +17,61 @@ describe('settings', () => {
     const { router } = renderApp('/settings/account')
 
     expect(await screen.findByRole('heading', { name: 'С возвращением!' })).toBeVisible()
-    expect(router.state.location.search).toEqual({ redirect: '/settings/account' })
+    expect(router.state.location.search).toEqual({ redirect: '/?settings=account' })
   })
 
-  it('opens from the user panel and closes back to the app', async () => {
-    const { user, router } = renderApp('/', { user: testUser })
+  it('opens over the chat from the user panel and closes back to it', async () => {
+    const { user, router } = renderApp(GENERAL_URL, { user: testUser })
+    await screen.findByText('Как дела?')
 
     await user.click(await screen.findByRole('link', { name: 'Настройки пользователя' }))
-    expect(await screen.findByRole('heading', { name: 'Моя учётная запись' })).toBeVisible()
+    const dialog = await screen.findByRole('dialog', { name: 'Настройки пользователя' })
+    expect(within(dialog).getByRole('heading', { name: 'Моя учётная запись' })).toBeVisible()
+    // The chat stays where it was, behind the window.
+    expect(router.state.location.pathname).toBe(GENERAL_URL)
+    expect(router.state.location.search).toEqual({ settings: 'account' })
 
-    await user.click(screen.getByRole('link', { name: 'Закрыть настройки' }))
-    expect(await screen.findByRole('heading', { name: 'Друзья', level: 1 })).toBeVisible()
-    expect(router.state.location.pathname).toBe('/')
+    await user.click(within(dialog).getByRole('link', { name: 'Профиль' }))
+    expect(await within(dialog).findByRole('heading', { name: 'Профиль' })).toBeVisible()
+    expect(router.state.location.search).toEqual({ settings: 'profile' })
+
+    await user.click(within(dialog).getByRole('button', { name: 'Закрыть настройки' }))
+    await waitFor(() =>
+      expect(screen.queryByRole('dialog', { name: 'Настройки пользователя' })).toBeNull(),
+    )
+    expect(router.state.location.pathname).toBe(GENERAL_URL)
+    expect(router.state.location.search).toEqual({})
+    expect(screen.getByText('Как дела?')).toBeVisible()
   })
 
   it('closes with Escape', async () => {
-    const { user, router } = renderApp('/settings/profile', { user: testUser })
+    const { user, router } = renderApp('/?settings=profile', { user: testUser })
 
     await screen.findByRole('heading', { name: 'Профиль' })
     await user.keyboard('{Escape}')
 
-    await waitFor(() => expect(router.state.location.pathname).toBe('/'))
+    await waitFor(() =>
+      expect(screen.queryByRole('dialog', { name: 'Настройки пользователя' })).toBeNull(),
+    )
+    expect(router.state.location.search).toEqual({})
   })
 
-  it('redirects /settings to the account section', async () => {
+  it('opens old links at their section', async () => {
     const { router } = renderApp('/settings', { user: testUser })
-
     expect(await screen.findByRole('heading', { name: 'Моя учётная запись' })).toBeVisible()
-    expect(router.state.location.pathname).toBe('/settings/account')
+    expect(router.state.location.pathname).toBe('/')
+    expect(router.state.location.search).toEqual({ settings: 'account' })
+
+    renderApp('/settings/language', { user: testUser })
+    expect(await screen.findByRole('heading', { name: 'Язык' })).toBeVisible()
+  })
+
+  it('ignores an unknown section', async () => {
+    const { router } = renderApp('/?settings=nope', { user: testUser })
+
+    expect(await screen.findByRole('heading', { name: 'Друзья', level: 1 })).toBeVisible()
+    expect(screen.queryByRole('dialog', { name: 'Настройки пользователя' })).toBeNull()
+    expect(router.state.location.search).toEqual({})
   })
 })
 

@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 
 import { settingsNavItemClass, SettingsShell } from '../../components/layout/settings-shell'
 import { useCurrentUser } from '../auth/use-auth-actions'
+import { settingsHref } from '../settings/settings-search'
 
 import type { ReactNode } from 'react'
 
@@ -22,7 +23,7 @@ export const AdminLayout = ({ children }: { children: ReactNode }) => {
     <SettingsShell
       title={t('admin.title')}
       closeLabel={t('admin.back')}
-      closeTo="/settings/account"
+      closeTo={settingsHref('account')}
       closeKind="back"
       nav={
         me?.isAdmin

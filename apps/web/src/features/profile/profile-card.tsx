@@ -19,6 +19,7 @@ import { ModerationActions } from '../moderation/moderation-actions'
 import { useOutranks } from '../moderation/use-outranks'
 import { can, toHexColor } from '../permissions/permissions'
 import { CustomStatusLine } from '../presence/custom-status-line'
+import { withSettings } from '../settings/settings-search'
 import { ProfileBanner } from './profile-banner'
 import { profileKeys, profileQueryOptions } from './queries'
 
@@ -70,7 +71,8 @@ const ProfileActions = ({
     return (
       <div className="flex flex-col gap-2">
         <Link
-          to="/settings/profile"
+          to="."
+          search={withSettings('profile')}
           className="rounded-md bg-elevated px-3 py-2 text-center text-sm font-medium hover:bg-hover"
         >
           {t('profile.edit')}

@@ -48,7 +48,7 @@ test('a bot joins a server, takes a slash command and answers it', async ({ brow
   })
   expect(registered.status()).toBe(200)
 
-  await page.getByRole('link', { name: 'Закрыть настройки' }).click()
+  await page.getByRole('button', { name: 'Закрыть настройки' }).click()
   await page.getByRole('link', { name: serverName }).click()
   const composer = page.getByRole('textbox', { name: 'Сообщение в #общий' })
   await composer.fill('/ro')
