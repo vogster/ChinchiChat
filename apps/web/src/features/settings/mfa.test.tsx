@@ -1,5 +1,5 @@
 import { screen, waitFor, within } from '@testing-library/react'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 
 import { createFakeApi, testUser } from '../../test/fake-api'
 import { renderApp } from '../../test/render-app'
@@ -27,6 +27,34 @@ describe('two-factor sign-in settings', () => {
 
     await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument())
     expect(await screen.findByText('Включена')).toBeVisible()
+  })
+
+  it('saves the recovery codes as a text file naming the instance and the login', async () => {
+    const saved: Blob[] = []
+    vi.spyOn(URL, 'createObjectURL').mockImplementation((blob) => {
+      saved.push(blob as Blob)
+      return 'blob:codes'
+    })
+    vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => undefined)
+    const click = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => {})
+    const api = createFakeApi({ user: { ...testUser, mfaEnabled: true } })
+    const { user } = renderApp('/settings/account', { api })
+
+    await user.click(await screen.findByRole('button', { name: 'Новые коды восстановления' }))
+    const dialog = await screen.findByRole('dialog', { name: 'Новые коды восстановления' })
+    await user.type(within(dialog).getByLabelText('Пароль', { exact: true }), 'password123')
+    await user.type(within(dialog).getByLabelText('Код подтверждения', { exact: true }), '654321')
+    await user.click(within(dialog).getByRole('button', { name: 'Продолжить' }))
+    await user.click(await within(dialog).findByRole('button', { name: 'Скачать коды' }))
+
+    expect(click).toHaveBeenCalledTimes(1)
+    const link = click.mock.contexts[0] as HTMLAnchorElement
+    expect(link.download).toBe(`chinchi-recovery-codes-${testUser.username}.txt`)
+    const text = await (saved[0] as Blob).text()
+    expect(text).toContain('Chinchi')
+    expect(text).toContain(testUser.username)
+    expect(text).toContain('eeeee-fffff')
+    vi.restoreAllMocks()
   })
 
   it('turns off, or renews the recovery codes, with the password and a code', async () => {
