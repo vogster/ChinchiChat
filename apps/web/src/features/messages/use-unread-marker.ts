@@ -1,5 +1,5 @@
 import { compareSnowflakes } from '@chinchi/shared'
-import { useState } from 'react'
+import { useCallback, useState } from 'react'
 
 import { useReadStates } from './use-messages'
 
@@ -15,6 +15,9 @@ export interface UnreadMarker {
   readonly count: number
   /** Older history (not loaded yet) holds more of them. */
   readonly more: boolean
+  /** The "N new messages" banner; it goes once the first of them has been on screen. */
+  readonly bannerShown: boolean
+  readonly hideBanner: () => void
   readonly dismiss: () => void
 }
 
@@ -38,13 +41,23 @@ export const useUnreadMarker = (
   } | null>(null)
   const [dismissed, setDismissed] = useState(false)
   const dismiss = () => setDismissed(true)
+  const [bannerShown, setBannerShown] = useState(true)
+  const hideBanner = useCallback(() => setBannerShown(false), [])
 
   // Taken during render, before the effect that marks the channel read runs.
   if (opened === null && readStates !== undefined && messages.length > 0) {
     setOpened({ lastRead: readStates[channelId] ?? null, newest: messages.at(-1)?.id ?? null })
   }
 
-  const none = { firstUnreadId: null, lastReadId: null, count: 0, more: false, dismiss }
+  const none = {
+    firstUnreadId: null,
+    lastReadId: null,
+    count: 0,
+    more: false,
+    bannerShown: false,
+    hideBanner,
+    dismiss,
+  }
   // A channel never opened before has no marker: all of it would be "new".
   if (!opened?.lastRead || dismissed) return none
   const { lastRead, newest } = opened
@@ -64,6 +77,8 @@ export const useUnreadMarker = (
     lastReadId: lastRead,
     count: unread.length,
     more,
+    bannerShown,
+    hideBanner,
     dismiss,
   }
 }

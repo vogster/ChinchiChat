@@ -16,7 +16,7 @@ import { mentionsMe } from './mentions'
 import { MessageItem } from './message-item'
 import { flattenPages, messagesQueryOptions } from './queries'
 import { SystemMessage } from './system-message'
-import { UnreadBanner } from './unread-banner'
+import { UnreadBanner, UnreadLine } from './unread-banner'
 import { useAckLatest, usePublishMessage } from './use-messages'
 import { useRenderWindow } from './use-render-window'
 import { useUnreadMarker } from './use-unread-marker'
@@ -228,16 +228,7 @@ export const MessageList = ({
                     }
                   >
                     {row.message.id === unread.firstUnreadId ? (
-                      <li>
-                        <div
-                          role="separator"
-                          aria-label={t('unread.marker')}
-                          className="mx-4 my-2 flex items-center gap-2 text-xs font-semibold text-danger"
-                        >
-                          <span className="h-px flex-1 bg-danger" />
-                          {t('unread.markerShort')}
-                        </div>
-                      </li>
+                      <UnreadLine onSeen={unread.hideBanner} />
                     ) : null}
                     <MessageItem
                       guildId={channel.guildId}

@@ -1,5 +1,5 @@
 import { act, screen, waitFor, within } from '@testing-library/react'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 
 import { createFakeApi, testGuild, testMessage, testUser } from '../../test/fake-api'
 import { renderApp } from '../../test/render-app'
@@ -59,7 +59,16 @@ describe('unread marker', () => {
     expect(within(next).getAllByRole('button', { name: 'Боб' })[0]).toBeVisible()
   })
 
-  it('jumps to the first new message, then can be dismissed', async () => {
+  it('can be dismissed', async () => {
+    const { user } = renderApp(GENERAL_URL, { api: readUpToFirst() })
+    await history()
+
+    await user.click(await screen.findByRole('button', { name: 'Отметить прочитанным' }))
+    expect(marker()).toBeNull()
+    expect(screen.queryByText('1 новое сообщение')).toBeNull()
+  })
+
+  it('jumps to the first new message and hides the banner, keeping the line', async () => {
     const { user } = renderApp(GENERAL_URL, { api: readUpToFirst() })
     await history()
 
@@ -68,9 +77,37 @@ describe('unread marker', () => {
       expect(document.activeElement?.getAttribute('data-message-id')).toBe('1002'),
     )
 
-    await user.click(screen.getByRole('button', { name: 'Отметить прочитанным' }))
-    expect(marker()).toBeNull()
-    expect(screen.queryByText('1 новое сообщение')).toBeNull()
+    await waitFor(() => expect(screen.queryByText('1 новое сообщение')).toBeNull())
+    expect(marker()).toBeVisible()
+  })
+
+  it('shows no banner when the new messages are already on screen', async () => {
+    const observed: Element[] = []
+    vi.stubGlobal(
+      'IntersectionObserver',
+      class {
+        constructor(private readonly callback: IntersectionObserverCallback) {}
+        observe(element: Element) {
+          observed.push(element)
+          this.callback(
+            [{ target: element, isIntersecting: true } as IntersectionObserverEntry],
+            this as unknown as IntersectionObserver,
+          )
+        }
+        disconnect() {}
+      },
+    )
+    try {
+      renderApp(GENERAL_URL, { api: readUpToFirst() })
+      expect(
+        await within(await history()).findByRole('separator', { name: 'Новые сообщения' }),
+      ).toBeVisible()
+
+      await waitFor(() => expect(screen.queryByText('1 новое сообщение')).toBeNull())
+      expect(observed).toContain(marker())
+    } finally {
+      vi.unstubAllGlobals()
+    }
   })
 
   it('stays where it was while new messages arrive, and goes away once I write', async () => {
