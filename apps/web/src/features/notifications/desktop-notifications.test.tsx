@@ -101,6 +101,23 @@ describe('desktop notifications', () => {
     await waitFor(() => expect(router.state.location.pathname).toBe(`/channels/@me/${testDm.id}`))
   })
 
+  it('shows an incoming friend request and opens the requests on click', async () => {
+    const { gateway, router } = renderApp(GENERAL_URL, { user: testUser })
+    await screen.findByText('Как дела?')
+    const since = '2026-10-17T12:00:00.000Z'
+
+    act(() => gateway.emit('RELATIONSHIP_ADD', { user: bob, type: 'pending_out', since }))
+    act(() => gateway.emit('RELATIONSHIP_ADD', { user: bob, type: 'friend', since }))
+    act(() => gateway.emit('RELATIONSHIP_ADD', { user: bob, type: 'pending_in', since }))
+
+    await waitFor(() => expect(FakeNotification.shown).toHaveLength(1))
+    const [shown] = FakeNotification.shown
+    expect(shown?.title).toBe('Запрос в друзья')
+    expect(shown?.options.body).toBe('Боб хочет добавить вас в друзья')
+    act(() => shown?.onclick?.())
+    await waitFor(() => expect(router.state.location.pathname).toBe('/'))
+  })
+
   it('follows the level: with "only mentions" a server message needs a mention', async () => {
     const api = createFakeApi({ user: testUser })
     api.notifications.list.mockResolvedValue({

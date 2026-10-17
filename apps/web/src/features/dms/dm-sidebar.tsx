@@ -7,6 +7,7 @@ import { useTranslation } from 'react-i18next'
 import { UserPanel } from '../../components/layout/user-panel'
 import { Avatar } from '../../components/ui/avatar'
 import { useApi } from '../../lib/api-context'
+import { useIncomingRequests } from '../friends/use-incoming-requests'
 import { formatMentionCount, useMentionCounts } from '../messages/mentions'
 import { isUnread, useReadStates } from '../messages/use-messages'
 import { CreateGroupDialog } from './dialogs/create-group-dialog'
@@ -70,6 +71,7 @@ export const DmSidebar = () => {
   const { t } = useTranslation()
   const { data: channels = [] } = useQuery(dmsQueryOptions(useApi()))
   const [creating, setCreating] = useState(false)
+  const requests = useIncomingRequests()
 
   return (
     <aside aria-label={t('dm.title')} className="flex w-60 shrink-0 flex-col bg-sidebar">
@@ -78,9 +80,26 @@ export const DmSidebar = () => {
       </header>
 
       <nav aria-label={t('dm.title')} className="flex-1 overflow-y-auto px-2 py-3">
-        <Link to="/" activeOptions={{ exact: true }} className={`${rowClass} font-medium`}>
+        <Link
+          to="/"
+          activeOptions={{ exact: true }}
+          aria-label={
+            requests > 0
+              ? `${t('dm.friends')} (${t('friends.incomingCount', { count: requests })})`
+              : t('dm.friends')
+          }
+          className={`${rowClass} font-medium`}
+        >
           <Users aria-hidden className="size-5" />
           {t('dm.friends')}
+          {requests > 0 ? (
+            <span
+              aria-hidden
+              className="ml-auto rounded-full bg-danger px-1.5 text-xs leading-4 font-bold text-danger-contrast"
+            >
+              {formatMentionCount(requests)}
+            </span>
+          ) : null}
         </Link>
 
         <div className="mt-4 mb-1 flex items-center px-2 text-xs font-bold tracking-wide text-muted uppercase">

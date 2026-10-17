@@ -5,6 +5,7 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { dmsQueryOptions } from '../../features/dms/queries'
+import { useIncomingRequests } from '../../features/friends/use-incoming-requests'
 import { CreateGuildDialog } from '../../features/guilds/create-guild-dialog'
 import { GuildIcon } from '../../features/guilds/guild-icon'
 import { guildQueryOptions, guildsQueryOptions } from '../../features/guilds/queries'
@@ -83,8 +84,14 @@ export const ServerRail = () => {
   const dmUnread = dms
     .filter((channel) => !resolveNotifications(channel).muted)
     .reduce((sum, channel) => sum + (mentionCounts[channel.id] ?? 0), 0)
+  const requests = useIncomingRequests()
+  const homeStates = [
+    dmUnread > 0 ? t('nav.dmUnread', { count: dmUnread }) : null,
+    requests > 0 ? t('friends.incomingCount', { count: requests }) : null,
+  ].filter(Boolean)
   const homeLabel =
-    dmUnread > 0 ? `${t('nav.home')} (${t('nav.dmUnread', { count: dmUnread })})` : t('nav.home')
+    homeStates.length > 0 ? `${t('nav.home')} (${homeStates.join(', ')})` : t('nav.home')
+  const homeCount = dmUnread + requests
 
   return (
     <nav
@@ -101,12 +108,12 @@ export const ServerRail = () => {
           >
             <MessageCircle aria-hidden className="size-6" />
           </Link>
-          {dmUnread > 0 ? (
+          {homeCount > 0 ? (
             <span
               aria-hidden
               className="pointer-events-none absolute right-2 bottom-0 rounded-full border-4 border-rail bg-danger px-1 text-xs leading-3.5 font-bold text-danger-contrast"
             >
-              {formatMentionCount(dmUnread)}
+              {formatMentionCount(homeCount)}
             </span>
           ) : null}
         </RailItem>

@@ -1,4 +1,4 @@
-import { screen, waitFor, within } from '@testing-library/react'
+import { act, screen, waitFor, within } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 
 import { apiError, createFakeApi, testDm, testFriend, testUser } from '../../test/fake-api'
@@ -17,7 +17,37 @@ const withRelationships = (relationships: Relationship[]) => {
   return api
 }
 
-const tab = (name: string) => screen.findByRole('tab', { name })
+const tab = (name: string | RegExp) => screen.findByRole('tab', { name })
+
+describe('incoming friend requests', () => {
+  it('are counted on Friends, the pending tab and the home button, live', async () => {
+    const api = withRelationships([{ user: carol, type: 'pending_in', since }])
+    const { gateway } = renderApp('/', { api })
+
+    const nav = await screen.findByRole('navigation', { name: 'Личные сообщения' })
+    expect(
+      await within(nav).findByRole('link', { name: 'Друзья (запросов в друзья: 1)' }),
+    ).toBeVisible()
+    expect(await tab('Ожидание (запросов в друзья: 1)')).toBeVisible()
+    expect(screen.getByRole('link', { name: /^Главная.*запросов в друзья: 1/ })).toBeVisible()
+
+    act(() => gateway.emit('RELATIONSHIP_ADD', { user: dave, type: 'pending_in', since }))
+    expect(
+      await within(nav).findByRole('link', { name: 'Друзья (запросов в друзья: 2)' }),
+    ).toBeVisible()
+
+    act(() => gateway.emit('RELATIONSHIP_REMOVE', { userId: carol.id }))
+    act(() => gateway.emit('RELATIONSHIP_REMOVE', { userId: dave.id }))
+    expect(await within(nav).findByRole('link', { name: 'Друзья' })).toBeVisible()
+    expect(screen.getByRole('tab', { name: 'Ожидание' })).toBeVisible()
+  })
+
+  it('leaves out requests I sent', async () => {
+    renderApp('/', { api: withRelationships([{ user: erin, type: 'pending_out', since }]) })
+    const nav = await screen.findByRole('navigation', { name: 'Личные сообщения' })
+    expect(await within(nav).findByRole('link', { name: 'Друзья' })).toBeVisible()
+  })
+})
 
 describe('friends page', () => {
   it('lists friends, online ones first by default', async () => {
@@ -47,7 +77,7 @@ describe('friends page', () => {
     ])
     const { user } = renderApp('/', { api })
 
-    await user.click(await tab('Ожидание'))
+    await user.click(await tab(/^Ожидание/))
     await user.click(await screen.findByRole('button', { name: 'Принять — carol' }))
     await user.click(screen.getByRole('button', { name: 'Отклонить — dave' }))
     await user.click(screen.getByRole('button', { name: 'Отменить — erin' }))
@@ -69,7 +99,7 @@ describe('friends page', () => {
 
     await user.click(await tab('Все'))
     await user.click(await screen.findByRole('button', { name: 'Заблокировать — Боб' }))
-    await user.click(await tab('Ожидание'))
+    await user.click(await tab(/^Ожидание/))
     await user.click(await screen.findByRole('button', { name: 'Заблокировать — carol' }))
 
     expect(api.relationships.block).toHaveBeenCalledWith(testFriend.id)
@@ -118,7 +148,7 @@ describe('friends page', () => {
   it('keeps the list in step with the gateway', async () => {
     const api = withRelationships([])
     const { user, gateway } = renderApp('/', { api })
-    await user.click(await tab('Ожидание'))
+    await user.click(await tab(/^Ожидание/))
     await screen.findByText('Нет заявок')
 
     gateway.emit('RELATIONSHIP_ADD', { user: carol, type: 'pending_in', since })

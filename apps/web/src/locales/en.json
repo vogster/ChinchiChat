@@ -856,7 +856,9 @@
       "username": "Username",
       "submit": "Send request",
       "sent": "Request sent: {{name}}"
-    }
+    },
+    "incomingCount_one": "{{count}} friend request",
+    "incomingCount_other": "{{count}} friend requests"
   },
   "voice": {
     "channelLabel": "Voice channel {{name}}",
@@ -1226,6 +1228,10 @@
       "hint": "New messages while the Chinchi tab is in the background.",
       "denied": "The browser blocked notifications for this site. Allow them in the browser’s site settings.",
       "unsupported": "This browser cannot show notifications."
+    },
+    "friendRequest": {
+      "title": "Friend request",
+      "body": "{{name}} wants to be your friend"
     }
   },
   "unread": {

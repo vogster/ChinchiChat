@@ -6,10 +6,12 @@ import { useTranslation } from 'react-i18next'
 import { PageHeader } from '../../components/layout/page-header'
 import { useApi } from '../../lib/api-context'
 import { useOpenDm } from '../dms/use-dm-actions'
+import { formatMentionCount } from '../messages/mentions'
 import { usePresences } from '../messages/use-presence'
 import { AddFriendForm } from './add-friend-form'
 import { FriendRow } from './friend-row'
 import { relationshipsQueryOptions } from './queries'
+import { useIncomingRequests } from './use-incoming-requests'
 import { useRelationshipActions } from './use-relationship-actions'
 
 import type { FriendAction } from './friend-row'
@@ -37,6 +39,7 @@ export const FriendsPage = () => {
   const presences = usePresences()
   const actions = useRelationshipActions()
   const openDm = useOpenDm()
+  const requests = useIncomingRequests()
 
   const shown: Record<ListTab, (r: Relationship) => boolean> = {
     online: (r) => r.type === 'friend' && presences[r.user.id] !== undefined,
@@ -62,10 +65,23 @@ export const FriendsPage = () => {
               type="button"
               role="tab"
               aria-selected={tab === value}
+              aria-label={
+                value === 'pending' && requests > 0
+                  ? `${t('friends.tabs.pending')} (${t('friends.incomingCount', { count: requests })})`
+                  : undefined
+              }
               onClick={() => setTab(value)}
               className={value === 'add' ? addTabClass : tabClass}
             >
               {t(`friends.tabs.${value}`)}
+              {value === 'pending' && requests > 0 ? (
+                <span
+                  aria-hidden
+                  className="ml-1.5 rounded-full bg-danger px-1.5 text-xs leading-4 font-bold text-danger-contrast"
+                >
+                  {formatMentionCount(requests)}
+                </span>
+              ) : null}
             </button>
           ))}
         </div>

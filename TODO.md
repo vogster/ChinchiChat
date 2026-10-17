@@ -369,7 +369,7 @@
 - [ ] [#20](https://github.com/vogster/ChinchiChat/issues/20) Сообщения от неподтверждённого аккаунта не помечаются у собеседника
 - [x] [#21](https://github.com/vogster/ChinchiChat/issues/21) Настройки канала: в списке медленного режима показывается {{seconds}}
 - [ ] [#22](https://github.com/vogster/ChinchiChat/issues/22) Проверить работу каналов объявлений (публикация в подписанные каналы)
-- [ ] [#23](https://github.com/vogster/ChinchiChat/issues/23) Нет уведомления о входящем запросе в друзья
+- [x] [#23](https://github.com/vogster/ChinchiChat/issues/23) Нет уведомления о входящем запросе в друзья
 
 ---
 

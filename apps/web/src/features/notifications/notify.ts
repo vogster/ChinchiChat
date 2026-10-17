@@ -24,7 +24,8 @@ export interface DesktopNotification {
   /** One notification per channel: a newer message replaces the older one. */
   readonly tag: string
   readonly guildId: string | null
-  readonly channelId: string
+  /** Null for what is not about a channel (a friend request). */
+  readonly channelId: string | null
 }
 
 const BODY_MAX = 140
