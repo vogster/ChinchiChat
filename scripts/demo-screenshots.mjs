@@ -127,15 +127,28 @@ if (!process.env.ONLY_WIKI) {
       await page.screenshot({ path: join(tmpdir(), 'chinchi-demo', 'failed.png') })
       throw error
     })
+    // Again on a rerun: the message from the last run, not a second copy.
+    await page.waitForTimeout(1500)
+    if ((await page.getByText(text).count()) > 0) return
     await box.fill(text)
     await page.keyboard.press('Enter')
     await page.getByText(text).first().waitFor({ timeout: 15_000 })
+  }
+  /** Notices that are not what the picture is about: a device to confirm, a history hint. */
+  const tidy = async (page) => {
+    for (const name of ['Понятно', 'Скрыть подсказку']) {
+      await page
+        .getByRole('button', { name, exact: true })
+        .click({ timeout: 2000 })
+        .catch(() => undefined)
+    }
   }
   await write(anna, 'Привет! Пароль от тестового стенда скину сюда, тут сквозное шифрование 🔒')
   await write(vika, 'Отлично, жду. Сервер этого всё равно не прочитает 😉')
   await anna.goto(`${WEB}/channels/@me/${dm}`)
   await later(anna)
   await anna.getByText('Сервер этого всё равно не прочитает').first().waitFor({ timeout: 30_000 })
+  await tidy(anna)
   await shot(anna, 'encrypted')
 
   // 5. Server settings: roles.
