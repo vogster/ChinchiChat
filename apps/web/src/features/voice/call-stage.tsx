@@ -29,6 +29,16 @@ const VideoView = ({ tile }: { tile: VideoTile }) => {
   )
 }
 
+/**
+ * A steady hue per person, for the tint of their tile in a voice channel. FNV-1a, so ids that
+ * differ in a digit or two (Snowflakes made close together) still land far apart.
+ */
+const hueOf = (id: string) => {
+  let hash = 0x811c9dc5
+  for (const char of id) hash = Math.imul(hash ^ char.charCodeAt(0), 0x01000193)
+  return (hash >>> 0) % 360
+}
+
 const Tile = ({
   state,
   name,
@@ -36,6 +46,7 @@ const Tile = ({
   speaking,
   video,
   large,
+  look,
 }: {
   state: VoiceState
   name: string
@@ -43,40 +54,69 @@ const Tile = ({
   speaking: boolean
   video: VideoTile | undefined
   large: boolean
+  /** `channel`: a voice channel's tinted 4:3 tile; `call`: a DM call's plain one. */
+  look: 'channel' | 'call'
 }) => {
   const { t } = useTranslation()
   const words = voiceStateWords(t, state, speaking)
   const muted = state.selfMute || state.serverMute || state.selfDeaf || state.serverDeaf
+  const channel = look === 'channel'
   return (
     <li
       aria-label={words.length > 0 ? `${name} (${words.join(', ')})` : name}
       data-speaking={speaking}
-      className="relative flex min-h-0 min-w-0 items-center justify-center overflow-hidden rounded-[28px] bg-stage transition-shadow duration-200 data-[speaking=true]:shadow-[inset_0_0_0_2px_var(--zl-accent)]"
+      // The tint follows the theme's lightness (`--zl-tile-l`) and the person's hue.
+      style={
+        channel
+          ? { backgroundColor: `oklch(var(--zl-tile-l) 0.04 ${hueOf(state.userId)})` }
+          : undefined
+      }
+      className={`relative flex min-h-0 min-w-0 items-center justify-center overflow-hidden rounded-[28px] transition-shadow duration-200 ${channel ? 'data-[speaking=true]:shadow-[inset_0_0_0_4px_var(--zl-accent)]' : 'bg-stage data-[speaking=true]:shadow-[inset_0_0_0_2px_var(--zl-accent)]'}`}
     >
       {video ? (
         <VideoView tile={video} />
       ) : (
         <span
           data-speaking={speaking}
-          className="rounded-[36%] transition-shadow duration-200 data-[speaking=true]:shadow-[0_0_0_3px_var(--zl-rail),0_0_0_6px_var(--zl-accent)]"
+          className={
+            channel
+              ? 'rounded-[32px]'
+              : 'rounded-[36%] transition-shadow duration-200 data-[speaking=true]:shadow-[0_0_0_3px_var(--zl-rail),0_0_0_6px_var(--zl-accent)]'
+          }
         >
           <Avatar
             name={name}
             src={user?.avatarUrl ?? null}
             id={user?.id}
-            rounded="rounded-[36%]"
-            className={large ? 'size-[132px] text-5xl' : 'size-24 text-3xl'}
+            rounded={channel ? 'rounded-[32px]' : 'rounded-[36%]'}
+            className={
+              channel
+                ? 'size-[92px] text-3xl'
+                : large
+                  ? 'size-[132px] text-5xl'
+                  : 'size-24 text-3xl'
+            }
           />
         </span>
       )}
-      <span className="absolute bottom-3 left-3 flex max-w-[calc(100%-1.5rem)] items-center gap-1.5 rounded-full bg-side px-3 py-1 text-[13px] font-medium">
-        <span className="truncate">{name}</span>
-        {muted ? <MicOff aria-hidden className="size-3.5 shrink-0 text-danger" /> : null}
-      </span>
+      {channel ? (
+        <span className="absolute bottom-3 left-3 flex max-w-[calc(100%-1.5rem)] items-center gap-1.5 rounded-[14px] bg-[rgb(15_15_22/0.5)] px-3 py-1.5 text-[12.5px] font-medium text-white backdrop-blur-md">
+          <span className="truncate">{name}</span>
+          {muted ? (
+            <span className="shrink-0 text-[11px] text-[oklch(0.82_0.12_25)]">
+              {t('voice.silent')}
+            </span>
+          ) : null}
+        </span>
+      ) : (
+        <span className="absolute bottom-3 left-3 flex max-w-[calc(100%-1.5rem)] items-center gap-1.5 rounded-full bg-side px-3 py-1 text-[13px] font-medium">
+          <span className="truncate">{name}</span>
+          {muted ? <MicOff aria-hidden className="size-3.5 shrink-0 text-danger" /> : null}
+        </span>
+      )}
     </li>
   )
 }
-
 /** Everyone in a call as tiles: video when they share it (to those in the call), else avatar. */
 export const CallStage = ({
   states,
@@ -109,9 +149,8 @@ export const CallStage = ({
       className={
         layout === 'row'
           ? 'flex min-h-0 flex-1 justify-center gap-3 *:max-h-[340px] *:max-w-[420px] *:flex-1'
-          : // Phones: portrait tiles, two to a row.
-            // Wider: tiles share the stage's height, never shorter than an avatar and its name.
-            'grid grid-cols-2 gap-3 *:aspect-[3/4] md:h-full md:auto-rows-[minmax(200px,1fr)] md:grid-cols-[repeat(auto-fit,minmax(16rem,1fr))] md:*:aspect-auto'
+          : // Phones: portrait tiles, two to a row; wider: 4:3 tiles of at least 260px.
+            'grid grid-cols-2 gap-3 *:aspect-[3/4] md:grid-cols-[repeat(auto-fill,minmax(260px,1fr))] md:*:aspect-[4/3]'
       }
     >
       {states.map((state) => {
@@ -125,6 +164,7 @@ export const CallStage = ({
             speaking={here && voice.speaking.includes(state.userId)}
             video={videoOf(state.userId)}
             large={large}
+            look={layout === 'grid' ? 'channel' : 'call'}
           />
         )
       })}

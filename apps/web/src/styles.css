@@ -36,6 +36,8 @@
   --zl-secure-text: oklch(0.78 0.16 150);
   --zl-warning-text: oklch(0.86 0.13 85);
   --zl-mention: oklch(0.8 0.15 80);
+  /* Lightness of the person-tinted voice channel tiles. */
+  --zl-tile-l: 0.32;
 }
 
 /* The neon and plum palettes: only the hues and chroma differ. */
@@ -76,6 +78,7 @@
   --zl-secure-text: oklch(0.5 0.14 150);
   --zl-warning-text: oklch(0.5 0.12 70);
   --zl-mention: oklch(0.62 0.14 75);
+  --zl-tile-l: 0.9;
 }
 
 @media (prefers-color-scheme: light) {
@@ -99,6 +102,7 @@
     --zl-secure-text: oklch(0.5 0.14 150);
     --zl-warning-text: oklch(0.5 0.12 70);
     --zl-mention: oklch(0.62 0.14 75);
+    --zl-tile-l: 0.9;
   }
 }
 

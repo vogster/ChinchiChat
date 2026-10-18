@@ -935,7 +935,6 @@
     "stream": "sharing screen",
     "membersIn": "In {{name}}",
     "stage": "Call participants",
-    "empty": "Nobody is here yet",
     "join": "Join",
     "actions": "Actions",
     "serverMute": "Server mute",
@@ -967,7 +966,12 @@
     "expand": "Full screen",
     "shrink": "Shrink the call",
     "callBlock": "Call",
-    "dialing": "Calling…"
+    "dialing": "Calling…",
+    "emptyTitle": "It's quiet here",
+    "emptyHint": "Be the first in — friends will see you're here.",
+    "inChannelCount_one": "Inside: {{count}}",
+    "inChannelCount_other": "Inside: {{count}}",
+    "nobody": "Nobody here"
   },
   "profile": {
     "label": "Profile: {{name}}",

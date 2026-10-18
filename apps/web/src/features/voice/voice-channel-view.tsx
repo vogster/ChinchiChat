@@ -3,7 +3,6 @@ import { useTranslation } from 'react-i18next'
 
 import { MainCard } from '../../components/layout/main-card'
 import { PageHeader, PageTitle } from '../../components/layout/page-header'
-import { Button } from '../../components/ui/button'
 import { CallDock } from './call-dock'
 import { CallStage } from './call-stage'
 import { statesInChannel, useVoiceStates } from './queries'
@@ -32,26 +31,37 @@ export const VoiceChannelView = ({ channel }: { channel: Channel }) => {
           }
         />
       </PageHeader>
-      <div className="mx-3 mb-3 flex min-h-0 flex-1 flex-col gap-3.5 rounded-panel bg-rail p-3.5">
-        <div className="min-h-0 flex-1 overflow-y-auto">
-          {inside.length === 0 ? (
-            <p className="flex h-full items-center justify-center text-faint">{t('voice.empty')}</p>
-          ) : (
-            <CallStage states={inside} channelId={channel.id} person={people} />
-          )}
-        </div>
+      <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto px-4 pt-1 pb-4">
+        {inside.length === 0 ? (
+          <div className="grid flex-1 place-items-center rounded-[24px] bg-stage p-6 text-center">
+            <div className="flex flex-col items-center gap-1.5">
+              <p className="text-[22px] font-semibold">{t('voice.emptyTitle')}</p>
+              <p className="text-muted">{t('voice.emptyHint')}</p>
+            </div>
+          </div>
+        ) : (
+          <CallStage states={inside} channelId={channel.id} person={people} />
+        )}
+      </div>
+      <div className="flex shrink-0 justify-center px-4 pb-[18px]">
         {here ? (
           <CallDock />
         ) : (
-          <div className="mx-auto">
-            <Button
-              fullWidth={false}
+          <div className="flex items-center gap-2 rounded-[34px] bg-side p-2 shadow-[0_0_0_1px_var(--zl-line)]">
+            <span className="pr-2.5 pl-3.5 text-[13px] text-muted">
+              {inside.length > 0
+                ? t('voice.inChannelCount', { count: inside.length })
+                : t('voice.nobody')}
+            </span>
+            <button
+              type="button"
               disabled={!enabled}
               title={enabled ? undefined : t('voice.disabled')}
               onClick={() => void voice.join(channel.guildId, channel.id)}
+              className="h-12 rounded-full bg-accent px-[26px] font-semibold text-accent-contrast transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60"
             >
               {t('voice.join')}
-            </Button>
+            </button>
           </div>
         )}
       </div>

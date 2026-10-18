@@ -947,7 +947,6 @@
     "stream": "показывает экран",
     "membersIn": "В канале {{name}}",
     "stage": "Участники звонка",
-    "empty": "В канале пока никого нет",
     "join": "Подключиться",
     "actions": "Действия",
     "serverMute": "Выключить микрофон на сервере",
@@ -981,7 +980,14 @@
     "expand": "Во весь экран",
     "shrink": "Свернуть звонок",
     "callBlock": "Звонок",
-    "dialing": "Вызываем…"
+    "dialing": "Вызываем…",
+    "emptyTitle": "Тут пока тихо",
+    "emptyHint": "Заходите первым — друзья увидят, что вы здесь.",
+    "inChannelCount_one": "В канале: {{count}}",
+    "inChannelCount_few": "В канале: {{count}}",
+    "inChannelCount_many": "В канале: {{count}}",
+    "inChannelCount_other": "В канале: {{count}}",
+    "nobody": "Никого нет"
   },
   "profile": {
     "label": "Профиль: {{name}}",
