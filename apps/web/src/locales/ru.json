@@ -619,7 +619,8 @@
     "attachUpTo": "До {{size}}",
     "sendMessage": "Отправить сообщение",
     "send": "Отправить",
-    "jumpToMessage": "Перейти к сообщению"
+    "jumpToMessage": "Перейти к сообщению",
+    "copyText": "Копировать текст"
   },
   "presence": {
     "online": "В сети",

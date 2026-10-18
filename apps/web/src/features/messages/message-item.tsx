@@ -6,6 +6,7 @@ import { Avatar } from '../../components/ui/avatar'
 import { Button } from '../../components/ui/button'
 import { InteractionHeader } from '../commands/interaction-header'
 import { EncryptedAttachments } from '../e2ee/encrypted-attachments'
+import { EmojiPicker } from '../emoji/emoji-picker'
 import { MessageContent } from '../markdown/message-content'
 import { ProfileTrigger } from '../profile/profile-trigger'
 import { AttachmentList } from './attachment-list'
@@ -15,9 +16,10 @@ import { EmbedCard } from './embed-card'
 import { formatMessageTime, formatShortTime } from './format-time'
 import { ForwardDialog } from './forward-dialog'
 import { ForwardedBlock } from './forwarded-block'
-import { MessageActions } from './message-actions'
 import { MessageHeader } from './message-header'
+import { MessageMenu } from './message-menu'
 import { PollCard } from './poll-card'
+import { QUICK_REACTIONS } from './reaction-cache'
 import { ReactionsBar } from './reactions-bar'
 import { ReplyHeader } from './reply-header'
 import { ThreadCard } from './thread-card'
@@ -113,7 +115,7 @@ export const MessageItem = ({
   // Encrypted messages stay in their conversation: the server can't copy what it can't read.
   const canForward = !message.pending && !message.system && !message.ciphertext
   const [forwarding, setForwarding] = useState(false)
-  // The picker opens in a portal: hovering it would otherwise hide its own anchor.
+  // The full emoji picker, opened from the menu's "+".
   const [picking, setPicking] = useState(false)
   const showActions =
     !message.pending &&
@@ -160,138 +162,155 @@ export const MessageItem = ({
   ) : null
 
   return (
-    <li
-      data-message-id={message.id}
-      data-side={mine ? 'mine' : 'other'}
-      data-group={position}
-      // Focusable from code only (jump to a pinned or replied-to message).
-      tabIndex={-1}
-      data-mentioned={mentioned || undefined}
-      className={`group relative mx-2 flex items-end gap-2.5 rounded-[20px] px-3 py-px transition-colors duration-300 data-flash:bg-accent-soft ${mine ? 'flex-row-reverse' : ''} ${compact ? '' : 'mt-(--zl-message-group-gap) pt-1.5'} ${endsRun ? 'pb-1.5' : ''}`}
+    <MessageMenu
+      message={message}
+      disabled={!showActions}
+      canReact={canReact}
+      onToggleReaction={onToggleReaction}
+      onMoreReactions={() => setPicking(true)}
+      onReply={canReply ? onReply : undefined}
+      onForward={canForward ? () => setForwarding(true) : undefined}
+      onTogglePin={canPin ? onTogglePin : undefined}
+      onStartEdit={canEdit ? onStartEdit : undefined}
+      onPublish={onPublish}
+      onStartThread={onStartThread}
+      onReport={onReport}
+      onDelete={canDelete ? onDelete : undefined}
     >
-      {mentioned ? (
-        // A separate layer, so the highlight never fights the row's own background.
-        <span
-          aria-hidden
-          className="pointer-events-none absolute inset-0 rounded-[20px] bg-mention/12 shadow-[inset_3px_0_0_var(--zl-mention)]"
-        />
-      ) : null}
-      {mine ? null : (
-        <div className="w-[38px] shrink-0">
-          {endsRun ? (
-            message.author ? (
-              <ProfileTrigger
-                userId={message.author.id}
-                guildId={guildId}
-                name={name}
-                className="block rounded-[14px] hover:no-underline hover:brightness-105"
-              >
-                <Avatar
-                  name={name}
-                  src={message.author.avatarUrl}
-                  id={message.author.id}
-                  rounded="rounded-[14px]"
-                  className="size-[38px] text-[13px]"
-                />
-              </ProfileTrigger>
-            ) : (
-              <Avatar name={name} src={null} rounded="rounded-[14px]" className="size-[38px]" />
-            )
-          ) : null}
-        </div>
-      )}
-
-      <div
-        className={`flex min-w-0 flex-1 flex-col gap-[3px] ${mine ? 'items-end' : 'max-w-[640px] items-start'}`}
+      <li
+        data-message-id={message.id}
+        data-side={mine ? 'mine' : 'other'}
+        data-group={position}
+        // Focusable from code only (jump to a pinned or replied-to message).
+        tabIndex={-1}
+        data-mentioned={mentioned || undefined}
+        className={`group relative mx-2 flex items-end gap-2.5 rounded-[20px] px-3 py-px transition-colors duration-300 data-flash:bg-accent-soft ${mine ? 'flex-row-reverse' : ''} ${compact ? '' : 'mt-(--zl-message-group-gap) pt-1.5'} ${endsRun ? 'pb-1.5' : ''}`}
       >
-        {compact ? null : (
-          <MessageHeader
-            message={message}
-            name={name}
-            mine={mine}
-            authorColor={authorColor}
-            guildId={guildId}
+        {mentioned ? (
+          // A separate layer, so the highlight never fights the row's own background.
+          <span
+            aria-hidden
+            className="pointer-events-none absolute inset-0 rounded-[20px] bg-mention/12 shadow-[inset_3px_0_0_var(--zl-mention)]"
           />
-        )}
-        {message.reply ? <ReplyHeader reply={message.reply} guildId={guildId} /> : null}
-        {message.interaction ? (
-          <InteractionHeader interaction={message.interaction} guildId={guildId} />
         ) : null}
-        <div className={`flex max-w-full items-center gap-2 ${mine ? 'flex-row-reverse' : ''}`}>
-          {bubble}
-          {compact && !editing ? (
-            <time
-              dateTime={message.createdAt}
-              className="invisible shrink-0 text-[11px] text-faint group-hover:visible"
-            >
-              {formatShortTime(message.createdAt, i18n.language)}
-            </time>
+        {mine ? null : (
+          <div className="w-[38px] shrink-0">
+            {endsRun ? (
+              message.author ? (
+                <ProfileTrigger
+                  userId={message.author.id}
+                  guildId={guildId}
+                  name={name}
+                  className="block rounded-[14px] hover:no-underline hover:brightness-105"
+                >
+                  <Avatar
+                    name={name}
+                    src={message.author.avatarUrl}
+                    id={message.author.id}
+                    rounded="rounded-[14px]"
+                    className="size-[38px] text-[13px]"
+                  />
+                </ProfileTrigger>
+              ) : (
+                <Avatar name={name} src={null} rounded="rounded-[14px]" className="size-[38px]" />
+              )
+            ) : null}
+          </div>
+        )}
+
+        <div
+          className={`flex min-w-0 flex-1 flex-col gap-[3px] ${mine ? 'items-end' : 'max-w-[640px] items-start'}`}
+        >
+          {compact ? null : (
+            <MessageHeader
+              message={message}
+              name={name}
+              mine={mine}
+              authorColor={authorColor}
+              guildId={guildId}
+            />
+          )}
+          {message.reply ? <ReplyHeader reply={message.reply} guildId={guildId} /> : null}
+          {message.interaction ? (
+            <InteractionHeader interaction={message.interaction} guildId={guildId} />
+          ) : null}
+          <div className={`flex max-w-full items-center gap-2 ${mine ? 'flex-row-reverse' : ''}`}>
+            {bubble}
+            {compact && !editing ? (
+              <time
+                dateTime={message.createdAt}
+                className="invisible shrink-0 text-[11px] text-faint group-hover:visible"
+              >
+                {formatShortTime(message.createdAt, i18n.language)}
+              </time>
+            ) : null}
+          </div>
+          {message.forward ? <ForwardedBlock forward={message.forward} /> : null}
+          <AttachmentList attachments={message.attachments} />
+          {message.encryptedFiles ? <EncryptedAttachments files={message.encryptedFiles} /> : null}
+          {message.poll && !message.pending ? (
+            <PollCard
+              poll={message.poll}
+              channelId={message.channelId}
+              messageId={message.id}
+              authorId={message.author?.id ?? null}
+            />
+          ) : null}
+          {message.pending && message.files ? (
+            <ul className="flex flex-wrap gap-1.5">
+              {message.files.map((file, index) => (
+                <li
+                  key={`${file.name}-${index}`}
+                  className="flex items-center gap-1 rounded-full bg-field px-2.5 py-0.5 text-xs text-muted"
+                >
+                  <Paperclip aria-hidden className="size-3" />
+                  {file.name}
+                </li>
+              ))}
+            </ul>
+          ) : null}
+          {message.embeds.map((embed) => (
+            <EmbedCard key={embed.url} embed={embed} />
+          ))}
+          {thread ? <ThreadCard thread={thread} /> : null}
+          {message.pending ? null : (
+            <ReactionsBar reactions={message.reactions} onToggle={onToggleReaction} />
+          )}
+          {message.pending === 'failed' ? (
+            <div role="alert" className="flex items-center gap-3 px-1 text-sm text-danger">
+              {t('messages.failed')}
+              <Button variant="link" onClick={onRetry}>
+                {t('messages.retry')}
+              </Button>
+              <Button variant="link" onClick={onDiscard}>
+                {t('messages.discard')}
+              </Button>
+            </div>
           ) : null}
         </div>
-        {message.forward ? <ForwardedBlock forward={message.forward} /> : null}
-        <AttachmentList attachments={message.attachments} />
-        {message.encryptedFiles ? <EncryptedAttachments files={message.encryptedFiles} /> : null}
-        {message.poll && !message.pending ? (
-          <PollCard
-            poll={message.poll}
-            channelId={message.channelId}
-            messageId={message.id}
-            authorId={message.author?.id ?? null}
+
+        {canReact ? (
+          // The full picker, opened by the menu's "+": it hangs from the row's top corner.
+          <EmojiPicker
+            label={t('messages.addReaction')}
+            trigger={null}
+            open={picking}
+            onOpenChange={setPicking}
+            onSelect={onToggleReaction}
+            custom={customEmojis ?? null}
+            quick={QUICK_REACTIONS.map((emoji) => ({
+              emoji,
+              label: t(
+                message.reactions.some((r) => r.emoji === emoji && r.me)
+                  ? 'messages.unreactWith'
+                  : 'messages.reactWith',
+                { emoji },
+              ),
+            }))}
           />
         ) : null}
-        {message.pending && message.files ? (
-          <ul className="flex flex-wrap gap-1.5">
-            {message.files.map((file, index) => (
-              <li
-                key={`${file.name}-${index}`}
-                className="flex items-center gap-1 rounded-full bg-field px-2.5 py-0.5 text-xs text-muted"
-              >
-                <Paperclip aria-hidden className="size-3" />
-                {file.name}
-              </li>
-            ))}
-          </ul>
-        ) : null}
-        {message.embeds.map((embed) => (
-          <EmbedCard key={embed.url} embed={embed} />
-        ))}
-        {thread ? <ThreadCard thread={thread} /> : null}
-        {message.pending ? null : (
-          <ReactionsBar reactions={message.reactions} onToggle={onToggleReaction} />
-        )}
-        {message.pending === 'failed' ? (
-          <div role="alert" className="flex items-center gap-3 px-1 text-sm text-danger">
-            {t('messages.failed')}
-            <Button variant="link" onClick={onRetry}>
-              {t('messages.retry')}
-            </Button>
-            <Button variant="link" onClick={onDiscard}>
-              {t('messages.discard')}
-            </Button>
-          </div>
-        ) : null}
-      </div>
-
-      {showActions ? (
-        <MessageActions
-          message={message}
-          mine={mine}
-          open={picking}
-          onPickingChange={setPicking}
-          canReact={canReact}
-          onToggleReaction={onToggleReaction}
-          customEmojis={customEmojis}
-          onReply={canReply ? onReply : undefined}
-          onForward={canForward ? () => setForwarding(true) : undefined}
-          onTogglePin={canPin ? onTogglePin : undefined}
-          onStartEdit={canEdit ? onStartEdit : undefined}
-          onPublish={onPublish}
-          onStartThread={onStartThread}
-          onReport={onReport}
-          onDelete={canDelete ? onDelete : undefined}
-        />
-      ) : null}
-      {forwarding ? <ForwardDialog message={message} onOpenChange={setForwarding} /> : null}
-    </li>
+        {forwarding ? <ForwardDialog message={message} onOpenChange={setForwarding} /> : null}
+      </li>
+    </MessageMenu>
   )
 }

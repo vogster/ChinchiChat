@@ -9,6 +9,7 @@ import {
   testThread,
   testUser,
 } from '../../test/fake-api'
+import { openMessageMenu } from '../../test/message-menu'
 import { renderApp } from '../../test/render-app'
 
 const GENERAL_URL = `/channels/${testGuild.id}/503`
@@ -130,7 +131,11 @@ describe('threads', () => {
     const { user, router } = renderApp(GENERAL_URL, { api })
 
     await screen.findByText('Как дела?')
-    await user.click(within(messageRow('Как дела?')).getByRole('button', { name: 'Создать тред' }))
+    await user.click(
+      within(await openMessageMenu(messageRow('Как дела?'))).getByRole('menuitem', {
+        name: 'Создать тред',
+      }),
+    )
     const dialog = await screen.findByRole('dialog', { name: 'Новый тред' })
     const name = within(dialog).getByLabelText('Название треда', { exact: true })
     expect(name).toHaveValue('Как дела?')

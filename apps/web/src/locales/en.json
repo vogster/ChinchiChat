@@ -609,7 +609,8 @@
     "attachUpTo": "Up to {{size}}",
     "sendMessage": "Send the message",
     "send": "Send",
-    "jumpToMessage": "Go to the message"
+    "jumpToMessage": "Go to the message",
+    "copyText": "Copy text"
   },
   "presence": {
     "online": "Online",

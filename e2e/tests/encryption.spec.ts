@@ -4,6 +4,7 @@ import { registerAndOpenHome } from '../support/auth'
 import { saveRecoveryKey } from '../support/encryption'
 import { befriend } from '../support/friends'
 import { acceptInvite, createServerWithInvite } from '../support/guild'
+import { messageAction } from '../support/messages'
 import { newUser } from '../support/users'
 
 import type { Browser } from '@playwright/test'
@@ -82,10 +83,9 @@ test('two people talk and call in an encrypted conversation the server cannot re
   await results.getByRole('button', { name: 'Закрыть поиск' }).click()
 
   // Bob reacts; Alice sees it, the server only holds an encrypted set.
+  // Message actions open with a right click.
   const bobRow = bob.page.getByText('Пароль от сейфа: 4242').locator('xpath=ancestor::li[1]')
-  await bobRow.hover()
-  await bobRow.getByRole('button', { name: 'Добавить реакцию' }).click()
-  await bob.page.getByRole('button', { name: 'Отреагировать: 😂' }).click()
+  await (await messageAction(bob.page, 'Пароль от сейфа: 4242', 'Отреагировать: 😂')).click()
   const aliceRow = alice.page.getByText('Пароль от сейфа: 4242').locator('xpath=ancestor::li[1]')
   await expect(aliceRow.getByRole('button', { name: '😂: 1' })).toBeVisible()
   await expect(bobRow.getByRole('button', { name: '😂: 1, вы среди них' })).toBeVisible()
@@ -390,10 +390,7 @@ test('a new browser is approved from an old one by comparing emoji', async ({ br
     .getByRole('link', { name: /зашифрованная беседа/ })
     .click()
   await saveRecoveryKey(bob.page)
-  const bobRow = bob.page.getByText('Встречаемся у фонтана').locator('xpath=ancestor::li[1]')
-  await bobRow.hover()
-  await bobRow.getByRole('button', { name: 'Добавить реакцию' }).click()
-  await bob.page.getByRole('button', { name: 'Отреагировать: 👍' }).click()
+  await (await messageAction(bob.page, 'Встречаемся у фонтана', 'Отреагировать: 👍')).click()
   const laptopRow = laptop.page.getByText('Встречаемся у фонтана').locator('xpath=ancestor::li[1]')
   await expect(laptopRow.getByRole('button', { name: '👍: 1' })).toBeVisible()
   await laptop.page.goto('/')

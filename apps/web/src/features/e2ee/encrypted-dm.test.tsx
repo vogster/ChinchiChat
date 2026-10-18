@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest'
 
 import { createFakeApi, testFriend, testGuild, testMessage, testUser } from '../../test/fake-api'
 import { fakeCiphertext } from '../../test/fake-e2ee'
+import { openMessageMenu } from '../../test/message-menu'
 import { renderApp } from '../../test/render-app'
 
 import type { ReadMessage } from './client'
@@ -283,7 +284,11 @@ describe('editing and replying in encrypted conversations', () => {
     expect(screen.getAllByText('Секретная встреча в пятницу')).toHaveLength(2)
 
     await user.hover(messageRow('Мой текст'))
-    await user.click(within(messageRow('Мой текст')).getByRole('button', { name: 'Ответить' }))
+    await user.click(
+      within(await openMessageMenu(messageRow('Мой текст'))).getByRole('menuitem', {
+        name: 'Ответить',
+      }),
+    )
     await user.type(screen.getByRole('textbox', { name: 'Написать @Боб' }), 'Ок{Enter}')
 
     await waitFor(() =>

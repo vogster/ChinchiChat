@@ -2,6 +2,7 @@ import { expect, test } from '@playwright/test'
 
 import { registerAndOpenHome } from '../support/auth'
 import { acceptInvite, createServerWithInvite } from '../support/guild'
+import { messageAction } from '../support/messages'
 import { newUser } from '../support/users'
 
 import type { Browser, Page } from '@playwright/test'
@@ -56,11 +57,8 @@ test('two people chat in real time', async ({ browser }) => {
   await expect(history(owner.page)).toContainText('(изменено)')
 
   // The owner moderates the friend's message; it disappears for both.
-  const message = history(owner.page).getByRole('listitem').filter({ hasText: 'Спасибо большое!' })
-  await message.hover()
-  await owner.page.keyboard.down('Shift')
-  await message.getByRole('button', { name: 'Удалить' }).click()
-  await owner.page.keyboard.up('Shift')
+  const remove = await messageAction(owner.page, 'Спасибо большое!', 'Удалить')
+  await remove.click({ modifiers: ['Shift'] })
   await expect(history(friend.page)).not.toContainText('Спасибо большое!')
   await expect(history(owner.page)).not.toContainText('Спасибо большое!')
 

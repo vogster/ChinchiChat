@@ -2,6 +2,7 @@ import { act, screen, waitFor, within } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 
 import { apiError, createFakeApi, testGuild, testMessage, testUser } from '../../test/fake-api'
+import { openMessageMenu } from '../../test/message-menu'
 import { renderApp } from '../../test/render-app'
 
 const CHANNEL_URL = `/channels/${testGuild.id}/503`
@@ -14,7 +15,9 @@ describe('pinning', () => {
     await screen.findByText('Как дела?')
 
     await user.hover(row('Как дела?'))
-    await user.click(within(row('Как дела?')).getByRole('button', { name: 'Закрепить' }))
+    await user.click(
+      within(await openMessageMenu(row('Как дела?'))).getByRole('menuitem', { name: 'Закрепить' }),
+    )
     await waitFor(() => expect(api.pins.pin).toHaveBeenCalledWith('503', '1002'))
 
     act(() =>
@@ -23,7 +26,9 @@ describe('pinning', () => {
     expect(await within(row('Как дела?')).findByLabelText('Закреплено')).toBeVisible()
 
     await user.hover(row('Как дела?'))
-    await user.click(within(row('Как дела?')).getByRole('button', { name: 'Открепить' }))
+    await user.click(
+      within(await openMessageMenu(row('Как дела?'))).getByRole('menuitem', { name: 'Открепить' }),
+    )
     await waitFor(() => expect(api.pins.unpin).toHaveBeenCalledWith('503', '1002'))
   })
 
@@ -34,7 +39,9 @@ describe('pinning', () => {
     await screen.findByText('Как дела?')
 
     await user.hover(row('Как дела?'))
-    await user.click(within(row('Как дела?')).getByRole('button', { name: 'Закрепить' }))
+    await user.click(
+      within(await openMessageMenu(row('Как дела?'))).getByRole('menuitem', { name: 'Закрепить' }),
+    )
 
     expect(
       await screen.findByText('В канале уже слишком много закреплённых сообщений.'),

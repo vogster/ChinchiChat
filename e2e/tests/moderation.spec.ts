@@ -2,6 +2,7 @@ import { expect, test } from '@playwright/test'
 
 import { registerAndOpenHome } from '../support/auth'
 import { acceptInvite, createServerWithInvite } from '../support/guild'
+import { messageAction } from '../support/messages'
 import { newUser } from '../support/users'
 
 import type { Browser, Page } from '@playwright/test'
@@ -85,9 +86,7 @@ test('a reported message reaches the moderators, who delete it', async ({ browse
 
   await memberPage.getByRole('textbox', { name: 'Сообщение в #общий' }).fill('купи казино')
   await memberPage.keyboard.press('Enter')
-  const message = ownerPage.getByRole('listitem').filter({ hasText: 'купи казино' })
-  await message.hover()
-  await message.getByRole('button', { name: 'Пожаловаться' }).click()
+  await (await messageAction(ownerPage, 'купи казино', 'Пожаловаться')).click()
   const dialog = ownerPage.getByRole('dialog', { name: 'Пожаловаться на сообщение' })
   await dialog.getByRole('radio', { name: 'Спам или реклама' }).check()
   await dialog.getByRole('button', { name: 'Отправить' }).click()

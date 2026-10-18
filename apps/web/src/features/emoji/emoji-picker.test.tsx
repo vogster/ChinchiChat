@@ -2,6 +2,7 @@ import { screen, waitFor, within } from '@testing-library/react'
 import { afterEach, describe, expect, it } from 'vitest'
 
 import { createFakeApi, testGuild, testUser } from '../../test/fake-api'
+import { openMessageMenu } from '../../test/message-menu'
 import { renderApp } from '../../test/render-app'
 
 const CHANNEL_URL = `/channels/${testGuild.id}/503`
@@ -53,14 +54,14 @@ describe('emoji picker', () => {
     expect(within(picker).getByText('Ничего не нашлось')).toBeVisible()
   })
 
-  it('reacts with any emoji from the message toolbar', async () => {
+  it('reacts with any emoji from the message menu', async () => {
     const api = createFakeApi({ user: testUser })
     const { user } = renderApp(CHANNEL_URL, { api })
     await screen.findByText('Как дела?')
     const row = screen.getByText('Как дела?').closest('li') as HTMLElement
 
-    await user.hover(row)
-    await user.click(within(row).getByRole('button', { name: 'Добавить реакцию' }))
+    const menu = await openMessageMenu(row)
+    await user.click(within(menu).getByRole('menuitem', { name: 'Добавить реакцию' }))
     const picker = await screen.findByRole('dialog', { name: 'Добавить реакцию' })
     expect(within(picker).getByRole('button', { name: 'Отреагировать: 👍' })).toBeVisible()
     await user.type(within(picker).getByRole('searchbox', { name: 'Поиск эмодзи' }), 'пицца')

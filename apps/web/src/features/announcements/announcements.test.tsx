@@ -2,6 +2,7 @@ import { screen, waitFor, within } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 
 import { createFakeApi, testGuild, testHistory, testMessage, testUser } from '../../test/fake-api'
+import { openMessageMenu } from '../../test/message-menu'
 import { renderApp } from '../../test/render-app'
 
 const GENERAL_URL = `/channels/${testGuild.id}/503`
@@ -60,7 +61,11 @@ describe('announcement channels', () => {
 
     await screen.findByText('Как дела?')
     await user.hover(row('Как дела?'))
-    await user.click(within(row('Как дела?')).getByRole('button', { name: 'Опубликовать' }))
+    await user.click(
+      within(await openMessageMenu(row('Как дела?'))).getByRole('menuitem', {
+        name: 'Опубликовать',
+      }),
+    )
     await waitFor(() => expect(api.announcements.publish).toHaveBeenCalledWith('503', '1002'))
 
     await user.hover(row('Уже разослано'))

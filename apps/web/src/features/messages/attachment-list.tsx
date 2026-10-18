@@ -43,6 +43,7 @@ export const AttachmentList = ({ attachments }: { attachments: readonly Attachme
               className="block overflow-hidden rounded-[20px] bg-field"
             >
               <img
+                data-native-menu
                 src={attachment.previewUrl ?? attachment.url}
                 alt={attachment.filename}
                 loading="lazy"

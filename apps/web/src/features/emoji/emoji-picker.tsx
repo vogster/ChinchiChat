@@ -20,8 +20,11 @@ export interface QuickEmoji {
 export interface EmojiPickerProps {
   /** Name of the trigger and of the panel. */
   readonly label: string
-  readonly trigger: ReactNode
+  /** The button that opens it; null for a picker opened from elsewhere (see `open`). */
+  readonly trigger: ReactNode | null
   readonly triggerClassName?: string
+  /** Opened by someone else (a menu): with no trigger, it hangs from a point in its parent. */
+  readonly open?: boolean
   readonly onSelect: (emoji: string) => void
   readonly onOpenChange?: (open: boolean) => void
   /** A row of one-click choices above the full list. */
@@ -42,11 +45,13 @@ export const EmojiPicker = ({
   onOpenChange,
   quick = [],
   custom = null,
+  open: controlled,
 }: EmojiPickerProps) => {
   const { t, i18n } = useTranslation()
-  const [open, setOpenState] = useState(false)
+  const [own, setOwn] = useState(false)
+  const open = controlled ?? own
   const setOpen = (next: boolean) => {
-    setOpenState(next)
+    setOwn(next)
     onOpenChange?.(next)
   }
   const [query, setQuery] = useState('')
@@ -80,9 +85,13 @@ export const EmojiPicker = ({
 
   return (
     <Popover.Root open={open} onOpenChange={setOpen}>
-      <Popover.Trigger aria-label={label} title={label} className={triggerClassName}>
-        {trigger}
-      </Popover.Trigger>
+      {trigger === null ? (
+        <Popover.Anchor className="pointer-events-none absolute top-1 right-3 size-px" />
+      ) : (
+        <Popover.Trigger aria-label={label} title={label} className={triggerClassName}>
+          {trigger}
+        </Popover.Trigger>
+      )}
       <Popover.Portal>
         <Popover.Content
           role="dialog"
@@ -91,7 +100,7 @@ export const EmojiPicker = ({
           align="end"
           sideOffset={6}
           collisionPadding={8}
-          className="z-50 flex w-80 flex-col gap-2 rounded-lg bg-rail p-2 text-text shadow-xl"
+          className="z-50 flex w-80 flex-col gap-2 rounded-card bg-side p-2 text-text shadow-popover"
         >
           <input
             type="search"

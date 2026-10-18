@@ -2,6 +2,7 @@ import { act, screen, waitFor, within } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 
 import { createFakeApi, testGuild, testMessage, testUser } from '../../test/fake-api'
+import { openMessageMenu } from '../../test/message-menu'
 import { renderApp } from '../../test/render-app'
 
 const CHANNEL_URL = `/channels/${testGuild.id}/503`
@@ -54,31 +55,28 @@ describe('reactions', () => {
     expect(reactionButton('👍')).toHaveAccessibleName('👍: 2, вы среди них')
   })
 
-  it('adds a quick reaction from the message toolbar', async () => {
+  it('adds a quick reaction from the message menu', async () => {
     const api = withReactions()
     const { user } = renderApp(CHANNEL_URL, { api })
     await screen.findByText('праздник')
 
-    await user.hover(row())
-    await user.click(within(row()).getByRole('button', { name: 'Добавить реакцию' }))
-    await user.click(await screen.findByRole('button', { name: 'Отреагировать: 😂' }))
+    const menu = await openMessageMenu(row())
+    await user.click(within(menu).getByRole('menuitem', { name: 'Отреагировать: 😂' }))
 
     await waitFor(() => expect(api.reactions.add).toHaveBeenCalledWith('503', '1001', '😂'))
     expect(reactionButton('😂')).toHaveAccessibleName('😂: 1, вы среди них')
   })
 
-  it('keeps the toolbar, the picker’s anchor, shown while the picker is open', async () => {
+  it('opens the full picker from the menu, with the quick ones on top', async () => {
     const { user } = renderApp(CHANNEL_URL, { api: withReactions() })
     await screen.findByText('праздник')
 
-    await user.hover(row())
-    const toolbar = within(row()).getByRole('toolbar')
-    await user.click(within(toolbar).getByRole('button', { name: 'Добавить реакцию' }))
-    await screen.findByRole('dialog', { name: 'Добавить реакцию' })
-    // The panel lives in a portal: moving into it leaves the message's hover and focus.
-    await user.unhover(row())
+    const menu = await openMessageMenu(row())
+    await user.click(within(menu).getByRole('menuitem', { name: 'Добавить реакцию' }))
 
-    expect(toolbar).toHaveAttribute('data-open')
+    const picker = await screen.findByRole('dialog', { name: 'Добавить реакцию' })
+    expect(within(picker).getByRole('button', { name: 'Отреагировать: 😂' })).toBeVisible()
+    expect(screen.queryByRole('menu')).not.toBeInTheDocument()
   })
 
   it('follows reactions of others live, without double-counting my own', async () => {
@@ -102,13 +100,12 @@ describe('reactions', () => {
   })
 
   it('offers to take back a quick reaction I already gave', async () => {
-    const { user } = renderApp(CHANNEL_URL, { api: withReactions() })
+    renderApp(CHANNEL_URL, { api: withReactions() })
     await screen.findByText('праздник')
 
-    await user.hover(row())
-    await user.click(within(row()).getByRole('button', { name: 'Добавить реакцию' }))
+    const menu = await openMessageMenu(row())
 
-    expect(await screen.findByRole('button', { name: 'Убрать реакцию: 🎉' })).toBeVisible()
+    expect(within(menu).getByRole('menuitem', { name: 'Убрать реакцию: 🎉' })).toBeVisible()
   })
 
   it('keeps my reactions when I edit the message', async () => {
@@ -124,7 +121,9 @@ describe('reactions', () => {
     await screen.findByText('праздник')
 
     await user.hover(row())
-    await user.click(within(row()).getByRole('button', { name: 'Редактировать' }))
+    await user.click(
+      within(await openMessageMenu(row())).getByRole('menuitem', { name: 'Редактировать' }),
+    )
     const box = screen.getByRole('textbox', { name: 'Изменить сообщение' })
     await user.type(box, '!{Enter}')
 

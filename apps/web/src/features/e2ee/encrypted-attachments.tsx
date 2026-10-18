@@ -64,6 +64,7 @@ const SealedImage = ({ file }: { file: SealedFile }) => {
   return (
     <a href={state.url} download={file.name} className="block overflow-hidden rounded-md bg-field">
       <img
+        data-native-menu
         src={state.url}
         alt={file.name}
         className="max-h-[300px] max-w-[min(400px,100%)] object-contain"

@@ -47,6 +47,7 @@ export const EmbedCard = ({ embed }: { embed: Embed }) => {
       ) : null}
       {embed.image && isImageUrl(embed.image.url) ? (
         <img
+          data-native-menu
           src={embed.image.url}
           width={embed.image.width}
           height={embed.image.height}

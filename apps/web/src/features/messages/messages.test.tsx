@@ -3,6 +3,7 @@ import { act, screen, waitFor, within } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 
 import { apiError, createFakeApi, testGuild, testMessage, testUser } from '../../test/fake-api'
+import { openMessageMenu } from '../../test/message-menu'
 import { renderApp } from '../../test/render-app'
 
 const CHANNEL_URL = `/channels/${testGuild.id}/503`
@@ -100,7 +101,11 @@ describe('editing and deleting', () => {
 
     await history()
     await user.hover(messageRow('Отлично!'))
-    await user.click(within(messageRow('Отлично!')).getByRole('button', { name: 'Редактировать' }))
+    await user.click(
+      within(await openMessageMenu(messageRow('Отлично!'))).getByRole('menuitem', {
+        name: 'Редактировать',
+      }),
+    )
     const box = screen.getByRole('textbox', { name: 'Изменить сообщение' })
     await user.clear(box)
     await user.type(box, 'Просто отлично!{Enter}')
@@ -127,7 +132,11 @@ describe('editing and deleting', () => {
     const { user } = renderApp(CHANNEL_URL, { api })
     await history()
 
-    await user.click(within(messageRow('Отлично!')).getByRole('button', { name: 'Удалить' }))
+    await user.click(
+      within(await openMessageMenu(messageRow('Отлично!'))).getByRole('menuitem', {
+        name: 'Удалить',
+      }),
+    )
     const dialog = await screen.findByRole('dialog', { name: 'Удалить сообщение' })
     await user.click(within(dialog).getByRole('button', { name: 'Удалить' }))
     await waitFor(() => expect(api.messages.delete).toHaveBeenCalledWith('503', '1003'))
@@ -135,7 +144,11 @@ describe('editing and deleting', () => {
 
     // The owner may also remove others' messages; Shift skips the confirmation.
     await user.keyboard('{Shift>}')
-    await user.click(within(messageRow('Как дела?')).getByRole('button', { name: 'Удалить' }))
+    await user.click(
+      within(await openMessageMenu(messageRow('Как дела?'))).getByRole('menuitem', {
+        name: 'Удалить',
+      }),
+    )
     await user.keyboard('{/Shift}')
     await waitFor(() => expect(api.messages.delete).toHaveBeenCalledWith('503', '1002'))
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
@@ -146,10 +159,10 @@ describe('editing and deleting', () => {
     renderApp(CHANNEL_URL, { user: member })
 
     await history()
-    const row = within(messageRow('Как дела?'))
-    expect(row.getByRole('button', { name: 'Ответить' })).toBeInTheDocument()
-    expect(row.queryByRole('button', { name: 'Редактировать' })).not.toBeInTheDocument()
-    expect(row.queryByRole('button', { name: 'Удалить' })).not.toBeInTheDocument()
+    const menu = within(await openMessageMenu(messageRow('Как дела?')))
+    expect(menu.getByRole('menuitem', { name: 'Ответить' })).toBeInTheDocument()
+    expect(menu.queryByRole('menuitem', { name: 'Редактировать' })).not.toBeInTheDocument()
+    expect(menu.queryByRole('menuitem', { name: 'Удалить' })).not.toBeInTheDocument()
   })
 
   it('lets members with MANAGE_MESSAGES delete messages of others', async () => {
@@ -160,10 +173,9 @@ describe('editing and deleting', () => {
     renderApp(CHANNEL_URL, { api })
 
     await history()
-    expect(within(messageRow('Как дела?')).getByRole('button', { name: 'Удалить' })).toBeVisible()
-    expect(
-      within(messageRow('Как дела?')).queryByRole('button', { name: 'Редактировать' }),
-    ).not.toBeInTheDocument()
+    const menu = within(await openMessageMenu(messageRow('Как дела?')))
+    expect(menu.getByRole('menuitem', { name: 'Удалить' })).toBeVisible()
+    expect(menu.queryByRole('menuitem', { name: 'Редактировать' })).not.toBeInTheDocument()
   })
 
   it('replaces the composer with a notice when sending is not allowed', async () => {
