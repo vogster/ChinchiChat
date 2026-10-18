@@ -28,7 +28,7 @@ const RailItem = ({ label, children }: { label: string; children: ReactNode }) =
 // Shape and focus only. Colors live in the variants below so utilities never compete
 // for the same CSS property (Tailwind resolves such conflicts by stylesheet order, not class order).
 const railButtonBase =
-  'flex size-12 items-center justify-center overflow-hidden rounded-tile transition duration-200 hover:-translate-y-px focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent'
+  'flex size-12 max-md:size-[52px] max-md:rounded-[18px] items-center justify-center overflow-hidden rounded-tile transition duration-200 hover:-translate-y-px focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent'
 
 // The open server wears a ring: a gap of the panel colour, then the accent.
 const activeRing =
@@ -105,9 +105,9 @@ export const ServerRail = () => {
   return (
     <nav
       aria-label={t('nav.servers')}
-      className="flex w-[76px] shrink-0 flex-col overflow-y-auto rounded-panel bg-side py-3.5"
+      className="flex shrink-0 overflow-x-auto [scrollbar-width:none] max-md:px-4 max-md:pt-4 max-md:pb-3.5 md:w-[76px] md:flex-col md:overflow-y-auto md:rounded-panel md:bg-side md:py-3.5"
     >
-      <ul className="flex flex-col items-center gap-2.5">
+      <ul className="flex items-center gap-2.5 md:flex-col">
         <RailItem label={t('nav.home')}>
           <Link
             to="/"
@@ -124,7 +124,7 @@ export const ServerRail = () => {
           ) : null}
         </RailItem>
 
-        <li aria-hidden className="h-0.5 w-6 rounded-full bg-line" />
+        <li aria-hidden className="h-0.5 w-6 rounded-full bg-line max-md:hidden" />
 
         {guilds.map((guild) => (
           <RailItem key={guild.id} label={guild.name}>

@@ -35,7 +35,9 @@ export const GuildSidebarHeader = ({
   return (
     <header className="flex items-center gap-2.5 px-[18px] pt-[18px] pb-2.5">
       <div className="min-w-0 flex-1">
-        <h2 className="truncate text-lg font-semibold tracking-[-0.01em]">{name}</h2>
+        <h2 className="truncate text-lg font-semibold tracking-[-0.01em] max-md:text-2xl">
+          {name}
+        </h2>
         {summary ? (
           <p className="mt-0.5 flex items-center gap-1.5 text-[12.5px] text-faint">
             <span aria-hidden className="size-[7px] shrink-0 rounded-full bg-status-online" />

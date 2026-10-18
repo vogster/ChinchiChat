@@ -132,7 +132,7 @@ export const ChannelRow = ({
         data-unread={unread}
         data-muted={muted}
         aria-label={states.length > 0 ? `${channel.name} (${states.join(', ')})` : undefined}
-        className={`flex h-[38px] items-center gap-2.5 rounded-field px-3 text-muted ${linkState} ${editButton || hasThreads ? 'pr-16' : ''}`}
+        className={`flex h-[38px] items-center gap-2.5 rounded-field px-3 text-muted max-md:h-12 max-md:rounded-tile ${linkState} ${editButton || hasThreads ? 'pr-16' : ''}`}
       >
         {channel.announcement ? (
           <Megaphone aria-hidden className="size-4 shrink-0 text-faint" />

@@ -109,7 +109,8 @@ export const CallStage = ({
       className={
         layout === 'row'
           ? 'flex min-h-0 flex-1 justify-center gap-3 *:max-h-[340px] *:max-w-[420px] *:flex-1'
-          : 'grid grid-cols-[repeat(auto-fill,minmax(14rem,1fr))] gap-3 *:aspect-video'
+          : // Phones: portrait tiles, two to a row.
+            'grid grid-cols-2 gap-3 *:aspect-[3/4] md:grid-cols-[repeat(auto-fill,minmax(14rem,1fr))] md:*:aspect-video'
       }
     >
       {states.map((state) => {

@@ -108,8 +108,13 @@ export const ChannelList = ({
           ? children.filter((child) => isUnread(child) || mentionCount(child) > 0)
           : children
         return (
-          <section key={category.id} {...dragProps(category.id)} className={dropTargetClass}>
-            <div className="group flex items-center gap-0.5 px-2.5 pt-3.5 pb-1.5">
+          // Phones: each category is a card of its own.
+          <section
+            key={category.id}
+            {...dragProps(category.id)}
+            className={`max-md:mb-3 max-md:rounded-[22px] max-md:bg-side max-md:p-1.5 ${dropTargetClass}`}
+          >
+            <div className="group flex items-center gap-0.5 px-2.5 pt-3.5 pb-1.5 max-md:pt-2 max-md:pb-1">
               <button
                 type="button"
                 aria-expanded={!isCollapsed}

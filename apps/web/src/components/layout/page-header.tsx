@@ -1,4 +1,4 @@
-import { Menu } from 'lucide-react'
+import { ChevronLeft } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
 import { useShell } from './shell-context'
@@ -15,14 +15,15 @@ export const PageHeader = ({ children }: { children: ReactNode }) => {
   const { openMenu } = useShell()
 
   return (
-    <header className="relative flex h-[68px] shrink-0 items-center gap-3 pr-4 pl-3 md:pl-[18px]">
+    <header className="relative flex h-[68px] shrink-0 items-center gap-2 pr-3 pl-3 md:gap-3 md:pr-4 md:pl-[18px]">
       <button
         type="button"
         aria-label={t('nav.openMenu')}
         onClick={openMenu}
-        className={`${headerButtonClass} md:hidden`}
+        // Phones: back to the list of servers, channels and chats.
+        className="grid size-11 shrink-0 place-items-center rounded-tile bg-field text-text md:hidden"
       >
-        <Menu aria-hidden className="size-5" />
+        <ChevronLeft aria-hidden className="size-5" />
       </button>
       {children}
     </header>
@@ -51,11 +52,11 @@ export const PageTitle = ({
   <>
     <span
       aria-hidden
-      className={`grid size-10 shrink-0 place-items-center rounded-field text-[17px] font-semibold ${tone === 'secure' ? 'bg-secure-soft text-secure-text' : 'bg-accent-soft text-accent-text'}`}
+      className={`grid size-10 shrink-0 place-items-center rounded-field text-[17px] font-semibold max-md:hidden ${tone === 'secure' ? 'bg-secure-soft text-secure-text' : 'bg-accent-soft text-accent-text'}`}
     >
       {glyph}
     </span>
-    <div className="min-w-[110px] flex-1 basis-0">
+    <div className="min-w-[96px] flex-1 basis-0">
       <div className="flex min-w-0 items-center gap-2">
         <h1 className="min-w-0 truncate text-base font-semibold">{title}</h1>
         {badge}

@@ -6,6 +6,7 @@ import { VerifyEmailBanner } from '../../features/auth/verify-email-banner'
 import { useGateway } from '../../features/realtime/gateway-context'
 import { IncomingCalls } from '../../features/voice/incoming-calls'
 import { ChannelSidebar } from './channel-sidebar'
+import { ListTabBar } from './list-tab-bar'
 import { ServerRail } from './server-rail'
 import { ShellContext } from './shell-context'
 
@@ -24,6 +25,7 @@ export const AppShell = ({ children }: { children: ReactNode }) => {
     () => ({
       menuOpen,
       openMenu: () => setOpenedOn(pathname),
+      openMenuAt: setOpenedOn,
       closeMenu: () => setOpenedOn(null),
     }),
     [menuOpen, pathname],
@@ -55,10 +57,13 @@ export const AppShell = ({ children }: { children: ReactNode }) => {
           <div
             data-testid="navigation-drawer"
             data-open={menuOpen}
-            className="fixed inset-y-0 left-0 z-40 flex -translate-x-full gap-2.5 bg-rail p-2.5 transition-transform duration-200 data-[open=true]:translate-x-0 md:static md:translate-x-0 md:p-0"
+            // Phones: the list screen, over everything — servers in a strip, then the sidebar,
+            // then a tab bar. Wider screens: two columns of cards.
+            className="fixed inset-0 z-40 flex -translate-x-full flex-col bg-main pb-28 transition-transform duration-200 data-[open=true]:translate-x-0 md:static md:translate-x-0 md:flex-row md:gap-2.5 md:bg-transparent md:pb-0"
           >
             <ServerRail />
             <ChannelSidebar />
+            <ListTabBar />
           </div>
           {/* A row of cards: the page's MainCard and its side panels. */}
           <main className="flex min-h-0 min-w-0 flex-1 gap-2.5">{children}</main>

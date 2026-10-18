@@ -1,11 +1,21 @@
 import { Permission } from '@chinchi/shared'
 import { Link, useNavigate } from '@tanstack/react-router'
-import { Bell, ChevronRight, Megaphone, MessagesSquare, Pin, Rss, Search } from 'lucide-react'
+import {
+  Bell,
+  ChevronRight,
+  Ellipsis,
+  Megaphone,
+  MessagesSquare,
+  Pin,
+  Rss,
+  Search,
+} from 'lucide-react'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { MainCard } from '../../components/layout/main-card'
 import { headerButtonClass, PageHeader, PageTitle } from '../../components/layout/page-header'
+import { Menu, MenuContent, MenuItem, MenuTrigger } from '../../components/ui/menu'
 import { FollowDialog } from '../announcements/follow-dialog'
 import { PinsPopover } from '../messages/pins-popover'
 import { NotificationSettingsDialog } from '../notifications/notification-settings-dialog'
@@ -132,7 +142,7 @@ export const ChannelView = ({
                 aria-label={t('announcements.followButton')}
                 title={t('announcements.followButton')}
                 onClick={() => setFollowing(true)}
-                className="flex h-[38px] shrink-0 items-center gap-1.5 rounded-full px-2.5 text-[13px] font-medium text-muted transition-colors hover:bg-field hover:text-text"
+                className="flex h-[38px] shrink-0 items-center max-md:hidden gap-1.5 rounded-full px-2.5 text-[13px] font-medium text-muted transition-colors hover:bg-field hover:text-text"
               >
                 <Rss aria-hidden className="size-5" />
                 <span className="hidden sm:inline">{t('announcements.followShort')}</span>
@@ -143,7 +153,7 @@ export const ChannelView = ({
               aria-label={t('notifications.channelButton')}
               title={t('notifications.channelButton')}
               onClick={() => setNotifications(true)}
-              className={headerButtonClass}
+              className={`${headerButtonClass} max-md:hidden`}
             >
               <Bell aria-hidden className="size-5" />
             </button>
@@ -153,10 +163,41 @@ export const ChannelView = ({
               title={t('messages.pins')}
               aria-pressed={showPins}
               onClick={() => setShowPins((value) => !value)}
-              className={headerButtonClass}
+              className={`${headerButtonClass} max-md:hidden`}
             >
               <Pin aria-hidden className="size-5" />
             </button>
+            {/* Phones: the header has no room for these, so they wait behind "more". */}
+            <Menu>
+              <MenuTrigger
+                aria-label={t('common.more')}
+                className={`${headerButtonClass} md:hidden`}
+              >
+                <Ellipsis aria-hidden className="size-5" />
+              </MenuTrigger>
+              <MenuContent>
+                {channel.announcement ? (
+                  <MenuItem
+                    onSelect={() => setFollowing(true)}
+                    icon={<Rss aria-hidden className="size-4" />}
+                  >
+                    {t('announcements.followShort')}
+                  </MenuItem>
+                ) : null}
+                <MenuItem
+                  onSelect={() => setNotifications(true)}
+                  icon={<Bell aria-hidden className="size-4" />}
+                >
+                  {t('notifications.channelButton')}
+                </MenuItem>
+                <MenuItem
+                  onSelect={() => setShowPins(true)}
+                  icon={<Pin aria-hidden className="size-4" />}
+                >
+                  {t('messages.pins')}
+                </MenuItem>
+              </MenuContent>
+            </Menu>
           </div>
         </PageHeader>
 

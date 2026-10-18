@@ -124,7 +124,7 @@ export const DmSidebar = () => {
   return (
     <aside
       aria-label={t('dm.title')}
-      className="flex w-[min(280px,calc(100vw-150px))] shrink-0 flex-col overflow-hidden rounded-panel bg-side"
+      className="flex min-h-0 flex-1 flex-col overflow-hidden md:w-[280px] md:flex-none md:shrink-0 md:rounded-panel md:bg-side"
     >
       <header className="flex flex-col gap-3 px-[18px] pt-[18px] pb-2.5">
         <h2 className="text-[19px] font-semibold tracking-[-0.01em]">{t('dm.heading')}</h2>

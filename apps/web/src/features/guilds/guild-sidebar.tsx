@@ -63,7 +63,7 @@ export const GuildSidebar = ({ guildId, channelId }: GuildSidebarProps) => {
 
   if (!guild)
     return (
-      <aside className="w-[min(280px,calc(100vw-150px))] shrink-0 overflow-hidden rounded-panel bg-side" />
+      <aside className="min-h-0 flex-1 overflow-hidden md:w-[280px] md:flex-none md:shrink-0 md:rounded-panel md:bg-side" />
     )
 
   const closeDialog = (open: boolean) => {
@@ -81,7 +81,7 @@ export const GuildSidebar = ({ guildId, channelId }: GuildSidebarProps) => {
   return (
     <aside
       aria-label={guild.name}
-      className="flex w-[min(280px,calc(100vw-150px))] shrink-0 overflow-hidden rounded-panel bg-side flex-col"
+      className="flex min-h-0 flex-1 overflow-hidden md:w-[280px] md:flex-none md:shrink-0 md:rounded-panel md:bg-side flex-col"
     >
       <GuildSidebarHeader
         guildId={guild.id}

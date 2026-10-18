@@ -230,6 +230,19 @@
   --radius-modal: 30px;
 }
 
+/*
+ * Phones: a popover marked `data-sheet` (the profile card) becomes a sheet along the bottom.
+ * Radix positions the wrapper with inline styles, hence the overrides.
+ */
+@media (max-width: 767px) {
+  [data-radix-popper-content-wrapper]:has(> [data-sheet]) {
+    position: fixed !important;
+    inset: auto 0 0 0 !important;
+    transform: none !important;
+    min-width: 0 !important;
+  }
+}
+
 html,
 body,
 #root {

@@ -9,7 +9,8 @@
     "backToLogin": "Back to sign in",
     "language": "Language",
     "cancel": "Cancel",
-    "close": "Close"
+    "close": "Close",
+    "more": "More"
   },
   "nav": {
     "servers": "Servers",
@@ -18,7 +19,11 @@
     "openMenu": "Open menu",
     "closeMenu": "Close menu",
     "dmUnread_one": "{{count}} unread direct message",
-    "dmUnread_other": "{{count}} unread direct messages"
+    "dmUnread_other": "{{count}} unread direct messages",
+    "sections": "Sections",
+    "tabServers": "Servers",
+    "tabChats": "Chats",
+    "tabProfile": "Profile"
   },
   "dm": {
     "title": "Direct messages",
