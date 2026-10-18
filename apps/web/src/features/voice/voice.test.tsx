@@ -225,6 +225,30 @@ describe('in a voice channel', () => {
   })
 })
 
+describe('in-voice bar', () => {
+  it('turns the camera and screen on from any page, not only the call', async () => {
+    const { user, voice, router } = renderApp(GENERAL_URL, { api: withVoice() })
+    await joinFromSidebar(user)
+    const bar = await panel()
+    await router.navigate({ to: GENERAL_URL })
+
+    await user.click(await within(bar).findByRole('button', { name: 'Включить камеру' }))
+    expect(voice.room.setCamera).toHaveBeenCalledWith(true)
+    await user.click(within(bar).getByRole('button', { name: 'Показать экран' }))
+    expect(voice.room.setScreenShare).toHaveBeenCalledWith(true)
+  })
+
+  it('marks a member muted by a moderator apart from one who muted themselves', async () => {
+    const { user, gateway } = renderApp(GENERAL_URL, { api: withVoice() })
+    await screen.findByRole('button', { name: 'Голосовой канал Общий' })
+    gateway.emit('VOICE_STATE_UPDATE', state('200', { serverMute: true }))
+
+    await user.click(await screen.findByRole('button', { name: 'Показать участников Общий' }))
+    const bob = await screen.findByRole('listitem', { name: /^Боб/ })
+    expect(within(bob).getByTitle('микрофон выключен модератором')).toBeInTheDocument()
+  })
+})
+
 describe('voice moderation', () => {
   it('lets moderators server-mute, deafen and disconnect people', async () => {
     const api = withVoice()

@@ -1,7 +1,7 @@
 import { Permission } from '@chinchi/shared'
 import { useQuery } from '@tanstack/react-query'
 import { useNavigate } from '@tanstack/react-router'
-import { ChevronDown } from 'lucide-react'
+import { ChevronDown, HeadphoneOff, MicOff } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
 import { Avatar } from '../../components/ui/avatar'
@@ -146,7 +146,7 @@ export const VoiceChannelRow = ({
                   }
                   title={person.name}
                   data-speaking={speaking(state.userId)}
-                  className="-mr-1.5 rounded-full transition-shadow duration-200 data-[speaking=true]:shadow-[0_0_0_2px_var(--zl-accent)]"
+                  className="relative -mr-1.5 rounded-full transition-shadow duration-200 data-[speaking=true]:shadow-[0_0_0_2px_var(--zl-accent)]"
                 >
                   <Avatar
                     name={person.name}
@@ -154,6 +154,19 @@ export const VoiceChannelRow = ({
                     id={person.user?.id}
                     className="size-[30px] border-[2.5px] border-field text-[11px]"
                   />
+                  {/* Muted by a moderator: a red mark on the face, seen even folded. */}
+                  {state.serverMute || state.serverDeaf ? (
+                    <span
+                      aria-hidden
+                      className="absolute -right-0.5 -bottom-0.5 grid size-3.5 place-items-center rounded-full bg-danger text-danger-contrast ring-2 ring-field"
+                    >
+                      {state.serverDeaf ? (
+                        <HeadphoneOff className="size-2" strokeWidth={3} />
+                      ) : (
+                        <MicOff className="size-2" strokeWidth={3} />
+                      )}
+                    </span>
+                  ) : null}
                 </li>
               )
             })}

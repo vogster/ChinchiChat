@@ -1,8 +1,10 @@
+import { Bell } from 'lucide-react'
 import { useId } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { Alert } from '../../components/ui/alert'
 import { Dialog } from '../../components/ui/dialog'
+import { HeaderPopover } from '../../components/ui/header-popover'
 import { errorMessage } from '../../lib/errors'
 import {
   useNotificationResolver,
@@ -34,19 +36,19 @@ const formatEnd = (iso: string, language: string) => {
   }).format(end)
 }
 
+interface NotificationSettingsProps {
+  readonly targetId: Snowflake
+  readonly kind: NotificationTargetKind
+  /** Shown in the title: "#general", the server's or the person's name. */
+  readonly name: string
+  readonly onClose: () => void
+}
+
 /** Mute (for a while or until lifted) and which messages notify, applied as they change. */
-export const NotificationSettingsDialog = ({
+const NotificationSettingsForm = ({
   targetId,
   kind,
-  name,
-  onClose,
-}: {
-  targetId: Snowflake
-  kind: NotificationTargetKind
-  /** Shown in the title: "#general", the server's or the person's name. */
-  name: string
-  onClose: () => void
-}) => {
+}: Pick<NotificationSettingsProps, 'targetId' | 'kind'>) => {
   const { t, i18n } = useTranslation()
   const muteId = useId()
   const setting = useNotificationSettings().get(targetId)
@@ -70,72 +72,108 @@ export const NotificationSettingsDialog = ({
   }
 
   return (
+    <div className="flex flex-col gap-5">
+      {update.isError ? <Alert tone="error">{errorMessage(t, update.error)}</Alert> : null}
+
+      <div className="flex flex-col gap-1.5">
+        <label htmlFor={muteId} className="px-1.5 text-[12.5px] font-medium text-faint">
+          {t('notifications.mute')}
+        </label>
+        <select
+          id={muteId}
+          value={muteValue}
+          onChange={(event) => onMute(event.target.value)}
+          className="h-11 rounded-field bg-field px-3.5 text-text outline-none focus:ring-2 focus:ring-accent"
+        >
+          <option value="off">{t('notifications.muteOff')}</option>
+          {muteValue === 'timed' && mutedUntil ? (
+            <option value="timed">
+              {t('notifications.muteUntilOption', { time: formatEnd(mutedUntil, i18n.language) })}
+            </option>
+          ) : null}
+          {DURATIONS.map((duration) => (
+            <option key={duration.key} value={duration.key}>
+              {t(`notifications.duration.${duration.key}`)}
+            </option>
+          ))}
+          <option value="forever">{t('notifications.muteForever')}</option>
+        </select>
+        <p className="px-1.5 text-xs text-faint">
+          {muted
+            ? mutedUntil
+              ? t('notifications.mutedUntil', { time: formatEnd(mutedUntil, i18n.language) })
+              : t('notifications.mutedForever')
+            : t('notifications.muteHint')}
+        </p>
+      </div>
+
+      {kind === 'dm' ? null : (
+        <fieldset className="flex flex-col gap-1">
+          <legend className="mb-1.5 px-1.5 text-[12.5px] font-medium text-faint">
+            {t('notifications.level')}
+          </legend>
+          {kind === 'channel' ? (
+            <LevelOption
+              name={targetId}
+              label={t('notifications.inherit')}
+              checked={level === null}
+              onChange={() => update.mutate({ level: null })}
+            />
+          ) : null}
+          {LEVELS.map((option) => (
+            <LevelOption
+              key={option}
+              name={targetId}
+              label={t(`notifications.levels.${option}`)}
+              checked={level === option}
+              onChange={() => update.mutate({ level: option })}
+            />
+          ))}
+        </fieldset>
+      )}
+    </div>
+  )
+}
+
+/** From the server menu: a window over the page. */
+export const NotificationSettingsDialog = ({
+  targetId,
+  kind,
+  name,
+  onClose,
+}: NotificationSettingsProps) => {
+  const { t } = useTranslation()
+  return (
     <Dialog
       open
       onOpenChange={(open) => !open && onClose()}
       title={t('notifications.title', { name })}
     >
-      <div className="flex flex-col gap-5">
-        {update.isError ? <Alert tone="error">{errorMessage(t, update.error)}</Alert> : null}
-
-        <div className="flex flex-col gap-1.5">
-          <label htmlFor={muteId} className="text-xs font-bold tracking-wide text-muted uppercase">
-            {t('notifications.mute')}
-          </label>
-          <select
-            id={muteId}
-            value={muteValue}
-            onChange={(event) => onMute(event.target.value)}
-            className="rounded-md border border-line bg-rail px-3 py-2 text-text outline-none focus:border-accent"
-          >
-            <option value="off">{t('notifications.muteOff')}</option>
-            {muteValue === 'timed' && mutedUntil ? (
-              <option value="timed">
-                {t('notifications.muteUntilOption', { time: formatEnd(mutedUntil, i18n.language) })}
-              </option>
-            ) : null}
-            {DURATIONS.map((duration) => (
-              <option key={duration.key} value={duration.key}>
-                {t(`notifications.duration.${duration.key}`)}
-              </option>
-            ))}
-            <option value="forever">{t('notifications.muteForever')}</option>
-          </select>
-          <p className="text-xs text-muted">
-            {muted
-              ? mutedUntil
-                ? t('notifications.mutedUntil', { time: formatEnd(mutedUntil, i18n.language) })
-                : t('notifications.mutedForever')
-              : t('notifications.muteHint')}
-          </p>
-        </div>
-
-        {kind === 'dm' ? null : (
-          <fieldset className="flex flex-col gap-1">
-            <legend className="mb-1.5 text-xs font-bold tracking-wide text-muted uppercase">
-              {t('notifications.level')}
-            </legend>
-            {kind === 'channel' ? (
-              <LevelOption
-                name={targetId}
-                label={t('notifications.inherit')}
-                checked={level === null}
-                onChange={() => update.mutate({ level: null })}
-              />
-            ) : null}
-            {LEVELS.map((option) => (
-              <LevelOption
-                key={option}
-                name={targetId}
-                label={t(`notifications.levels.${option}`)}
-                checked={level === option}
-                onChange={() => update.mutate({ level: option })}
-              />
-            ))}
-          </fieldset>
-        )}
-      </div>
+      <NotificationSettingsForm targetId={targetId} kind={kind} />
     </Dialog>
+  )
+}
+
+/** From a channel's or a DM's header: a popover over the chat, like threads and pins. */
+export const NotificationSettingsPopover = ({
+  targetId,
+  kind,
+  name,
+  onClose,
+}: NotificationSettingsProps) => {
+  const { t } = useTranslation()
+  return (
+    <HeaderPopover
+      label={t('notifications.title', { name })}
+      title={t('notifications.popoverTitle')}
+      subtitle={name}
+      icon={<Bell className="size-[18px]" />}
+      onClose={onClose}
+    >
+      <div className="px-1.5 pt-1 pb-2">
+        <NotificationSettingsForm targetId={targetId} kind={kind} />
+      </div>
+    </HeaderPopover>
   )
 }
 
@@ -150,13 +188,17 @@ const LevelOption = ({
   checked: boolean
   onChange: () => void
 }) => (
-  <label className="flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 hover:bg-chip">
+  <label className="flex h-10 cursor-pointer items-center gap-2.5 rounded-field px-3 transition-colors hover:bg-field has-checked:bg-accent-soft has-checked:text-accent-text has-focus-visible:ring-2 has-focus-visible:ring-accent">
     <input
       type="radio"
       name={`notification-level-${name}`}
       checked={checked}
       onChange={onChange}
-      className="accent-accent"
+      className="peer sr-only"
+    />
+    <span
+      aria-hidden
+      className="size-[18px] shrink-0 rounded-full shadow-[inset_0_0_0_2px_var(--zl-faint)] peer-checked:shadow-[inset_0_0_0_5px_var(--zl-accent)]"
     />
     {label}
   </label>

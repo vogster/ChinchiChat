@@ -1,4 +1,4 @@
-import { Monitor, Video } from 'lucide-react'
+import { HeadphoneOff, MicOff, Monitor, Video } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
 import { Avatar } from '../../components/ui/avatar'
@@ -60,9 +60,19 @@ export const VoiceMemberRow = ({
       <span aria-hidden className="flex shrink-0 items-center gap-1 text-[11px]">
         {state.stream ? <Monitor className="size-3.5" /> : null}
         {state.video ? <Video className="size-3.5" /> : null}
+        {/* A moderator's mute stands out in red; their own is the quiet word. */}
+        {state.serverDeaf ? (
+          <span title={t('voice.serverDeafened')} className="text-danger">
+            <HeadphoneOff className="size-3.5" />
+          </span>
+        ) : state.serverMute ? (
+          <span title={t('voice.serverMuted')} className="text-danger">
+            <MicOff className="size-3.5" />
+          </span>
+        ) : null}
         {speaking ? (
           <span className="text-accent-text">{t('voice.speaking')}</span>
-        ) : silent ? (
+        ) : silent && !state.serverMute && !state.serverDeaf ? (
           <span className="text-danger">{t('voice.silent')}</span>
         ) : null}
       </span>

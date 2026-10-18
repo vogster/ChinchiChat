@@ -45,7 +45,7 @@ import {
 } from '../messages/use-messages'
 import { usePendingFiles } from '../messages/use-pending-files'
 import { usePresence } from '../messages/use-presence'
-import { NotificationSettingsDialog } from '../notifications/notification-settings-dialog'
+import { NotificationSettingsPopover } from '../notifications/notification-settings-dialog'
 import { SearchBox } from '../search/search-box'
 import { DmCall } from '../voice/dm-call'
 import { statesInChannel, useVoiceStates } from '../voice/queries'
@@ -219,7 +219,8 @@ export const DmView = ({ channel }: { channel: PrivateChannel }) => {
               type="button"
               aria-label={t('notifications.dmButton')}
               title={t('notifications.dmButton')}
-              onClick={() => setNotifications(true)}
+              aria-pressed={notifications}
+              onClick={() => setNotifications((value) => !value)}
               className={headerButton}
             >
               <Bell aria-hidden className="size-5" />
@@ -414,6 +415,14 @@ export const DmView = ({ channel }: { channel: PrivateChannel }) => {
             </p>
           )}
         </section>
+        {notifications ? (
+          <NotificationSettingsPopover
+            targetId={channel.id}
+            kind="dm"
+            name={name}
+            onClose={() => setNotifications(false)}
+          />
+        ) : null}
       </MainCard>
       {encryption && search ? (
         <LocalSearchPanel
@@ -431,14 +440,6 @@ export const DmView = ({ channel }: { channel: PrivateChannel }) => {
           safety={safety}
           nameOf={(userId) => callPerson(userId).name}
           onOpenChange={setChecking}
-        />
-      ) : null}
-      {notifications ? (
-        <NotificationSettingsDialog
-          targetId={channel.id}
-          kind="dm"
-          name={name}
-          onClose={() => setNotifications(false)}
         />
       ) : null}
       {dialog === 'rename' ? (

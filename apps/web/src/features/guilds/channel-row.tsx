@@ -158,11 +158,13 @@ export const ChannelRow = ({
                 : t('threads.fold', { name: channel.name })
             }
             onClick={onToggleFolded}
-            className={`${sideButton} h-6 gap-0.5 px-1.5 text-[11px] font-medium`}
+            // A pill of count and chevron in one line ("2 ›" folded), as in the design.
+            className="flex h-6 shrink-0 items-center gap-[3px] rounded-full pr-1.5 pl-[7px] text-[11px] font-medium text-faint transition-colors hover:bg-chip hover:text-text"
           >
             {folded ? <span>{threads.length}</span> : null}
             <ChevronDown
               aria-hidden
+              strokeWidth={2.4}
               className={`size-3.5 transition-transform duration-200 ${folded ? '-rotate-90' : ''}`}
             />
           </button>

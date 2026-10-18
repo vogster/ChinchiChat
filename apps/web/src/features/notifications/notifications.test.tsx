@@ -32,6 +32,8 @@ describe('notification settings', () => {
 
     await user.click(await screen.findByRole('button', { name: 'Уведомления канала' }))
     const dialog = await screen.findByRole('dialog', { name: 'Уведомления: #общий' })
+    // A popover from the header, like threads and pins: inside the chat's card, not a window.
+    expect(screen.getByRole('main')).toContainElement(dialog)
     await user.selectOptions(within(dialog).getByLabelText('Заглушить'), '1 час')
 
     await waitFor(() =>

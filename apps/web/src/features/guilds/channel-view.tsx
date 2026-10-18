@@ -18,7 +18,7 @@ import { headerButtonClass, PageHeader, PageTitle } from '../../components/layou
 import { Menu, MenuContent, MenuItem, MenuTrigger } from '../../components/ui/menu'
 import { FollowDialog } from '../announcements/follow-dialog'
 import { PinsPopover } from '../messages/pins-popover'
-import { NotificationSettingsDialog } from '../notifications/notification-settings-dialog'
+import { NotificationSettingsPopover } from '../notifications/notification-settings-dialog'
 import { can } from '../permissions/permissions'
 import { useGuildPermissions } from '../permissions/use-guild-permissions'
 import { SearchBox } from '../search/search-box'
@@ -152,7 +152,11 @@ export const ChannelView = ({
               type="button"
               aria-label={t('notifications.channelButton')}
               title={t('notifications.channelButton')}
-              onClick={() => setNotifications(true)}
+              aria-pressed={notifications}
+              onClick={() => {
+                setShowPins(false)
+                setNotifications((value) => !value)
+              }}
               className={`${headerButtonClass} max-md:hidden`}
             >
               <Bell aria-hidden className="size-5" />
@@ -162,7 +166,10 @@ export const ChannelView = ({
               aria-label={t('messages.pins')}
               title={t('messages.pins')}
               aria-pressed={showPins}
-              onClick={() => setShowPins((value) => !value)}
+              onClick={() => {
+                setNotifications(false)
+                setShowPins((value) => !value)
+              }}
               className={`${headerButtonClass} max-md:hidden`}
             >
               <Pin aria-hidden className="size-5" />
@@ -210,6 +217,13 @@ export const ChannelView = ({
           <ThreadsPopover guild={guild} channel={channel} onClose={() => setThread(undefined)} />
         ) : showPins ? (
           <PinsPopover channel={channel} canUnpin={canUnpin} onClose={() => setShowPins(false)} />
+        ) : notifications ? (
+          <NotificationSettingsPopover
+            targetId={channel.id}
+            kind="channel"
+            name={`#${channel.name}`}
+            onClose={() => setNotifications(false)}
+          />
         ) : null}
       </MainCard>
       {channel.nsfw && !nsfwOk ? null : (
@@ -251,14 +265,6 @@ export const ChannelView = ({
       )}
 
       {following ? <FollowDialog channel={channel} onOpenChange={setFollowing} /> : null}
-      {notifications ? (
-        <NotificationSettingsDialog
-          targetId={channel.id}
-          kind="channel"
-          name={`#${channel.name}`}
-          onClose={() => setNotifications(false)}
-        />
-      ) : null}
     </>
   )
 }

@@ -1345,7 +1345,8 @@
     "friendRequest": {
       "title": "Запрос в друзья",
       "body": "{{name}} хочет добавить вас в друзья"
-    }
+    },
+    "popoverTitle": "Уведомления"
   },
   "unread": {
     "count_one": "{{count}} новое сообщение",
