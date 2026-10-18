@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
-import { Lock, Monitor, MonitorOff, PhoneOff, Video, VideoOff } from 'lucide-react'
+import { Lock, PhoneOff } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
 import { useApi } from '../../lib/api-context'
@@ -9,10 +9,6 @@ import { dmsQueryOptions } from '../dms/queries'
 import { BetaBadge } from '../e2ee/beta-badge'
 import { guildQueryOptions } from '../guilds/queries'
 import { useVoice } from './voice-context'
-
-// Camera and screen stay here until the call dock takes them (design v2, step 7).
-const iconButton =
-  'grid size-8 shrink-0 place-items-center rounded-full text-muted hover:bg-accent-soft hover:text-text aria-pressed:bg-accent-soft aria-pressed:text-accent-text disabled:opacity-60'
 
 /** Above the user panel while in voice: where you are, camera, screen and hang up. */
 export const VoicePanel = () => {
@@ -62,36 +58,6 @@ export const VoicePanel = () => {
             </div>
           ) : null}
         </div>
-        <button
-          type="button"
-          aria-pressed={voice.camera}
-          aria-label={voice.camera ? t('voice.cameraOff') : t('voice.cameraOn')}
-          title={voice.camera ? t('voice.cameraOff') : t('voice.cameraOn')}
-          disabled={!connected}
-          onClick={voice.toggleCamera}
-          className={iconButton}
-        >
-          {voice.camera ? (
-            <VideoOff aria-hidden className="size-4" />
-          ) : (
-            <Video aria-hidden className="size-4" />
-          )}
-        </button>
-        <button
-          type="button"
-          aria-pressed={voice.screen}
-          aria-label={voice.screen ? t('voice.screenOff') : t('voice.screenOn')}
-          title={voice.screen ? t('voice.screenOff') : t('voice.screenOn')}
-          disabled={!connected}
-          onClick={voice.toggleScreen}
-          className={iconButton}
-        >
-          {voice.screen ? (
-            <MonitorOff aria-hidden className="size-4" />
-          ) : (
-            <Monitor aria-hidden className="size-4" />
-          )}
-        </button>
         <button
           type="button"
           aria-label={t('voice.leave')}

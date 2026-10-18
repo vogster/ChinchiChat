@@ -196,14 +196,17 @@ describe('in a voice channel', () => {
   it('turns the camera and screen share on and off', async () => {
     const { user, voice } = renderApp(GENERAL_URL, { api: withVoice() })
     await joinFromSidebar(user)
-    const controls = await panel()
+    const controls = await screen.findByRole('region', { name: 'Управление звонком' })
+    const camera = await within(controls).findByRole('button', { name: 'Камера' })
+    await waitFor(() => expect(camera).toBeEnabled())
 
-    await user.click(within(controls).getByRole('button', { name: 'Включить камеру' }))
+    await user.click(camera)
     expect(voice.room.setCamera).toHaveBeenCalledWith(true)
-    await user.click(await within(controls).findByRole('button', { name: 'Выключить камеру' }))
+    await waitFor(() => expect(camera).toHaveAttribute('aria-pressed', 'true'))
+    await user.click(camera)
     expect(voice.room.setCamera).toHaveBeenLastCalledWith(false)
 
-    await user.click(within(controls).getByRole('button', { name: 'Показать экран' }))
+    await user.click(within(controls).getByRole('button', { name: 'Демонстрация экрана' }))
     expect(voice.room.setScreenShare).toHaveBeenCalledWith(true)
   })
 

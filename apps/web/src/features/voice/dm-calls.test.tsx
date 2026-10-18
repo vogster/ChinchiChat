@@ -70,7 +70,8 @@ describe('calls in DMs', () => {
     gateway.emit('VOICE_STATE_UPDATE', inCall('200'))
     gateway.emit('VOICE_STATE_UPDATE', inCall(testUser.id))
 
-    await user.click(await screen.findByRole('button', { name: 'Отключиться' }))
+    const dock = await screen.findByRole('region', { name: 'Управление звонком' })
+    await user.click(within(dock).getByRole('button', { name: 'Отключиться' }))
     gateway.emit('VOICE_STATE_UPDATE', inCall(testUser.id, null))
 
     await new Promise((resolve) => setTimeout(resolve, 50))

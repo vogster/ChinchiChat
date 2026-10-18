@@ -940,7 +940,19 @@
     "countIn_other": "{{count}} inside",
     "foldMembers": "Fold the people in {{name}}",
     "unfoldMembers": "Show the people in {{name}}",
-    "silent": "silent"
+    "silent": "silent",
+    "dock": "Call controls",
+    "dockMic": "Microphone",
+    "dockCamera": "Camera",
+    "dockScreen": "Share screen",
+    "dockSound": "Sound",
+    "callGoing": "A call is on",
+    "callLive": "Call · {{time}}",
+    "endToEnd": "End-to-end encrypted",
+    "expand": "Full screen",
+    "shrink": "Shrink the call",
+    "callBlock": "Call",
+    "dialing": "Calling…"
   },
   "profile": {
     "label": "Profile: {{name}}",

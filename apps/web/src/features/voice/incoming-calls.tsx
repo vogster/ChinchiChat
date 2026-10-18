@@ -46,7 +46,7 @@ export const IncomingCalls = () => {
           key={channel.id}
           role="alertdialog"
           aria-label={t('voice.incoming')}
-          className="pointer-events-auto flex w-full max-w-sm items-center gap-3 rounded-lg bg-elevated p-3 shadow-lg"
+          className="pointer-events-auto flex w-full max-w-sm items-center gap-3 rounded-card bg-side py-2.5 pr-2.5 pl-4 shadow-popover"
         >
           <p className="min-w-0 flex-1 truncate font-medium">{t('voice.calling', { name: who })}</p>
           <button
@@ -54,7 +54,7 @@ export const IncomingCalls = () => {
             aria-label={t('voice.decline')}
             title={t('voice.decline')}
             onClick={() => declineCall(queryClient, channel.id)}
-            className="rounded-full bg-danger p-2 text-danger-contrast hover:opacity-90"
+            className="grid size-10 place-items-center rounded-full bg-danger text-danger-contrast hover:brightness-110"
           >
             <PhoneOff aria-hidden className="size-4" />
           </button>
@@ -63,7 +63,7 @@ export const IncomingCalls = () => {
             aria-label={t('voice.accept')}
             title={t('voice.accept')}
             onClick={() => void voice.join(null, channel.id)}
-            className="rounded-full bg-green-600 p-2 text-white hover:opacity-90"
+            className="grid size-10 place-items-center rounded-full bg-secure text-secure-contrast hover:brightness-110"
           >
             <Phone aria-hidden className="size-4" />
           </button>

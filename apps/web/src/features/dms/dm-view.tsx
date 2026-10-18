@@ -16,7 +16,6 @@ import { useTranslation } from 'react-i18next'
 import { MainCard } from '../../components/layout/main-card'
 import { headerButtonClass, PageHeader, PageTitle } from '../../components/layout/page-header'
 import { Alert } from '../../components/ui/alert'
-import { Button } from '../../components/ui/button'
 import { useApi } from '../../lib/api-context'
 import { useCurrentUser } from '../auth/use-auth-actions'
 import { BetaBadge } from '../e2ee/beta-badge'
@@ -48,7 +47,7 @@ import { usePendingFiles } from '../messages/use-pending-files'
 import { usePresence } from '../messages/use-presence'
 import { NotificationSettingsDialog } from '../notifications/notification-settings-dialog'
 import { SearchBox } from '../search/search-box'
-import { CallStage } from '../voice/call-stage'
+import { DmCall } from '../voice/dm-call'
 import { statesInChannel, useVoiceStates } from '../voice/queries'
 import { useVoiceEnabled } from '../voice/use-voice-people'
 import { useVoice } from '../voice/voice-context'
@@ -279,17 +278,15 @@ export const DmView = ({ channel }: { channel: PrivateChannel }) => {
           ) : null}
         </PageHeader>
 
-        {callStates.length > 0 ? (
-          <div className="flex flex-col gap-3 border-b border-border bg-sidebar p-3">
-            <CallStage states={callStates} channelId={channel.id} person={callPerson} />
-            {!inCall && canTalk ? (
-              <div className="mx-auto">
-                <Button fullWidth={false} onClick={() => void voice.join(null, channel.id)}>
-                  {t('voice.joinCall')}
-                </Button>
-              </div>
-            ) : null}
-          </div>
+        {inCall || callStates.length > 0 ? (
+          <DmCall
+            channelId={channel.id}
+            myId={me?.id}
+            states={callStates}
+            person={callPerson}
+            encrypted={encryption !== undefined}
+            canJoin={canTalk}
+          />
         ) : null}
 
         <section

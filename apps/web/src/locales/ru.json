@@ -954,7 +954,19 @@
     "countIn_other": "{{count}} в канале",
     "foldMembers": "Свернуть участников {{name}}",
     "unfoldMembers": "Показать участников {{name}}",
-    "silent": "без звука"
+    "silent": "без звука",
+    "dock": "Управление звонком",
+    "dockMic": "Микрофон",
+    "dockCamera": "Камера",
+    "dockScreen": "Демонстрация экрана",
+    "dockSound": "Звук",
+    "callGoing": "Идёт звонок",
+    "callLive": "Звонок · {{time}}",
+    "endToEnd": "Сквозное шифрование",
+    "expand": "Во весь экран",
+    "shrink": "Свернуть звонок",
+    "callBlock": "Звонок",
+    "dialing": "Вызываем…"
   },
   "profile": {
     "label": "Профиль: {{name}}",

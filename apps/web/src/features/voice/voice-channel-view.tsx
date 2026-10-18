@@ -2,8 +2,9 @@ import { Volume2 } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
 import { MainCard } from '../../components/layout/main-card'
-import { PageHeader } from '../../components/layout/page-header'
+import { PageHeader, PageTitle } from '../../components/layout/page-header'
 import { Button } from '../../components/ui/button'
+import { CallDock } from './call-dock'
 import { CallStage } from './call-stage'
 import { statesInChannel, useVoiceStates } from './queries'
 import { useVoiceEnabled, useVoicePeople } from './use-voice-people'
@@ -11,7 +12,7 @@ import { useVoice } from './voice-context'
 
 import type { Channel } from '@chinchi/shared'
 
-/** A voice channel's page: everyone in the call as tiles, and a way to join it. */
+/** A voice channel's page: everyone in it as tiles, and the call's controls or a way to join. */
 export const VoiceChannelView = ({ channel }: { channel: Channel }) => {
   const { t } = useTranslation()
   const voice = useVoice()
@@ -23,16 +24,25 @@ export const VoiceChannelView = ({ channel }: { channel: Channel }) => {
   return (
     <MainCard>
       <PageHeader>
-        <Volume2 aria-hidden className="size-5 shrink-0 text-muted" />
-        <h1 className="truncate">{channel.name}</h1>
+        <PageTitle
+          glyph={<Volume2 className="size-5" />}
+          title={channel.name}
+          subtitle={
+            inside.length > 0 ? t('voice.countIn', { count: inside.length }) : t('voice.countEmpty')
+          }
+        />
       </PageHeader>
-      <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto p-4">
-        {inside.length === 0 ? (
-          <p className="m-auto text-muted">{t('voice.empty')}</p>
+      <div className="mx-3 mb-3 flex min-h-0 flex-1 flex-col gap-3.5 rounded-panel bg-rail p-3.5">
+        <div className="min-h-0 flex-1 overflow-y-auto">
+          {inside.length === 0 ? (
+            <p className="flex h-full items-center justify-center text-faint">{t('voice.empty')}</p>
+          ) : (
+            <CallStage states={inside} channelId={channel.id} person={people} />
+          )}
+        </div>
+        {here ? (
+          <CallDock />
         ) : (
-          <CallStage states={inside} channelId={channel.id} person={people} />
-        )}
-        {!here ? (
           <div className="mx-auto">
             <Button
               fullWidth={false}
@@ -43,7 +53,7 @@ export const VoiceChannelView = ({ channel }: { channel: Channel }) => {
               {t('voice.join')}
             </Button>
           </div>
-        ) : null}
+        )}
       </div>
     </MainCard>
   )

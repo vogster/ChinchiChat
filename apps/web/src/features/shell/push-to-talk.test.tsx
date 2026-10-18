@@ -1,4 +1,4 @@
-import { screen, waitFor } from '@testing-library/react'
+import { screen, waitFor, within } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 
 import { createFakeApi, testGuild, testUser } from '../../test/fake-api'
@@ -40,7 +40,8 @@ describe('push-to-talk in the desktop shell', () => {
     await waitFor(() => expect(voice.room.setMicrophone).toHaveBeenLastCalledWith(false))
 
     // Leaving voice gives the shortcut back.
-    await user.click(await screen.findByRole('button', { name: 'Отключиться' }))
+    const bar = await screen.findByRole('region', { name: 'Голосовое подключение' })
+    await user.click(within(bar).getByRole('button', { name: 'Отключиться' }))
     await waitFor(() => expect(shell.bound()).toEqual([]))
   })
 
