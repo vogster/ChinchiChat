@@ -20,7 +20,7 @@ import { useApi } from '../../lib/api-context'
 import type { ReactNode } from 'react'
 
 const RailItem = ({ label, children }: { label: string; children: ReactNode }) => (
-  <li className="group relative flex justify-center" title={label}>
+  <li className="group relative flex" title={label}>
     {children}
   </li>
 )
@@ -28,11 +28,20 @@ const RailItem = ({ label, children }: { label: string; children: ReactNode }) =
 // Shape and focus only. Colors live in the variants below so utilities never compete
 // for the same CSS property (Tailwind resolves such conflicts by stylesheet order, not class order).
 const railButtonBase =
-  'flex size-12 items-center justify-center overflow-hidden rounded-3xl bg-elevated transition-all duration-150 hover:rounded-2xl focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent'
+  'flex size-12 items-center justify-center overflow-hidden rounded-tile transition duration-200 hover:-translate-y-px focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent'
 
-const railLinkClass = `${railButtonBase} text-text hover:bg-accent hover:text-accent-contrast data-[status=active]:rounded-2xl data-[status=active]:bg-accent data-[status=active]:text-accent-contrast`
+// The open server wears a ring: a gap of the panel colour, then the accent.
+const activeRing =
+  'data-[status=active]:shadow-[0_0_0_3px_var(--zl-side),0_0_0_5px_var(--zl-accent)]'
 
-const railActionClass = `${railButtonBase} text-green-600 hover:bg-green-600 hover:text-white`
+const homeLinkClass = `${railButtonBase} bg-field text-text data-[status=active]:bg-accent data-[status=active]:text-accent-contrast`
+
+const guildLinkClass = `${railButtonBase} bg-field text-text ${activeRing}`
+
+const railActionClass = `${railButtonBase} bg-field text-muted hover:text-text`
+
+const countBadge =
+  'pointer-events-none absolute -right-1 -bottom-1 min-w-5 rounded-full border-[2.5px] border-side bg-danger px-1 text-center text-[11px] leading-[15px] font-semibold text-danger-contrast'
 
 export const ServerRail = () => {
   const { t } = useTranslation()
@@ -96,51 +105,45 @@ export const ServerRail = () => {
   return (
     <nav
       aria-label={t('nav.servers')}
-      className="flex w-[72px] shrink-0 flex-col overflow-y-auto bg-rail py-3"
+      className="flex w-[76px] shrink-0 flex-col overflow-y-auto rounded-panel bg-side py-3.5"
     >
-      <ul className="flex flex-col gap-2">
+      <ul className="flex flex-col items-center gap-2.5">
         <RailItem label={t('nav.home')}>
           <Link
             to="/"
             aria-label={homeLabel}
-            className={railLinkClass}
+            className={homeLinkClass}
             activeOptions={{ exact: true }}
           >
             <MessageCircle aria-hidden className="size-6" />
           </Link>
           {homeCount > 0 ? (
-            <span
-              aria-hidden
-              className="pointer-events-none absolute right-2 bottom-0 rounded-full border-4 border-rail bg-danger px-1 text-xs leading-3.5 font-bold text-danger-contrast"
-            >
+            <span aria-hidden className={countBadge}>
               {formatMentionCount(homeCount)}
             </span>
           ) : null}
         </RailItem>
 
-        <li aria-hidden className="mx-auto h-0.5 w-8 rounded bg-elevated" />
+        <li aria-hidden className="h-0.5 w-6 rounded-full bg-line" />
 
         {guilds.map((guild) => (
           <RailItem key={guild.id} label={guild.name}>
-            {unreadGuilds.has(guild.id) ? (
-              <span
-                aria-hidden
-                className="absolute top-1/2 left-0 h-2 w-1 -translate-y-1/2 rounded-r bg-text"
-              />
-            ) : null}
             <Link
               to="/channels/$guildId"
               params={{ guildId: guild.id }}
               aria-label={labelOf(guild.id, guild.name)}
-              className={railLinkClass}
+              className={guildLinkClass}
             >
               <GuildIcon id={guild.id} name={guild.name} iconUrl={guild.iconUrl} />
             </Link>
-            {mentionsIn(guild.id) > 0 ? (
+            {unreadGuilds.has(guild.id) ? (
               <span
                 aria-hidden
-                className="pointer-events-none absolute right-2 bottom-0 rounded-full border-4 border-rail bg-danger px-1 text-xs leading-3.5 font-bold text-danger-contrast"
-              >
+                className="pointer-events-none absolute -top-0.5 -right-0.5 size-3 rounded-full border-[2.5px] border-side bg-accent"
+              />
+            ) : null}
+            {mentionsIn(guild.id) > 0 ? (
+              <span aria-hidden className={countBadge}>
                 {formatMentionCount(mentionsIn(guild.id))}
               </span>
             ) : null}

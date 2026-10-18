@@ -106,9 +106,9 @@
       "pending": "Verifying your email…",
       "done": "Your email is verified. Thank you!",
       "continue": "Continue to Chinchi",
-      "banner": "Please verify your email — we sent a message to {{email}}.",
+      "banner": "Confirm your email — we sent a message to <strong>{{email}}</strong>.",
       "resend": "Resend",
-      "resent": "Email sent"
+      "resentCooldown": "Sent · {{seconds}} s"
     },
     "mfa": {
       "prompt": "Enter the code from your authenticator app or one of your recovery codes.",

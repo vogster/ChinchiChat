@@ -76,7 +76,10 @@ export const DmSidebar = () => {
   const requests = useIncomingRequests()
 
   return (
-    <aside aria-label={t('dm.title')} className="flex w-60 shrink-0 flex-col bg-sidebar">
+    <aside
+      aria-label={t('dm.title')}
+      className="flex w-[min(280px,calc(100vw-150px))] shrink-0 overflow-hidden rounded-panel bg-side flex-col"
+    >
       <header className="flex h-12 items-center border-b border-border px-4 font-semibold shadow-sm">
         {t('dm.title')}
       </header>

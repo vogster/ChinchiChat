@@ -60,7 +60,10 @@ export const GuildSidebar = ({ guildId, channelId }: GuildSidebarProps) => {
   const resolveNotifications = useNotificationResolver()
   const ackGuild = useAckGuild()
 
-  if (!guild) return <aside className="w-60 shrink-0 bg-sidebar" />
+  if (!guild)
+    return (
+      <aside className="w-[min(280px,calc(100vw-150px))] shrink-0 overflow-hidden rounded-panel bg-side" />
+    )
 
   const closeDialog = (open: boolean) => {
     if (!open) setDialog(null)
@@ -75,7 +78,10 @@ export const GuildSidebar = ({ guildId, channelId }: GuildSidebarProps) => {
   const canOpenSettings = allowedSections(permissions.base).length > 0
 
   return (
-    <aside aria-label={guild.name} className="flex w-60 shrink-0 flex-col bg-sidebar">
+    <aside
+      aria-label={guild.name}
+      className="flex w-[min(280px,calc(100vw-150px))] shrink-0 overflow-hidden rounded-panel bg-side flex-col"
+    >
       <Menu>
         <MenuTrigger
           aria-label={t('guild.menu', { name: guild.name })}

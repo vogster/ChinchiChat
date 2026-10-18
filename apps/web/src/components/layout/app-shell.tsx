@@ -31,35 +31,38 @@ export const AppShell = ({ children }: { children: ReactNode }) => {
 
   return (
     <ShellContext.Provider value={shell}>
-      <div className="flex h-full flex-col overflow-hidden">
+      {/* Floating panels: every column is its own rounded card over the rail colour. */}
+      <div className="flex h-full flex-col gap-2.5 overflow-hidden bg-rail md:p-2.5">
         {gateway.state === 'reconnecting' ? (
           <div
             role="status"
-            className="bg-yellow-500 px-4 py-1 text-center text-sm font-medium text-black"
+            className="shrink-0 rounded-full bg-warning-soft px-4 py-1.5 text-center text-[12.5px] font-medium text-warning-text"
           >
             {t('messages.reconnecting')}
           </div>
         ) : null}
         <VerifyEmailBanner />
         <IncomingCalls />
-        <div className="relative flex min-h-0 flex-1">
+        <div className="relative flex min-h-0 flex-1 md:gap-2.5">
           {menuOpen ? (
             <button
               type="button"
               aria-label={t('nav.closeMenu')}
               onClick={shell.closeMenu}
-              className="fixed inset-0 z-30 bg-black/50 md:hidden"
+              className="fixed inset-0 z-30 bg-[rgb(8_8_16/0.5)] backdrop-blur-[3px] md:hidden"
             />
           ) : null}
           <div
             data-testid="navigation-drawer"
             data-open={menuOpen}
-            className="fixed inset-y-0 left-0 z-40 flex -translate-x-full transition-transform duration-200 data-[open=true]:translate-x-0 md:static md:translate-x-0"
+            className="fixed inset-y-0 left-0 z-40 flex -translate-x-full gap-2.5 bg-rail p-2.5 transition-transform duration-200 data-[open=true]:translate-x-0 md:static md:translate-x-0 md:p-0"
           >
             <ServerRail />
             <ChannelSidebar />
           </div>
-          <main className="flex min-w-0 flex-1 flex-col bg-main">{children}</main>
+          <main className="flex min-w-0 flex-1 flex-col overflow-hidden bg-main md:rounded-panel">
+            {children}
+          </main>
         </div>
       </div>
     </ShellContext.Provider>

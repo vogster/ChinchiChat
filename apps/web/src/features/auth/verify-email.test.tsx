@@ -1,5 +1,5 @@
-import { screen } from '@testing-library/react'
-import { describe, expect, it } from 'vitest'
+import { screen, waitFor } from '@testing-library/react'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import { apiError, createFakeApi, testUser } from '../../test/fake-api'
 import { renderApp } from '../../test/render-app'
@@ -33,6 +33,10 @@ describe('verify email page', () => {
 })
 
 describe('verify email banner', () => {
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
   const unverified = { ...testUser, emailVerified: false }
 
   it('asks unverified users to confirm and can resend the email', async () => {
@@ -40,12 +44,47 @@ describe('verify email banner', () => {
     const { user } = renderApp('/', { api })
 
     expect(
-      await screen.findByText(/Подтвердите email — мы отправили письмо на alice@example.com/),
+      await screen.findByText((_, element) =>
+        element?.getAttribute('role') === 'status'
+          ? element.textContent ===
+            'Подтвердите email — мы отправили письмо на alice@example.com.Отправить ещё раз'
+          : false,
+      ),
     ).toBeVisible()
+    expect(screen.getByText('alice@example.com')).toHaveClass('font-semibold')
     await user.click(screen.getByRole('button', { name: 'Отправить ещё раз' }))
 
-    expect(await screen.findByText('Письмо отправлено')).toBeVisible()
+    expect(await screen.findByRole('button', { name: 'Отправили · 30 с' })).toBeDisabled()
     expect(api.auth.resendVerification).toHaveBeenCalledTimes(1)
+  })
+
+  it('lets the email be sent again once the cooldown is over', async () => {
+    const start = new Date('2026-10-18T12:00:00Z')
+    vi.useFakeTimers({ now: start, toFake: ['Date'] })
+    const api = createFakeApi({ user: unverified })
+    const { user } = renderApp('/', { api })
+
+    await user.click(await screen.findByRole('button', { name: 'Отправить ещё раз' }))
+    await screen.findByRole('button', { name: 'Отправили · 30 с' })
+
+    vi.setSystemTime(start.getTime() + 30_000)
+    const again = await screen.findByRole(
+      'button',
+      { name: 'Отправить ещё раз' },
+      { timeout: 2_000 },
+    )
+    await user.click(again)
+    await waitFor(() => expect(api.auth.resendVerification).toHaveBeenCalledTimes(2))
+  })
+
+  it('shows why the email could not be sent', async () => {
+    const api = createFakeApi({ user: unverified })
+    api.auth.resendVerification.mockRejectedValueOnce(apiError(429, 'RATE_LIMITED'))
+    const { user } = renderApp('/', { api })
+
+    await user.click(await screen.findByRole('button', { name: 'Отправить ещё раз' }))
+
+    expect(await screen.findByText(/Слишком много/)).toBeVisible()
   })
 
   it('is hidden for verified users', async () => {
