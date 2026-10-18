@@ -1,4 +1,4 @@
-import { HeadphoneOff, MicOff, Monitor, Video } from 'lucide-react'
+import { Monitor, Video } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
 import { Avatar } from '../../components/ui/avatar'
@@ -9,7 +9,7 @@ import { voiceStateWords } from './voice-words'
 import type { VoiceModerationRights } from './voice-moderation-menu'
 import type { PublicUser, VoiceState } from '@chinchi/shared'
 
-/** One person in a voice channel in the sidebar. */
+/** One person in an unfolded voice channel card in the sidebar. */
 export const VoiceMemberRow = ({
   state,
   name,
@@ -25,24 +25,24 @@ export const VoiceMemberRow = ({
 }) => {
   const { t } = useTranslation()
   const words = voiceStateWords(t, state, speaking)
-  const muted = state.selfMute || state.serverMute
-  const deaf = state.selfDeaf || state.serverDeaf
+  const silent = state.selfMute || state.serverMute || state.selfDeaf || state.serverDeaf
 
   return (
     <li
       aria-label={words.length > 0 ? `${name} (${words.join(', ')})` : name}
       data-speaking={speaking}
-      className="group flex items-center gap-2 rounded py-1 pr-2 pl-7 text-sm text-muted"
+      className="group/member flex h-[34px] items-center gap-2.5 rounded-xl px-1.5 text-[13px] text-muted data-[speaking=true]:font-medium data-[speaking=true]:text-text"
     >
       <span
         data-speaking={speaking}
-        className="rounded-full outline-offset-1 data-[speaking=true]:outline-2 data-[speaking=true]:outline-green-500"
+        className="shrink-0 rounded-[9px] transition-shadow duration-200 data-[speaking=true]:shadow-[0_0_0_2px_var(--zl-accent)]"
       >
         <Avatar
           name={name}
           src={user?.avatarUrl ?? null}
           id={user?.id}
-          className="size-6 text-xs"
+          rounded="rounded-[9px]"
+          className="size-[26px] text-[10px]"
         />
       </span>
       {state.guildId ? (
@@ -50,26 +50,20 @@ export const VoiceMemberRow = ({
           userId={state.userId}
           guildId={state.guildId}
           name={name}
-          className="min-w-0 flex-1 truncate"
+          className="min-w-0 flex-1 truncate text-left"
         >
           {name}
         </ProfileTrigger>
       ) : (
         <span className="min-w-0 flex-1 truncate">{name}</span>
       )}
-      <span aria-hidden className="flex gap-1">
+      <span aria-hidden className="flex shrink-0 items-center gap-1 text-[11px]">
         {state.stream ? <Monitor className="size-3.5" /> : null}
         {state.video ? <Video className="size-3.5" /> : null}
-        {deaf ? (
-          <HeadphoneOff
-            className="size-3.5 data-[server=true]:text-danger"
-            data-server={state.serverDeaf}
-          />
-        ) : muted ? (
-          <MicOff
-            className="size-3.5 data-[server=true]:text-danger"
-            data-server={state.serverMute}
-          />
+        {speaking ? (
+          <span className="text-accent-text">{t('voice.speaking')}</span>
+        ) : silent ? (
+          <span className="text-danger">{t('voice.silent')}</span>
         ) : null}
       </span>
       <VoiceModerationMenu state={state} name={name} rights={rights} />

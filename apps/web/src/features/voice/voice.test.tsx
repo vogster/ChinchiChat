@@ -70,7 +70,7 @@ describe('joining voice', () => {
         preferences: expect.objectContaining({ noiseSuppression: true }),
       }),
     )
-    expect(await panel()).toHaveTextContent('Голос подключён')
+    expect(await panel()).toHaveTextContent('В голосовом')
     expect(await panel()).toHaveTextContent('Общий')
     expect(router.state.location.pathname).toBe(`/channels/${testGuild.id}/${VOICE_ID}`)
   })
@@ -92,7 +92,7 @@ describe('joining voice', () => {
 
     await joinFromSidebar(user)
 
-    expect(await panel()).toHaveTextContent('Голос подключён')
+    expect(await panel()).toHaveTextContent('В голосовом')
     expect(await screen.findByRole('alert')).toHaveTextContent('Нет доступа к микрофону')
     expect(screen.getByRole('button', { name: 'Включить микрофон' })).toBeVisible()
     expect(api.voice.updateState).toHaveBeenCalledWith({ selfMute: true, selfDeaf: false })
@@ -229,6 +229,7 @@ describe('voice moderation', () => {
     await screen.findByRole('button', { name: 'Голосовой канал Общий' })
     gateway.emit('VOICE_STATE_UPDATE', state('200', { serverMute: true }))
 
+    await user.click(await screen.findByRole('button', { name: 'Показать участников Общий' }))
     await user.click(await screen.findByRole('button', { name: 'Действия — Боб' }))
     await user.click(await screen.findByRole('menuitem', { name: 'Включить микрофон на сервере' }))
     expect(api.voice.moderate).toHaveBeenLastCalledWith(testGuild.id, '200', { mute: false })
@@ -260,6 +261,7 @@ describe('voice moderation', () => {
     await screen.findByRole('button', { name: 'Голосовой канал Общий' })
     gateway.emit('VOICE_STATE_UPDATE', state('200'))
 
+    await user.click(await screen.findByRole('button', { name: 'Показать участников Общий' }))
     await user.click(await screen.findByRole('button', { name: 'Действия — Боб' }))
     expect(screen.queryByRole('menuitem', { name: 'Переместить в «Общий»' })).toBeNull()
     await user.click(await screen.findByRole('menuitem', { name: 'Переместить в «Тихий»' }))
@@ -274,7 +276,7 @@ describe('being moved', () => {
     api.guilds.get.mockResolvedValue({ guild: withSecondVoice() })
     const { user, gateway } = renderApp(GENERAL_URL, { api })
     await joinFromSidebar(user)
-    expect(await panel()).toHaveTextContent('Голос подключён')
+    expect(await panel()).toHaveTextContent('В голосовом')
 
     gateway.emit('VOICE_MOVE', { guildId: testGuild.id, channelId: SECOND_VOICE_ID })
 

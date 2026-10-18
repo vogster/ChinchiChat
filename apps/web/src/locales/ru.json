@@ -429,7 +429,11 @@
     "welcomeTitle": "Добро пожаловать в #{{name}}!",
     "welcomeText": "Это начало канала #{{name}}.",
     "messagesSoon": "Сообщения появятся в следующей фазе разработки.",
-    "markRead": "Отметить прочитанным"
+    "markRead": "Отметить прочитанным",
+    "onlineSummary_one": "{{online}} в сети · {{count}} участник",
+    "onlineSummary_few": "{{online}} в сети · {{count}} участника",
+    "onlineSummary_many": "{{online}} в сети · {{count}} участников",
+    "onlineSummary_other": "{{online}} в сети · {{count}} участника"
   },
   "createGuild": {
     "title": "Создайте свой сервер",
@@ -887,7 +891,7 @@
     "channelLabel": "Голосовой канал {{name}}",
     "disabled": "Голос не настроен на этом сервере Chinchi",
     "panelLabel": "Голосовое подключение",
-    "connected": "Голос подключён",
+    "connected": "В голосовом",
     "encrypted": "Звонок зашифрован",
     "connecting": "Подключение…",
     "leave": "Отключиться",
@@ -922,7 +926,15 @@
     "decline": "Отклонить",
     "call": "Позвонить",
     "joinCall": "Присоединиться к звонку",
-    "moveTo": "Переместить в «{{channel}}»"
+    "moveTo": "Переместить в «{{channel}}»",
+    "countEmpty": "пусто",
+    "countIn_one": "{{count}} в канале",
+    "countIn_few": "{{count}} в канале",
+    "countIn_many": "{{count}} в канале",
+    "countIn_other": "{{count}} в канале",
+    "foldMembers": "Свернуть участников {{name}}",
+    "unfoldMembers": "Показать участников {{name}}",
+    "silent": "без звука"
   },
   "profile": {
     "label": "Профиль: {{name}}",
@@ -1165,7 +1177,9 @@
     "closeList": "Закрыть список тредов",
     "none": "Тредов пока нет. Начните тред из любого сообщения.",
     "openFull": "Открыть тред целиком",
-    "close": "Закрыть тред"
+    "close": "Закрыть тред",
+    "fold": "Свернуть треды #{{name}}",
+    "unfold": "Показать треды #{{name}} ({{count}})"
   },
   "emojis": {
     "title": "Эмодзи",

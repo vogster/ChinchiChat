@@ -8,11 +8,20 @@ const COLORS: Readonly<Record<PresenceStatus, string>> = {
 }
 
 /** Status badge drawn over the bottom-right corner of an avatar. */
-export const PresenceDot = ({ status, label }: { status: PresenceStatus; label: string }) => (
+export const PresenceDot = ({
+  status,
+  label,
+  border = 'border-side',
+}: {
+  status: PresenceStatus
+  label: string
+  /** The colour behind the avatar, so the dot looks cut out of it. */
+  border?: string
+}) => (
   <span
     role="img"
     aria-label={label}
     data-status={status}
-    className={`absolute -right-0.5 -bottom-0.5 size-3.5 rounded-full border-[3px] border-sidebar ${COLORS[status]}`}
+    className={`absolute -right-[3px] -bottom-[3px] size-[13px] rounded-full border-[3px] ${border} ${COLORS[status]}`}
   />
 )

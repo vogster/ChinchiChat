@@ -4,7 +4,7 @@ import { useNavigate } from '@tanstack/react-router'
 import {
   Bell,
   CheckCheck,
-  ChevronDown,
+  Ellipsis,
   FolderPlus,
   LogOut,
   PlusCircle,
@@ -30,6 +30,7 @@ import { CreateChannelDialog } from './dialogs/create-channel-dialog'
 import { EditChannelDialog } from './dialogs/edit-channel-dialog'
 import { InviteDialog } from './dialogs/invite-dialog'
 import { LeaveGuildDialog } from './dialogs/leave-guild-dialog'
+import { GuildSidebarHeader } from './guild-sidebar-header'
 import { guildQueryOptions } from './queries'
 import { useAckGuild } from './use-ack-guild'
 import { useChannelReorder } from './use-channel-reorder'
@@ -82,75 +83,83 @@ export const GuildSidebar = ({ guildId, channelId }: GuildSidebarProps) => {
       aria-label={guild.name}
       className="flex w-[min(280px,calc(100vw-150px))] shrink-0 overflow-hidden rounded-panel bg-side flex-col"
     >
-      <Menu>
-        <MenuTrigger
-          aria-label={t('guild.menu', { name: guild.name })}
-          className="flex h-12 items-center justify-between gap-2 border-b border-border px-4 text-left font-semibold shadow-sm hover:bg-hover data-[state=open]:bg-hover"
-        >
-          <span className="truncate">{guild.name}</span>
-          <ChevronDown aria-hidden className="size-4 shrink-0" />
-        </MenuTrigger>
-        <MenuContent>
-          {canInvite ? (
-            <MenuItem
-              onSelect={() => setDialog({ kind: 'invite' })}
-              icon={<UserPlus aria-hidden className="size-4" />}
+      <GuildSidebarHeader
+        guildId={guild.id}
+        name={guild.name}
+        menu={
+          <Menu>
+            <MenuTrigger
+              aria-label={t('guild.menu', { name: guild.name })}
+              className="grid size-[34px] shrink-0 place-items-center rounded-xl bg-field text-muted hover:text-text data-[state=open]:bg-chip data-[state=open]:text-text"
             >
-              {t('guild.invite')}
-            </MenuItem>
-          ) : null}
-          <MenuItem
-            onSelect={() => ackGuild.mutate(guild)}
-            icon={<CheckCheck aria-hidden className="size-4" />}
-          >
-            {t('guild.markRead')}
-          </MenuItem>
-          <MenuItem
-            onSelect={() => setDialog({ kind: 'notifications' })}
-            icon={<Bell aria-hidden className="size-4" />}
-          >
-            {t('notifications.menu')}
-          </MenuItem>
-          {canOpenSettings ? (
-            <MenuItem
-              onSelect={() =>
-                void navigate({ to: '/server-settings/$guildId', params: { guildId: guild.id } })
-              }
-              icon={<Settings aria-hidden className="size-4" />}
-            >
-              {t('guild.settings')}
-            </MenuItem>
-          ) : null}
-          {canManageChannels ? (
-            <>
+              <Ellipsis aria-hidden className="size-4" />
+            </MenuTrigger>
+            <MenuContent>
+              {canInvite ? (
+                <MenuItem
+                  onSelect={() => setDialog({ kind: 'invite' })}
+                  icon={<UserPlus aria-hidden className="size-4" />}
+                >
+                  {t('guild.invite')}
+                </MenuItem>
+              ) : null}
               <MenuItem
-                onSelect={() => setDialog({ kind: 'create', type: 'text', parent: null })}
-                icon={<PlusCircle aria-hidden className="size-4" />}
+                onSelect={() => ackGuild.mutate(guild)}
+                icon={<CheckCheck aria-hidden className="size-4" />}
               >
-                {t('guild.createChannel')}
+                {t('guild.markRead')}
               </MenuItem>
               <MenuItem
-                onSelect={() => setDialog({ kind: 'create', type: 'category', parent: null })}
-                icon={<FolderPlus aria-hidden className="size-4" />}
+                onSelect={() => setDialog({ kind: 'notifications' })}
+                icon={<Bell aria-hidden className="size-4" />}
               >
-                {t('guild.createCategory')}
+                {t('notifications.menu')}
               </MenuItem>
-            </>
-          ) : null}
-          {permissions.isOwner ? null : (
-            <>
-              <MenuSeparator />
-              <MenuItem
-                danger
-                onSelect={() => setDialog({ kind: 'leave' })}
-                icon={<LogOut aria-hidden className="size-4" />}
-              >
-                {t('guild.leave')}
-              </MenuItem>
-            </>
-          )}
-        </MenuContent>
-      </Menu>
+              {canOpenSettings ? (
+                <MenuItem
+                  onSelect={() =>
+                    void navigate({
+                      to: '/server-settings/$guildId',
+                      params: { guildId: guild.id },
+                    })
+                  }
+                  icon={<Settings aria-hidden className="size-4" />}
+                >
+                  {t('guild.settings')}
+                </MenuItem>
+              ) : null}
+              {canManageChannels ? (
+                <>
+                  <MenuItem
+                    onSelect={() => setDialog({ kind: 'create', type: 'text', parent: null })}
+                    icon={<PlusCircle aria-hidden className="size-4" />}
+                  >
+                    {t('guild.createChannel')}
+                  </MenuItem>
+                  <MenuItem
+                    onSelect={() => setDialog({ kind: 'create', type: 'category', parent: null })}
+                    icon={<FolderPlus aria-hidden className="size-4" />}
+                  >
+                    {t('guild.createCategory')}
+                  </MenuItem>
+                </>
+              ) : null}
+              {permissions.isOwner ? null : (
+                <>
+                  <MenuSeparator />
+                  <MenuItem
+                    danger
+                    onSelect={() => setDialog({ kind: 'leave' })}
+                    icon={<LogOut aria-hidden className="size-4" />}
+                  >
+                    {t('guild.leave')}
+                  </MenuItem>
+                </>
+              )}
+            </MenuContent>
+          </Menu>
+        }
+      />
 
       <ChannelList
         channels={guild.channels}

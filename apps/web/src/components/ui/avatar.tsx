@@ -9,6 +9,7 @@ export const Avatar = ({
   src,
   id,
   className = 'size-10',
+  rounded = 'rounded-full',
 }: {
   name: string
   src: string | null
@@ -16,6 +17,8 @@ export const Avatar = ({
   id?: string | null | undefined
   /** Size utilities, e.g. `size-8`. */
   className?: string
+  /** The corner radius: a circle, or a squircle such as `rounded-[14px]` for 40px. */
+  rounded?: string
 }) => {
   if (src || id) {
     return (
@@ -25,14 +28,14 @@ export const Avatar = ({
         aria-hidden
         loading="lazy"
         data-generated={src ? undefined : true}
-        className={`shrink-0 rounded-full bg-elevated object-cover ${className}`}
+        className={`shrink-0 ${rounded} bg-elevated object-cover ${className}`}
       />
     )
   }
   return (
     <span
       aria-hidden
-      className={`flex shrink-0 items-center justify-center rounded-full bg-accent font-semibold text-accent-contrast ${className}`}
+      className={`flex shrink-0 items-center justify-center ${rounded} bg-accent font-semibold text-accent-contrast ${className}`}
     >
       {name.charAt(0).toUpperCase()}
     </span>

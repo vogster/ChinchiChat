@@ -427,7 +427,9 @@
     "welcomeTitle": "Welcome to #{{name}}!",
     "welcomeText": "This is the start of the #{{name}} channel.",
     "messagesSoon": "Messages arrive in the next development phase.",
-    "markRead": "Mark as read"
+    "markRead": "Mark as read",
+    "onlineSummary_one": "{{online}} online · {{count}} member",
+    "onlineSummary_other": "{{online}} online · {{count}} members"
   },
   "createGuild": {
     "title": "Create your server",
@@ -879,7 +881,7 @@
     "channelLabel": "Voice channel {{name}}",
     "disabled": "Voice is not set up on this Chinchi server",
     "panelLabel": "Voice connection",
-    "connected": "Voice connected",
+    "connected": "In voice",
     "encrypted": "Call encrypted",
     "connecting": "Connecting…",
     "leave": "Disconnect",
@@ -914,7 +916,13 @@
     "decline": "Decline",
     "call": "Call",
     "joinCall": "Join the call",
-    "moveTo": "Move to “{{channel}}”"
+    "moveTo": "Move to “{{channel}}”",
+    "countEmpty": "empty",
+    "countIn_one": "{{count}} inside",
+    "countIn_other": "{{count}} inside",
+    "foldMembers": "Fold the people in {{name}}",
+    "unfoldMembers": "Show the people in {{name}}",
+    "silent": "silent"
   },
   "profile": {
     "label": "Profile: {{name}}",
@@ -1141,7 +1149,9 @@
     "closeList": "Close the thread list",
     "none": "No threads yet. Start one from any message.",
     "openFull": "Open the whole thread",
-    "close": "Close the thread"
+    "close": "Close the thread",
+    "fold": "Fold threads of #{{name}}",
+    "unfold": "Show threads of #{{name}} ({{count}})"
   },
   "emojis": {
     "title": "Emoji",
