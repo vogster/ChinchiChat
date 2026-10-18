@@ -206,7 +206,7 @@ export const MessageItem = ({
       // Focusable from code only (jump to a pinned or replied-to message).
       tabIndex={-1}
       data-mentioned={mentioned || undefined}
-      className={`group relative flex gap-4 px-4 hover:bg-black/5 dark:hover:bg-white/[0.03] ${compact ? 'py-0.5' : 'mt-3 py-0.5'}`}
+      className={`group relative flex gap-4 px-4 hover:bg-black/5 dark:hover:bg-white/[0.03] ${compact ? 'py-0.5' : 'mt-(--zl-message-group-gap) py-0.5'}`}
     >
       {mentioned ? (
         // A separate layer, so the highlight never fights the row's hover background.

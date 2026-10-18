@@ -1,3 +1,4 @@
+import '@fontsource-variable/rubik/index.css'
 import './styles.css'
 
 import { QueryClient } from '@tanstack/react-query'

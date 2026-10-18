@@ -10,7 +10,7 @@ export const MenuContent = ({ children }: { children: ReactNode }) => (
     <Dropdown.Content
       align="start"
       sideOffset={4}
-      className="z-50 w-56 rounded-md bg-rail p-1.5 text-sm text-text shadow-xl"
+      className="z-50 w-56 rounded-card bg-side p-1.5 text-sm text-text shadow-popover"
     >
       {children}
     </Dropdown.Content>
@@ -27,17 +27,17 @@ export interface MenuItemProps {
 }
 
 const itemClass =
-  'flex cursor-pointer items-center justify-between gap-2 rounded px-2 py-1.5 outline-none select-none'
+  'flex h-9 cursor-pointer items-center justify-between gap-2 rounded-field px-3 outline-none select-none'
 
 export const MenuItem = ({ onSelect, icon, danger = false, label, children }: MenuItemProps) => (
   <Dropdown.Item
     onSelect={onSelect}
     aria-label={label}
-    className={`${itemClass} ${danger ? 'text-red-400 data-[highlighted]:bg-red-600 data-[highlighted]:text-white' : 'data-[highlighted]:bg-accent data-[highlighted]:text-accent-contrast'}`}
+    className={`${itemClass} ${danger ? 'text-danger data-[highlighted]:bg-danger-soft' : 'data-[highlighted]:bg-field'}`}
   >
     <span>{children}</span>
     {icon}
   </Dropdown.Item>
 )
 
-export const MenuSeparator = () => <Dropdown.Separator className="mx-1 my-1 h-px bg-border" />
+export const MenuSeparator = () => <Dropdown.Separator className="mx-2 my-1 h-px bg-line" />

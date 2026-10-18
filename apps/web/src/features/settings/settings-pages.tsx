@@ -14,7 +14,7 @@ import { ProfileForm } from './profile-form'
 import { RecoveryKeySettings } from './recovery-key-settings'
 import { SessionsList } from './sessions-list'
 import { SettingsCard, SettingsSection } from './settings-section'
-import { ThemePicker } from './theme-picker'
+import { DensityPicker, PalettePicker, ThemePicker } from './theme-picker'
 import { VoiceDevices } from './voice-devices'
 
 export const AccountPage = () => {
@@ -142,7 +142,11 @@ export const AppearancePage = () => {
       title={t('settings.appearance.title')}
       subtitle={t('settings.appearance.subtitle')}
     >
-      <ThemePicker />
+      <div className="flex flex-col gap-6">
+        <ThemePicker />
+        <PalettePicker />
+        <DensityPicker />
+      </div>
     </SettingsSection>
   )
 }

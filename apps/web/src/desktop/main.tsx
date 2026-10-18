@@ -1,3 +1,4 @@
+import '@fontsource-variable/rubik/index.css'
 import '../styles.css'
 
 import { getVersion } from '@tauri-apps/api/app'

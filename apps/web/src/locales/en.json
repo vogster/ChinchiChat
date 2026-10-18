@@ -351,11 +351,22 @@
     },
     "appearance": {
       "title": "Appearance",
-      "subtitle": "The theme is remembered in this browser.",
+      "subtitle": "The theme, palette and density are remembered in this browser.",
       "theme": "Theme",
       "system": "Match the system",
       "dark": "Dark",
-      "light": "Light"
+      "light": "Light",
+      "palette": "Palette",
+      "palettes": {
+        "chinchilla": "Chinchilla",
+        "neon": "Neon",
+        "plum": "Plum"
+      },
+      "density": "Message density",
+      "densities": {
+        "cozy": "Cozy",
+        "compact": "Compact"
+      }
     },
     "export": {
       "title": "Your data",

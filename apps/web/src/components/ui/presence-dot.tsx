@@ -1,10 +1,10 @@
 import type { PresenceStatus } from '@chinchi/shared'
 
 const COLORS: Readonly<Record<PresenceStatus, string>> = {
-  online: 'bg-green-500',
-  idle: 'bg-yellow-500',
-  dnd: 'bg-red-500',
-  offline: 'bg-gray-500',
+  online: 'bg-status-online',
+  idle: 'bg-status-idle',
+  dnd: 'bg-status-dnd',
+  offline: 'bg-status-offline',
 }
 
 /** Status badge drawn over the bottom-right corner of an avatar. */

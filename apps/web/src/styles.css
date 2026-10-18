@@ -1,85 +1,231 @@
 @import 'tailwindcss';
 
 /*
- * Theme tokens. Dark is the default; light follows the OS preference unless the user picked one.
- * Components use the semantic Tailwind colors below (bg-rail, text-muted, ...), never raw values.
+ * Theme tokens (design v2). Dark is the default; light follows the OS preference unless the
+ * user picked one (`data-theme` on <html>). A palette (`data-palette`) only sets the hues and
+ * chroma below, and every color is derived from them, so one set of rules serves all palettes.
+ * Components use the semantic Tailwind colors (bg-side, text-muted, ...), never raw values.
+ *
+ * N(L, k) = oklch(L, nc·k, nh) — the neutrals; the accent is oklch(al, ac, ah).
  */
 :root {
+  /* Chinchilla: cool grey neutrals with a soft pink accent. */
+  --zl-nh: 255;
+  --zl-nc: 0.012;
+  --zl-ah: 12;
+  --zl-al: 0.72;
+  --zl-ac: 0.14;
+
   /* Native controls (radios, scrollbars) follow the theme in use. */
   color-scheme: dark;
-  --zl-rail: #1e1f22;
-  --zl-sidebar: #2b2d31;
-  --zl-main: #313338;
-  --zl-elevated: #383a40;
-  --zl-hover: #3f4147;
-  --zl-text: #f2f3f5;
-  --zl-muted: #a0a4ab;
-  --zl-accent: #5b5bd6;
-  --zl-accent-contrast: #ffffff;
-  --zl-border: #1f2023;
-  --zl-mention: #f0b232;
-  --zl-danger: #da373c;
-  --zl-danger-contrast: #ffffff;
-  /* End-to-end encrypted: the green of "only you two can read this". */
-  --zl-secure: #3ba55d;
+  --zl-rail: oklch(0.15 var(--zl-nc) var(--zl-nh));
+  --zl-side: oklch(0.2 var(--zl-nc) var(--zl-nh));
+  --zl-main: oklch(0.225 var(--zl-nc) var(--zl-nh));
+  --zl-stage: oklch(0.25 var(--zl-nc) var(--zl-nh));
+  --zl-field: oklch(0.28 var(--zl-nc) var(--zl-nh));
+  --zl-chip: oklch(0.33 var(--zl-nc) var(--zl-nh));
+  --zl-text: oklch(0.97 calc(var(--zl-nc) * 0.5) var(--zl-nh));
+  --zl-body: oklch(0.92 calc(var(--zl-nc) * 0.7) var(--zl-nh));
+  --zl-muted: oklch(0.76 var(--zl-nc) var(--zl-nh));
+  --zl-faint: oklch(0.63 var(--zl-nc) var(--zl-nh));
+  --zl-line: oklch(1 0 0 / 0.07);
+  --zl-accent-shift: 0;
+  --zl-accent-soft: color-mix(in oklch, var(--zl-accent) 18%, transparent);
+  --zl-accent-text: oklch(0.82 0.12 var(--zl-ah));
+  --zl-danger: oklch(0.62 0.18 25);
+  --zl-secure-text: oklch(0.78 0.16 150);
+  --zl-warning-text: oklch(0.86 0.13 85);
+  --zl-mention: oklch(0.8 0.15 80);
 }
 
-/* A theme picked in the settings wins over the OS preference (`data-theme` on <html>). */
+/* The neon and plum palettes: only the hues and chroma differ. */
+:root[data-palette='neon'] {
+  --zl-nh: 285;
+  --zl-nc: 0.035;
+  --zl-ah: 350;
+  --zl-al: 0.68;
+  --zl-ac: 0.25;
+}
+
+:root[data-palette='plum'] {
+  --zl-nh: 320;
+  --zl-nc: 0.028;
+  --zl-ah: 85;
+  --zl-al: 0.85;
+  --zl-ac: 0.15;
+}
+
+/* A theme picked in the settings wins over the OS preference. */
 :root[data-theme='light'] {
   color-scheme: light;
-  --zl-rail: #e3e5e8;
-  --zl-sidebar: #f2f3f5;
-  --zl-main: #ffffff;
-  --zl-elevated: #ebedef;
-  --zl-hover: #e0e2e6;
-  --zl-text: #1e1f22;
-  --zl-muted: #5c5f66;
-  --zl-accent: #5b5bd6;
-  --zl-accent-contrast: #ffffff;
-  --zl-border: #d4d7dc;
-  --zl-mention: #c9881e;
-  --zl-danger: #da373c;
-  --zl-danger-contrast: #ffffff;
-  /* End-to-end encrypted: the green of "only you two can read this". */
-  --zl-secure: #248046;
+  --zl-rail: oklch(0.91 calc(var(--zl-nc) * 1.5) var(--zl-nh));
+  --zl-side: oklch(0.965 var(--zl-nc) var(--zl-nh));
+  --zl-main: oklch(0.995 calc(var(--zl-nc) * 0.3) var(--zl-nh));
+  --zl-stage: oklch(0.955 var(--zl-nc) var(--zl-nh));
+  --zl-field: oklch(0.94 var(--zl-nc) var(--zl-nh));
+  --zl-chip: oklch(0.9 var(--zl-nc) var(--zl-nh));
+  --zl-text: oklch(0.22 calc(var(--zl-nc) * 1.5) var(--zl-nh));
+  --zl-body: oklch(0.28 calc(var(--zl-nc) * 1.5) var(--zl-nh));
+  --zl-muted: oklch(0.48 calc(var(--zl-nc) * 1.5) var(--zl-nh));
+  --zl-faint: oklch(0.6 var(--zl-nc) var(--zl-nh));
+  --zl-line: oklch(0.88 var(--zl-nc) var(--zl-nh));
+  --zl-accent-shift: -0.06;
+  --zl-accent-soft: color-mix(in oklch, var(--zl-accent) 22%, transparent);
+  --zl-accent-text: oklch(0.48 0.15 var(--zl-ah));
+  --zl-danger: oklch(0.56 0.19 25);
+  --zl-secure-text: oklch(0.5 0.14 150);
+  --zl-warning-text: oklch(0.5 0.12 70);
+  --zl-mention: oklch(0.62 0.14 75);
 }
 
 @media (prefers-color-scheme: light) {
   :root:not([data-theme='dark']) {
     color-scheme: light;
-    --zl-rail: #e3e5e8;
-    --zl-sidebar: #f2f3f5;
-    --zl-main: #ffffff;
-    --zl-elevated: #ebedef;
-    --zl-hover: #e0e2e6;
-    --zl-text: #1e1f22;
-    --zl-muted: #5c5f66;
-    --zl-accent: #5b5bd6;
-    --zl-accent-contrast: #ffffff;
-    --zl-border: #d4d7dc;
-    --zl-mention: #c9881e;
-    --zl-danger: #da373c;
-    --zl-danger-contrast: #ffffff;
-    /* End-to-end encrypted: the green of "only you two can read this". */
-    --zl-secure: #248046;
+    --zl-rail: oklch(0.91 calc(var(--zl-nc) * 1.5) var(--zl-nh));
+    --zl-side: oklch(0.965 var(--zl-nc) var(--zl-nh));
+    --zl-main: oklch(0.995 calc(var(--zl-nc) * 0.3) var(--zl-nh));
+    --zl-stage: oklch(0.955 var(--zl-nc) var(--zl-nh));
+    --zl-field: oklch(0.94 var(--zl-nc) var(--zl-nh));
+    --zl-chip: oklch(0.9 var(--zl-nc) var(--zl-nh));
+    --zl-text: oklch(0.22 calc(var(--zl-nc) * 1.5) var(--zl-nh));
+    --zl-body: oklch(0.28 calc(var(--zl-nc) * 1.5) var(--zl-nh));
+    --zl-muted: oklch(0.48 calc(var(--zl-nc) * 1.5) var(--zl-nh));
+    --zl-faint: oklch(0.6 var(--zl-nc) var(--zl-nh));
+    --zl-line: oklch(0.88 var(--zl-nc) var(--zl-nh));
+    --zl-accent-shift: -0.06;
+    --zl-accent-soft: color-mix(in oklch, var(--zl-accent) 22%, transparent);
+    --zl-accent-text: oklch(0.48 0.15 var(--zl-ah));
+    --zl-danger: oklch(0.56 0.19 25);
+    --zl-secure-text: oklch(0.5 0.14 150);
+    --zl-warning-text: oklch(0.5 0.12 70);
+    --zl-mention: oklch(0.62 0.14 75);
   }
+}
+
+/* Derived from the tokens above, the same in both themes. */
+:root {
+  --zl-accent: oklch(calc(var(--zl-al) + var(--zl-accent-shift)) var(--zl-ac) var(--zl-ah));
+  /* Text on the accent: a dark ink of the accent's own hue. */
+  --zl-accent-contrast: oklch(0.2 0.03 var(--zl-ah));
+  --zl-danger-soft: color-mix(in oklch, var(--zl-danger) 16%, transparent);
+  --zl-danger-contrast: #ffffff;
+  /* End-to-end encrypted, "online": the green of "only you two can read this". */
+  --zl-secure: oklch(0.74 0.16 150);
+  --zl-secure-soft: color-mix(in oklch, var(--zl-secure) 20%, transparent);
+  /* Beta, "not verified". */
+  --zl-warning-soft: color-mix(in oklch, oklch(0.8 0.15 80) 22%, transparent);
+  --zl-status-online: oklch(0.74 0.14 150);
+  --zl-status-idle: oklch(0.8 0.14 80);
+  --zl-status-dnd: oklch(0.64 0.18 25);
+  --zl-status-offline: oklch(0.6 0.01 255);
+  /* Space above a new group of messages: "cozy" by default, tighter when compact. */
+  --zl-message-group-gap: 14px;
+}
+
+:root[data-density='compact'] {
+  --zl-message-group-gap: 8px;
+}
+
+/*
+ * Appearance settings draw other palettes and themes than the one in use: a swatch re-declares
+ * its palette's parameters, a preview the lightness of its theme.
+ */
+[data-swatch] {
+  --swatch-neutral: oklch(0.33 var(--zl-nc) var(--zl-nh));
+  --swatch-accent: oklch(calc(var(--zl-al) + var(--zl-accent-shift)) var(--zl-ac) var(--zl-ah));
+}
+
+[data-swatch='chinchilla'] {
+  --zl-nh: 255;
+  --zl-nc: 0.012;
+  --zl-ah: 12;
+  --zl-al: 0.72;
+  --zl-ac: 0.14;
+}
+
+[data-swatch='neon'] {
+  --zl-nh: 285;
+  --zl-nc: 0.035;
+  --zl-ah: 350;
+  --zl-al: 0.68;
+  --zl-ac: 0.25;
+}
+
+[data-swatch='plum'] {
+  --zl-nh: 320;
+  --zl-nc: 0.028;
+  --zl-ah: 85;
+  --zl-al: 0.85;
+  --zl-ac: 0.15;
+}
+
+[data-preview='dark'] {
+  --preview-rail: oklch(0.15 var(--zl-nc) var(--zl-nh));
+  --preview-side: oklch(0.2 var(--zl-nc) var(--zl-nh));
+  --preview-main: oklch(0.225 var(--zl-nc) var(--zl-nh));
+  --preview-field: oklch(0.28 var(--zl-nc) var(--zl-nh));
+  --preview-accent: oklch(var(--zl-al) var(--zl-ac) var(--zl-ah));
+}
+
+[data-preview='light'] {
+  --preview-rail: oklch(0.91 calc(var(--zl-nc) * 1.5) var(--zl-nh));
+  --preview-side: oklch(0.965 var(--zl-nc) var(--zl-nh));
+  --preview-main: oklch(0.995 calc(var(--zl-nc) * 0.3) var(--zl-nh));
+  --preview-field: oklch(0.94 var(--zl-nc) var(--zl-nh));
+  --preview-accent: oklch(calc(var(--zl-al) - 0.06) var(--zl-ac) var(--zl-ah));
 }
 
 @theme inline {
   --color-rail: var(--zl-rail);
-  --color-sidebar: var(--zl-sidebar);
+  --color-side: var(--zl-side);
   --color-main: var(--zl-main);
-  --color-elevated: var(--zl-elevated);
-  --color-hover: var(--zl-hover);
+  --color-stage: var(--zl-stage);
+  --color-field: var(--zl-field);
+  --color-chip: var(--zl-chip);
   --color-text: var(--zl-text);
+  --color-body: var(--zl-body);
   --color-muted: var(--zl-muted);
+  --color-faint: var(--zl-faint);
+  --color-line: var(--zl-line);
   --color-accent: var(--zl-accent);
+  --color-accent-soft: var(--zl-accent-soft);
+  --color-accent-text: var(--zl-accent-text);
   --color-accent-contrast: var(--zl-accent-contrast);
-  --color-border: var(--zl-border);
   --color-mention: var(--zl-mention);
   --color-danger: var(--zl-danger);
+  --color-danger-soft: var(--zl-danger-soft);
   --color-danger-contrast: var(--zl-danger-contrast);
   --color-secure: var(--zl-secure);
+  --color-secure-soft: var(--zl-secure-soft);
+  --color-secure-text: var(--zl-secure-text);
+  --color-warning-soft: var(--zl-warning-soft);
+  --color-warning-text: var(--zl-warning-text);
+  --color-status-online: var(--zl-status-online);
+  --color-status-idle: var(--zl-status-idle);
+  --color-status-dnd: var(--zl-status-dnd);
+  --color-status-offline: var(--zl-status-offline);
+
+  /* Design v1 names, kept until every screen moves to the tokens above (phase 23, step 10). */
+  --color-sidebar: var(--zl-side);
+  --color-elevated: var(--zl-field);
+  --color-hover: var(--zl-chip);
+  --color-border: var(--zl-line);
+
+  --shadow-popover: 0 24px 60px rgb(8 8 16 / 0.38), 0 0 0 1px var(--zl-line);
+  --shadow-modal: 0 30px 80px rgb(8 8 16 / 0.45), 0 0 0 1px var(--zl-line);
+}
+
+@theme {
+  --font-sans: 'Rubik Variable', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-mono: ui-monospace, 'JetBrains Mono', Menlo, monospace;
+
+  /* Inputs · server icons and avatars · cards · the composer · panels · dialogs. */
+  --radius-field: 14px;
+  --radius-tile: 16px;
+  --radius-card: 22px;
+  --radius-composer: 24px;
+  --radius-panel: 26px;
+  --radius-modal: 30px;
 }
 
 html,
@@ -89,16 +235,10 @@ body,
 }
 
 body {
-  background-color: var(--zl-main);
+  background-color: var(--zl-rail);
   color: var(--zl-text);
-  font-family:
-    'Inter',
-    ui-sans-serif,
-    system-ui,
-    -apple-system,
-    'Segoe UI',
-    Roboto,
-    'Helvetica Neue',
-    sans-serif;
+  font-family: var(--font-sans);
+  font-size: 14px;
+  line-height: 1.45;
   -webkit-font-smoothing: antialiased;
 }
