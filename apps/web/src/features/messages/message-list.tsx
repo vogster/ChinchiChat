@@ -1,5 +1,4 @@
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query'
-import { Hash } from 'lucide-react'
 import { Fragment, useCallback, useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
@@ -10,6 +9,7 @@ import { guildQueryOptions, membersQueryOptions } from '../guilds/queries'
 import { MentionResolverProvider } from '../markdown/mention-resolver-provider'
 import { ReportDialog } from '../reports/report-dialog'
 import { CreateThreadDialog } from '../threads/create-thread-dialog'
+import { groupPosition } from './bubble-shape'
 import { formatDay } from './format-time'
 import { groupMessages } from './group-messages'
 import { mentionsMe } from './mentions'
@@ -22,6 +22,7 @@ import { useRenderWindow } from './use-render-window'
 import { useUnreadMarker } from './use-unread-marker'
 
 import type { EncryptedChannel } from '../e2ee/client'
+import type { MessageRow } from './group-messages'
 import type { MessageItem as Item } from './queries'
 import type { PublicUser } from '@chinchi/shared'
 import type { ReactNode } from 'react'
@@ -70,15 +71,30 @@ export interface MessageListProps {
 const ChannelStart = ({ name }: { name: string }) => {
   const { t } = useTranslation()
   return (
-    <div className="px-4 pt-8 pb-4">
-      <div className="mb-2 flex size-16 items-center justify-center rounded-full bg-elevated">
-        <Hash aria-hidden className="size-9" />
+    <div className="mx-5 mt-4 mb-5 flex items-center gap-4 rounded-card bg-stage p-5">
+      <span
+        aria-hidden
+        className="grid size-14 shrink-0 place-items-center rounded-[18px] bg-accent text-2xl font-semibold text-accent-contrast"
+      >
+        #
+      </span>
+      <div className="min-w-0">
+        <h2 className="text-xl font-semibold tracking-[-0.01em]">
+          {t('guild.welcomeTitle', { name })}
+        </h2>
+        <p className="mt-0.5 text-pretty text-muted">{t('guild.welcomeText', { name })}</p>
       </div>
-      <h2 className="text-3xl font-bold">{t('guild.welcomeTitle', { name })}</h2>
-      <p className="text-muted">{t('guild.welcomeText', { name })}</p>
     </div>
   )
 }
+
+/** A message row continues its author's run when it is grouped and no marker splits it. */
+const continuesRun = (row: MessageRow | undefined, firstUnreadId: string | null) =>
+  row?.kind === 'message' &&
+  row.compact &&
+  !row.message.notice &&
+  !row.message.system &&
+  row.message.id !== firstUnreadId
 
 /**
  * History, newest at the bottom. The scroller is `flex-col-reverse`, so the browser keeps the
@@ -201,22 +217,20 @@ export const MessageList = ({
           <MentionResolverProvider guildId={channel.guildId} people={people}>
             <ol
               aria-label={label ?? t('messages.listLabel', { name: channel.name })}
-              className="pb-2"
+              className="pb-3"
             >
-              {window_.rows.map((row) =>
+              {window_.rows.map((row, index) =>
                 row.kind === 'day' ? (
-                  <li key={`day-${row.day}`}>
+                  <li key={`day-${row.day}`} className="mt-2 mb-1 flex justify-center">
                     <div
                       role="separator"
-                      className="mx-4 my-4 flex items-center gap-2 text-xs font-semibold text-muted"
+                      className="rounded-xl bg-stage px-3 py-[5px] text-xs text-faint"
                     >
-                      <span className="h-px flex-1 bg-border" />
                       {formatDay(row.day, i18n.language)}
-                      <span className="h-px flex-1 bg-border" />
                     </div>
                   </li>
                 ) : row.message.notice ? (
-                  <li key={row.message.id} className="px-4 py-1 text-sm text-muted italic">
+                  <li key={row.message.id} className="px-5 py-1 text-sm text-faint italic">
                     {row.message.notice}
                   </li>
                 ) : row.message.system ? (
@@ -238,6 +252,11 @@ export const MessageList = ({
                       message={row.message}
                       // The unread marker starts a new group.
                       compact={row.compact && row.message.id !== unread.firstUnreadId}
+                      position={groupPosition(
+                        !continuesRun(row, unread.firstUnreadId),
+                        !continuesRun(window_.rows[index + 1], unread.firstUnreadId),
+                      )}
+                      mine={myId !== undefined && row.message.author?.id === myId}
                       mentioned={myId !== undefined && mentionsMe(row.message, myId, myRoleIds)}
                       canEdit={canEditOwn && row.message.author?.id === myId}
                       canDelete={row.message.author?.id === myId || canModerate}

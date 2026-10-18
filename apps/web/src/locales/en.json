@@ -1151,7 +1151,8 @@
     "openFull": "Open the whole thread",
     "close": "Close the thread",
     "fold": "Fold threads of #{{name}}",
-    "unfold": "Show threads of #{{name}} ({{count}})"
+    "unfold": "Show threads of #{{name}} ({{count}})",
+    "meta": "{{size}} · last at {{time}}"
   },
   "emojis": {
     "title": "Emoji",

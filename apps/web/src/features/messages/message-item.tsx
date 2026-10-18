@@ -1,17 +1,4 @@
-import { Link } from '@tanstack/react-router'
-import {
-  Flag,
-  Forward,
-  Megaphone,
-  MessagesSquare,
-  Paperclip,
-  Pencil,
-  Pin,
-  PinOff,
-  Reply,
-  SmilePlus,
-  Trash2,
-} from 'lucide-react'
+import { Paperclip, Pin } from 'lucide-react'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
@@ -19,27 +6,35 @@ import { Avatar } from '../../components/ui/avatar'
 import { Button } from '../../components/ui/button'
 import { InteractionHeader } from '../commands/interaction-header'
 import { EncryptedAttachments } from '../e2ee/encrypted-attachments'
-import { EmojiPicker } from '../emoji/emoji-picker'
 import { MessageContent } from '../markdown/message-content'
 import { ProfileTrigger } from '../profile/profile-trigger'
 import { AttachmentList } from './attachment-list'
+import { bubbleShape } from './bubble-shape'
+import { EditBox } from './edit-box'
 import { EmbedCard } from './embed-card'
 import { formatMessageTime, formatShortTime } from './format-time'
 import { ForwardDialog } from './forward-dialog'
 import { ForwardedBlock } from './forwarded-block'
+import { MessageActions } from './message-actions'
+import { MessageHeader } from './message-header'
 import { PollCard } from './poll-card'
-import { QUICK_REACTIONS } from './reaction-cache'
 import { ReactionsBar } from './reactions-bar'
 import { ReplyHeader } from './reply-header'
+import { ThreadCard } from './thread-card'
 
 import type { EmojiPickerProps } from '../emoji/emoji-picker'
+import type { GroupPosition } from './bubble-shape'
 import type { MessageItem as Item } from './queries'
 import type { Channel } from '@chinchi/shared'
-import type { KeyboardEvent, MouseEvent } from 'react'
 
 export interface MessageItemProps {
   readonly message: Item
+  /** Continues the author's run: no header. */
   readonly compact: boolean
+  /** Where it sits in the run, for the bubble's corners and the avatar at the run's foot. */
+  readonly position?: GroupPosition
+  /** Written by the viewer: on the right, in the accent. */
+  readonly mine?: boolean
   /** Mentions the viewer: highlighted. */
   readonly mentioned?: boolean
   readonly canEdit: boolean
@@ -79,50 +74,11 @@ export interface MessageItemProps {
   readonly customEmojis?: EmojiPickerProps['custom']
 }
 
-const EditBox = ({
-  initial,
-  onSave,
-  onCancel,
-}: {
-  initial: string
-  onSave: (v: string) => void
-  onCancel: () => void
-}) => {
-  const { t } = useTranslation()
-  const [value, setValue] = useState(initial)
-
-  const onKeyDown = (event: KeyboardEvent<HTMLTextAreaElement>) => {
-    if (event.key === 'Escape') onCancel()
-    if (event.key === 'Enter' && !event.shiftKey) {
-      event.preventDefault()
-      if (value.trim() === '') return
-      if (value.trim() === initial.trim()) onCancel()
-      else onSave(value)
-    }
-  }
-
-  return (
-    <div className="mt-1">
-      <textarea
-        aria-label={t('messages.editLabel')}
-        autoFocus
-        value={value}
-        rows={Math.min(8, value.split('\n').length)}
-        onChange={(event) => setValue(event.target.value)}
-        onKeyDown={onKeyDown}
-        onFocus={(event) =>
-          event.target.setSelectionRange(event.target.value.length, event.target.value.length)
-        }
-        className="w-full resize-none rounded-md bg-elevated px-3 py-2 outline-none"
-      />
-      <p className="text-xs text-muted">{t('messages.editHint')}</p>
-    </div>
-  )
-}
-
 export const MessageItem = ({
   message,
   compact,
+  position = compact ? 'last' : 'single',
+  mine = false,
   mentioned = false,
   canEdit,
   canDelete,
@@ -169,130 +125,109 @@ export const MessageItem = ({
       canDelete ||
       canForward ||
       onPublish !== undefined)
+  const endsRun = position === 'single' || position === 'last'
+  const hasText = message.content.trim() !== ''
 
-  const content = editing ? (
-    <EditBox initial={message.content} onSave={onSaveEdit} onCancel={onCancelEdit} />
-  ) : (
-    <MessageContent
-      content={message.content}
-      className={`whitespace-pre-wrap ${message.pending ? 'text-muted' : ''}`}
-      suffix={
-        <>
-          {message.pinned ? (
-            <Pin
-              role="img"
-              aria-label={t('messages.pinned')}
-              className="ml-1 inline size-3.5 align-[-2px] text-muted"
-            />
-          ) : null}
-          {message.editedAt ? (
-            <span
-              className="ml-1 text-[11px] text-muted"
-              title={t('messages.editedAt', {
-                time: formatMessageTime(message.editedAt, i18n.language),
-              })}
-            >
-              {t('messages.edited')}
-            </span>
-          ) : null}
-        </>
-      }
-    />
+  const suffix = (
+    <>
+      {message.pinned ? (
+        <Pin
+          role="img"
+          aria-label={t('messages.pinned')}
+          className="ml-1 inline size-3.5 align-[-2px] opacity-70"
+        />
+      ) : null}
+      {message.editedAt ? (
+        <span
+          className="ml-1 text-[11px] opacity-70"
+          title={t('messages.editedAt', {
+            time: formatMessageTime(message.editedAt, i18n.language),
+          })}
+        >
+          {t('messages.edited')}
+        </span>
+      ) : null}
+    </>
   )
+  const bubble = editing ? (
+    <EditBox initial={message.content} onSave={onSaveEdit} onCancel={onCancelEdit} />
+  ) : hasText || message.pinned || message.editedAt ? (
+    <div
+      className={`px-3.5 py-[9px] leading-[1.45] text-pretty ${bubbleShape(mine, position)} ${mine ? 'max-w-[min(560px,100%)] bg-accent text-accent-contrast [&_a]:text-current [&_a]:underline' : 'max-w-full bg-field text-body'} ${message.pending ? 'opacity-60' : ''}`}
+    >
+      <MessageContent content={message.content} className="whitespace-pre-wrap" suffix={suffix} />
+    </div>
+  ) : null
 
   return (
     <li
       data-message-id={message.id}
+      data-side={mine ? 'mine' : 'other'}
+      data-group={position}
       // Focusable from code only (jump to a pinned or replied-to message).
       tabIndex={-1}
       data-mentioned={mentioned || undefined}
-      className={`group relative flex gap-4 px-4 hover:bg-black/5 dark:hover:bg-white/[0.03] ${compact ? 'py-0.5' : 'mt-(--zl-message-group-gap) py-0.5'}`}
+      className={`group relative mx-2 flex items-end gap-2.5 rounded-[20px] px-3 py-px transition-colors duration-300 ${mine ? 'flex-row-reverse' : ''} ${compact ? '' : 'mt-(--zl-message-group-gap) pt-1.5'} ${endsRun ? 'pb-1.5' : ''}`}
     >
       {mentioned ? (
-        // A separate layer, so the highlight never fights the row's hover background.
+        // A separate layer, so the highlight never fights the row's own background.
         <span
           aria-hidden
-          className="pointer-events-none absolute inset-0 border-l-2 border-mention bg-mention/10"
+          className="pointer-events-none absolute inset-0 rounded-[20px] bg-mention/12 shadow-[inset_3px_0_0_var(--zl-mention)]"
         />
       ) : null}
-      <div className="w-10 shrink-0">
-        {compact ? (
-          <time
-            dateTime={message.createdAt}
-            className="invisible block pt-1 text-right text-[11px] text-muted group-hover:visible"
-          >
-            {formatShortTime(message.createdAt, i18n.language)}
-          </time>
-        ) : message.author ? (
-          <ProfileTrigger
-            userId={message.author.id}
-            guildId={guildId}
-            name={name}
-            className="rounded-full hover:no-underline"
-          >
-            <Avatar name={name} src={message.author.avatarUrl} id={message.author.id} />
-          </ProfileTrigger>
-        ) : (
-          <Avatar name={name} src={null} />
-        )}
-      </div>
-
-      <div className="min-w-0 flex-1">
-        {message.reply ? <ReplyHeader reply={message.reply} guildId={guildId} /> : null}
-        {message.interaction ? (
-          <InteractionHeader interaction={message.interaction} guildId={guildId} />
-        ) : null}
-        {compact ? null : (
-          <div className="flex min-w-0 items-baseline gap-2 whitespace-nowrap">
-            {/* A long name shrinks with an ellipsis; the badges and time always stay whole. */}
-            {message.author ? (
+      {mine ? null : (
+        <div className="w-[38px] shrink-0">
+          {endsRun ? (
+            message.author ? (
               <ProfileTrigger
                 userId={message.author.id}
                 guildId={guildId}
                 name={name}
-                className="min-w-0 truncate font-medium"
+                className="block rounded-[14px] hover:no-underline hover:brightness-105"
               >
-                <span style={authorColor ? { color: authorColor } : undefined}>{name}</span>
+                <Avatar
+                  name={name}
+                  src={message.author.avatarUrl}
+                  id={message.author.id}
+                  rounded="rounded-[14px]"
+                  className="size-[38px] text-[13px]"
+                />
               </ProfileTrigger>
             ) : (
-              <span className="min-w-0 truncate font-medium">{name}</span>
-            )}
-            {message.author?.bot ? (
-              <span className="shrink-0 rounded bg-accent px-1 text-[10px] font-semibold text-accent-contrast uppercase">
-                {t('bots.badge')}
-              </span>
-            ) : null}
-            {message.webhook ? (
-              <span className="shrink-0 rounded bg-accent px-1 text-[10px] font-semibold text-accent-contrast uppercase">
-                {t('webhooks.badge')}
-              </span>
-            ) : null}
-            {/* Encrypted conversations: the signature MLS checked disagrees with the server. */}
-            {message.senderCheck?.kind === 'mismatch' ? (
-              <span
-                role="status"
-                title={t('e2ee.sender.mismatchHint')}
-                className="shrink-0 rounded border border-danger px-1 text-[10px] font-semibold text-danger uppercase"
-              >
-                {t('e2ee.sender.mismatch')}
-              </span>
-            ) : null}
-            {message.senderCheck?.kind === 'unverified' ? (
-              <span title={t('e2ee.sender.unverifiedHint')} className="shrink-0 text-xs text-muted">
-                {t('e2ee.sender.unverified')}
-              </span>
-            ) : null}
-            <time dateTime={message.createdAt} className="shrink-0 text-xs text-muted">
-              {formatMessageTime(message.createdAt, i18n.language)}
-            </time>
-            {message.published ? (
-              <span title={t('announcements.publishedHint')} className="text-xs text-muted">
-                {t('announcements.published')}
-              </span>
-            ) : null}
-          </div>
+              <Avatar name={name} src={null} rounded="rounded-[14px]" className="size-[38px]" />
+            )
+          ) : null}
+        </div>
+      )}
+
+      <div
+        className={`flex min-w-0 flex-1 flex-col gap-[3px] ${mine ? 'items-end' : 'max-w-[640px] items-start'}`}
+      >
+        {compact ? null : (
+          <MessageHeader
+            message={message}
+            name={name}
+            mine={mine}
+            authorColor={authorColor}
+            guildId={guildId}
+          />
         )}
-        {content}
+        {message.reply ? <ReplyHeader reply={message.reply} guildId={guildId} /> : null}
+        {message.interaction ? (
+          <InteractionHeader interaction={message.interaction} guildId={guildId} />
+        ) : null}
+        <div className={`flex max-w-full items-center gap-2 ${mine ? 'flex-row-reverse' : ''}`}>
+          {bubble}
+          {compact && !editing ? (
+            <time
+              dateTime={message.createdAt}
+              className="invisible shrink-0 text-[11px] text-faint group-hover:visible"
+            >
+              {formatShortTime(message.createdAt, i18n.language)}
+            </time>
+          ) : null}
+        </div>
         {message.forward ? <ForwardedBlock forward={message.forward} /> : null}
         <AttachmentList attachments={message.attachments} />
         {message.encryptedFiles ? <EncryptedAttachments files={message.encryptedFiles} /> : null}
@@ -305,11 +240,11 @@ export const MessageItem = ({
           />
         ) : null}
         {message.pending && message.files ? (
-          <ul className="mt-1 flex flex-wrap gap-1.5">
+          <ul className="flex flex-wrap gap-1.5">
             {message.files.map((file, index) => (
               <li
                 key={`${file.name}-${index}`}
-                className="flex items-center gap-1 rounded bg-elevated px-2 py-0.5 text-xs text-muted"
+                className="flex items-center gap-1 rounded-full bg-field px-2.5 py-0.5 text-xs text-muted"
               >
                 <Paperclip aria-hidden className="size-3" />
                 {file.name}
@@ -320,25 +255,12 @@ export const MessageItem = ({
         {message.embeds.map((embed) => (
           <EmbedCard key={embed.url} embed={embed} />
         ))}
-        {thread ? (
-          <Link
-            to="/channels/$guildId/$channelId"
-            // Opens beside the channel it was started in.
-            params={{ guildId: thread.guildId, channelId: thread.parentId ?? thread.id }}
-            search={{ thread: thread.id }}
-            aria-label={t('threads.chip', { name: thread.name, count: thread.messageCount })}
-            className="mt-1 flex w-fit items-center gap-2 rounded-md bg-elevated px-2.5 py-1 text-sm hover:bg-hover"
-          >
-            <MessagesSquare aria-hidden className="size-4 text-muted" />
-            <span className="font-medium">{thread.name}</span>
-            <span className="text-muted">{t('threads.count', { count: thread.messageCount })}</span>
-          </Link>
-        ) : null}
+        {thread ? <ThreadCard thread={thread} /> : null}
         {message.pending ? null : (
           <ReactionsBar reactions={message.reactions} onToggle={onToggleReaction} />
         )}
         {message.pending === 'failed' ? (
-          <div role="alert" className="flex items-center gap-3 text-sm text-red-400">
+          <div role="alert" className="flex items-center gap-3 px-1 text-sm text-danger">
             {t('messages.failed')}
             <Button variant="link" onClick={onRetry}>
               {t('messages.retry')}
@@ -351,124 +273,23 @@ export const MessageItem = ({
       </div>
 
       {showActions ? (
-        <div
-          role="toolbar"
-          aria-label={t('messages.actions')}
-          data-open={picking ? '' : undefined}
-          className="absolute -top-3 right-4 hidden rounded-md border border-border bg-main shadow group-focus-within:flex group-hover:flex data-open:flex"
-        >
-          {canReact ? (
-            <EmojiPicker
-              label={t('messages.addReaction')}
-              trigger={<SmilePlus aria-hidden className="size-4" />}
-              triggerClassName="p-1.5 text-muted hover:text-text"
-              onSelect={onToggleReaction}
-              onOpenChange={setPicking}
-              custom={customEmojis ?? null}
-              quick={QUICK_REACTIONS.map((emoji) => ({
-                emoji,
-                label: t(
-                  message.reactions.some((r) => r.emoji === emoji && r.me)
-                    ? 'messages.unreactWith'
-                    : 'messages.reactWith',
-                  { emoji },
-                ),
-              }))}
-            />
-          ) : null}
-          {canReply ? (
-            <button
-              type="button"
-              aria-label={t('messages.reply')}
-              title={t('messages.reply')}
-              onClick={onReply}
-              className="p-1.5 text-muted hover:text-text"
-            >
-              <Reply aria-hidden className="size-4" />
-            </button>
-          ) : null}
-          {canForward ? (
-            <button
-              type="button"
-              aria-label={t('forward.action')}
-              title={t('forward.action')}
-              onClick={() => setForwarding(true)}
-              className="p-1.5 text-muted hover:text-text"
-            >
-              <Forward aria-hidden className="size-4" />
-            </button>
-          ) : null}
-          {canPin ? (
-            <button
-              type="button"
-              aria-label={t(message.pinned ? 'messages.unpin' : 'messages.pin')}
-              title={t(message.pinned ? 'messages.unpin' : 'messages.pin')}
-              onClick={onTogglePin}
-              className="p-1.5 text-muted hover:text-text"
-            >
-              {message.pinned ? (
-                <PinOff aria-hidden className="size-4" />
-              ) : (
-                <Pin aria-hidden className="size-4" />
-              )}
-            </button>
-          ) : null}
-          {canEdit ? (
-            <button
-              type="button"
-              aria-label={t('messages.edit')}
-              title={t('messages.edit')}
-              onClick={onStartEdit}
-              className="p-1.5 text-muted hover:text-text"
-            >
-              <Pencil aria-hidden className="size-4" />
-            </button>
-          ) : null}
-          {onPublish ? (
-            <button
-              type="button"
-              aria-label={t('announcements.publish')}
-              title={t('announcements.publish')}
-              onClick={onPublish}
-              className="p-1.5 text-muted hover:text-text"
-            >
-              <Megaphone aria-hidden className="size-4" />
-            </button>
-          ) : null}
-          {onStartThread ? (
-            <button
-              type="button"
-              aria-label={t('threads.start')}
-              title={t('threads.start')}
-              onClick={onStartThread}
-              className="p-1.5 text-muted hover:text-text"
-            >
-              <MessagesSquare aria-hidden className="size-4" />
-            </button>
-          ) : null}
-          {onReport ? (
-            <button
-              type="button"
-              aria-label={t('reports.action')}
-              title={t('reports.action')}
-              onClick={onReport}
-              className="p-1.5 text-muted hover:text-text"
-            >
-              <Flag aria-hidden className="size-4" />
-            </button>
-          ) : null}
-          {canDelete ? (
-            <button
-              type="button"
-              aria-label={t('messages.delete')}
-              title={t('messages.delete')}
-              onClick={(event: MouseEvent) => onDelete(event.shiftKey)}
-              className="p-1.5 text-red-400 hover:text-red-300"
-            >
-              <Trash2 aria-hidden className="size-4" />
-            </button>
-          ) : null}
-        </div>
+        <MessageActions
+          message={message}
+          mine={mine}
+          open={picking}
+          onPickingChange={setPicking}
+          canReact={canReact}
+          onToggleReaction={onToggleReaction}
+          customEmojis={customEmojis}
+          onReply={canReply ? onReply : undefined}
+          onForward={canForward ? () => setForwarding(true) : undefined}
+          onTogglePin={canPin ? onTogglePin : undefined}
+          onStartEdit={canEdit ? onStartEdit : undefined}
+          onPublish={onPublish}
+          onStartThread={onStartThread}
+          onReport={onReport}
+          onDelete={canDelete ? onDelete : undefined}
+        />
       ) : null}
       {forwarding ? <ForwardDialog message={message} onOpenChange={setForwarding} /> : null}
     </li>

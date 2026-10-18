@@ -117,7 +117,7 @@ export const ChannelChat = ({
   return (
     <>
       <section
-        className="flex min-w-0 flex-1 flex-col"
+        className="flex min-h-0 min-w-0 flex-1 flex-col"
         // Files dropped anywhere on the channel join the next message.
         onDragOver={(event) => {
           if (canAttach && event.dataTransfer.types.includes('Files')) event.preventDefault()

@@ -31,8 +31,12 @@ export const UnreadBanner = ({
   }
 
   return (
-    <div className="absolute inset-x-4 top-2 z-10 flex items-center gap-3 rounded-md bg-accent px-3 py-1.5 text-sm text-accent-contrast shadow-lg">
-      <span className="min-w-0 flex-1 truncate font-medium">
+    <div className="absolute top-2.5 left-1/2 z-10 flex max-w-[calc(100%-1.5rem)] -translate-x-1/2 items-center gap-1 rounded-full bg-side py-1 pr-1 pl-3.5 shadow-popover">
+      <span
+        aria-hidden
+        className="mr-1.5 size-2 shrink-0 rounded-full bg-accent shadow-[0_0_0_4px_var(--zl-accent-soft)]"
+      />
+      <span className="min-w-0 truncate text-[13px] font-semibold">
         {marker.more
           ? t('unread.countMore', { count: marker.count })
           : t('unread.count', { count: marker.count })}
@@ -41,14 +45,14 @@ export const UnreadBanner = ({
         type="button"
         aria-label={t('unread.jump')}
         onClick={() => void jump()}
-        className="shrink-0 rounded px-2 py-0.5 font-semibold hover:bg-black/15"
+        className="ml-1.5 h-9 shrink-0 rounded-full bg-accent px-3.5 text-[12.5px] font-semibold text-accent-contrast hover:brightness-105"
       >
         {t('unread.jumpShort')}
       </button>
       <button
         type="button"
         onClick={marker.dismiss}
-        className="shrink-0 rounded px-2 py-0.5 hover:bg-black/15"
+        className="h-9 shrink-0 rounded-full px-3 text-[12.5px] font-medium text-muted hover:bg-field hover:text-text"
       >
         {t('unread.markRead')}
       </button>
@@ -76,10 +80,12 @@ export const UnreadLine = ({ onSeen }: { onSeen: () => void }) => {
         ref={line}
         role="separator"
         aria-label={t('unread.marker')}
-        className="mx-4 my-2 flex items-center gap-2 text-xs font-semibold text-danger"
+        className="flex items-center gap-2.5 px-4 pt-1 pb-1.5"
       >
-        <span className="h-px flex-1 bg-danger" />
-        {t('unread.markerShort')}
+        <span className="h-0.5 flex-1 rounded-full bg-accent" />
+        <span className="flex h-[22px] items-center rounded-full bg-accent px-2.5 text-[11.5px] font-semibold text-accent-contrast">
+          {t('unread.markerShort')}
+        </span>
       </div>
     </li>
   )

@@ -21,7 +21,7 @@ export const ReplyHeader = ({
 
   if (!original) {
     return (
-      <p className="flex items-center gap-1 text-xs text-muted italic">
+      <p className="mx-3 flex items-center gap-1.5 rounded-xl bg-stage px-2.5 py-1.5 text-[12.5px] text-faint italic">
         <CornerUpLeft aria-hidden className="size-3.5" />
         {t('messages.replyDeleted')}
       </p>
@@ -43,10 +43,10 @@ export const ReplyHeader = ({
         name,
         snippet: snippet || t('messages.replyAttachments', { count: original.attachmentCount }),
       })}
-      className="flex max-w-full items-center gap-1 text-left text-xs text-muted hover:text-text"
+      className="mx-3 flex max-w-[calc(100%-1.5rem)] min-w-0 items-center gap-1.5 rounded-xl bg-stage px-2.5 py-1.5 text-left text-[12.5px] text-faint transition-colors hover:bg-field hover:text-muted"
     >
       <CornerUpLeft aria-hidden className="size-3.5 shrink-0" />
-      <span className="shrink-0 font-semibold">{name}</span>
+      <span className="shrink-0 font-medium text-text">{name}</span>
       <span className="truncate">
         {snippet || t('messages.replyAttachments', { count: original.attachmentCount })}
       </span>
