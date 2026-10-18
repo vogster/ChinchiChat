@@ -87,7 +87,7 @@ export const MembersPanel = ({
   return (
     <aside
       aria-label={heading}
-      className={`${narrowOpen ? 'fixed inset-y-0 right-0 z-40 flex shadow-xl' : 'hidden'} w-60 shrink-0 flex-col overflow-y-auto bg-sidebar p-3 lg:static lg:z-auto lg:flex lg:shadow-none`}
+      className={`${narrowOpen ? 'fixed inset-y-2.5 right-2.5 z-40 flex shadow-modal' : 'hidden'} w-[260px] shrink-0 flex-col overflow-y-auto rounded-panel bg-side p-3 xl:static xl:z-auto xl:flex xl:shadow-none`}
     >
       <h2 className="sr-only">{heading}</h2>
       {/* One flat list keyed by user: a member changing group moves their row instead of

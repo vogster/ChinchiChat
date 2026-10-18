@@ -60,9 +60,8 @@ export const AppShell = ({ children }: { children: ReactNode }) => {
             <ServerRail />
             <ChannelSidebar />
           </div>
-          <main className="flex min-w-0 flex-1 flex-col overflow-hidden bg-main md:rounded-panel">
-            {children}
-          </main>
+          {/* A row of cards: the page's MainCard and its side panels. */}
+          <main className="flex min-h-0 min-w-0 flex-1 gap-2.5">{children}</main>
         </div>
       </div>
     </ShellContext.Provider>

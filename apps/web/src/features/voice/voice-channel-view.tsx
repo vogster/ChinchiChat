@@ -1,6 +1,7 @@
 import { Volume2 } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
+import { MainCard } from '../../components/layout/main-card'
 import { PageHeader } from '../../components/layout/page-header'
 import { Button } from '../../components/ui/button'
 import { CallStage } from './call-stage'
@@ -20,7 +21,7 @@ export const VoiceChannelView = ({ channel }: { channel: Channel }) => {
   const here = voice.channelId === channel.id && voice.status !== 'idle'
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col">
+    <MainCard>
       <PageHeader>
         <Volume2 aria-hidden className="size-5 shrink-0 text-muted" />
         <h1 className="truncate">{channel.name}</h1>
@@ -44,6 +45,6 @@ export const VoiceChannelView = ({ channel }: { channel: Channel }) => {
           </div>
         ) : null}
       </div>
-    </div>
+    </MainCard>
   )
 }

@@ -119,7 +119,7 @@ export const SearchPanel = ({
     <aside
       aria-label={t('search.results')}
       // Narrow screens: results cover the chat; wide ones show them beside it.
-      className="fixed inset-0 z-40 flex w-full shrink-0 flex-col bg-sidebar lg:static lg:z-auto lg:w-80 lg:border-l lg:border-border"
+      className="fixed inset-0 z-40 flex w-full shrink-0 flex-col overflow-hidden bg-side xl:static xl:z-auto xl:w-80 xl:rounded-panel"
     >
       <header className="flex h-12 shrink-0 items-center justify-between px-4">
         <h2 className="text-sm font-semibold">

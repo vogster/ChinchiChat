@@ -25,11 +25,9 @@ const Panel = ({
   <aside
     aria-label={label}
     // Narrow screens: the panel covers the chat; wide ones show it beside it.
-    className="fixed inset-0 z-40 flex w-full min-w-0 shrink-0 flex-col bg-main lg:static lg:z-auto lg:w-[26rem] lg:border-l lg:border-border"
+    className="fixed inset-0 z-40 flex w-full min-w-0 shrink-0 flex-col overflow-hidden bg-main xl:static xl:z-auto xl:w-[26rem] xl:rounded-panel"
   >
-    <header className="flex h-12 shrink-0 items-center gap-2 border-b border-border px-4">
-      {header}
-    </header>
+    <header className="flex h-[68px] shrink-0 items-center gap-2 px-[18px]">{header}</header>
     {children}
   </aside>
 )

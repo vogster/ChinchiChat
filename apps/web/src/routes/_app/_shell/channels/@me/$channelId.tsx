@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query'
 import { createFileRoute } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
 
+import { MainCard } from '../../../../../components/layout/main-card'
 import { PageHeader } from '../../../../../components/layout/page-header'
 import { DmView } from '../../../../../features/dms/dm-view'
 import { dmsQueryOptions } from '../../../../../features/dms/queries'
@@ -16,10 +17,10 @@ const DmPage = () => {
   if (isPending) return null
   if (!channel) {
     return (
-      <>
+      <MainCard>
         <PageHeader>{t('dm.title')}</PageHeader>
         <p className="flex flex-1 items-center justify-center text-muted">{t('dm.notFound')}</p>
-      </>
+      </MainCard>
     )
   }
   return <DmView key={channel.id} channel={channel} />

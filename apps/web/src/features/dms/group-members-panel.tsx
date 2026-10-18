@@ -21,7 +21,7 @@ export const GroupMembersPanel = ({ channel, me }: { channel: PrivateChannel; me
   return (
     <aside
       aria-label={heading}
-      className="hidden w-60 shrink-0 flex-col overflow-y-auto bg-sidebar p-3 lg:flex"
+      className="hidden w-[260px] shrink-0 flex-col overflow-y-auto rounded-panel bg-side p-3 xl:flex"
     >
       <h2 className="px-2 pb-1 text-xs font-bold tracking-wide text-muted uppercase">
         {heading} — {people.length}

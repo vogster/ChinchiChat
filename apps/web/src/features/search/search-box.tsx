@@ -23,7 +23,8 @@ export const SearchBox = ({
   return (
     <form
       role="search"
-      className={`${open ? 'absolute inset-x-2 top-full z-30 mt-1 block' : 'hidden'} lg:relative lg:inset-auto lg:z-auto lg:mt-0 lg:block ${className}`}
+      // Wide screens: a pill that gives way first when the header runs out of room.
+      className={`${open ? 'absolute inset-x-3 top-full z-30 block' : 'hidden'} lg:relative lg:inset-auto lg:z-auto lg:block lg:min-w-10 lg:shrink-[4] lg:grow-0 lg:basis-40 ${className}`}
       onSubmit={(event) => {
         event.preventDefault()
         onSearch(value.trim() || null)
@@ -40,11 +41,11 @@ export const SearchBox = ({
           if (!event.target.value) onSearch(null)
         }}
         ref={input}
-        className="w-full rounded bg-rail lg:w-48 lg:focus:w-64 py-1 pr-7 pl-2 text-sm font-normal outline-none placeholder:text-muted focus:outline-2 focus:outline-accent"
+        className="h-[38px] w-full rounded-full bg-field pr-9 pl-4 text-[13px] font-normal outline-none placeholder:text-faint focus:ring-2 focus:ring-accent"
       />
       <Search
         aria-hidden
-        className="pointer-events-none absolute top-1.5 right-2 size-4 text-muted"
+        className="pointer-events-none absolute top-[11px] right-3.5 size-4 text-faint"
       />
     </form>
   )

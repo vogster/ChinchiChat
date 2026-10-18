@@ -3,6 +3,7 @@ import { Users } from 'lucide-react'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
+import { MainCard } from '../../components/layout/main-card'
 import { PageHeader } from '../../components/layout/page-header'
 import { useApi } from '../../lib/api-context'
 import { useOpenDm } from '../dms/use-dm-actions'
@@ -49,7 +50,7 @@ export const FriendsPage = () => {
   }
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col">
+    <MainCard>
       <PageHeader>
         <Users aria-hidden className="size-5 shrink-0 text-muted" />
         <h1 className="mr-2 shrink-0">{t('friends.title')}</h1>
@@ -106,7 +107,7 @@ export const FriendsPage = () => {
           />
         )}
       </section>
-    </div>
+    </MainCard>
   )
 }
 

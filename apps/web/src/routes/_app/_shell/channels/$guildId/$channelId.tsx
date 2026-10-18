@@ -3,6 +3,7 @@ import { createFileRoute } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
 import { z } from 'zod'
 
+import { MainCard } from '../../../../../components/layout/main-card'
 import { PageHeader } from '../../../../../components/layout/page-header'
 import { ChannelView } from '../../../../../features/guilds/channel-view'
 import { guildQueryOptions } from '../../../../../features/guilds/queries'
@@ -18,12 +19,12 @@ const ChannelPage = () => {
 
   if (!channel) {
     return (
-      <>
+      <MainCard>
         <PageHeader>{guild.name}</PageHeader>
         <p className="flex flex-1 items-center justify-center text-muted">
           {t('errors.UNKNOWN_CHANNEL')}
         </p>
-      </>
+      </MainCard>
     )
   }
   if (channel.type === 'voice') return <VoiceChannelView key={channel.id} channel={channel} />
