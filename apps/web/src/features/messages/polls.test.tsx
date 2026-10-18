@@ -38,7 +38,8 @@ describe('polls', () => {
     const api = createFakeApi({ user: testUser })
     const { user } = renderApp(CHANNEL_URL, { api })
 
-    await user.click(await screen.findByRole('button', { name: 'Создать опрос' }))
+    await user.click(await screen.findByRole('button', { name: 'Добавить в сообщение' }))
+    await user.click(await screen.findByRole('menuitem', { name: /Опрос/ }))
     const dialog = await screen.findByRole('dialog', { name: 'Новый опрос' })
     await user.type(within(dialog).getByLabelText('Вопрос', { exact: true }), 'Пицца или суши?')
     await user.type(within(dialog).getByLabelText('Ответ 1', { exact: true }), 'Пицца')

@@ -583,7 +583,12 @@
       "leave": "{{actor}} left the group",
       "rename": "{{actor}} renamed the group: “{{name}}”",
       "renameCleared": "{{actor}} removed the group name"
-    }
+    },
+    "addToMessage": "Add to the message",
+    "attachMenu": "File or photo",
+    "attachUpTo": "Up to {{size}}",
+    "sendMessage": "Send the message",
+    "send": "Send"
   },
   "presence": {
     "online": "Online",
@@ -1420,7 +1425,9 @@
       "24": "1 day",
       "72": "3 days",
       "168": "1 week"
-    }
+    },
+    "menu": "Poll",
+    "menuHint": "A question with answers to pick"
   },
   "forward": {
     "action": "Forward",

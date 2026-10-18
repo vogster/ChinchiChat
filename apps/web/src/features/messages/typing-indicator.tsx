@@ -51,7 +51,7 @@ export const TypingIndicator = ({
           : t('messages.typingMany')
 
   return (
-    <p aria-live="polite" className="h-5 truncate px-4 text-xs text-muted">
+    <p aria-live="polite" className="h-5 truncate px-6 text-xs text-faint">
       {text}
     </p>
   )

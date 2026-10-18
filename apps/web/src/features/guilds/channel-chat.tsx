@@ -195,6 +195,7 @@ export const ChannelChat = ({
             <Alert tone="error">{errorMessage(t, pin.error)}</Alert>
           </div>
         ) : null}
+        <TypingIndicator guildId={guild.id} channelId={channel.id} />
         {can(permissions, Permission.SendMessages) ? (
           <Composer
             channelName={channel.name}
@@ -228,14 +229,14 @@ export const ChannelChat = ({
             }
           />
         ) : mustAcceptRules ? (
-          <div className="mx-4 mb-6 flex flex-wrap items-center justify-between gap-3 rounded-lg bg-elevated px-4 py-3 text-sm">
+          <div className="mx-4 mb-4 flex flex-wrap items-center justify-between gap-3 rounded-card bg-stage px-4 py-3 text-sm">
             <span className="text-muted">{t('rules.mustAccept')}</span>
             <Button fullWidth={false} onClick={() => setRulesOpen(true)}>
               {t('rules.open')}
             </Button>
           </div>
         ) : (
-          <p className="mx-4 mb-6 rounded-lg bg-elevated px-4 py-3 text-sm text-muted">
+          <p className="mx-4 mb-4 rounded-card bg-stage px-4 py-3 text-sm text-muted">
             {guildPermissions.timeoutUntil
               ? t('moderation.timedOutUntil', {
                   time: formatTimeoutEnd(guildPermissions.timeoutUntil, i18n.language),
@@ -243,7 +244,6 @@ export const ChannelChat = ({
               : t('messages.noSendPermission')}
           </p>
         )}
-        <TypingIndicator guildId={guild.id} channelId={channel.id} />
       </section>
 
       {rulesOpen && mustAcceptRules ? (

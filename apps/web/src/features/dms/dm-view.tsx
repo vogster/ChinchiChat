@@ -362,6 +362,7 @@ export const DmView = ({ channel }: { channel: PrivateChannel }) => {
               onCheck={() => setChecking(true)}
             />
           ) : null}
+          <TypingIndicator guildId={null} channelId={channel.id} people={channel.recipients} />
           {encryption && encrypted.state !== 'ready' ? (
             <EncryptionStatus state={encrypted.state} />
           ) : canTalk ? (
@@ -391,11 +392,10 @@ export const DmView = ({ channel }: { channel: PrivateChannel }) => {
               }
             />
           ) : (
-            <p className="mx-4 mb-6 rounded-lg bg-elevated px-4 py-3 text-sm text-muted">
+            <p className="mx-4 mb-4 rounded-card bg-stage px-4 py-3 text-sm text-muted">
               {t('dm.blocked')}
             </p>
           )}
-          <TypingIndicator guildId={null} channelId={channel.id} people={channel.recipients} />
         </section>
       </MainCard>
       {encryption && search ? (

@@ -1,5 +1,5 @@
 import { MESSAGE_MAX_LENGTH } from '@chinchi/shared'
-import { AtSign, BarChart3, Paperclip, Smile, X } from 'lucide-react'
+import { ArrowUp, AtSign, Smile, X } from 'lucide-react'
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
@@ -8,6 +8,7 @@ import { parseCommand, suggestCommands } from '../commands/parse-command'
 import { EmojiPicker } from '../emoji/emoji-picker'
 import { MentionSuggestions } from '../mentions/mention-suggestions'
 import { useMentionSuggestions } from '../mentions/use-mention-suggestions'
+import { ComposerMenu } from './composer-menu'
 import { CreatePollDialog } from './create-poll-dialog'
 
 import type { EmojiPickerProps } from '../emoji/emoji-picker'
@@ -64,7 +65,7 @@ export interface ComposerReply {
 const ReplyBar = ({ reply }: { reply: ComposerReply }) => {
   const { t } = useTranslation()
   return (
-    <div className="flex items-center gap-2 rounded-t-lg bg-sidebar px-4 py-1.5 text-sm text-muted">
+    <div className="flex items-center gap-2 rounded-t-composer bg-stage py-2 pr-2 pl-4 text-[12.5px] text-faint">
       <span className="min-w-0 flex-1 truncate">
         {t('messages.replyingTo', { name: reply.authorName })}
       </span>
@@ -74,7 +75,7 @@ const ReplyBar = ({ reply }: { reply: ComposerReply }) => {
         aria-label={t('messages.replyMention')}
         title={t('messages.replyMention')}
         onClick={reply.onToggleMention}
-        className="flex items-center gap-0.5 rounded px-1 text-xs font-semibold aria-pressed:text-accent"
+        className="flex h-7 items-center gap-0.5 rounded-full px-2.5 text-xs font-semibold hover:bg-field aria-pressed:text-accent-text"
       >
         <AtSign aria-hidden className="size-3.5" />
         {reply.mention ? t('messages.replyMentionOn') : t('messages.replyMentionOff')}
@@ -84,7 +85,7 @@ const ReplyBar = ({ reply }: { reply: ComposerReply }) => {
         aria-label={t('messages.cancelReply')}
         title={t('messages.cancelReply')}
         onClick={reply.onCancel}
-        className="rounded p-0.5 hover:text-text"
+        className="grid size-7 place-items-center rounded-full hover:bg-field hover:text-text"
       >
         <X aria-hidden className="size-4" />
       </button>
@@ -115,6 +116,7 @@ export const Composer = ({
   const [active, setActive] = useState(0)
   const suggestions = commands ? suggestCommands(value, commands.list) : []
   const ref = useRef<HTMLTextAreaElement>(null)
+  const fileInput = useRef<HTMLInputElement>(null)
   const mention = useMentionSuggestions({
     value,
     candidates: mentions,
@@ -222,7 +224,7 @@ export const Composer = ({
   const left = MESSAGE_MAX_LENGTH - value.length
 
   return (
-    <div className="px-4 pb-1">
+    <div className="px-3 pb-3 md:px-4">
       {mention.matches.length > 0 ? (
         <MentionSuggestions
           candidates={mention.matches}
@@ -234,37 +236,28 @@ export const Composer = ({
       ) : null}
       {reply ? <ReplyBar reply={reply} /> : null}
       <div
-        className={`flex items-end bg-elevated px-4 py-2.5 ${reply ? 'rounded-b-lg' : 'rounded-lg'}`}
+        className={`flex items-end gap-2 bg-field p-1.5 ${reply ? 'rounded-b-composer' : 'rounded-composer'}`}
       >
         {attach ? (
-          <label
-            title={t('messages.attachFiles')}
-            className="mr-3 cursor-pointer self-center rounded p-0.5 text-muted focus-within:outline-2 focus-within:outline-accent hover:text-text"
-          >
-            <Paperclip aria-hidden className="size-5" />
-            <input
-              type="file"
-              multiple
-              aria-label={t('messages.attachFiles')}
-              className="sr-only"
-              onChange={(event) => {
-                attach.onAdd([...(event.target.files ?? [])])
-                // Picking the same file again should work.
-                event.target.value = ''
-              }}
-            />
-          </label>
+          <input
+            ref={fileInput}
+            type="file"
+            multiple
+            aria-label={t('messages.attachFiles')}
+            tabIndex={-1}
+            className="sr-only"
+            onChange={(event) => {
+              attach.onAdd([...(event.target.files ?? [])])
+              // Picking the same file again should work.
+              event.target.value = ''
+            }}
+          />
         ) : null}
-        {pollChannelId ? (
-          <button
-            type="button"
-            aria-label={t('polls.create')}
-            title={t('polls.create')}
-            onClick={() => setCreatingPoll(true)}
-            className="mr-3 self-center rounded p-0.5 text-muted hover:text-text"
-          >
-            <BarChart3 aria-hidden className="size-5" />
-          </button>
+        {attach || pollChannelId ? (
+          <ComposerMenu
+            onPickFiles={attach ? () => fileInput.current?.click() : null}
+            onCreatePoll={pollChannelId ? () => setCreatingPoll(true) : null}
+          />
         ) : null}
         <textarea
           ref={ref}
@@ -285,18 +278,30 @@ export const Composer = ({
           }}
           onSelect={mention.track}
           onKeyDown={onKeyDown}
-          className="max-h-60 flex-1 resize-none bg-transparent outline-none placeholder:text-muted"
+          className="max-h-60 min-h-[38px] flex-1 resize-none self-center bg-transparent px-1.5 py-[9px] leading-5 outline-none placeholder:text-faint"
         />
         <EmojiPicker
           label={t('emoji.picker')}
           trigger={<Smile aria-hidden className="size-5" />}
-          triggerClassName="ml-2 self-center rounded p-0.5 text-muted hover:text-text"
+          triggerClassName="grid size-[38px] shrink-0 place-items-center self-end rounded-full text-muted transition-colors hover:bg-stage hover:text-text"
           onSelect={insert}
           custom={customEmojis}
         />
+        <button
+          type="button"
+          aria-label={t('messages.sendMessage')}
+          title={t('messages.sendMessage')}
+          onClick={submit}
+          className="flex h-[38px] min-w-[38px] shrink-0 items-center justify-center gap-1.5 self-end rounded-full bg-accent text-accent-contrast transition hover:brightness-110 md:px-4"
+        >
+          <ArrowUp aria-hidden className="size-5 md:hidden" />
+          <span aria-hidden className="hidden text-[13px] font-semibold md:inline">
+            {t('messages.send')}
+          </span>
+        </button>
         {value.length >= COUNTER_FROM ? (
           <span
-            className={`ml-2 text-xs ${left < 0 ? 'text-red-400' : 'text-muted'}`}
+            className={`self-center text-xs ${left < 0 ? 'text-danger' : 'text-faint'}`}
             aria-live="polite"
           >
             {t('messages.tooLong', { count: left })}
@@ -304,12 +309,12 @@ export const Composer = ({
         ) : null}
       </div>
       {missing.length > 0 ? (
-        <p className="mt-1 text-xs text-red-400" role="alert">
+        <p className="mt-1 px-3 text-xs text-danger" role="alert">
           {t('commands.missing', { options: missing.join(', ') })}
         </p>
       ) : null}
       {slowmode && slowmode.seconds > 0 ? (
-        <p className="mt-1 text-xs text-muted" aria-live="polite">
+        <p className="mt-1 px-3 text-xs text-faint" aria-live="polite">
           {slowmode.wait > 0
             ? t('messages.slowmodeWait', { seconds: slowmode.wait })
             : t('messages.slowmode', { seconds: slowmode.seconds })}
