@@ -13,7 +13,7 @@ export const SettingsSection = ({ title, subtitle, children }: SettingsSectionPr
   return (
     <section aria-labelledby={id} className="flex flex-col gap-5">
       <header>
-        <h1 id={id} className="text-xl font-semibold">
+        <h1 id={id} className="text-[21px] font-semibold tracking-[-0.015em]">
           {title}
         </h1>
         {subtitle ? <p className="mt-1 text-sm text-muted">{subtitle}</p> : null}
@@ -23,11 +23,22 @@ export const SettingsSection = ({ title, subtitle, children }: SettingsSectionPr
   )
 }
 
-export const SettingsCard = ({ title, children }: { title?: string; children: ReactNode }) => (
-  <div className="rounded-lg bg-sidebar p-4">
-    {title ? (
-      <h2 className="mb-3 text-sm font-bold tracking-wide text-muted uppercase">{title}</h2>
-    ) : null}
-    {children}
+/** A group of settings: its title above, the rows in a soft card. `danger` rings it in red. */
+export const SettingsCard = ({
+  title,
+  danger = false,
+  children,
+}: {
+  title?: string
+  danger?: boolean
+  children: ReactNode
+}) => (
+  <div className="flex flex-col gap-2">
+    {title ? <h2 className="px-1.5 text-[12.5px] font-medium text-faint">{title}</h2> : null}
+    <div
+      className={`rounded-card bg-stage p-4 ${danger ? 'shadow-[inset_0_0_0_1.5px_var(--zl-danger-soft)]' : ''}`}
+    >
+      {children}
+    </div>
   </div>
 )

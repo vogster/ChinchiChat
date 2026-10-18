@@ -267,7 +267,8 @@
       "confirmPassword": "Confirm new password",
       "mismatch": "Passwords do not match",
       "changePassword": "Change password",
-      "passwordChanged": "Password changed. You've been signed out on other devices."
+      "passwordChanged": "Password changed. You've been signed out on other devices.",
+      "credentials": "Credentials"
     },
     "profile": {
       "title": "Profile",
@@ -411,6 +412,11 @@
         "change": "Change server"
       },
       "version": "App version {{version}}"
+    },
+    "groups": {
+      "account": "Account",
+      "app": "App",
+      "developers": "For developers"
     }
   },
   "guild": {
@@ -442,11 +448,15 @@
     "name": "Server name",
     "defaultName": "{{username}}'s server",
     "submit": "Create",
-    "joinTitle": "Have an invite already?",
     "joinLabel": "Invite link",
     "joinPlaceholder": "https://chinchi.example/invite/AbCd1234",
     "join": "Join server",
-    "invalidLink": "Paste an invite link or its code."
+    "invalidLink": "Paste an invite link or its code.",
+    "modes": {
+      "create": "Create",
+      "join": "With an invite"
+    },
+    "notFound": "The invite was not found or no longer works."
   },
   "createChannel": {
     "title": "Create channel",

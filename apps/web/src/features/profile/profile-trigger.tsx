@@ -55,7 +55,7 @@ export const ProfileTrigger = ({
             align="start"
             sideOffset={8}
             collisionPadding={8}
-            className="z-50 w-80 overflow-y-auto rounded-lg bg-rail text-text shadow-xl"
+            className="z-50 max-h-[var(--radix-popover-content-available-height)] w-80 overflow-y-auto rounded-modal bg-side text-text shadow-popover"
           >
             {open ? (
               <ProfileCard

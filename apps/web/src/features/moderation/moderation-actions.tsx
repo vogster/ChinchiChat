@@ -1,9 +1,9 @@
 import { Permission } from '@chinchi/shared'
 import { useMutation, useQuery } from '@tanstack/react-query'
+import { Ban, Clock, UserX } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
 import { Alert } from '../../components/ui/alert'
-import { Button } from '../../components/ui/button'
 import { useApi } from '../../lib/api-context'
 import { errorMessage } from '../../lib/errors'
 import { useCurrentUser } from '../auth/use-auth-actions'
@@ -14,7 +14,10 @@ import { useOutranks } from './use-outranks'
 import type { ModerationKind } from './moderation-dialogs'
 import type { Snowflake, UserProfile } from '@chinchi/shared'
 
-/** A moderator's buttons on someone's card: timeout (or lift it), kick, ban. */
+const tile =
+  'flex h-[62px] min-w-0 flex-col items-center justify-center gap-1 rounded-tile bg-danger-soft px-1 text-center text-xs font-medium text-danger transition hover:brightness-110 disabled:opacity-60'
+
+/** A moderator's tiles on someone's card: timeout (or lift it), kick, ban. */
 export const ModerationActions = ({
   profile,
   guildId,
@@ -48,29 +51,40 @@ export const ModerationActions = ({
   if (!allowed.timeout && !allowed.kick && !allowed.ban) return null
 
   return (
-    <div className="flex flex-col gap-2 border-t border-border pt-3">
+    <div className="flex flex-col gap-2">
       {lift.isError ? <Alert tone="error">{errorMessage(t, lift.error)}</Alert> : null}
-      {allowed.timeout ? (
-        timedOut ? (
-          <Button variant="secondary" pending={lift.isPending} onClick={() => lift.mutate()}>
-            {t('moderation.timeout.lift')}
-          </Button>
-        ) : (
-          <Button variant="secondary" onClick={() => onModerate('timeout')}>
-            {t('moderation.timeout.action')}
-          </Button>
-        )
-      ) : null}
-      {allowed.kick ? (
-        <Button variant="secondary" onClick={() => onModerate('kick')}>
-          {t('moderation.kick.action')}
-        </Button>
-      ) : null}
-      {allowed.ban ? (
-        <Button variant="danger" onClick={() => onModerate('ban')}>
-          {t('moderation.ban.action')}
-        </Button>
-      ) : null}
+      <div className="grid grid-cols-[repeat(auto-fit,minmax(0,1fr))] gap-1.5">
+        {allowed.timeout ? (
+          timedOut ? (
+            <button
+              type="button"
+              disabled={lift.isPending}
+              onClick={() => lift.mutate()}
+              className={tile}
+            >
+              <Clock aria-hidden className="size-4" />
+              {t('moderation.timeout.lift')}
+            </button>
+          ) : (
+            <button type="button" onClick={() => onModerate('timeout')} className={tile}>
+              <Clock aria-hidden className="size-4" />
+              {t('moderation.timeout.action')}
+            </button>
+          )
+        ) : null}
+        {allowed.kick ? (
+          <button type="button" onClick={() => onModerate('kick')} className={tile}>
+            <UserX aria-hidden className="size-4" />
+            {t('moderation.kick.action')}
+          </button>
+        ) : null}
+        {allowed.ban ? (
+          <button type="button" onClick={() => onModerate('ban')} className={tile}>
+            <Ban aria-hidden className="size-4" />
+            {t('moderation.ban.action')}
+          </button>
+        ) : null}
+      </div>
     </div>
   )
 }

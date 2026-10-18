@@ -34,9 +34,9 @@ export const DeleteAccount = () => {
   return (
     <section
       aria-labelledby={titleId}
-      className="rounded-lg border border-danger/40 bg-sidebar p-4"
+      className="rounded-card bg-stage p-4 shadow-[inset_0_0_0_1.5px_var(--zl-danger-soft)]"
     >
-      <h2 id={titleId} className="mb-1 text-sm font-bold tracking-wide text-danger uppercase">
+      <h2 id={titleId} className="mb-1 text-[13.5px] font-semibold text-danger">
         {t('settings.deleteAccount.title')}
       </h2>
       <p className="mb-3 text-sm text-muted">{t('settings.deleteAccount.text')}</p>

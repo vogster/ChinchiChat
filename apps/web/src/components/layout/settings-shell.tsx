@@ -5,7 +5,7 @@ import { useEffect } from 'react'
 import type { ReactNode } from 'react'
 
 export const settingsNavItemClass =
-  'shrink-0 rounded px-2.5 py-1.5 text-sm text-muted hover:bg-hover hover:text-text data-[status=active]:bg-hover data-[status=active]:text-text'
+  'flex h-[38px] shrink-0 items-center rounded-field px-3 text-[13.5px] font-medium text-muted transition-colors hover:bg-field hover:text-text data-[status=active]:bg-accent-soft data-[status=active]:text-accent-text max-md:rounded-full max-md:bg-field'
 
 export interface SettingsShellProps {
   readonly title: string

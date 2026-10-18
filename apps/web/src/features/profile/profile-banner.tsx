@@ -12,7 +12,7 @@ export const ProfileBanner = ({
 }) => (
   <div
     data-testid="profile-banner"
-    className={`aspect-[3/1] w-full overflow-hidden bg-elevated ${className}`}
+    className={`w-full overflow-hidden bg-field ${className || 'aspect-[3/1]'}`}
     style={accentColor !== null ? { backgroundColor: toHexColor(accentColor) } : undefined}
   >
     {bannerUrl ? <img src={bannerUrl} alt="" className="size-full object-cover" /> : null}

@@ -1,27 +1,18 @@
-import { Permission } from '@chinchi/shared'
-import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { Link } from '@tanstack/react-router'
-import { Lock } from 'lucide-react'
+import { useQuery } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 
 import { Avatar } from '../../components/ui/avatar'
-import { Button } from '../../components/ui/button'
 import { PresenceDot } from '../../components/ui/presence-dot'
 import { useApi } from '../../lib/api-context'
-import { useCurrentUser } from '../auth/use-auth-actions'
-import { useOpenDm } from '../dms/use-dm-actions'
-import { useOpenDmWith } from '../dms/use-open-dm-with'
-import { BetaBadge } from '../e2ee/beta-badge'
-import { useRelationshipActions } from '../friends/use-relationship-actions'
+import { GuildIcon } from '../guilds/guild-icon'
 import { guildQueryOptions, guildsQueryOptions } from '../guilds/queries'
 import { usePresence } from '../messages/use-presence'
 import { ModerationActions } from '../moderation/moderation-actions'
-import { useOutranks } from '../moderation/use-outranks'
-import { can, toHexColor } from '../permissions/permissions'
+import { toHexColor } from '../permissions/permissions'
 import { CustomStatusLine } from '../presence/custom-status-line'
-import { withSettings } from '../settings/settings-search'
+import { ProfileActions } from './profile-actions'
 import { ProfileBanner } from './profile-banner'
-import { profileKeys, profileQueryOptions } from './queries'
+import { profileQueryOptions } from './queries'
 
 import type { ModerationKind } from '../moderation/moderation-dialogs'
 import type { Snowflake, UserProfile } from '@chinchi/shared'
@@ -33,116 +24,10 @@ const formatDate = (iso: string, language: string) =>
 
 const Section = ({ title, children }: { title: string; children: React.ReactNode }) => (
   <section className="flex flex-col gap-1">
-    <h3 className="text-xs font-bold tracking-wide text-muted uppercase">{title}</h3>
+    <h3 className="text-xs font-medium text-faint">{title}</h3>
     {children}
   </section>
 )
-
-/** What you can do with someone from their card: message, befriend, block, rename. */
-const ProfileActions = ({
-  profile,
-  guildId,
-  onNickname,
-}: {
-  profile: UserProfile
-  guildId: Snowflake | null
-  onNickname: () => void
-}) => {
-  const { t } = useTranslation()
-  const queryClient = useQueryClient()
-  const me = useCurrentUser()
-  const openDm = useOpenDm()
-  // Opened from your DM with them: the matching button would lead right back here.
-  const shared = useOpenDmWith(profile.user.id)
-  const actions = useRelationshipActions()
-  const { permissions, outranks } = useOutranks(guildId)
-  const self = profile.user.id === me?.id
-  const refresh = {
-    onSuccess: () =>
-      void queryClient.invalidateQueries({ queryKey: profileKeys.user(profile.user.id) }),
-  }
-  // Others' nicknames also need a higher role.
-  const canRename =
-    profile.member !== null &&
-    (self || outranks(profile.user.id, profile.member.roleIds)) &&
-    can(permissions.base, self ? Permission.ChangeNickname : Permission.ManageNicknames)
-
-  if (self) {
-    return (
-      <div className="flex flex-col gap-2">
-        <Link
-          to="."
-          search={withSettings('profile')}
-          className="rounded-md bg-elevated px-3 py-2 text-center text-sm font-medium hover:bg-hover"
-        >
-          {t('profile.edit')}
-        </Link>
-        {canRename ? (
-          <Button variant="secondary" onClick={onNickname}>
-            {t('profile.changeNickname')}
-          </Button>
-        ) : null}
-      </div>
-    )
-  }
-
-  const { relationship } = profile
-  return (
-    <div className="flex flex-col gap-2">
-      {relationship !== 'blocked' && (!shared || shared.encrypted) ? (
-        <Button onClick={() => openDm.mutate([profile.user.id])} pending={openDm.isPending}>
-          {t('friends.message')}
-        </Button>
-      ) : null}
-      {relationship !== 'blocked' && !shared?.encrypted ? (
-        <Button
-          variant="secondary"
-          onClick={() => openDm.mutate({ ids: [profile.user.id], encrypted: true })}
-          pending={openDm.isPending}
-        >
-          <span className="inline-flex items-center gap-2">
-            <Lock aria-hidden className="size-4" />
-            {t('e2ee.start')}
-            <BetaBadge />
-          </span>
-        </Button>
-      ) : null}
-      {relationship === null ? (
-        <Button
-          variant="secondary"
-          pending={actions.request.isPending}
-          onClick={() => actions.request.mutate(profile.user.username, refresh)}
-        >
-          {t('friends.tabs.add')}
-        </Button>
-      ) : null}
-      {relationship === 'pending_in' ? (
-        <Button variant="secondary" onClick={() => actions.accept.mutate(profile.user.id, refresh)}>
-          {t('profile.acceptRequest')}
-        </Button>
-      ) : null}
-      {relationship === 'pending_out' ? (
-        <Button variant="secondary" disabled>
-          {t('profile.requestSent')}
-        </Button>
-      ) : null}
-      {canRename ? (
-        <Button variant="secondary" onClick={onNickname}>
-          {t('profile.changeNickname')}
-        </Button>
-      ) : null}
-      {relationship === 'blocked' ? (
-        <Button variant="secondary" onClick={() => actions.remove.mutate(profile.user.id, refresh)}>
-          {t('friends.unblock')}
-        </Button>
-      ) : (
-        <Button variant="danger" onClick={() => actions.block.mutate(profile.user.id, refresh)}>
-          {t('friends.block')}
-        </Button>
-      )}
-    </div>
-  )
-}
 
 /** Someone's profile card: who they are, what you share, and what you can do. */
 export const ProfileCard = ({
@@ -177,75 +62,103 @@ export const ProfileCard = ({
   const mutualGuilds = guilds.filter((g) => profile.mutualGuildIds.includes(g.id))
 
   return (
-    <div className="flex flex-col">
-      <ProfileBanner bannerUrl={profile.bannerUrl} accentColor={profile.accentColor} />
-      <div className="flex flex-col gap-4 p-4">
-        <header className="flex items-center gap-3">
-          <span className="relative">
-            <Avatar name={name} src={user.avatarUrl} id={user.id} className="size-16 text-2xl" />
-            <span className="absolute right-0 bottom-0">
+    <div className="flex flex-col p-2">
+      <ProfileBanner
+        bannerUrl={profile.bannerUrl}
+        accentColor={profile.accentColor}
+        className="h-[100px] rounded-[24px]"
+      />
+      <div className="flex flex-col gap-3.5 px-2.5 pb-2">
+        <header className="flex flex-col gap-2">
+          <div className="-mt-[46px] flex items-end gap-2">
+            <span className="relative shrink-0 rounded-[30px] border-[5px] border-side bg-side">
+              <Avatar
+                name={name}
+                src={user.avatarUrl}
+                id={user.id}
+                rounded="rounded-[26px]"
+                className="size-[84px] text-3xl"
+              />
               <PresenceDot status={status} label={t(`presence.${status}`)} />
             </span>
-          </span>
-          <div className="min-w-0">
-            <h2 className="truncate text-lg font-bold">{name}</h2>
-            <p className="truncate text-sm text-muted">{user.username}</p>
             {status === 'offline' ? null : (
-              <CustomStatusLine userId={user.id} wrap className="mt-1 text-sm" />
+              <CustomStatusLine
+                userId={user.id}
+                className="mb-1 min-w-0 rounded-full bg-field px-2.5 py-1 text-xs text-muted"
+              />
             )}
           </div>
-        </header>
-
-        {profile.bio ? (
-          <Section title={t('profile.about')}>
-            <p className="text-sm break-words whitespace-pre-wrap">{profile.bio}</p>
-          </Section>
-        ) : null}
-
-        <Section title={t('profile.memberSince')}>
-          <p className="text-sm">
-            {t('profile.onChinchi', { date: formatDate(profile.createdAt, i18n.language) })}
-            {member ? (
-              <>
-                <br />
-                {t('profile.onServer', { date: formatDate(member.joinedAt, i18n.language) })}
-              </>
-            ) : null}
-          </p>
-        </Section>
-
-        {roles.length > 0 ? (
-          <Section title={t('profile.roles')}>
-            <ul className="flex flex-wrap gap-1">
+          <div className="min-w-0">
+            <h2 className="truncate text-[21px] font-semibold tracking-[-0.015em]">{name}</h2>
+            <p className="truncate text-[13px] text-faint">
+              @<span>{user.username}</span> · {t(`presence.${status}`)}
+            </p>
+          </div>
+          {roles.length > 0 ? (
+            <ul aria-label={t('profile.roles')} className="flex flex-wrap gap-1">
               {roles.map((role) => (
                 <li
                   key={role.id}
-                  className="flex items-center gap-1 rounded bg-elevated px-2 py-0.5 text-xs"
+                  className="flex h-6 items-center gap-1.5 rounded-full bg-field px-2.5 text-xs font-medium"
                 >
                   <span
                     aria-hidden
-                    className="size-2.5 rounded-full bg-muted"
+                    className="size-2 rounded-full bg-muted"
                     style={role.color ? { backgroundColor: toHexColor(role.color) } : undefined}
                   />
                   {role.name}
                 </li>
               ))}
             </ul>
-          </Section>
+          ) : null}
+        </header>
+
+        {profile.bio ? (
+          <p className="text-sm break-words whitespace-pre-wrap text-body">{profile.bio}</p>
         ) : null}
 
-        {mutualGuilds.length > 0 || profile.mutualFriends.length > 0 ? (
-          <Section title={t('profile.shared')}>
-            {mutualGuilds.length > 0 ? (
-              <p className="text-sm">{mutualGuilds.map((g) => g.name).join(', ')}</p>
-            ) : null}
-            {profile.mutualFriends.length > 0 ? (
-              <p className="text-sm text-muted">
-                {t('profile.mutualFriends', { count: profile.mutualFriends.length })}
-              </p>
-            ) : null}
+        <div className="flex flex-col gap-3 rounded-tile bg-stage p-3.5">
+          <Section title={t('profile.memberSince')}>
+            <p className="text-[13px]">
+              {t('profile.onChinchi', { date: formatDate(profile.createdAt, i18n.language) })}
+              {member ? (
+                <>
+                  <br />
+                  {t('profile.onServer', { date: formatDate(member.joinedAt, i18n.language) })}
+                </>
+              ) : null}
+            </p>
           </Section>
-        ) : null}
+          {mutualGuilds.length > 0 || profile.mutualFriends.length > 0 ? (
+            <Section title={t('profile.shared')}>
+              {mutualGuilds.length > 0 ? (
+                <ul className="flex flex-wrap gap-1">
+                  {mutualGuilds.map((g) => (
+                    <li
+                      key={g.id}
+                      className="flex h-7 items-center gap-1.5 rounded-full bg-field pr-2.5 pl-1 text-xs font-medium"
+                    >
+                      <span className="size-5 overflow-hidden rounded-[7px] text-[9px]">
+                        <GuildIcon
+                          id={g.id}
+                          name={g.name}
+                          iconUrl={g.iconUrl}
+                          className="text-[9px]"
+                        />
+                      </span>
+                      {g.name}
+                    </li>
+                  ))}
+                </ul>
+              ) : null}
+              {profile.mutualFriends.length > 0 ? (
+                <p className="text-xs text-faint">
+                  {t('profile.mutualFriends', { count: profile.mutualFriends.length })}
+                </p>
+              ) : null}
+            </Section>
+          ) : null}
+        </div>
 
         <ProfileActions
           profile={profile}

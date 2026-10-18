@@ -51,6 +51,7 @@ describe('server rail', () => {
 
     await user.click(await screen.findByRole('button', { name: 'Добавить сервер' }))
     const dialog = await screen.findByRole('dialog')
+    await user.click(within(dialog).getByRole('tab', { name: 'По приглашению' }))
     await user.type(
       within(dialog).getByLabelText('Ссылка-приглашение'),
       'https://chat.example.com/invite/AbCd1234',
@@ -67,6 +68,7 @@ describe('server rail', () => {
 
     await user.click(await screen.findByRole('button', { name: 'Добавить сервер' }))
     const dialog = await screen.findByRole('dialog')
+    await user.click(within(dialog).getByRole('tab', { name: 'По приглашению' }))
     await user.type(within(dialog).getByLabelText('Ссылка-приглашение'), 'not a link!')
     await user.click(within(dialog).getByRole('button', { name: 'Присоединиться' }))
 

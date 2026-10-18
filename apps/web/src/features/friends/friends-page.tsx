@@ -161,9 +161,10 @@ export const FriendsPage = () => {
                   secret: (id) => openDm.mutate({ ids: [id], encrypted: true }),
                   call: voiceEnabled
                     ? (id) =>
-                        openDm.mutate([id], {
-                          onSuccess: ({ channel }) => void voice.join(null, channel.id),
-                        })
+                        void openDm
+                          .mutateAsync([id])
+                          .then(({ channel }) => voice.join(null, channel.id))
+                          .catch(() => undefined)
                     : null,
                   accept: (id) => actions.accept.mutate(id),
                   block: (id) => actions.block.mutate(id),
