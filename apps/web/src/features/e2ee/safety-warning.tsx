@@ -28,7 +28,7 @@ export const SafetyWarning = ({
     <div
       role="alert"
       aria-label={t('e2ee.safety.newDevicesLabel')}
-      className="mx-4 mt-2 flex items-start gap-3 rounded-md border border-border bg-elevated px-3 py-2 text-sm"
+      className="mx-4 mt-2 flex items-start gap-3 rounded-md border border-line bg-field px-3 py-2 text-sm"
     >
       <ShieldAlert aria-hidden className="mt-0.5 size-4 shrink-0 text-danger" />
       <div className="min-w-0 flex-1">

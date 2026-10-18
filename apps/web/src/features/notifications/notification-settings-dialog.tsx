@@ -86,7 +86,7 @@ export const NotificationSettingsDialog = ({
             id={muteId}
             value={muteValue}
             onChange={(event) => onMute(event.target.value)}
-            className="rounded-md border border-border bg-rail px-3 py-2 text-text outline-none focus:border-accent"
+            className="rounded-md border border-line bg-rail px-3 py-2 text-text outline-none focus:border-accent"
           >
             <option value="off">{t('notifications.muteOff')}</option>
             {muteValue === 'timed' && mutedUntil ? (
@@ -150,7 +150,7 @@ const LevelOption = ({
   checked: boolean
   onChange: () => void
 }) => (
-  <label className="flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 hover:bg-hover">
+  <label className="flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 hover:bg-chip">
     <input
       type="radio"
       name={`notification-level-${name}`}

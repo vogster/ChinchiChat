@@ -62,11 +62,7 @@ const SealedImage = ({ file }: { file: SealedFile }) => {
     return <p className="text-sm text-muted">{t('e2ee.fileDecrypting', { name: file.name })}</p>
   }
   return (
-    <a
-      href={state.url}
-      download={file.name}
-      className="block overflow-hidden rounded-md bg-elevated"
-    >
+    <a href={state.url} download={file.name} className="block overflow-hidden rounded-md bg-field">
       <img
         src={state.url}
         alt={file.name}
@@ -104,7 +100,7 @@ const SealedDownload = ({ file }: { file: SealedFile }) => {
         aria-label={`${file.name} (${formatFileSize(file.size, i18n.language)})`}
         disabled={state === 'loading'}
         onClick={() => void download()}
-        className="flex max-w-sm items-center gap-3 rounded-md border border-border bg-elevated px-3 py-2 text-left hover:bg-hover disabled:opacity-60"
+        className="flex max-w-sm items-center gap-3 rounded-md border border-line bg-field px-3 py-2 text-left hover:bg-chip disabled:opacity-60"
       >
         <FileText aria-hidden className="size-8 shrink-0 text-muted" />
         <span className="min-w-0">

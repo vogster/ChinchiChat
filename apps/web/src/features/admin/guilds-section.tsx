@@ -51,10 +51,10 @@ export const AdminGuildsSection = () => {
         placeholder={t('admin.guilds.searchPlaceholder')}
         value={search.text}
         onChange={(event) => search.setText(event.target.value)}
-        className="rounded-md border border-border bg-rail px-3 py-2 outline-none focus:border-accent"
+        className="rounded-md border border-line bg-rail px-3 py-2 outline-none focus:border-accent"
       />
       <SettingsCard>
-        <ul aria-label={t('admin.guilds.title')} className="flex flex-col divide-y divide-border">
+        <ul aria-label={t('admin.guilds.title')} className="flex flex-col divide-y divide-line">
           {rows.map((guild) => (
             <li key={guild.id} className="flex items-center gap-3 py-3">
               <div className="min-w-0 flex-1">

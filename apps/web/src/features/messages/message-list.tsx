@@ -187,7 +187,7 @@ export const MessageList = ({
   }
   if (history.isError) {
     return (
-      <p role="alert" className="flex flex-1 items-center justify-center text-red-400">
+      <p role="alert" className="flex flex-1 items-center justify-center text-danger">
         {t('messages.loadError')}
       </p>
     )

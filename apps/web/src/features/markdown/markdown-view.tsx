@@ -16,8 +16,7 @@ const mentionClass = 'rounded bg-accent/15 px-0.5 font-medium text-accent'
  */
 const Spoiler = ({ label, children }: { label: string; children: ReactNode }) => {
   const [revealed, setRevealed] = useState(false)
-  if (revealed)
-    return <span className="rounded bg-black/10 px-0.5 dark:bg-white/10">{children}</span>
+  if (revealed) return <span className="rounded bg-chip px-0.5">{children}</span>
   return (
     <span
       role="button"
@@ -58,9 +57,7 @@ const Inline = ({ node, resolve }: { node: InlineNode; resolve: MentionResolver 
       return <Spoiler label={resolve.labels.showSpoiler}>{children(node.children)}</Spoiler>
     case 'inlineCode':
       return (
-        <code className="rounded bg-elevated px-1 py-0.5 font-mono text-[0.85em]">
-          {node.value}
-        </code>
+        <code className="rounded bg-field px-1 py-0.5 font-mono text-[0.85em]">{node.value}</code>
       )
     case 'link':
       // The parser only emits http(s) links; checked again because this is the last line.
@@ -135,13 +132,13 @@ const Block = ({ node, resolve, suffix }: BlockProps) => {
       )
     case 'codeBlock':
       return (
-        <pre className="my-1 overflow-x-auto rounded-md border border-border bg-elevated p-2 font-mono text-sm">
+        <pre className="my-1 overflow-x-auto rounded-md border border-line bg-field p-2 font-mono text-sm">
           <code data-lang={node.lang ?? undefined}>{node.value}</code>
         </pre>
       )
     case 'quote':
       return (
-        <blockquote className="my-0.5 border-l-4 border-border pl-3">
+        <blockquote className="my-0.5 border-l-4 border-line pl-3">
           {node.children.map((child, index) => (
             <Block key={index} node={child} resolve={resolve} />
           ))}

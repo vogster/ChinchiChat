@@ -135,7 +135,7 @@ export const ProfileForm = ({ user }: { user: CurrentUser }) => {
           id="profile-bio"
           rows={3}
           maxLength={BIO_MAX_LENGTH}
-          className="resize-none rounded-md border border-border bg-rail px-3 py-2 text-text outline-none transition focus:border-accent"
+          className="resize-none rounded-md border border-line bg-rail px-3 py-2 text-text outline-none transition focus:border-accent"
           {...register('bio')}
         />
         <div className="flex justify-between text-xs text-muted">
@@ -159,7 +159,7 @@ export const ProfileForm = ({ user }: { user: CurrentUser }) => {
           <input
             id="profile-accent"
             type="color"
-            className="h-9 w-14 cursor-pointer rounded-md border border-border bg-rail"
+            className="h-9 w-14 cursor-pointer rounded-md border border-line bg-rail"
             value={accent || DEFAULT_ACCENT}
             onChange={(event) =>
               setValue('accentColor', event.currentTarget.value, { shouldDirty: true })

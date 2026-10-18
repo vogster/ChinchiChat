@@ -75,7 +75,7 @@ export const PickFriendsDialog = ({
               const checked = picked.includes(friend.id)
               return (
                 <li key={friend.id}>
-                  <label className="flex cursor-pointer items-center gap-3 rounded px-2 py-1.5 hover:bg-hover">
+                  <label className="flex cursor-pointer items-center gap-3 rounded px-2 py-1.5 hover:bg-chip">
                     <Avatar
                       name={userName(friend)}
                       src={friend.avatarUrl}

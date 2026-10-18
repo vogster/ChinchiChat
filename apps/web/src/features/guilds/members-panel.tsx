@@ -36,7 +36,7 @@ const MemberRow = ({ member, status, isOwner, color, guildId }: MemberRowProps) 
           .filter(Boolean)
           .join(', ')}
         side="left"
-        className="flex w-full items-center gap-2.5 rounded px-2 py-1.5 hover:bg-hover hover:no-underline"
+        className="flex w-full items-center gap-2.5 rounded px-2 py-1.5 hover:bg-chip hover:no-underline"
       >
         <span className="relative shrink-0">
           <Avatar
@@ -54,7 +54,7 @@ const MemberRow = ({ member, status, isOwner, color, guildId }: MemberRowProps) 
           {status === 'offline' ? null : <CustomStatusLine userId={member.user.id} />}
         </span>
         {isOwner ? (
-          <Crown aria-label={t('guild.owner')} className="size-4 shrink-0 text-yellow-500" />
+          <Crown aria-label={t('guild.owner')} className="size-4 shrink-0 text-warning-text" />
         ) : null}
       </ProfileTrigger>
     </li>

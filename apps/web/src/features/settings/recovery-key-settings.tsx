@@ -75,7 +75,7 @@ export const RecoveryKeySettings = () => {
           aria-label={shown ? t('e2ee.recovery.hide') : t('e2ee.recovery.show')}
           aria-pressed={shown}
           onClick={() => setShown((value) => !value)}
-          className="rounded p-2 text-muted hover:bg-hover hover:text-text"
+          className="rounded p-2 text-muted hover:bg-chip hover:text-text"
         >
           {shown ? (
             <EyeOff aria-hidden className="size-5" />

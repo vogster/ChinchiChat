@@ -145,7 +145,7 @@ export const SearchPanel = ({
           </p>
         ) : null}
         {results.isError ? (
-          <p className="text-sm text-red-400">{errorMessage(t, results.error)}</p>
+          <p className="text-sm text-danger">{errorMessage(t, results.error)}</p>
         ) : null}
         {results.isSuccess && found.length === 0 ? (
           <p className="text-sm text-muted">{t('search.nothing')}</p>

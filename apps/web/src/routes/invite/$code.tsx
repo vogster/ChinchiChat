@@ -54,7 +54,7 @@ const InvitePage = () => {
       }
     >
       <div className="flex flex-col items-center gap-4">
-        <div className="flex size-20 items-center justify-center overflow-hidden rounded-3xl bg-elevated">
+        <div className="flex size-20 items-center justify-center overflow-hidden rounded-3xl bg-field">
           <GuildIcon id={guild.id} name={guild.name} iconUrl={guild.iconUrl} className="text-2xl" />
         </div>
         <p className="text-sm text-muted">
@@ -80,7 +80,7 @@ const InvitePage = () => {
               <Link
                 to="/register"
                 search={{ redirect: back }}
-                className={`${linkButton} bg-elevated text-text`}
+                className={`${linkButton} bg-field text-text`}
               >
                 {t('invite.registerToAccept')}
               </Link>

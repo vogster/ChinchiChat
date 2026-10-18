@@ -31,7 +31,7 @@ const SessionRow = ({
         <div className="flex flex-wrap items-center gap-2">
           <span className="font-medium">{device}</span>
           {session.current ? (
-            <span className="rounded bg-green-600 px-1.5 py-0.5 text-[11px] font-semibold text-white">
+            <span className="rounded-full bg-secure-soft px-2 py-0.5 text-[11px] font-semibold text-secure-text">
               {t('settings.sessions.current')}
             </span>
           ) : null}
@@ -88,7 +88,7 @@ export const SessionsList = () => {
       ) : null}
 
       <ul
-        className="divide-y divide-border rounded-lg bg-sidebar px-4"
+        className="divide-y divide-line rounded-lg bg-side px-4"
         aria-label={t('settings.sessions.title')}
       >
         {sessions.map((session) => (

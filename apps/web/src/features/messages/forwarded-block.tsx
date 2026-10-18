@@ -16,7 +16,7 @@ export const ForwardedBlock = ({ forward }: { forward: ForwardedMessage }) => {
     <div
       role="group"
       aria-label={t('forward.block')}
-      className="mt-1 max-w-xl border-l-4 border-border pl-3"
+      className="mt-1 max-w-xl border-l-4 border-line pl-3"
     >
       <div className="flex items-center gap-1.5 text-xs text-muted">
         <Forward aria-hidden className="size-3.5" />

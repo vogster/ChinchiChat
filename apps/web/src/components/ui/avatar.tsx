@@ -28,7 +28,7 @@ export const Avatar = ({
         aria-hidden
         loading="lazy"
         data-generated={src ? undefined : true}
-        className={`shrink-0 ${rounded} bg-elevated object-cover ${className}`}
+        className={`shrink-0 ${rounded} bg-field object-cover ${className}`}
       />
     )
   }

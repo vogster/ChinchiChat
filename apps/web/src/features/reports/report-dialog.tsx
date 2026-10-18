@@ -76,7 +76,7 @@ export const ReportDialog = ({
               maxLength={REPORT_DETAILS_MAX_LENGTH}
               value={details}
               onChange={(event) => setDetails(event.target.value)}
-              className="resize-none rounded-md border border-border bg-rail px-3 py-2 outline-none focus:border-accent"
+              className="resize-none rounded-md border border-line bg-rail px-3 py-2 outline-none focus:border-accent"
             />
           </div>
           {send.isError ? <Alert tone="error">{errorMessage(t, send.error)}</Alert> : null}

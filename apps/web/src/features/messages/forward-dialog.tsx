@@ -98,12 +98,12 @@ export const ForwardDialog = ({
           placeholder={t('forward.search')}
           value={query}
           onChange={(event) => setQuery(event.target.value)}
-          className="rounded-md border border-border bg-rail px-3 py-2 text-sm text-text outline-none focus:border-accent"
+          className="rounded-md border border-line bg-rail px-3 py-2 text-sm text-text outline-none focus:border-accent"
         />
         <ul className="flex max-h-64 flex-col gap-0.5 overflow-y-auto">
           {shown.map((destination) => (
             <li key={destination.id}>
-              <label className="flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 hover:bg-hover has-checked:bg-hover">
+              <label className="flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 hover:bg-chip has-checked:bg-chip">
                 {destination.kind === 'dm' ? (
                   <MessageCircle aria-hidden className="size-4 shrink-0 text-muted" />
                 ) : (

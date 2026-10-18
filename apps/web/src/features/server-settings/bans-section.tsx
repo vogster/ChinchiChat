@@ -43,7 +43,7 @@ export const BansSection = ({ guildId }: { guildId: Snowflake }) => {
         ) : bans.length === 0 ? (
           <p className="text-sm text-muted">{t('serverSettings.bans.empty')}</p>
         ) : (
-          <ul className="flex flex-col divide-y divide-border">
+          <ul className="flex flex-col divide-y divide-line">
             {bans.map((ban) => {
               const name = ban.user.displayName ?? ban.user.username
               return (

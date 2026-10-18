@@ -57,7 +57,7 @@ const SettingsForm = ({ settings }: { settings: InstanceSettings }) => {
           id="registration-mode"
           value={mode}
           onChange={(event) => setMode(event.target.value as RegistrationMode)}
-          className="rounded-md border border-border bg-rail px-3 py-2"
+          className="rounded-md border border-line bg-rail px-3 py-2"
         >
           {MODES.map((value) => (
             <option key={value} value={value}>
@@ -81,7 +81,7 @@ const SettingsForm = ({ settings }: { settings: InstanceSettings }) => {
           value={limit}
           placeholder={t('admin.instance.noLimit')}
           onChange={(event) => setLimit(event.target.value)}
-          className="rounded-md border border-border bg-rail px-3 py-2"
+          className="rounded-md border border-line bg-rail px-3 py-2"
         />
       </div>
       <Switch
@@ -125,7 +125,7 @@ const Invites = () => {
       <Button fullWidth={false} pending={create.isPending} onClick={() => create.mutate()}>
         {t('admin.instance.createInvite')}
       </Button>
-      <ul aria-label={t('admin.instance.invites')} className="flex flex-col divide-y divide-border">
+      <ul aria-label={t('admin.instance.invites')} className="flex flex-col divide-y divide-line">
         {invites.map((invite) => (
           <li key={invite.code} className="flex flex-wrap items-center gap-2 py-2">
             <div className="min-w-0 flex-1">

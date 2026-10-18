@@ -24,7 +24,7 @@ export const EmbedCard = ({ embed }: { embed: Embed }) => {
   return (
     <article
       aria-label={title}
-      className="mt-1 flex max-w-lg flex-col gap-1 rounded-md border-l-4 border-accent bg-elevated p-3"
+      className="mt-1 flex max-w-lg flex-col gap-1 rounded-md border-l-4 border-accent bg-field p-3"
     >
       <p className="flex gap-1.5 text-xs text-muted">
         {embed.siteName ? <span>{embed.siteName}</span> : null}

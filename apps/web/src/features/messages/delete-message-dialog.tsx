@@ -25,7 +25,7 @@ export const DeleteMessageDialog = ({
       description={t('messages.deleteText')}
     >
       <div className="flex flex-col gap-4">
-        <blockquote className="line-clamp-4 rounded-md bg-sidebar p-3 text-sm whitespace-pre-wrap">
+        <blockquote className="line-clamp-4 rounded-md bg-side p-3 text-sm whitespace-pre-wrap">
           {message.content}
         </blockquote>
         <p className="text-xs text-muted">{t('messages.deleteHint')}</p>

@@ -16,7 +16,7 @@ import { useRoleActions } from './use-role-actions'
 import type { GuildDetail, Role } from '@chinchi/shared'
 
 const iconButton =
-  'rounded p-1 text-muted hover:bg-hover hover:text-text disabled:pointer-events-none disabled:opacity-30'
+  'rounded p-1 text-muted hover:bg-chip hover:text-text disabled:pointer-events-none disabled:opacity-30'
 
 /** Role list (highest first) next to the editor of the selected role. */
 export const RolesSection = ({ guild }: { guild: GuildDetail }) => {
@@ -79,7 +79,7 @@ export const RolesSection = ({ guild }: { guild: GuildDetail }) => {
                     type="button"
                     aria-current={role.id === selectedId || undefined}
                     onClick={() => setSelectedId(role.id)}
-                    className="flex min-w-0 flex-1 items-center gap-2 rounded px-2 py-1.5 text-left hover:bg-hover aria-[current]:bg-hover aria-[current]:font-medium"
+                    className="flex min-w-0 flex-1 items-center gap-2 rounded px-2 py-1.5 text-left hover:bg-chip aria-[current]:bg-chip aria-[current]:font-medium"
                   >
                     <Shield
                       aria-hidden

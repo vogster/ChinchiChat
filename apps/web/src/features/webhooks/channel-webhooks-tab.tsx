@@ -77,7 +77,7 @@ export const ChannelWebhooksTab = ({ channel }: { channel: Channel }) => {
         </div>
       ) : null}
       {error ? <Alert tone="error">{errorMessage(t, error)}</Alert> : null}
-      <ul aria-label={t('webhooks.list')} className="flex flex-col divide-y divide-border">
+      <ul aria-label={t('webhooks.list')} className="flex flex-col divide-y divide-line">
         {webhooks.map((webhook) => (
           <li key={webhook.id} className="flex items-center gap-3 py-2">
             <div className="min-w-0 flex-1">

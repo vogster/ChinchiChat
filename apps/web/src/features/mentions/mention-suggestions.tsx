@@ -47,7 +47,7 @@ export const MentionSuggestions = ({
     <ul
       role="listbox"
       aria-label={t('mentions.suggestions')}
-      className="mb-1 flex max-h-64 flex-col overflow-y-auto rounded-lg border border-border bg-sidebar py-1"
+      className="mb-1 flex max-h-64 flex-col overflow-y-auto rounded-lg border border-line bg-side py-1"
     >
       {candidates.map((candidate, index) => (
         <li
@@ -60,7 +60,7 @@ export const MentionSuggestions = ({
           // Keeps focus in the composer while picking with the mouse.
           onMouseDown={(event) => event.preventDefault()}
           onClick={() => onPick(candidate)}
-          className="flex cursor-pointer items-center gap-2 px-3 py-1.5 text-sm hover:bg-elevated aria-selected:bg-elevated"
+          className="flex cursor-pointer items-center gap-2 px-3 py-1.5 text-sm hover:bg-field aria-selected:bg-field"
         >
           <Icon candidate={candidate} />
           <span className="truncate font-semibold">{candidate.label}</span>

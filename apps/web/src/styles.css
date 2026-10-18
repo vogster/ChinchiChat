@@ -207,12 +207,6 @@
   --color-status-dnd: var(--zl-status-dnd);
   --color-status-offline: var(--zl-status-offline);
 
-  /* Design v1 names, kept until every screen moves to the tokens above (phase 23, step 10). */
-  --color-sidebar: var(--zl-side);
-  --color-elevated: var(--zl-field);
-  --color-hover: var(--zl-chip);
-  --color-border: var(--zl-line);
-
   --shadow-popover: 0 24px 60px rgb(8 8 16 / 0.38), 0 0 0 1px var(--zl-line);
   --shadow-modal: 0 30px 80px rgb(8 8 16 / 0.45), 0 0 0 1px var(--zl-line);
 }

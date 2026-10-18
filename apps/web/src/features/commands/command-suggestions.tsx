@@ -18,7 +18,7 @@ export const CommandSuggestions = ({
     <ul
       role="listbox"
       aria-label={t('commands.suggestions')}
-      className="mb-1 flex max-h-64 flex-col overflow-y-auto rounded-lg border border-border bg-sidebar py-1"
+      className="mb-1 flex max-h-64 flex-col overflow-y-auto rounded-lg border border-line bg-side py-1"
     >
       {commands.map((command, index) => (
         <li
@@ -28,7 +28,7 @@ export const CommandSuggestions = ({
           // Keeps focus in the composer while picking with the mouse.
           onMouseDown={(event) => event.preventDefault()}
           onClick={() => onPick(command)}
-          className="flex cursor-pointer items-baseline gap-2 px-3 py-1.5 text-sm hover:bg-elevated aria-selected:bg-elevated"
+          className="flex cursor-pointer items-baseline gap-2 px-3 py-1.5 text-sm hover:bg-field aria-selected:bg-field"
         >
           <span className="font-semibold">/{command.name}</span>
           {command.options.map((option) => (

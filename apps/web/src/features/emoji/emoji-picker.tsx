@@ -31,7 +31,7 @@ export interface EmojiPickerProps {
 }
 
 const emojiButton =
-  'flex size-9 items-center justify-center rounded text-2xl hover:bg-hover focus-visible:outline-2 focus-visible:outline-accent'
+  'flex size-9 items-center justify-center rounded text-2xl hover:bg-chip focus-visible:outline-2 focus-visible:outline-accent'
 
 /** Search or browse by category; picking closes the panel. Loads its data on first open. */
 export const EmojiPicker = ({
@@ -100,10 +100,10 @@ export const EmojiPicker = ({
             aria-label={t('emoji.search')}
             placeholder={t('emoji.search')}
             onChange={(event) => setQuery(event.target.value)}
-            className="rounded-md bg-elevated px-2 py-1.5 text-sm outline-none placeholder:text-muted"
+            className="rounded-md bg-field px-2 py-1.5 text-sm outline-none placeholder:text-muted"
           />
           {quick.length > 0 ? (
-            <div className="flex gap-1 border-b border-border pb-2">
+            <div className="flex gap-1 border-b border-line pb-2">
               {quick.map((item) => (
                 <button
                   key={item.emoji}
@@ -137,7 +137,7 @@ export const EmojiPicker = ({
             </div>
           )}
           {recent.length > 0 && !query.trim() ? (
-            <section aria-label={t('emoji.recent')} className="border-b border-border pb-2">
+            <section aria-label={t('emoji.recent')} className="border-b border-line pb-2">
               <h3 className="mb-1 px-1 text-xs font-bold tracking-wide text-muted uppercase">
                 {t('emoji.recent')}
               </h3>
@@ -158,7 +158,7 @@ export const EmojiPicker = ({
             </section>
           ) : null}
           {serverEmojis.length > 0 ? (
-            <section aria-label={custom?.title} className="border-b border-border pb-2">
+            <section aria-label={custom?.title} className="border-b border-line pb-2">
               <h3 className="mb-1 px-1 text-xs font-bold tracking-wide text-muted uppercase">
                 {custom?.title}
               </h3>

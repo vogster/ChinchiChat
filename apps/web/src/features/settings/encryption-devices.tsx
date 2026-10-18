@@ -32,7 +32,7 @@ const StrictModeSwitch = () => {
     onSettled: () => queryClient.invalidateQueries({ queryKey: strictKey }),
   })
   return (
-    <div className="rounded-lg bg-sidebar px-4">
+    <div className="rounded-lg bg-side px-4">
       <Switch
         checked={enabled}
         onCheckedChange={(on) => toggle.mutate(on)}
@@ -69,7 +69,7 @@ export const EncryptionDevices = () => {
       <StrictModeSwitch />
       <ul
         aria-label={t('settings.encryptionDevices.title')}
-        className="divide-y divide-border rounded-lg bg-sidebar px-4"
+        className="divide-y divide-line rounded-lg bg-side px-4"
       >
         {active.map((device) => (
           <li key={device.id} aria-label={device.name} className="flex items-center gap-3 py-3">
@@ -78,7 +78,7 @@ export const EncryptionDevices = () => {
               <div className="flex flex-wrap items-center gap-2">
                 <span className="font-medium">{device.name}</span>
                 {device.id === thisDevice ? (
-                  <span className="rounded bg-green-600 px-1.5 py-0.5 text-[11px] font-semibold text-white">
+                  <span className="rounded-full bg-secure-soft px-2 py-0.5 text-[11px] font-semibold text-secure-text">
                     {t('settings.sessions.current')}
                   </span>
                 ) : null}

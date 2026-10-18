@@ -67,7 +67,7 @@ export const LocalSearchPanel = ({
                 <button
                   type="button"
                   onClick={() => void revealMessage(queryClient, api, channel.id, item.id)}
-                  className="w-full rounded-md bg-main p-2.5 text-left text-sm hover:bg-hover"
+                  className="w-full rounded-md bg-main p-2.5 text-left text-sm hover:bg-chip"
                 >
                   <span className="flex items-baseline gap-2 text-xs text-muted">
                     <span className="truncate font-semibold text-text">
