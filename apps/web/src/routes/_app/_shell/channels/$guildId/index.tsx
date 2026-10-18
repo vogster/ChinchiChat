@@ -1,6 +1,7 @@
 import { createFileRoute, redirect } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
 
+import { MainCard } from '../../../../../components/layout/main-card'
 import { PageHeader } from '../../../../../components/layout/page-header'
 import { firstTextChannel } from '../../../../../features/guilds/channel-tree'
 import { guildQueryOptions } from '../../../../../features/guilds/queries'
@@ -9,12 +10,12 @@ const NoTextChannels = () => {
   const { t } = useTranslation()
   const guild = Route.useLoaderData()
   return (
-    <>
+    <MainCard>
       <PageHeader>{guild.name}</PageHeader>
       <p className="flex flex-1 items-center justify-center p-8 text-center text-muted">
         {t('guild.noTextChannels')}
       </p>
-    </>
+    </MainCard>
   )
 }
 

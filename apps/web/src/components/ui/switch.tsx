@@ -33,7 +33,7 @@ export const Switch = ({ checked, onCheckedChange, label, description, disabled 
         aria-describedby={description ? `${id}-description` : undefined}
         disabled={disabled}
         onClick={() => onCheckedChange(!checked)}
-        className={`relative mt-0.5 h-6 w-10 shrink-0 rounded-full transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:cursor-not-allowed ${checked ? 'bg-green-600' : 'bg-elevated'}`}
+        className={`relative mt-0.5 h-6 w-10 shrink-0 rounded-full transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:cursor-not-allowed ${checked ? 'bg-secure' : 'bg-chip'}`}
       >
         <span
           aria-hidden

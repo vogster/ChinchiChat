@@ -2,8 +2,21 @@ import { Permission } from '@chinchi/shared'
 
 import { can } from '../permissions/permissions'
 
-export type ServerSettingsSection =
-  'overview' | 'emojis' | 'roles' | 'members' | 'automod' | 'bans' | 'reports' | 'audit-log'
+export const SERVER_SETTINGS_SECTIONS = [
+  'overview',
+  'emojis',
+  'roles',
+  'members',
+  'automod',
+  'bans',
+  'reports',
+  'audit-log',
+] as const
+
+export type ServerSettingsSection = (typeof SERVER_SETTINGS_SECTIONS)[number]
+
+export const isServerSettingsSection = (value: string): value is ServerSettingsSection =>
+  (SERVER_SETTINGS_SECTIONS as readonly string[]).includes(value)
 
 const SECTIONS: readonly { key: ServerSettingsSection; permission: bigint }[] = [
   { key: 'overview', permission: Permission.ManageGuild },

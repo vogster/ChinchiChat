@@ -12,9 +12,9 @@ export interface TriStatePermissionProps {
 }
 
 const OPTIONS = [
-  { value: 'deny', Icon: X, active: 'bg-red-600 text-white' },
-  { value: 'inherit', Icon: Slash, active: 'bg-elevated text-text' },
-  { value: 'allow', Icon: Check, active: 'bg-green-600 text-white' },
+  { value: 'deny', Icon: X, active: 'bg-danger text-danger-contrast' },
+  { value: 'inherit', Icon: Slash, active: 'bg-field text-text' },
+  { value: 'allow', Icon: Check, active: 'bg-secure text-secure-contrast' },
 ] as const
 
 /** Deny / inherit / allow for one permission in a channel overwrite. */
@@ -36,7 +36,7 @@ export const TriStatePermission = ({
       <div
         role="radiogroup"
         aria-label={label}
-        className="flex shrink-0 overflow-hidden rounded-md border border-border"
+        className="flex shrink-0 overflow-hidden rounded-md border border-line"
       >
         {OPTIONS.map(({ value: option, Icon, active }) => (
           <button
@@ -47,7 +47,7 @@ export const TriStatePermission = ({
             aria-label={t(`permissions.${option}`)}
             disabled={disabled}
             onClick={() => onChange(option)}
-            className={`flex size-8 items-center justify-center transition disabled:cursor-not-allowed disabled:opacity-50 ${value === option ? active : 'text-muted hover:bg-hover'}`}
+            className={`flex size-8 items-center justify-center transition disabled:cursor-not-allowed disabled:opacity-50 ${value === option ? active : 'text-muted hover:bg-chip'}`}
           >
             <Icon aria-hidden className="size-4" />
           </button>

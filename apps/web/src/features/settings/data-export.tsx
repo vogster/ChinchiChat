@@ -14,7 +14,7 @@ export const DataExport = () => {
       <a
         href={EXPORT_URL}
         download
-        className="inline-flex items-center gap-2 rounded-md bg-elevated px-3 py-2 text-sm font-medium hover:bg-hover"
+        className="inline-flex h-9 items-center gap-2 rounded-full bg-field px-4 text-[13px] font-medium transition-colors hover:bg-chip"
       >
         <Download aria-hidden className="size-4" />
         {t('settings.export.download')}

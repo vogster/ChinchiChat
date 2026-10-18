@@ -36,7 +36,7 @@ const MemberRow = ({ member, status, isOwner, color, guildId }: MemberRowProps) 
           .filter(Boolean)
           .join(', ')}
         side="left"
-        className="flex w-full items-center gap-2.5 rounded px-2 py-1.5 hover:bg-hover hover:no-underline"
+        className="flex w-full items-center gap-2.5 rounded px-2 py-1.5 hover:bg-chip hover:no-underline"
       >
         <span className="relative shrink-0">
           <Avatar
@@ -54,7 +54,7 @@ const MemberRow = ({ member, status, isOwner, color, guildId }: MemberRowProps) 
           {status === 'offline' ? null : <CustomStatusLine userId={member.user.id} />}
         </span>
         {isOwner ? (
-          <Crown aria-label={t('guild.owner')} className="size-4 shrink-0 text-yellow-500" />
+          <Crown aria-label={t('guild.owner')} className="size-4 shrink-0 text-warning-text" />
         ) : null}
       </ProfileTrigger>
     </li>
@@ -87,7 +87,7 @@ export const MembersPanel = ({
   return (
     <aside
       aria-label={heading}
-      className={`${narrowOpen ? 'fixed inset-y-0 right-0 z-40 flex shadow-xl' : 'hidden'} w-60 shrink-0 flex-col overflow-y-auto bg-sidebar p-3 lg:static lg:z-auto lg:flex lg:shadow-none`}
+      className={`${narrowOpen ? 'fixed inset-y-2.5 right-2.5 z-40 flex shadow-modal' : 'hidden'} w-[260px] shrink-0 flex-col overflow-y-auto rounded-panel bg-side p-3 xl:static xl:z-auto xl:flex xl:shadow-none`}
     >
       <h2 className="sr-only">{heading}</h2>
       {/* One flat list keyed by user: a member changing group moves their row instead of

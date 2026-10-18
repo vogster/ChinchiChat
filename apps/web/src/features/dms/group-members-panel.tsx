@@ -21,7 +21,7 @@ export const GroupMembersPanel = ({ channel, me }: { channel: PrivateChannel; me
   return (
     <aside
       aria-label={heading}
-      className="hidden w-60 shrink-0 flex-col overflow-y-auto bg-sidebar p-3 lg:flex"
+      className="hidden w-[260px] shrink-0 flex-col overflow-y-auto rounded-panel bg-side p-3 xl:flex"
     >
       <h2 className="px-2 pb-1 text-xs font-bold tracking-wide text-muted uppercase">
         {heading} — {people.length}
@@ -34,7 +34,7 @@ export const GroupMembersPanel = ({ channel, me }: { channel: PrivateChannel; me
             <li
               key={user.id}
               data-status={status}
-              className="group flex items-center gap-2.5 rounded px-2 py-1.5 hover:bg-hover data-[status=offline]:opacity-50"
+              className="group flex items-center gap-2.5 rounded px-2 py-1.5 hover:bg-chip data-[status=offline]:opacity-50"
             >
               <span className="relative shrink-0">
                 <Avatar name={name} src={user.avatarUrl} id={user.id} className="size-8 text-sm" />
@@ -47,7 +47,7 @@ export const GroupMembersPanel = ({ channel, me }: { channel: PrivateChannel; me
                 ) : null}
               </span>
               {user.id === channel.ownerId ? (
-                <Crown aria-label={t('dm.owner')} className="size-4 shrink-0 text-yellow-500" />
+                <Crown aria-label={t('dm.owner')} className="size-4 shrink-0 text-warning-text" />
               ) : null}
               {isOwner && user.id !== me.id ? (
                 <button

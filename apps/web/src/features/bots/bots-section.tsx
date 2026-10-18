@@ -87,7 +87,7 @@ const BotRow = ({ bot, onToken }: { bot: Bot; onToken: (token: string) => void }
           aria-label={t('bots.addTo', { name })}
           value=""
           onChange={(event) => event.target.value && add.mutate(event.target.value)}
-          className="rounded-md border border-border bg-rail px-2 py-1 text-sm"
+          className="rounded-md border border-line bg-rail px-2 py-1 text-sm"
         >
           <option value="">{t('bots.addToPlaceholder')}</option>
           {guilds.map((guild) => (
@@ -164,7 +164,7 @@ export const BotsSection = () => {
       {token ? <TokenBox token={token} /> : null}
       <SettingsCard>
         {bots.length === 0 ? <p className="text-sm text-muted">{t('bots.empty')}</p> : null}
-        <ul aria-label={t('bots.list')} className="flex flex-col divide-y divide-border">
+        <ul aria-label={t('bots.list')} className="flex flex-col divide-y divide-line">
           {bots.map((bot) => (
             <BotRow key={bot.user.id} bot={bot} onToken={setToken} />
           ))}

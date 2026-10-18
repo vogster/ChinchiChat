@@ -24,7 +24,7 @@ export const RolePermissionList = ({
   return (
     <div className="flex flex-col gap-4">
       {PERMISSION_GROUPS.map((group) => (
-        <fieldset key={group.key} className="flex flex-col divide-y divide-border">
+        <fieldset key={group.key} className="flex flex-col divide-y divide-line">
           <legend className="mb-1 text-xs font-bold tracking-wide text-muted uppercase">
             {t(`permissions.groups.${group.key}`)}
           </legend>

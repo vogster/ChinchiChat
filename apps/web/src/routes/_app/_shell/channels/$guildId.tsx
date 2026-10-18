@@ -1,13 +1,14 @@
 import { createFileRoute, Link, Outlet } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
 
+import { MainCard } from '../../../../components/layout/main-card'
 import { PageHeader } from '../../../../components/layout/page-header'
 import { guildQueryOptions } from '../../../../features/guilds/queries'
 
 const GuildNotFound = () => {
   const { t } = useTranslation()
   return (
-    <>
+    <MainCard>
       <PageHeader>{t('errors.UNKNOWN_GUILD')}</PageHeader>
       <div className="flex flex-1 flex-col items-center justify-center gap-4 p-8 text-center">
         <p className="text-muted">{t('guild.notFound')}</p>
@@ -18,7 +19,7 @@ const GuildNotFound = () => {
           {t('notFound.home')}
         </Link>
       </div>
-    </>
+    </MainCard>
   )
 }
 

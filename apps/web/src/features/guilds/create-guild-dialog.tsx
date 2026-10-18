@@ -8,7 +8,8 @@ import { Dialog } from '../../components/ui/dialog'
 import { TextField } from '../../components/ui/text-field'
 import { errorMessage } from '../../lib/errors'
 import { useCurrentUser } from '../auth/use-auth-actions'
-import { parseInviteCode } from './invite-link'
+import { guildInitials } from './initials'
+import { JoinGuildForm } from './join-guild-form'
 import { useAcceptInvite, useCreateGuild } from './use-guild-actions'
 
 export interface CreateGuildDialogProps {
@@ -16,14 +17,20 @@ export interface CreateGuildDialogProps {
   readonly onOpenChange: (open: boolean) => void
 }
 
+type Mode = 'create' | 'join'
+const MODES: readonly Mode[] = ['create', 'join']
+
+const segmentClass =
+  'h-9 flex-1 rounded-full text-[13px] font-medium text-muted transition-colors hover:text-text aria-selected:bg-chip aria-selected:text-text'
+
+/** Making a new server, or joining one by invite: two tabs of one window. */
 export const CreateGuildDialog = ({ open, onOpenChange }: CreateGuildDialogProps) => {
   const { t, i18n } = useTranslation()
   const user = useCurrentUser()
+  const [mode, setMode] = useState<Mode>('create')
   const [name, setName] = useState(() =>
     t('createGuild.defaultName', { username: user?.username ?? '' }),
   )
-  const [link, setLink] = useState('')
-  const [linkError, setLinkError] = useState<string | null>(null)
   const create = useCreateGuild()
   const join = useAcceptInvite()
 
@@ -32,14 +39,13 @@ export const CreateGuildDialog = ({ open, onOpenChange }: CreateGuildDialogProps
     if (!next) {
       create.reset()
       join.reset()
-      setLinkError(null)
     }
   }
 
   const trimmed = name.trim()
   const nameValid =
     trimmed.length >= GUILD_NAME_MIN_LENGTH && trimmed.length <= GUILD_NAME_MAX_LENGTH
-  const error = create.error ?? join.error
+  const error = mode === 'create' ? create.error : join.error
 
   return (
     <Dialog
@@ -49,55 +55,57 @@ export const CreateGuildDialog = ({ open, onOpenChange }: CreateGuildDialogProps
       description={t('createGuild.subtitle')}
     >
       <div className="flex flex-col gap-5">
+        <div role="tablist" className="flex gap-1 rounded-card bg-stage p-1">
+          {MODES.map((value) => (
+            <button
+              key={value}
+              type="button"
+              role="tab"
+              aria-selected={mode === value}
+              onClick={() => setMode(value)}
+              className={segmentClass}
+            >
+              {t(`createGuild.modes.${value}`)}
+            </button>
+          ))}
+        </div>
+
         {error ? <Alert tone="error">{errorMessage(t, error)}</Alert> : null}
 
-        <form
-          className="flex flex-col gap-3"
-          onSubmit={(event) => {
-            event.preventDefault()
-            if (!nameValid) return
-            const locale = i18n.resolvedLanguage === 'ru' ? 'ru' : 'en'
-            create.mutate({ name: trimmed, locale }, { onSuccess: () => close(false) })
-          }}
-        >
-          <TextField
-            label={t('createGuild.name')}
-            value={name}
-            maxLength={GUILD_NAME_MAX_LENGTH}
-            onChange={(event) => setName(event.target.value)}
-          />
-          <Button type="submit" pending={create.isPending} disabled={!nameValid}>
-            {t('createGuild.submit')}
-          </Button>
-        </form>
-
-        <hr className="border-border" />
-
-        <form
-          className="flex flex-col gap-3"
-          onSubmit={(event) => {
-            event.preventDefault()
-            const code = parseInviteCode(link)
-            if (!code) {
-              setLinkError(t('createGuild.invalidLink'))
-              return
-            }
-            setLinkError(null)
-            join.mutate(code, { onSuccess: () => close(false) })
-          }}
-        >
-          <h3 className="font-semibold">{t('createGuild.joinTitle')}</h3>
-          <TextField
-            label={t('createGuild.joinLabel')}
-            placeholder={t('createGuild.joinPlaceholder')}
-            value={link}
-            error={linkError ?? undefined}
-            onChange={(event) => setLink(event.target.value)}
-          />
-          <Button type="submit" variant="secondary" pending={join.isPending}>
-            {t('createGuild.join')}
-          </Button>
-        </form>
+        {mode === 'create' ? (
+          <form
+            role="tabpanel"
+            className="flex flex-col gap-4"
+            onSubmit={(event) => {
+              event.preventDefault()
+              if (!nameValid) return
+              const locale = i18n.resolvedLanguage === 'ru' ? 'ru' : 'en'
+              create.mutate({ name: trimmed, locale }, { onSuccess: () => close(false) })
+            }}
+          >
+            {/* The icon the server starts with: its initials, until a picture is uploaded. */}
+            <span
+              aria-hidden
+              data-testid="guild-icon-preview"
+              className="mx-auto grid size-[76px] place-items-center rounded-panel bg-accent text-2xl font-semibold text-accent-contrast"
+            >
+              {guildInitials(trimmed).toLocaleUpperCase() || '?'}
+            </span>
+            <TextField
+              label={t('createGuild.name')}
+              value={name}
+              maxLength={GUILD_NAME_MAX_LENGTH}
+              onChange={(event) => setName(event.target.value)}
+            />
+            <Button type="submit" pending={create.isPending} disabled={!nameValid}>
+              {t('createGuild.submit')}
+            </Button>
+          </form>
+        ) : (
+          <div role="tabpanel">
+            <JoinGuildForm join={join} onJoined={() => close(false)} />
+          </div>
+        )}
       </div>
     </Dialog>
   )

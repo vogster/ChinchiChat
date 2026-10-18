@@ -2,6 +2,7 @@ import { act, screen, waitFor, within } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 
 import { apiError, createFakeApi, testGuild, testMessage, testUser } from '../../test/fake-api'
+import { openMessageMenu } from '../../test/message-menu'
 import { renderApp } from '../../test/render-app'
 
 const CHANNEL_URL = `/channels/${testGuild.id}/503`
@@ -14,7 +15,9 @@ describe('pinning', () => {
     await screen.findByText('Как дела?')
 
     await user.hover(row('Как дела?'))
-    await user.click(within(row('Как дела?')).getByRole('button', { name: 'Закрепить' }))
+    await user.click(
+      within(await openMessageMenu(row('Как дела?'))).getByRole('menuitem', { name: 'Закрепить' }),
+    )
     await waitFor(() => expect(api.pins.pin).toHaveBeenCalledWith('503', '1002'))
 
     act(() =>
@@ -23,7 +26,9 @@ describe('pinning', () => {
     expect(await within(row('Как дела?')).findByLabelText('Закреплено')).toBeVisible()
 
     await user.hover(row('Как дела?'))
-    await user.click(within(row('Как дела?')).getByRole('button', { name: 'Открепить' }))
+    await user.click(
+      within(await openMessageMenu(row('Как дела?'))).getByRole('menuitem', { name: 'Открепить' }),
+    )
     await waitFor(() => expect(api.pins.unpin).toHaveBeenCalledWith('503', '1002'))
   })
 
@@ -34,7 +39,9 @@ describe('pinning', () => {
     await screen.findByText('Как дела?')
 
     await user.hover(row('Как дела?'))
-    await user.click(within(row('Как дела?')).getByRole('button', { name: 'Закрепить' }))
+    await user.click(
+      within(await openMessageMenu(row('Как дела?'))).getByRole('menuitem', { name: 'Закрепить' }),
+    )
 
     expect(
       await screen.findByText('В канале уже слишком много закреплённых сообщений.'),
@@ -63,10 +70,30 @@ describe('pins panel', () => {
     const panel = await screen.findByRole('dialog', { name: 'Закреплённые сообщения' })
     expect(await within(panel).findByText('Привет всем!')).toBeVisible()
 
-    await user.click(within(panel).getByRole('button', { name: 'Перейти' }))
+    await user.click(within(panel).getByRole('button', { name: 'Перейти к сообщению' }))
     expect(scroll.mock.contexts.at(-1)).toHaveAttribute('data-message-id', '1001')
     expect(document.querySelector('[data-message-id="1001"]')).toHaveFocus()
+    // The message lights up for a moment, so the eye finds it; the popover is gone.
+    expect(document.querySelector('[data-message-id="1001"]')).toHaveAttribute('data-flash')
+    expect(screen.queryByRole('dialog', { name: 'Закреплённые сообщения' })).toBeNull()
     scroll.mockRestore()
+  })
+
+  it('lets moderators unpin from the popover, which closes with Escape', async () => {
+    const api = createFakeApi({ user: testUser })
+    api.pins.list.mockResolvedValue({
+      messages: [testMessage('1001', { content: 'Привет всем!', pinned: true })],
+    })
+    const { user } = renderApp(CHANNEL_URL, { api })
+    await screen.findByText('Как дела?')
+
+    await user.click(screen.getByRole('button', { name: 'Закреплённые сообщения' }))
+    const panel = await screen.findByRole('dialog', { name: 'Закреплённые сообщения' })
+    await user.click(await within(panel).findByRole('button', { name: 'Открепить' }))
+    await waitFor(() => expect(api.pins.unpin).toHaveBeenCalledWith('503', '1001'))
+
+    await user.keyboard('{Escape}')
+    expect(screen.queryByRole('dialog', { name: 'Закреплённые сообщения' })).toBeNull()
   })
 
   it('keeps the panel open when the pinned message is not loaded', async () => {
@@ -79,7 +106,7 @@ describe('pins panel', () => {
 
     await user.click(screen.getByRole('button', { name: 'Закреплённые сообщения' }))
     const panel = await screen.findByRole('dialog', { name: 'Закреплённые сообщения' })
-    await user.click(await within(panel).findByRole('button', { name: 'Перейти' }))
+    await user.click(await within(panel).findByRole('button', { name: 'Перейти к сообщению' }))
 
     expect(
       within(panel).getByText('Это сообщение не загружено — прокрутите историю выше.'),

@@ -29,7 +29,7 @@ export const DmPolicyPicker = () => {
       {POLICIES.map((policy) => (
         <label
           key={policy}
-          className="flex cursor-pointer items-center gap-3 rounded-lg bg-sidebar px-4 py-3 hover:bg-hover has-[:checked]:outline-2 has-[:checked]:outline-accent"
+          className="flex cursor-pointer items-center gap-3 rounded-lg bg-side px-4 py-3 hover:bg-chip has-[:checked]:outline-2 has-[:checked]:outline-accent"
         >
           <input
             type="radio"

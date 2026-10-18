@@ -62,7 +62,7 @@ export const OverviewSection = ({ guild }: { guild: GuildDetail }) => {
 
       <SettingsCard title={t('guildSettings.icon')}>
         <div className="flex items-center gap-4">
-          <div className="flex size-20 shrink-0 items-center justify-center overflow-hidden rounded-3xl bg-elevated">
+          <div className="flex size-20 shrink-0 items-center justify-center overflow-hidden rounded-3xl bg-field">
             <GuildIcon
               id={guild.id}
               name={guild.name}
@@ -124,7 +124,7 @@ export const OverviewSection = ({ guild }: { guild: GuildDetail }) => {
             maxLength={GUILD_RULES_MAX_LENGTH}
             value={rulesText}
             onChange={(event) => setRulesText(event.target.value)}
-            className="resize-y rounded-md border border-border bg-rail px-3 py-2 text-text outline-none transition focus:border-accent"
+            className="resize-y rounded-md border border-line bg-rail px-3 py-2 text-text outline-none transition focus:border-accent"
           />
           <p className="text-xs text-muted">{t('rules.hint')}</p>
           <Button
@@ -155,7 +155,7 @@ export const OverviewSection = ({ guild }: { guild: GuildDetail }) => {
               id="new-owner"
               value={newOwner}
               onChange={(event) => setNewOwner(event.target.value)}
-              className="rounded-md border border-border bg-rail px-3 py-2"
+              className="rounded-md border border-line bg-rail px-3 py-2"
             >
               <option value="">{t('guildSettings.transferChoose')}</option>
               {candidates.map((member) => (

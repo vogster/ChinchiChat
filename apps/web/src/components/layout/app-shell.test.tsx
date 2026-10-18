@@ -1,7 +1,7 @@
 import { act, screen, waitFor, within } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 
-import { createFakeApi, testUser } from '../../test/fake-api'
+import { createFakeApi, testGuild, testUser } from '../../test/fake-api'
 import { renderApp } from '../../test/render-app'
 
 describe('app shell', () => {
@@ -64,6 +64,32 @@ describe('app shell', () => {
 
     await user.click(screen.getByRole('button', { name: 'Закрыть меню' }))
     expect(drawer).toHaveAttribute('data-open', 'false')
+  })
+})
+
+describe('phone list screen', () => {
+  it('switches between servers and chats from its tab bar, staying on the list', async () => {
+    const { user, router } = renderApp('/', { user: testUser })
+    await user.click(await screen.findByRole('button', { name: 'Открыть меню' }))
+    const drawer = screen.getByTestId('navigation-drawer')
+    const tabs = within(drawer).getByRole('navigation', { name: 'Разделы' })
+
+    await user.click(within(tabs).getByRole('button', { name: 'Серверы' }))
+    await waitFor(() =>
+      expect(router.state.location.pathname.startsWith(`/channels/${testGuild.id}`)).toBe(true),
+    )
+    expect(drawer).toHaveAttribute('data-open', 'true')
+    expect(within(tabs).getByRole('button', { name: 'Серверы' })).toHaveAttribute(
+      'aria-current',
+      'page',
+    )
+
+    await user.click(within(tabs).getByRole('button', { name: 'Чаты' }))
+    await waitFor(() => expect(router.state.location.pathname).toBe('/'))
+    expect(drawer).toHaveAttribute('data-open', 'true')
+
+    await user.click(within(tabs).getByRole('button', { name: 'Профиль' }))
+    expect(await screen.findByRole('dialog', { name: 'Настройки пользователя' })).toBeVisible()
   })
 })
 

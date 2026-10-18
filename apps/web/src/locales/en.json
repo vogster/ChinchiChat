@@ -9,7 +9,8 @@
     "backToLogin": "Back to sign in",
     "language": "Language",
     "cancel": "Cancel",
-    "close": "Close"
+    "close": "Close",
+    "more": "More"
   },
   "nav": {
     "servers": "Servers",
@@ -18,7 +19,11 @@
     "openMenu": "Open menu",
     "closeMenu": "Close menu",
     "dmUnread_one": "{{count}} unread direct message",
-    "dmUnread_other": "{{count}} unread direct messages"
+    "dmUnread_other": "{{count}} unread direct messages",
+    "sections": "Sections",
+    "tabServers": "Servers",
+    "tabChats": "Chats",
+    "tabProfile": "Profile"
   },
   "dm": {
     "title": "Direct messages",
@@ -52,7 +57,12 @@
     "remove": "Remove",
     "blocked": "You blocked this user. Unblock them to send a message.",
     "notFound": "Conversation not found",
-    "listLabel": "Conversation with {{name}}"
+    "listLabel": "Conversation with {{name}}",
+    "heading": "Messages",
+    "search": "Find a conversation",
+    "searchEmpty": "Nothing found",
+    "groupSize_one": "{{count}} member",
+    "groupSize_other": "{{count}} members"
   },
   "userPanel": {
     "label": "Current user",
@@ -106,9 +116,9 @@
       "pending": "Verifying your email…",
       "done": "Your email is verified. Thank you!",
       "continue": "Continue to Chinchi",
-      "banner": "Please verify your email — we sent a message to {{email}}.",
+      "banner": "Confirm your email — we sent a message to <strong>{{email}}</strong>.",
       "resend": "Resend",
-      "resent": "Email sent"
+      "resentCooldown": "Sent · {{seconds}} s"
     },
     "mfa": {
       "prompt": "Enter the code from your authenticator app or one of your recovery codes.",
@@ -262,7 +272,8 @@
       "confirmPassword": "Confirm new password",
       "mismatch": "Passwords do not match",
       "changePassword": "Change password",
-      "passwordChanged": "Password changed. You've been signed out on other devices."
+      "passwordChanged": "Password changed. You've been signed out on other devices.",
+      "credentials": "Credentials"
     },
     "profile": {
       "title": "Profile",
@@ -351,11 +362,22 @@
     },
     "appearance": {
       "title": "Appearance",
-      "subtitle": "The theme is remembered in this browser.",
+      "subtitle": "The theme, palette and density are remembered in this browser.",
       "theme": "Theme",
       "system": "Match the system",
       "dark": "Dark",
-      "light": "Light"
+      "light": "Light",
+      "palette": "Palette",
+      "palettes": {
+        "chinchilla": "Chinchilla",
+        "neon": "Neon",
+        "plum": "Plum"
+      },
+      "density": "Message density",
+      "densities": {
+        "cozy": "Cozy",
+        "compact": "Compact"
+      }
     },
     "export": {
       "title": "Your data",
@@ -395,6 +417,11 @@
         "change": "Change server"
       },
       "version": "App version {{version}}"
+    },
+    "groups": {
+      "account": "Account",
+      "app": "App",
+      "developers": "For developers"
     }
   },
   "guild": {
@@ -416,7 +443,9 @@
     "welcomeTitle": "Welcome to #{{name}}!",
     "welcomeText": "This is the start of the #{{name}} channel.",
     "messagesSoon": "Messages arrive in the next development phase.",
-    "markRead": "Mark as read"
+    "markRead": "Mark as read",
+    "onlineSummary_one": "{{online}} online · {{count}} member",
+    "onlineSummary_other": "{{online}} online · {{count}} members"
   },
   "createGuild": {
     "title": "Create your server",
@@ -424,11 +453,15 @@
     "name": "Server name",
     "defaultName": "{{username}}'s server",
     "submit": "Create",
-    "joinTitle": "Have an invite already?",
     "joinLabel": "Invite link",
     "joinPlaceholder": "https://chinchi.example/invite/AbCd1234",
     "join": "Join server",
-    "invalidLink": "Paste an invite link or its code."
+    "invalidLink": "Paste an invite link or its code.",
+    "modes": {
+      "create": "Create",
+      "join": "With an invite"
+    },
+    "notFound": "The invite was not found or no longer works."
   },
   "createChannel": {
     "title": "Create channel",
@@ -570,7 +603,14 @@
       "leave": "{{actor}} left the group",
       "rename": "{{actor}} renamed the group: “{{name}}”",
       "renameCleared": "{{actor}} removed the group name"
-    }
+    },
+    "addToMessage": "Add to the message",
+    "attachMenu": "File or photo",
+    "attachUpTo": "Up to {{size}}",
+    "sendMessage": "Send the message",
+    "send": "Send",
+    "jumpToMessage": "Go to the message",
+    "copyText": "Copy text"
   },
   "presence": {
     "online": "Online",
@@ -862,13 +902,20 @@
       "sent": "Request sent: {{name}}"
     },
     "incomingCount_one": "{{count}} friend request",
-    "incomingCount_other": "{{count}} friend requests"
+    "incomingCount_other": "{{count}} friend requests",
+    "secret": "Secret chat",
+    "call": "Call",
+    "more": "More — {{name}}",
+    "search": "Search friends",
+    "searchEmpty": "Nobody found",
+    "layoutGrid": "As cards",
+    "layoutList": "As a list"
   },
   "voice": {
     "channelLabel": "Voice channel {{name}}",
     "disabled": "Voice is not set up on this Chinchi server",
     "panelLabel": "Voice connection",
-    "connected": "Voice connected",
+    "connected": "In voice",
     "encrypted": "Call encrypted",
     "connecting": "Connecting…",
     "leave": "Disconnect",
@@ -889,7 +936,6 @@
     "stream": "sharing screen",
     "membersIn": "In {{name}}",
     "stage": "Call participants",
-    "empty": "Nobody is here yet",
     "join": "Join",
     "actions": "Actions",
     "serverMute": "Server mute",
@@ -903,7 +949,30 @@
     "decline": "Decline",
     "call": "Call",
     "joinCall": "Join the call",
-    "moveTo": "Move to “{{channel}}”"
+    "moveTo": "Move to “{{channel}}”",
+    "countEmpty": "empty",
+    "countIn_one": "{{count}} inside",
+    "countIn_other": "{{count}} inside",
+    "foldMembers": "Fold the people in {{name}}",
+    "unfoldMembers": "Show the people in {{name}}",
+    "silent": "silent",
+    "dock": "Call controls",
+    "dockMic": "Microphone",
+    "dockCamera": "Camera",
+    "dockScreen": "Share screen",
+    "dockSound": "Sound",
+    "callGoing": "A call is on",
+    "callLive": "Call · {{time}}",
+    "endToEnd": "End-to-end encrypted",
+    "expand": "Full screen",
+    "shrink": "Shrink the call",
+    "callBlock": "Call",
+    "dialing": "Calling…",
+    "emptyTitle": "It's quiet here",
+    "emptyHint": "Be the first in — friends will see you're here.",
+    "inChannelCount_one": "Inside: {{count}}",
+    "inChannelCount_other": "Inside: {{count}}",
+    "nobody": "Nobody here"
   },
   "profile": {
     "label": "Profile: {{name}}",
@@ -1130,7 +1199,12 @@
     "closeList": "Close the thread list",
     "none": "No threads yet. Start one from any message.",
     "openFull": "Open the whole thread",
-    "close": "Close the thread"
+    "close": "Close the thread",
+    "fold": "Fold threads of #{{name}}",
+    "unfold": "Show threads of #{{name}} ({{count}})",
+    "meta": "{{size}} · last at {{time}}",
+    "new": "new",
+    "metaLong": "{{size}} · last {{time}}"
   },
   "emojis": {
     "title": "Emoji",
@@ -1238,7 +1312,8 @@
     "friendRequest": {
       "title": "Friend request",
       "body": "{{name}} wants to be your friend"
-    }
+    },
+    "popoverTitle": "Notifications"
   },
   "unread": {
     "count_one": "{{count}} new message",
@@ -1361,7 +1436,8 @@
       "mismatchHint": "The server named an author other than the one who signed this message. The real sender is shown.",
       "unverified": "sender not verified",
       "unverifiedHint": "Sent just before the conversation keys changed; the signer was not checked against the author."
-    }
+    },
+    "listSubtitle": "Encrypted conversation"
   },
   "polls": {
     "label": "Poll: {{question}}",
@@ -1379,7 +1455,7 @@
     "leftDays_other": "{{count}} days left",
     "vote": "Vote",
     "change": "Change vote",
-    "unvote": "Remove vote",
+    "unvote": "Take back the vote",
     "end": "End poll",
     "create": "Create poll",
     "createTitle": "New poll",
@@ -1398,7 +1474,14 @@
       "24": "1 day",
       "72": "3 days",
       "168": "1 week"
-    }
+    },
+    "menu": "Poll",
+    "menuHint": "A question with answers to pick",
+    "kindOne": "Poll · one answer",
+    "kindSeveral": "Poll · several answers",
+    "youVoted": "you voted",
+    "voteFor": "Vote for “{{answer}}”",
+    "answers": "Answers"
   },
   "forward": {
     "action": "Forward",

@@ -17,7 +17,7 @@ export const TextField = ({ label, error, id, className = '', ...props }: TextFi
     <div className="flex flex-col gap-1.5">
       <label
         htmlFor={inputId}
-        className={`text-xs font-bold tracking-wide uppercase ${error ? 'text-red-400' : 'text-muted'}`}
+        className={`px-1.5 text-[12.5px] font-medium ${error ? 'text-danger' : 'text-faint'}`}
       >
         {label}
       </label>
@@ -25,11 +25,11 @@ export const TextField = ({ label, error, id, className = '', ...props }: TextFi
         id={inputId}
         aria-invalid={error ? true : undefined}
         aria-describedby={error ? errorId : undefined}
-        className={`rounded-md border bg-rail px-3 py-2 text-text outline-none transition focus:border-accent ${error ? 'border-red-500' : 'border-border'} ${className}`}
+        className={`h-11 rounded-field bg-field px-3.5 text-text outline-none transition placeholder:text-faint focus:ring-2 ${error ? 'ring-2 ring-danger' : 'focus:ring-accent'} ${className}`}
         {...props}
       />
       {error ? (
-        <p id={errorId} className="text-xs text-red-400">
+        <p id={errorId} className="px-1.5 text-xs text-danger">
           {error}
         </p>
       ) : null}

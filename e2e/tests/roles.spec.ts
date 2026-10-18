@@ -28,7 +28,7 @@ test('a private channel appears for a member once they get the role', async ({ b
   await editor.getByRole('button', { name: '#e74c3c' }).click()
   await editor.getByRole('button', { name: 'Сохранить изменения' }).click()
   await expect(owner.getByText('Изменения сохранены')).toBeVisible()
-  await owner.getByRole('link', { name: 'Закрыть настройки сервера' }).click()
+  await owner.getByRole('button', { name: 'Закрыть настройки сервера' }).click()
 
   // Owner creates a channel and hides it from everyone except that role.
   await owner.getByRole('button', { name: 'Создать канал в категории Текстовые каналы' }).click()

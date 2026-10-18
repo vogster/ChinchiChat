@@ -52,7 +52,7 @@ const AutomodForm = ({ guildId, settings }: { guildId: Snowflake; settings: Auto
           rows={6}
           value={words}
           onChange={(event) => setWords(event.target.value)}
-          className="resize-y rounded-md border border-border bg-rail px-3 py-2 outline-none focus:border-accent"
+          className="resize-y rounded-md border border-line bg-rail px-3 py-2 outline-none focus:border-accent"
         />
         <p className="text-xs text-muted">{t('automod.wordsHint')}</p>
       </div>
@@ -83,7 +83,7 @@ const AutomodForm = ({ guildId, settings }: { guildId: Snowflake; settings: Auto
           value={maxMentions}
           placeholder={t('automod.noLimit')}
           onChange={(event) => setMaxMentions(event.target.value)}
-          className="w-40 rounded-md border border-border bg-rail px-3 py-2"
+          className="w-40 rounded-md border border-line bg-rail px-3 py-2"
         />
       </div>
       <p className="text-xs text-muted">{t('automod.moderatorsExempt')}</p>

@@ -47,7 +47,7 @@ const MemberRow = ({ member, roles, canManage, onAdd, onRemove }: MemberRowProps
           {held.map((role) => (
             <li
               key={role.id}
-              className="flex items-center gap-1 rounded-full border border-border px-2 py-0.5 text-sm"
+              className="flex items-center gap-1 rounded-full border border-line px-2 py-0.5 text-sm"
             >
               <span
                 aria-hidden
@@ -73,7 +73,7 @@ const MemberRow = ({ member, roles, canManage, onAdd, onRemove }: MemberRowProps
             aria-label={t('serverSettings.members.addRoleFor', { name })}
             value=""
             onChange={(event) => event.target.value && onAdd(event.target.value)}
-            className="rounded-md border border-border bg-rail px-2 py-1 text-sm"
+            className="rounded-md border border-line bg-rail px-2 py-1 text-sm"
           >
             <option value="">{t('serverSettings.members.addRole')}</option>
             {addable.map((role) => (
@@ -103,7 +103,7 @@ export const MembersSection = ({ guild }: { guild: GuildDetail }) => {
     <SettingsSection title={t('serverSettings.members.title')}>
       {error ? <Alert tone="error">{errorMessage(t, error)}</Alert> : null}
       <SettingsCard>
-        <ul className="flex flex-col divide-y divide-border">
+        <ul className="flex flex-col divide-y divide-line">
           {members.map((member) => (
             <MemberRow
               key={member.user.id}

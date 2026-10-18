@@ -70,7 +70,7 @@ describe('joining voice', () => {
         preferences: expect.objectContaining({ noiseSuppression: true }),
       }),
     )
-    expect(await panel()).toHaveTextContent('Голос подключён')
+    expect(await panel()).toHaveTextContent('В голосовом')
     expect(await panel()).toHaveTextContent('Общий')
     expect(router.state.location.pathname).toBe(`/channels/${testGuild.id}/${VOICE_ID}`)
   })
@@ -92,7 +92,7 @@ describe('joining voice', () => {
 
     await joinFromSidebar(user)
 
-    expect(await panel()).toHaveTextContent('Голос подключён')
+    expect(await panel()).toHaveTextContent('В голосовом')
     expect(await screen.findByRole('alert')).toHaveTextContent('Нет доступа к микрофону')
     expect(screen.getByRole('button', { name: 'Включить микрофон' })).toBeVisible()
     expect(api.voice.updateState).toHaveBeenCalledWith({ selfMute: true, selfDeaf: false })
@@ -196,14 +196,17 @@ describe('in a voice channel', () => {
   it('turns the camera and screen share on and off', async () => {
     const { user, voice } = renderApp(GENERAL_URL, { api: withVoice() })
     await joinFromSidebar(user)
-    const controls = await panel()
+    const controls = await screen.findByRole('region', { name: 'Управление звонком' })
+    const camera = await within(controls).findByRole('button', { name: 'Камера' })
+    await waitFor(() => expect(camera).toBeEnabled())
 
-    await user.click(within(controls).getByRole('button', { name: 'Включить камеру' }))
+    await user.click(camera)
     expect(voice.room.setCamera).toHaveBeenCalledWith(true)
-    await user.click(await within(controls).findByRole('button', { name: 'Выключить камеру' }))
+    await waitFor(() => expect(camera).toHaveAttribute('aria-pressed', 'true'))
+    await user.click(camera)
     expect(voice.room.setCamera).toHaveBeenLastCalledWith(false)
 
-    await user.click(within(controls).getByRole('button', { name: 'Показать экран' }))
+    await user.click(within(controls).getByRole('button', { name: 'Демонстрация экрана' }))
     expect(voice.room.setScreenShare).toHaveBeenCalledWith(true)
   })
 
@@ -222,6 +225,30 @@ describe('in a voice channel', () => {
   })
 })
 
+describe('in-voice bar', () => {
+  it('turns the camera and screen on from any page, not only the call', async () => {
+    const { user, voice, router } = renderApp(GENERAL_URL, { api: withVoice() })
+    await joinFromSidebar(user)
+    const bar = await panel()
+    await router.navigate({ to: GENERAL_URL })
+
+    await user.click(await within(bar).findByRole('button', { name: 'Включить камеру' }))
+    expect(voice.room.setCamera).toHaveBeenCalledWith(true)
+    await user.click(within(bar).getByRole('button', { name: 'Показать экран' }))
+    expect(voice.room.setScreenShare).toHaveBeenCalledWith(true)
+  })
+
+  it('marks a member muted by a moderator apart from one who muted themselves', async () => {
+    const { user, gateway } = renderApp(GENERAL_URL, { api: withVoice() })
+    await screen.findByRole('button', { name: 'Голосовой канал Общий' })
+    gateway.emit('VOICE_STATE_UPDATE', state('200', { serverMute: true }))
+
+    await user.click(await screen.findByRole('button', { name: 'Показать участников Общий' }))
+    const bob = await screen.findByRole('listitem', { name: /^Боб/ })
+    expect(within(bob).getByTitle('микрофон выключен модератором')).toBeInTheDocument()
+  })
+})
+
 describe('voice moderation', () => {
   it('lets moderators server-mute, deafen and disconnect people', async () => {
     const api = withVoice()
@@ -229,6 +256,7 @@ describe('voice moderation', () => {
     await screen.findByRole('button', { name: 'Голосовой канал Общий' })
     gateway.emit('VOICE_STATE_UPDATE', state('200', { serverMute: true }))
 
+    await user.click(await screen.findByRole('button', { name: 'Показать участников Общий' }))
     await user.click(await screen.findByRole('button', { name: 'Действия — Боб' }))
     await user.click(await screen.findByRole('menuitem', { name: 'Включить микрофон на сервере' }))
     expect(api.voice.moderate).toHaveBeenLastCalledWith(testGuild.id, '200', { mute: false })
@@ -260,6 +288,7 @@ describe('voice moderation', () => {
     await screen.findByRole('button', { name: 'Голосовой канал Общий' })
     gateway.emit('VOICE_STATE_UPDATE', state('200'))
 
+    await user.click(await screen.findByRole('button', { name: 'Показать участников Общий' }))
     await user.click(await screen.findByRole('button', { name: 'Действия — Боб' }))
     expect(screen.queryByRole('menuitem', { name: 'Переместить в «Общий»' })).toBeNull()
     await user.click(await screen.findByRole('menuitem', { name: 'Переместить в «Тихий»' }))
@@ -274,7 +303,7 @@ describe('being moved', () => {
     api.guilds.get.mockResolvedValue({ guild: withSecondVoice() })
     const { user, gateway } = renderApp(GENERAL_URL, { api })
     await joinFromSidebar(user)
-    expect(await panel()).toHaveTextContent('Голос подключён')
+    expect(await panel()).toHaveTextContent('В голосовом')
 
     gateway.emit('VOICE_MOVE', { guildId: testGuild.id, channelId: SECOND_VOICE_ID })
 

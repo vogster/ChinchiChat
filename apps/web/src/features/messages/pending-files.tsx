@@ -15,16 +15,21 @@ export const PendingFilesList = ({ files, onRemove }: PendingFilesListProps) => 
   const { t, i18n } = useTranslation()
   if (files.length === 0) return null
   return (
-    <ul aria-label={t('messages.pendingFiles')} className="flex flex-wrap gap-2 px-4 pt-2">
+    <ul aria-label={t('messages.pendingFiles')} className="flex flex-wrap gap-2 px-4 pt-2 pb-1">
       {files.map(({ id, file }) => (
         <li
           key={id}
-          className="flex max-w-56 items-center gap-2 rounded-md border border-border bg-elevated px-2 py-1.5 text-sm"
+          className="flex max-w-60 items-center gap-2.5 rounded-[18px] bg-field py-1.5 pr-1.5 pl-1.5 text-sm"
         >
-          <FileText aria-hidden className="size-4 shrink-0 text-muted" />
+          <span
+            aria-hidden
+            className="grid size-9 shrink-0 place-items-center rounded-xl bg-accent-soft text-accent-text"
+          >
+            <FileText className="size-4" />
+          </span>
           <span className="min-w-0">
             <span className="block truncate">{file.name}</span>
-            <span className="block text-xs text-muted">
+            <span className="block text-xs text-faint">
               {formatFileSize(file.size, i18n.language)}
             </span>
           </span>
@@ -32,7 +37,7 @@ export const PendingFilesList = ({ files, onRemove }: PendingFilesListProps) => 
             type="button"
             aria-label={t('messages.removeFile', { name: file.name })}
             onClick={() => onRemove(id)}
-            className="rounded p-0.5 text-muted hover:text-text"
+            className="grid size-7 shrink-0 place-items-center rounded-full text-muted hover:bg-stage hover:text-text"
           >
             <X aria-hidden className="size-4" />
           </button>

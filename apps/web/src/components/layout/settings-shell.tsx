@@ -5,7 +5,7 @@ import { useEffect } from 'react'
 import type { ReactNode } from 'react'
 
 export const settingsNavItemClass =
-  'shrink-0 rounded px-2.5 py-1.5 text-sm text-muted hover:bg-hover hover:text-text data-[status=active]:bg-hover data-[status=active]:text-text'
+  'flex h-[38px] shrink-0 items-center rounded-field px-3 text-[13.5px] font-medium text-muted transition-colors hover:bg-field hover:text-text data-[status=active]:bg-accent-soft data-[status=active]:text-accent-text max-md:rounded-full max-md:bg-field'
 
 export interface SettingsShellProps {
   readonly title: string
@@ -41,7 +41,7 @@ export const SettingsShell = ({
 
   return (
     <div className="flex h-full flex-col bg-main md:flex-row">
-      <aside className="shrink-0 bg-sidebar md:flex md:w-64 md:justify-end md:py-14 md:pr-2">
+      <aside className="shrink-0 bg-side md:flex md:w-64 md:justify-end md:py-14 md:pr-2">
         <nav aria-label={title} className="flex flex-col md:w-48">
           <p className="hidden truncate px-2.5 pb-1 text-xs font-bold tracking-wide text-muted uppercase md:block">
             {title}

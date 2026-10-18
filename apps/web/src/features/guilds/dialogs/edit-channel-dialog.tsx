@@ -50,7 +50,7 @@ export const EditChannelDialog = ({
       size={tab === 'permissions' ? 'lg' : 'md'}
     >
       {tabs.length > 1 ? (
-        <div role="tablist" className="mb-4 flex gap-1 border-b border-border">
+        <div role="tablist" className="mb-4 flex gap-1 border-b border-line">
           {tabs.map((key) => (
             <button
               key={key}

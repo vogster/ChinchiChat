@@ -6,7 +6,7 @@ export const BetaBadge = () => {
   return (
     <span
       title={t('e2ee.betaHint')}
-      className="shrink-0 rounded bg-mention/15 px-1 py-px text-[10px] leading-tight font-semibold tracking-wide text-mention uppercase"
+      className="flex h-5 shrink-0 items-center rounded-[7px] bg-warning-soft px-[7px] text-[10.5px] font-semibold tracking-wide text-warning-text uppercase"
     >
       {t('e2ee.beta')}
     </span>

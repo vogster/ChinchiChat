@@ -66,11 +66,9 @@ if (!process.env.ONLY_WIKI) {
   await server(anna).click()
   await channel(anna, 'общий').click()
   await anna.getByText('Куда идём в пятницу?').first().waitFor()
-  const vote = anna.getByRole('button', { name: 'Проголосовать' })
-  if (await vote.isVisible()) {
-    await anna.getByRole('radio', { name: 'Настолки' }).check()
-    await vote.click()
-  }
+  // A single-choice poll votes on a click; once voted, the answer shows as a result instead.
+  const vote = anna.getByRole('button', { name: 'Настолки', exact: true })
+  if (await vote.isVisible()) await vote.click()
   const markRead = anna.getByRole('button', { name: 'Отметить прочитанным' })
   if (await markRead.isVisible()) await markRead.click()
   await shot(anna, 'chat')
@@ -86,7 +84,7 @@ if (!process.env.ONLY_WIKI) {
   for (const page of [anna, boris, vika]) {
     await server(page).click()
     await page.getByRole('button', { name: 'Голосовой канал Общий' }).click()
-    await page.getByText('Голос подключён').waitFor({ timeout: 15_000 })
+    await page.getByText('В голосовом').waitFor({ timeout: 15_000 })
   }
   await anna.waitForTimeout(2500)
   await shot(anna, 'voice')
@@ -129,15 +127,28 @@ if (!process.env.ONLY_WIKI) {
       await page.screenshot({ path: join(tmpdir(), 'chinchi-demo', 'failed.png') })
       throw error
     })
+    // Again on a rerun: the message from the last run, not a second copy.
+    await page.waitForTimeout(1500)
+    if ((await page.getByText(text).count()) > 0) return
     await box.fill(text)
     await page.keyboard.press('Enter')
     await page.getByText(text).first().waitFor({ timeout: 15_000 })
+  }
+  /** Notices that are not what the picture is about: a device to confirm, a history hint. */
+  const tidy = async (page) => {
+    for (const name of ['Понятно', 'Скрыть подсказку']) {
+      await page
+        .getByRole('button', { name, exact: true })
+        .click({ timeout: 2000 })
+        .catch(() => undefined)
+    }
   }
   await write(anna, 'Привет! Пароль от тестового стенда скину сюда, тут сквозное шифрование 🔒')
   await write(vika, 'Отлично, жду. Сервер этого всё равно не прочитает 😉')
   await anna.goto(`${WEB}/channels/@me/${dm}`)
   await later(anna)
   await anna.getByText('Сервер этого всё равно не прочитает').first().waitFor({ timeout: 30_000 })
+  await tidy(anna)
   await shot(anna, 'encrypted')
 
   // 5. Server settings: roles.

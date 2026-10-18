@@ -1,5 +1,5 @@
 import { isInlineImage } from '@chinchi/shared'
-import { FileText } from 'lucide-react'
+import { Download, FileText } from 'lucide-react'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
@@ -11,6 +11,12 @@ import type { Attachment } from '@chinchi/shared'
 /** Images show at most this big in the feed; the viewer shows the original. */
 const MAX_WIDTH = 400
 const MAX_HEIGHT = 300
+
+/** "PDF" from "report.pdf"; nothing for a name without an extension. */
+const extensionOf = (filename: string) => {
+  const dot = filename.lastIndexOf('.')
+  return dot > 0 && dot < filename.length - 1 ? filename.slice(dot + 1).toUpperCase() : null
+}
 
 /** Display size that fits the box, so the feed does not jump when the image loads. */
 const fit = (width: number | null, height: number | null) => {
@@ -26,7 +32,7 @@ export const AttachmentList = ({ attachments }: { attachments: readonly Attachme
   if (attachments.length === 0) return null
 
   return (
-    <ul className="mt-1 flex flex-col items-start gap-1.5">
+    <ul className="flex max-w-full flex-col items-start gap-1.5">
       {attachments.map((attachment) => (
         <li key={attachment.id}>
           {isInlineImage(attachment.contentType) ? (
@@ -34,9 +40,10 @@ export const AttachmentList = ({ attachments }: { attachments: readonly Attachme
               type="button"
               aria-label={t('messages.openImage', { name: attachment.filename })}
               onClick={() => setViewing(attachment)}
-              className="block overflow-hidden rounded-md bg-elevated"
+              className="block overflow-hidden rounded-[20px] bg-field"
             >
               <img
+                data-native-menu
                 src={attachment.previewUrl ?? attachment.url}
                 alt={attachment.filename}
                 loading="lazy"
@@ -49,14 +56,30 @@ export const AttachmentList = ({ attachments }: { attachments: readonly Attachme
               href={attachment.url}
               download={attachment.filename}
               aria-label={`${attachment.filename} (${formatFileSize(attachment.size, i18n.language)})`}
-              className="flex max-w-sm items-center gap-3 rounded-md border border-border bg-elevated px-3 py-2 hover:bg-hover"
+              className="group/file flex w-[min(340px,100%)] items-center gap-3 rounded-[18px] bg-field p-2.5 transition hover:brightness-105"
             >
-              <FileText aria-hidden className="size-8 shrink-0 text-muted" />
-              <span className="min-w-0">
-                <span className="block truncate text-accent">{attachment.filename}</span>
-                <span className="block text-xs text-muted">
-                  {formatFileSize(attachment.size, i18n.language)}
+              <span
+                aria-hidden
+                className="grid size-[42px] shrink-0 place-items-center rounded-field bg-accent-soft text-accent-text"
+              >
+                <FileText className="size-5" />
+              </span>
+              <span className="min-w-0 flex-1">
+                <span className="block truncate font-medium">{attachment.filename}</span>
+                <span className="block text-xs text-faint">
+                  {[
+                    formatFileSize(attachment.size, i18n.language),
+                    extensionOf(attachment.filename),
+                  ]
+                    .filter(Boolean)
+                    .join(' · ')}
                 </span>
+              </span>
+              <span
+                aria-hidden
+                className="grid size-9 shrink-0 place-items-center rounded-full bg-stage text-muted group-hover/file:text-text"
+              >
+                <Download className="size-4" />
               </span>
             </a>
           )}

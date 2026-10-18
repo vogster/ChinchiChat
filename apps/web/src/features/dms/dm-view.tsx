@@ -1,6 +1,5 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import {
-  AtSign,
   Bell,
   Lock,
   LogOut,
@@ -14,9 +13,9 @@ import {
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
-import { PageHeader } from '../../components/layout/page-header'
+import { MainCard } from '../../components/layout/main-card'
+import { headerButtonClass, PageHeader, PageTitle } from '../../components/layout/page-header'
 import { Alert } from '../../components/ui/alert'
-import { Button } from '../../components/ui/button'
 import { useApi } from '../../lib/api-context'
 import { useCurrentUser } from '../auth/use-auth-actions'
 import { BetaBadge } from '../e2ee/beta-badge'
@@ -45,9 +44,10 @@ import {
   useTypingNotifier,
 } from '../messages/use-messages'
 import { usePendingFiles } from '../messages/use-pending-files'
-import { NotificationSettingsDialog } from '../notifications/notification-settings-dialog'
+import { usePresence } from '../messages/use-presence'
+import { NotificationSettingsPopover } from '../notifications/notification-settings-dialog'
 import { SearchBox } from '../search/search-box'
-import { CallStage } from '../voice/call-stage'
+import { DmCall } from '../voice/dm-call'
 import { statesInChannel, useVoiceStates } from '../voice/queries'
 import { useVoiceEnabled } from '../voice/use-voice-people'
 import { useVoice } from '../voice/voice-context'
@@ -64,7 +64,7 @@ const newNonce = () => crypto.randomUUID()
 
 type OpenDialog = 'rename' | 'add' | 'leave' | null
 
-const headerButton = 'rounded p-1.5 text-muted hover:text-text'
+const headerButton = headerButtonClass
 
 /** A 1:1 or group DM: the server channel view without roles, pins or moderation. */
 export const DmView = ({ channel }: { channel: PrivateChannel }) => {
@@ -93,12 +93,16 @@ export const DmView = ({ channel }: { channel: PrivateChannel }) => {
   const encryption = useEncryptedChannel(channel, me?.id)
   const encrypted = useEncryptedConversation(encryption)
   const safety = useSafety(encryption, encrypted.state === 'ready')
+  const allVerified =
+    (safety.status?.people.length ?? 0) > 0 &&
+    (safety.status?.people.every((person) => person.verified) ?? false)
   const keysReady = encrypted.state === 'ready' || encrypted.state === 'waiting'
   const canAttach = pending.enabled
 
   const isGroup = channel.type === 'group_dm'
   const name = privateChannelName(t, channel)
   const [other] = channel.recipients
+  const otherStatus = usePresence(other?.id)
   // Only a block you made is known here; the server answers anything else.
   const blocked =
     !isGroup &&
@@ -148,129 +152,146 @@ export const DmView = ({ channel }: { channel: PrivateChannel }) => {
   }
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col">
-      <PageHeader>
-        {isGroup ? (
-          <Users aria-hidden className="size-5 shrink-0 text-muted" />
-        ) : (
-          <AtSign aria-hidden className="size-5 shrink-0 text-muted" />
-        )}
-        <h1 className="truncate">{name}</h1>
-        {encryption ? (
-          // Green: at a glance, this conversation is end-to-end encrypted.
-          <span className="flex shrink-0 items-center gap-1 rounded border border-secure/60 bg-secure/10 px-1.5 py-0.5 text-xs font-medium text-secure">
-            <Lock aria-hidden className="size-3" />
-            {t('e2ee.badge')}
-          </span>
-        ) : null}
-        {encryption ? <BetaBadge /> : null}
-        {encryption ? (
-          <>
-            {/* Narrow screens: the field opens from this button, as in server channels. */}
-            <button
-              type="button"
-              aria-label={t('search.open')}
-              aria-pressed={searchOpen}
-              onClick={() => setSearchOpen((value) => !value)}
-              className="ml-auto rounded p-1.5 text-muted hover:text-text aria-pressed:text-text lg:hidden"
-            >
-              <Search aria-hidden className="size-5" />
-            </button>
-            <SearchBox className="lg:ml-auto" onSearch={setSearch} open={searchOpen} />
-          </>
-        ) : null}
-        <span className={`${encryption ? '' : 'ml-auto '}flex gap-1`}>
-          {encryption ? <MissingHistoryButton ready={keysReady} className={headerButton} /> : null}
+    <>
+      <MainCard>
+        <PageHeader>
+          <PageTitle
+            glyph={
+              encryption ? (
+                <Lock className="size-5" />
+              ) : isGroup ? (
+                <Users className="size-5" />
+              ) : (
+                '@'
+              )
+            }
+            tone={encryption ? 'secure' : 'accent'}
+            title={name}
+            subtitle={
+              encryption ? (
+                // Green: at a glance, this conversation is end-to-end encrypted.
+                <span className="mt-0.5 flex items-center gap-1.5">
+                  <span className="flex h-5 items-center gap-1 rounded-full bg-secure-soft px-2 text-[11.5px] font-medium text-secure-text">
+                    <Lock aria-hidden className="size-3" />
+                    {t('e2ee.badge')}
+                  </span>
+                  <BetaBadge />
+                </span>
+              ) : isGroup ? (
+                t('dm.groupSize', { count: channel.recipients.length + 1 })
+              ) : (
+                t(`presence.${otherStatus}`)
+              )
+            }
+          />
           {encryption ? (
-            <button
-              type="button"
-              aria-label={t('e2ee.safety.title')}
-              title={t('e2ee.safety.title')}
-              onClick={() => setChecking(true)}
-              className={headerButton}
-            >
-              <ShieldCheck aria-hidden className="size-5" />
-            </button>
+            <>
+              {/* Narrow screens: the field opens from this button, as in server channels. */}
+              <button
+                type="button"
+                aria-label={t('search.open')}
+                aria-pressed={searchOpen}
+                onClick={() => setSearchOpen((value) => !value)}
+                className={`${headerButton} lg:hidden`}
+              >
+                <Search aria-hidden className="size-5" />
+              </button>
+              <SearchBox onSearch={setSearch} open={searchOpen} />
+            </>
           ) : null}
-          <button
-            type="button"
-            aria-label={t('notifications.dmButton')}
-            title={t('notifications.dmButton')}
-            onClick={() => setNotifications(true)}
-            className={headerButton}
-          >
-            <Bell aria-hidden className="size-5" />
-          </button>
-          {voiceEnabled && canTalk && !inCall ? (
+          <span className="flex shrink-0 gap-0.5">
+            {encryption ? (
+              <MissingHistoryButton ready={keysReady} className={headerButton} />
+            ) : null}
+            {encryption ? (
+              <button
+                type="button"
+                aria-label={t('e2ee.safety.title')}
+                title={t('e2ee.safety.title')}
+                onClick={() => setChecking(true)}
+                data-verified={allVerified}
+                className={`${headerButton} data-[verified=true]:text-secure-text`}
+              >
+                <ShieldCheck aria-hidden className="size-5" />
+              </button>
+            ) : null}
             <button
               type="button"
-              aria-label={t('voice.call')}
-              title={t('voice.call')}
-              onClick={() => void voice.join(null, channel.id)}
+              aria-label={t('notifications.dmButton')}
+              title={t('notifications.dmButton')}
+              aria-pressed={notifications}
+              onClick={() => setNotifications((value) => !value)}
               className={headerButton}
             >
-              <Phone aria-hidden className="size-5" />
+              <Bell aria-hidden className="size-5" />
             </button>
-          ) : null}
-        </span>
-        {isGroup ? (
-          <span className="flex gap-1">
-            <button
-              type="button"
-              aria-label={t('dm.rename')}
-              title={t('dm.rename')}
-              onClick={() => setDialog('rename')}
-              className={headerButton}
-            >
-              <Pencil aria-hidden className="size-5" />
-            </button>
-            <button
-              type="button"
-              aria-label={t('dm.add')}
-              title={t('dm.add')}
-              onClick={() => setDialog('add')}
-              className={headerButton}
-            >
-              <UserPlus aria-hidden className="size-5" />
-            </button>
-            <button
-              type="button"
-              aria-pressed={showMembers}
-              aria-label={showMembers ? t('dm.hideMembers') : t('dm.showMembers')}
-              onClick={() => setShowMembers((value) => !value)}
-              className={`${headerButton} hidden aria-pressed:text-text lg:block`}
-            >
-              <Users aria-hidden className="size-5" />
-            </button>
-            <button
-              type="button"
-              aria-label={t('dm.leave')}
-              title={t('dm.leave')}
-              onClick={() => setDialog('leave')}
-              className={`${headerButton} hover:text-danger`}
-            >
-              <LogOut aria-hidden className="size-5" />
-            </button>
+            {voiceEnabled && canTalk && !inCall ? (
+              <button
+                type="button"
+                aria-label={t('voice.call')}
+                title={t('voice.call')}
+                onClick={() => void voice.join(null, channel.id)}
+                className={headerButton}
+              >
+                <Phone aria-hidden className="size-5" />
+              </button>
+            ) : null}
           </span>
-        ) : null}
-      </PageHeader>
-
-      {callStates.length > 0 ? (
-        <div className="flex flex-col gap-3 border-b border-border bg-sidebar p-3">
-          <CallStage states={callStates} channelId={channel.id} person={callPerson} />
-          {!inCall && canTalk ? (
-            <div className="mx-auto">
-              <Button fullWidth={false} onClick={() => void voice.join(null, channel.id)}>
-                {t('voice.joinCall')}
-              </Button>
-            </div>
+          {isGroup ? (
+            <span className="flex shrink-0 gap-0.5">
+              <button
+                type="button"
+                aria-label={t('dm.rename')}
+                title={t('dm.rename')}
+                onClick={() => setDialog('rename')}
+                className={headerButton}
+              >
+                <Pencil aria-hidden className="size-5" />
+              </button>
+              <button
+                type="button"
+                aria-label={t('dm.add')}
+                title={t('dm.add')}
+                onClick={() => setDialog('add')}
+                className={headerButton}
+              >
+                <UserPlus aria-hidden className="size-5" />
+              </button>
+              <button
+                type="button"
+                aria-pressed={showMembers}
+                aria-label={showMembers ? t('dm.hideMembers') : t('dm.showMembers')}
+                onClick={() => setShowMembers((value) => !value)}
+                className={`${headerButton} hidden xl:grid`}
+              >
+                <Users aria-hidden className="size-5" />
+              </button>
+              <button
+                type="button"
+                aria-label={t('dm.leave')}
+                title={t('dm.leave')}
+                onClick={() => setDialog('leave')}
+                className={`${headerButton} hover:bg-danger-soft hover:text-danger`}
+              >
+                <LogOut aria-hidden className="size-5" />
+              </button>
+            </span>
           ) : null}
-        </div>
-      ) : null}
+        </PageHeader>
 
-      <div className="flex min-h-0 flex-1">
+        {inCall || callStates.length > 0 ? (
+          <DmCall
+            channelId={channel.id}
+            myId={me?.id}
+            states={callStates}
+            person={callPerson}
+            encrypted={encryption !== undefined}
+            canJoin={canTalk}
+          />
+        ) : null}
+
         <section
-          className="flex min-w-0 flex-1 flex-col"
+          className="flex min-h-0 min-w-0 flex-1 flex-col"
           onDragOver={(event) => {
             if (canTalk && canAttach && event.dataTransfer.types.includes('Files')) {
               event.preventDefault()
@@ -359,6 +380,7 @@ export const DmView = ({ channel }: { channel: PrivateChannel }) => {
               onCheck={() => setChecking(true)}
             />
           ) : null}
+          <TypingIndicator guildId={null} channelId={channel.id} people={channel.recipients} />
           {encryption && encrypted.state !== 'ready' ? (
             <EncryptionStatus state={encrypted.state} />
           ) : canTalk ? (
@@ -388,37 +410,36 @@ export const DmView = ({ channel }: { channel: PrivateChannel }) => {
               }
             />
           ) : (
-            <p className="mx-4 mb-6 rounded-lg bg-elevated px-4 py-3 text-sm text-muted">
+            <p className="mx-4 mb-4 rounded-card bg-stage px-4 py-3 text-sm text-muted">
               {t('dm.blocked')}
             </p>
           )}
-          <TypingIndicator guildId={null} channelId={channel.id} people={channel.recipients} />
         </section>
-        {encryption && search ? (
-          <LocalSearchPanel
-            channel={encryption}
-            query={search}
-            nameOf={(userId) => callPerson(userId).name}
-            onClose={() => setSearch(null)}
+        {notifications ? (
+          <NotificationSettingsPopover
+            targetId={channel.id}
+            kind="dm"
+            name={name}
+            onClose={() => setNotifications(false)}
           />
-        ) : isGroup && showMembers && me ? (
-          <GroupMembersPanel channel={channel} me={me} />
         ) : null}
-      </div>
+      </MainCard>
+      {encryption && search ? (
+        <LocalSearchPanel
+          channel={encryption}
+          query={search}
+          nameOf={(userId) => callPerson(userId).name}
+          onClose={() => setSearch(null)}
+        />
+      ) : isGroup && showMembers && me ? (
+        <GroupMembersPanel channel={channel} me={me} />
+      ) : null}
 
       {checking ? (
         <SafetyDialog
           safety={safety}
           nameOf={(userId) => callPerson(userId).name}
           onOpenChange={setChecking}
-        />
-      ) : null}
-      {notifications ? (
-        <NotificationSettingsDialog
-          targetId={channel.id}
-          kind="dm"
-          name={name}
-          onClose={() => setNotifications(false)}
         />
       ) : null}
       {dialog === 'rename' ? (
@@ -440,6 +461,6 @@ export const DmView = ({ channel }: { channel: PrivateChannel }) => {
           }}
         />
       ) : null}
-    </div>
+    </>
   )
 }

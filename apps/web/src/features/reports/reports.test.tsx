@@ -2,6 +2,7 @@ import { screen, waitFor, within } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 
 import { createFakeApi, testFriend, testGuild, testUser } from '../../test/fake-api'
+import { openMessageMenu } from '../../test/message-menu'
 import { renderApp } from '../../test/render-app'
 
 import type { Report } from '@chinchi/shared'
@@ -34,7 +35,11 @@ describe('reporting a message', () => {
     expect(
       within(messageRow('Отлично!')).queryByRole('button', { name: 'Пожаловаться' }),
     ).not.toBeInTheDocument()
-    await user.click(within(messageRow('Как дела?')).getByRole('button', { name: 'Пожаловаться' }))
+    await user.click(
+      within(await openMessageMenu(messageRow('Как дела?'))).getByRole('menuitem', {
+        name: 'Пожаловаться',
+      }),
+    )
     const dialog = await screen.findByRole('dialog', { name: 'Пожаловаться на сообщение' })
     await user.click(within(dialog).getByRole('radio', { name: 'Спам или реклама' }))
     await user.type(within(dialog).getByLabelText('Подробности', { exact: true }), 'казино')

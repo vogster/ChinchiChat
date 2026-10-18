@@ -53,7 +53,7 @@ export const AuditLogSection = ({ guild }: { guild: GuildDetail }) => {
         ) : (
           <ul
             aria-label={t('serverSettings.auditLog.title')}
-            className="flex flex-col divide-y divide-border"
+            className="flex flex-col divide-y divide-line"
           >
             {entries.map((entry) => (
               <li key={entry.id} className="flex gap-3 py-3">

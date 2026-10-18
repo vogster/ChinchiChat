@@ -15,7 +15,7 @@ import { useGuildPermissions } from '../permissions/use-guild-permissions'
 import type { Channel } from '@chinchi/shared'
 import type { ReactNode } from 'react'
 
-const selectClass = 'rounded-md border border-border bg-rail px-3 py-2'
+const selectClass = 'rounded-md border border-line bg-rail px-3 py-2'
 
 const Field = ({ id, label, children }: { id: string; label: string; children: ReactNode }) => (
   <div className="flex flex-col gap-1.5">

@@ -20,7 +20,7 @@ export const DmRowMenu = ({ channel, name }: { channel: PrivateChannel; name: st
         <MenuTrigger
           aria-label={t('dm.actions', { name })}
           title={t('dm.actions', { name })}
-          className="absolute top-1/2 right-1.5 flex size-6 -translate-y-1/2 items-center justify-center rounded text-muted opacity-0 group-focus-within:opacity-100 group-hover:opacity-100 hover:bg-elevated hover:text-text data-[state=open]:opacity-100"
+          className="absolute top-1/2 right-2 flex size-7 -translate-y-1/2 items-center justify-center rounded-full text-muted opacity-0 group-focus-within:opacity-100 group-hover:opacity-100 hover:bg-chip hover:text-text data-[state=open]:opacity-100"
         >
           <MoreHorizontal aria-hidden className="size-4" />
         </MenuTrigger>

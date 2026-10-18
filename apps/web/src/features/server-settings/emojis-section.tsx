@@ -91,7 +91,7 @@ export const EmojisSection = ({ guild }: { guild: GuildDetail }) => {
               {emoji.animated ? (
                 <span
                   title={t('emojis.animated')}
-                  className="rounded bg-elevated px-1.5 py-0.5 text-xs font-semibold text-muted"
+                  className="rounded bg-field px-1.5 py-0.5 text-xs font-semibold text-muted"
                 >
                   GIF
                 </span>

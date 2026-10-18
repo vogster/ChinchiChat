@@ -10,8 +10,9 @@ import { BetaBadge } from '../e2ee/beta-badge'
 import { guildQueryOptions } from '../guilds/queries'
 import { useVoice } from './voice-context'
 
+// Small, so they fit beside where you are; on the call's own page the dock has the big ones.
 const iconButton =
-  'rounded p-1.5 text-muted hover:bg-hover hover:text-text aria-pressed:text-text disabled:opacity-60'
+  'grid size-8 shrink-0 place-items-center rounded-full text-muted transition-colors hover:bg-accent-soft hover:text-text aria-pressed:bg-accent-soft aria-pressed:text-accent-text disabled:opacity-60'
 
 /** Above the user panel while in voice: where you are, camera, screen and hang up. */
 export const VoicePanel = () => {
@@ -25,10 +26,7 @@ export const VoicePanel = () => {
 
   if (voice.status === 'idle') {
     return voice.error ? (
-      <div
-        role="alert"
-        className="flex items-start gap-2 border-t border-border bg-danger/10 px-3 py-2 text-xs text-danger"
-      >
+      <div role="alert" className="rounded-[18px] bg-danger-soft px-3.5 py-2.5 text-xs text-danger">
         <span className="flex-1">{errorMessage(t, voice.error)}</span>
       </div>
     ) : null
@@ -37,24 +35,27 @@ export const VoicePanel = () => {
   const channel = guild?.channels.find((c) => c.id === voice.channelId)
   const dm = voice.guildId === null ? dms.find((c) => c.id === voice.channelId) : undefined
   const place = dm ? [privateChannelName(t, dm)] : [channel?.name, guild?.name]
+  const where = place.filter(Boolean).join(' · ')
   const connected = voice.status === 'connected'
 
   return (
     <section
       aria-label={t('voice.panelLabel')}
-      className="border-t border-border bg-rail/40 px-2 py-2"
+      className="rounded-[18px] bg-accent-soft py-2.5 pr-2.5 pl-3.5"
     >
-      <div className="flex items-center gap-1">
-        <div className="min-w-0 flex-1 text-xs">
+      <div className="flex items-center gap-1.5">
+        <div className="min-w-0 flex-1">
           <div
             data-connected={connected}
-            className="truncate font-semibold text-muted data-[connected=true]:text-green-500"
+            className="truncate text-[13px] font-semibold text-muted data-[connected=true]:text-accent-text"
           >
             {connected ? t('voice.connected') : t('voice.connecting')}
           </div>
-          <div className="truncate text-muted">{place.filter(Boolean).join(' / ')}</div>
+          <div className="truncate text-xs text-muted" title={where}>
+            {where}
+          </div>
           {connected && voice.encrypted ? (
-            <div className="flex items-center gap-1 text-secure">
+            <div className="flex items-center gap-1 text-xs text-secure-text">
               <Lock aria-hidden className="size-3 shrink-0" />
               <span className="truncate">{t('voice.encrypted')}</span>
               <BetaBadge />
@@ -83,7 +84,7 @@ export const VoicePanel = () => {
           title={voice.screen ? t('voice.screenOff') : t('voice.screenOn')}
           disabled={!connected}
           onClick={voice.toggleScreen}
-          className={iconButton}
+          className={`${iconButton} max-md:hidden`}
         >
           {voice.screen ? (
             <MonitorOff aria-hidden className="size-4" />
@@ -96,7 +97,7 @@ export const VoicePanel = () => {
           aria-label={t('voice.leave')}
           title={t('voice.leave')}
           onClick={() => void voice.leave()}
-          className="rounded p-1.5 text-muted hover:bg-hover hover:text-danger"
+          className="ml-0.5 grid h-8 w-10 shrink-0 place-items-center rounded-full bg-danger text-danger-contrast hover:brightness-110"
         >
           <PhoneOff aria-hidden className="size-4" />
         </button>

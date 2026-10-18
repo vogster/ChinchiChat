@@ -83,7 +83,7 @@ export const ChannelPermissionsTab = ({ guild, channel }: ChannelPermissionsTabP
       <p className="text-sm text-muted">{t('channelPermissions.subtitle')}</p>
       {error ? <Alert tone="error">{errorMessage(t, error)}</Alert> : null}
       {category && channel.type !== 'thread' ? (
-        <div className="flex items-center gap-3 rounded-md bg-sidebar px-3 py-2 text-sm">
+        <div className="flex items-center gap-3 rounded-md bg-side px-3 py-2 text-sm">
           <p className="min-w-0 flex-1 text-muted">
             {t(synced ? 'channelPermissions.synced' : 'channelPermissions.notSynced', {
               name: category.name,
@@ -117,7 +117,7 @@ export const ChannelPermissionsTab = ({ guild, channel }: ChannelPermissionsTabP
                   type="button"
                   aria-current={target.id === selected.id || undefined}
                   onClick={() => select(target)}
-                  className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-left text-sm hover:bg-hover aria-[current]:bg-hover aria-[current]:font-medium"
+                  className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-left text-sm hover:bg-chip aria-[current]:bg-chip aria-[current]:font-medium"
                 >
                   {target.type === 'role' ? (
                     <Shield aria-hidden className="size-4 shrink-0" />
@@ -140,7 +140,7 @@ export const ChannelPermissionsTab = ({ guild, channel }: ChannelPermissionsTabP
                 setAdded((current) => [...current, target])
                 select(target)
               }}
-              className="rounded-md border border-border bg-rail px-2 py-1.5 text-sm"
+              className="rounded-md border border-line bg-rail px-2 py-1.5 text-sm"
             >
               <option value="">{t('channelPermissions.add')}</option>
               {roleOptions.length > 0 ? (
@@ -174,7 +174,7 @@ export const ChannelPermissionsTab = ({ guild, channel }: ChannelPermissionsTabP
           }}
         >
           {channelPermissionGroups(channel.type).map((group) => (
-            <fieldset key={group.key} className="flex flex-col divide-y divide-border">
+            <fieldset key={group.key} className="flex flex-col divide-y divide-line">
               <legend className="mb-1 text-xs font-bold tracking-wide text-muted uppercase">
                 {t(`permissions.groups.${group.key}`)}
               </legend>

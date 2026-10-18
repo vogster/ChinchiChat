@@ -1,15 +1,17 @@
 import type { ButtonHTMLAttributes } from 'react'
 
-type Variant = 'primary' | 'secondary' | 'danger' | 'link' | 'on-accent'
+type Variant = 'primary' | 'secondary' | 'danger' | 'secure' | 'link' | 'on-accent'
+
+/** Filled buttons are pills (radius = half the height). */
+const PILL =
+  'h-10 rounded-full px-5 font-medium transition disabled:cursor-not-allowed disabled:opacity-60'
 
 const VARIANTS: Readonly<Record<Variant, string>> = {
-  primary:
-    'rounded-md bg-accent px-4 py-2.5 font-medium text-accent-contrast transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60',
-  secondary:
-    'rounded-md bg-elevated px-4 py-2.5 font-medium text-text transition hover:bg-hover disabled:cursor-not-allowed disabled:opacity-60',
-  danger:
-    'rounded-md bg-red-600 px-4 py-2.5 font-medium text-white transition hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-60',
-  link: 'text-sm font-medium text-accent hover:underline disabled:opacity-60',
+  primary: `${PILL} bg-accent text-accent-contrast hover:brightness-110`,
+  secondary: `${PILL} bg-field text-text hover:bg-chip`,
+  danger: `${PILL} bg-danger text-danger-contrast hover:brightness-110`,
+  secure: `${PILL} bg-secure text-secure-contrast hover:brightness-110`,
+  link: 'text-sm font-medium text-accent-text hover:underline disabled:opacity-60',
   'on-accent':
     'text-sm font-semibold text-accent-contrast underline hover:opacity-90 disabled:opacity-60',
 }

@@ -34,10 +34,12 @@ test('two people talk in a voice channel and see each other on camera', async ({
   // Both join; LiveKit reports them through webhooks and everyone sees who is inside.
   await voiceChannel(owner.page).click()
   await expect(owner.page.getByRole('region', { name: 'Голосовое подключение' })).toContainText(
-    'Голос подключён',
+    'В голосовом',
   )
   await voiceChannel(friend.page).click()
   for (const { page } of [owner, friend]) {
+    // The sidebar card stacks faces; unfolded, it lists names.
+    await page.getByRole('button', { name: 'Показать участников Общий' }).click()
     await expect(inVoice(page)).toContainText(ownerUser.username)
     await expect(inVoice(page)).toContainText(friendUser.username)
   }
@@ -51,14 +53,15 @@ test('two people talk in a voice channel and see each other on camera', async ({
   ).toBeVisible()
 
   // The owner's camera reaches the friend's stage as video.
-  await owner.page.getByRole('button', { name: 'Включить камеру' }).click()
+  const dock = owner.page.getByRole('region', { name: 'Управление звонком' })
+  await dock.getByRole('button', { name: 'Камера' }).click()
   const ownerTile = friend.page
     .getByRole('list', { name: 'Участники звонка' })
     .getByRole('listitem', { name: new RegExp(`^${ownerUser.username}`) })
   await expect(ownerTile.locator('video')).toBeVisible()
 
   // Hanging up removes the owner from the list for both.
-  await owner.page.getByRole('button', { name: 'Отключиться' }).click()
+  await dock.getByRole('button', { name: 'Отключиться' }).click()
   await expect(inVoice(friend.page)).not.toContainText(ownerUser.username)
 
   await owner.context.close()

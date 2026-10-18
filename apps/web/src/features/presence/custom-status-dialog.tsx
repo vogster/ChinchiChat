@@ -106,7 +106,7 @@ export const CustomStatusDialog = ({
             id={durationId}
             value={duration}
             onChange={(event) => setDuration(event.target.value as typeof duration)}
-            className="rounded-md border border-border bg-rail px-3 py-2 text-text outline-none focus:border-accent"
+            className="rounded-md border border-line bg-rail px-3 py-2 text-text outline-none focus:border-accent"
           >
             {DURATIONS.map((option) => (
               <option key={option.key} value={option.key}>

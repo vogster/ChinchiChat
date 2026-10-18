@@ -16,7 +16,7 @@ import type { AdminUser } from '@chinchi/shared'
 const PAGE_SIZE = 50
 
 const Badge = ({ children }: { children: string }) => (
-  <span className="rounded bg-elevated px-1.5 py-0.5 text-[11px] font-semibold text-muted">
+  <span className="rounded bg-field px-1.5 py-0.5 text-[11px] font-semibold text-muted">
     {children}
   </span>
 )
@@ -79,13 +79,13 @@ export const AdminUsersSection = () => {
         placeholder={t('admin.users.searchPlaceholder')}
         value={search.text}
         onChange={(event) => search.setText(event.target.value)}
-        className="rounded-md border border-border bg-rail px-3 py-2 outline-none focus:border-accent"
+        className="rounded-md border border-line bg-rail px-3 py-2 outline-none focus:border-accent"
       />
       {update.isError || remove.isError ? (
         <Alert tone="error">{errorMessage(t, update.error ?? remove.error)}</Alert>
       ) : null}
       <SettingsCard>
-        <ul aria-label={t('admin.users.title')} className="flex flex-col divide-y divide-border">
+        <ul aria-label={t('admin.users.title')} className="flex flex-col divide-y divide-line">
           {rows.map((row) => {
             const name = row.user.username
             const self = row.user.id === me?.id

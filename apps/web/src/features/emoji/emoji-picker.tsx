@@ -20,8 +20,11 @@ export interface QuickEmoji {
 export interface EmojiPickerProps {
   /** Name of the trigger and of the panel. */
   readonly label: string
-  readonly trigger: ReactNode
+  /** The button that opens it; null for a picker opened from elsewhere (see `open`). */
+  readonly trigger: ReactNode | null
   readonly triggerClassName?: string
+  /** Opened by someone else (a menu): with no trigger, it hangs from a point in its parent. */
+  readonly open?: boolean
   readonly onSelect: (emoji: string) => void
   readonly onOpenChange?: (open: boolean) => void
   /** A row of one-click choices above the full list. */
@@ -31,7 +34,7 @@ export interface EmojiPickerProps {
 }
 
 const emojiButton =
-  'flex size-9 items-center justify-center rounded text-2xl hover:bg-hover focus-visible:outline-2 focus-visible:outline-accent'
+  'flex size-9 items-center justify-center rounded text-2xl hover:bg-chip focus-visible:outline-2 focus-visible:outline-accent'
 
 /** Search or browse by category; picking closes the panel. Loads its data on first open. */
 export const EmojiPicker = ({
@@ -42,11 +45,13 @@ export const EmojiPicker = ({
   onOpenChange,
   quick = [],
   custom = null,
+  open: controlled,
 }: EmojiPickerProps) => {
   const { t, i18n } = useTranslation()
-  const [open, setOpenState] = useState(false)
+  const [own, setOwn] = useState(false)
+  const open = controlled ?? own
   const setOpen = (next: boolean) => {
-    setOpenState(next)
+    setOwn(next)
     onOpenChange?.(next)
   }
   const [query, setQuery] = useState('')
@@ -80,9 +85,13 @@ export const EmojiPicker = ({
 
   return (
     <Popover.Root open={open} onOpenChange={setOpen}>
-      <Popover.Trigger aria-label={label} title={label} className={triggerClassName}>
-        {trigger}
-      </Popover.Trigger>
+      {trigger === null ? (
+        <Popover.Anchor className="pointer-events-none absolute top-1 right-3 size-px" />
+      ) : (
+        <Popover.Trigger aria-label={label} title={label} className={triggerClassName}>
+          {trigger}
+        </Popover.Trigger>
+      )}
       <Popover.Portal>
         <Popover.Content
           role="dialog"
@@ -91,7 +100,7 @@ export const EmojiPicker = ({
           align="end"
           sideOffset={6}
           collisionPadding={8}
-          className="z-50 flex w-80 flex-col gap-2 rounded-lg bg-rail p-2 text-text shadow-xl"
+          className="z-50 flex w-80 flex-col gap-2 rounded-card bg-side p-2 text-text shadow-popover"
         >
           <input
             type="search"
@@ -100,10 +109,10 @@ export const EmojiPicker = ({
             aria-label={t('emoji.search')}
             placeholder={t('emoji.search')}
             onChange={(event) => setQuery(event.target.value)}
-            className="rounded-md bg-elevated px-2 py-1.5 text-sm outline-none placeholder:text-muted"
+            className="rounded-md bg-field px-2 py-1.5 text-sm outline-none placeholder:text-muted"
           />
           {quick.length > 0 ? (
-            <div className="flex gap-1 border-b border-border pb-2">
+            <div className="flex gap-1 border-b border-line pb-2">
               {quick.map((item) => (
                 <button
                   key={item.emoji}
@@ -137,7 +146,7 @@ export const EmojiPicker = ({
             </div>
           )}
           {recent.length > 0 && !query.trim() ? (
-            <section aria-label={t('emoji.recent')} className="border-b border-border pb-2">
+            <section aria-label={t('emoji.recent')} className="border-b border-line pb-2">
               <h3 className="mb-1 px-1 text-xs font-bold tracking-wide text-muted uppercase">
                 {t('emoji.recent')}
               </h3>
@@ -158,7 +167,7 @@ export const EmojiPicker = ({
             </section>
           ) : null}
           {serverEmojis.length > 0 ? (
-            <section aria-label={custom?.title} className="border-b border-border pb-2">
+            <section aria-label={custom?.title} className="border-b border-line pb-2">
               <h3 className="mb-1 px-1 text-xs font-bold tracking-wide text-muted uppercase">
                 {custom?.title}
               </h3>

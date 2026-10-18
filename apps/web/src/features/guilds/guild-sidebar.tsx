@@ -4,7 +4,7 @@ import { useNavigate } from '@tanstack/react-router'
 import {
   Bell,
   CheckCheck,
-  ChevronDown,
+  Ellipsis,
   FolderPlus,
   LogOut,
   PlusCircle,
@@ -24,12 +24,14 @@ import { useNotificationResolver } from '../notifications/use-notifications'
 import { can } from '../permissions/permissions'
 import { useGuildPermissions } from '../permissions/use-guild-permissions'
 import { allowedSections } from '../server-settings/sections'
+import { withServerSettings } from '../server-settings/server-settings-search'
 import { ChannelList } from './channel-list'
 import { firstTextChannel } from './channel-tree'
 import { CreateChannelDialog } from './dialogs/create-channel-dialog'
 import { EditChannelDialog } from './dialogs/edit-channel-dialog'
 import { InviteDialog } from './dialogs/invite-dialog'
 import { LeaveGuildDialog } from './dialogs/leave-guild-dialog'
+import { GuildSidebarHeader } from './guild-sidebar-header'
 import { guildQueryOptions } from './queries'
 import { useAckGuild } from './use-ack-guild'
 import { useChannelReorder } from './use-channel-reorder'
@@ -60,7 +62,10 @@ export const GuildSidebar = ({ guildId, channelId }: GuildSidebarProps) => {
   const resolveNotifications = useNotificationResolver()
   const ackGuild = useAckGuild()
 
-  if (!guild) return <aside className="w-60 shrink-0 bg-sidebar" />
+  if (!guild)
+    return (
+      <aside className="min-h-0 flex-1 overflow-hidden md:w-[280px] md:flex-none md:shrink-0 md:rounded-panel md:bg-side" />
+    )
 
   const closeDialog = (open: boolean) => {
     if (!open) setDialog(null)
@@ -75,76 +80,82 @@ export const GuildSidebar = ({ guildId, channelId }: GuildSidebarProps) => {
   const canOpenSettings = allowedSections(permissions.base).length > 0
 
   return (
-    <aside aria-label={guild.name} className="flex w-60 shrink-0 flex-col bg-sidebar">
-      <Menu>
-        <MenuTrigger
-          aria-label={t('guild.menu', { name: guild.name })}
-          className="flex h-12 items-center justify-between gap-2 border-b border-border px-4 text-left font-semibold shadow-sm hover:bg-hover data-[state=open]:bg-hover"
-        >
-          <span className="truncate">{guild.name}</span>
-          <ChevronDown aria-hidden className="size-4 shrink-0" />
-        </MenuTrigger>
-        <MenuContent>
-          {canInvite ? (
-            <MenuItem
-              onSelect={() => setDialog({ kind: 'invite' })}
-              icon={<UserPlus aria-hidden className="size-4" />}
+    <aside
+      aria-label={guild.name}
+      className="flex min-h-0 flex-1 overflow-hidden md:w-[280px] md:flex-none md:shrink-0 md:rounded-panel md:bg-side flex-col"
+    >
+      <GuildSidebarHeader
+        guildId={guild.id}
+        name={guild.name}
+        menu={
+          <Menu>
+            <MenuTrigger
+              aria-label={t('guild.menu', { name: guild.name })}
+              className="grid size-[34px] shrink-0 place-items-center rounded-xl bg-field text-muted hover:text-text data-[state=open]:bg-chip data-[state=open]:text-text"
             >
-              {t('guild.invite')}
-            </MenuItem>
-          ) : null}
-          <MenuItem
-            onSelect={() => ackGuild.mutate(guild)}
-            icon={<CheckCheck aria-hidden className="size-4" />}
-          >
-            {t('guild.markRead')}
-          </MenuItem>
-          <MenuItem
-            onSelect={() => setDialog({ kind: 'notifications' })}
-            icon={<Bell aria-hidden className="size-4" />}
-          >
-            {t('notifications.menu')}
-          </MenuItem>
-          {canOpenSettings ? (
-            <MenuItem
-              onSelect={() =>
-                void navigate({ to: '/server-settings/$guildId', params: { guildId: guild.id } })
-              }
-              icon={<Settings aria-hidden className="size-4" />}
-            >
-              {t('guild.settings')}
-            </MenuItem>
-          ) : null}
-          {canManageChannels ? (
-            <>
+              <Ellipsis aria-hidden className="size-4" />
+            </MenuTrigger>
+            <MenuContent>
+              {canInvite ? (
+                <MenuItem
+                  onSelect={() => setDialog({ kind: 'invite' })}
+                  icon={<UserPlus aria-hidden className="size-4" />}
+                >
+                  {t('guild.invite')}
+                </MenuItem>
+              ) : null}
               <MenuItem
-                onSelect={() => setDialog({ kind: 'create', type: 'text', parent: null })}
-                icon={<PlusCircle aria-hidden className="size-4" />}
+                onSelect={() => ackGuild.mutate(guild)}
+                icon={<CheckCheck aria-hidden className="size-4" />}
               >
-                {t('guild.createChannel')}
+                {t('guild.markRead')}
               </MenuItem>
               <MenuItem
-                onSelect={() => setDialog({ kind: 'create', type: 'category', parent: null })}
-                icon={<FolderPlus aria-hidden className="size-4" />}
+                onSelect={() => setDialog({ kind: 'notifications' })}
+                icon={<Bell aria-hidden className="size-4" />}
               >
-                {t('guild.createCategory')}
+                {t('notifications.menu')}
               </MenuItem>
-            </>
-          ) : null}
-          {permissions.isOwner ? null : (
-            <>
-              <MenuSeparator />
-              <MenuItem
-                danger
-                onSelect={() => setDialog({ kind: 'leave' })}
-                icon={<LogOut aria-hidden className="size-4" />}
-              >
-                {t('guild.leave')}
-              </MenuItem>
-            </>
-          )}
-        </MenuContent>
-      </Menu>
+              {canOpenSettings ? (
+                <MenuItem
+                  onSelect={() => void navigate({ to: '.', search: withServerSettings(guild.id) })}
+                  icon={<Settings aria-hidden className="size-4" />}
+                >
+                  {t('guild.settings')}
+                </MenuItem>
+              ) : null}
+              {canManageChannels ? (
+                <>
+                  <MenuItem
+                    onSelect={() => setDialog({ kind: 'create', type: 'text', parent: null })}
+                    icon={<PlusCircle aria-hidden className="size-4" />}
+                  >
+                    {t('guild.createChannel')}
+                  </MenuItem>
+                  <MenuItem
+                    onSelect={() => setDialog({ kind: 'create', type: 'category', parent: null })}
+                    icon={<FolderPlus aria-hidden className="size-4" />}
+                  >
+                    {t('guild.createCategory')}
+                  </MenuItem>
+                </>
+              ) : null}
+              {permissions.isOwner ? null : (
+                <>
+                  <MenuSeparator />
+                  <MenuItem
+                    danger
+                    onSelect={() => setDialog({ kind: 'leave' })}
+                    icon={<LogOut aria-hidden className="size-4" />}
+                  >
+                    {t('guild.leave')}
+                  </MenuItem>
+                </>
+              )}
+            </MenuContent>
+          </Menu>
+        }
+      />
 
       <ChannelList
         channels={guild.channels}

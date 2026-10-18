@@ -9,6 +9,7 @@ import {
   testMessage,
   testUser,
 } from '../../test/fake-api'
+import { openMessageMenu } from '../../test/message-menu'
 import { renderApp } from '../../test/render-app'
 
 const CHANNEL_URL = `/channels/${testGuild.id}/503`
@@ -22,7 +23,9 @@ describe('forwarding', () => {
     await screen.findByText('Как дела?')
 
     await user.hover(row('Как дела?'))
-    await user.click(within(row('Как дела?')).getByRole('button', { name: 'Переслать' }))
+    await user.click(
+      within(await openMessageMenu(row('Как дела?'))).getByRole('menuitem', { name: 'Переслать' }),
+    )
     const dialog = await screen.findByRole('dialog', { name: 'Переслать сообщение' })
     expect(await within(dialog).findByRole('radio', { name: /Боб/ })).toBeVisible()
     await user.type(within(dialog).getByRole('searchbox', { name: 'Поиск' }), 'мем')

@@ -15,7 +15,7 @@ export const ReactionsBar = ({ reactions, onToggle }: ReactionsBarProps) => {
   const { t } = useTranslation()
   if (reactions.length === 0) return null
   return (
-    <ul className="mt-1 flex flex-wrap gap-1">
+    <ul className="flex flex-wrap gap-1.5 px-1">
       {reactions.map(({ emoji, count, me }) => (
         <li key={emoji}>
           <button
@@ -26,13 +26,13 @@ export const ReactionsBar = ({ reactions, onToggle }: ReactionsBarProps) => {
               count,
             })}
             onClick={() => onToggle(emoji)}
-            className="flex items-center gap-1 rounded-md border border-transparent bg-elevated px-1.5 py-0.5 text-sm hover:border-border aria-pressed:border-accent aria-pressed:bg-accent/15"
+            className="flex h-7 items-center gap-1 rounded-full bg-field px-3 text-xs font-medium whitespace-nowrap text-muted transition hover:brightness-110 aria-pressed:bg-accent-soft aria-pressed:text-accent-text aria-pressed:shadow-[inset_0_0_0_1.5px_var(--zl-accent)]"
           >
             <span aria-hidden>
               <EmojiGlyph emoji={emoji} />
             </span>
-            <span aria-hidden className="text-xs font-semibold tabular-nums">
-              {count}
+            <span aria-hidden className="tabular-nums">
+              · {count}
             </span>
           </button>
         </li>

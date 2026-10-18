@@ -9,7 +9,8 @@
     "backToLogin": "Вернуться ко входу",
     "language": "Язык",
     "cancel": "Отмена",
-    "close": "Закрыть"
+    "close": "Закрыть",
+    "more": "Ещё"
   },
   "nav": {
     "servers": "Серверы",
@@ -20,7 +21,11 @@
     "dmUnread_one": "непрочитанных в личных сообщениях: {{count}}",
     "dmUnread_few": "непрочитанных в личных сообщениях: {{count}}",
     "dmUnread_many": "непрочитанных в личных сообщениях: {{count}}",
-    "dmUnread_other": "непрочитанных в личных сообщениях: {{count}}"
+    "dmUnread_other": "непрочитанных в личных сообщениях: {{count}}",
+    "sections": "Разделы",
+    "tabServers": "Серверы",
+    "tabChats": "Чаты",
+    "tabProfile": "Профиль"
   },
   "dm": {
     "title": "Личные сообщения",
@@ -54,7 +59,14 @@
     "remove": "Исключить",
     "blocked": "Вы заблокировали этого пользователя. Разблокируйте его, чтобы написать.",
     "notFound": "Переписка не найдена",
-    "listLabel": "Переписка с {{name}}"
+    "listLabel": "Переписка с {{name}}",
+    "heading": "Сообщения",
+    "search": "Найти беседу",
+    "searchEmpty": "Ничего не нашлось",
+    "groupSize_one": "{{count}} участник",
+    "groupSize_few": "{{count}} участника",
+    "groupSize_many": "{{count}} участников",
+    "groupSize_other": "{{count}} участника"
   },
   "userPanel": {
     "label": "Текущий пользователь",
@@ -108,9 +120,9 @@
       "pending": "Подтверждаем адрес…",
       "done": "Email подтверждён. Спасибо!",
       "continue": "Перейти в Chinchi",
-      "banner": "Подтвердите email — мы отправили письмо на {{email}}.",
+      "banner": "Подтвердите email — мы отправили письмо на <strong>{{email}}</strong>.",
       "resend": "Отправить ещё раз",
-      "resent": "Письмо отправлено"
+      "resentCooldown": "Отправили · {{seconds}} с"
     },
     "mfa": {
       "prompt": "Введите код из приложения-аутентификатора или один из кодов восстановления.",
@@ -264,7 +276,8 @@
       "confirmPassword": "Повторите новый пароль",
       "mismatch": "Пароли не совпадают",
       "changePassword": "Сменить пароль",
-      "passwordChanged": "Пароль изменён. На остальных устройствах выполнен выход."
+      "passwordChanged": "Пароль изменён. На остальных устройствах выполнен выход.",
+      "credentials": "Учётные данные"
     },
     "profile": {
       "title": "Профиль",
@@ -353,11 +366,22 @@
     },
     "appearance": {
       "title": "Внешний вид",
-      "subtitle": "Тема запоминается в этом браузере.",
+      "subtitle": "Тема, палитра и плотность запоминаются в этом браузере.",
       "theme": "Тема",
       "system": "Как в системе",
       "dark": "Тёмная",
-      "light": "Светлая"
+      "light": "Светлая",
+      "palette": "Палитра",
+      "palettes": {
+        "chinchilla": "Шиншилла",
+        "neon": "Неон",
+        "plum": "Слива"
+      },
+      "density": "Плотность сообщений",
+      "densities": {
+        "cozy": "Уютно",
+        "compact": "Компактно"
+      }
     },
     "export": {
       "title": "Мои данные",
@@ -397,6 +421,11 @@
         "change": "Сменить сервер"
       },
       "version": "Версия приложения {{version}}"
+    },
+    "groups": {
+      "account": "Аккаунт",
+      "app": "Приложение",
+      "developers": "Для разработчиков"
     }
   },
   "guild": {
@@ -418,7 +447,11 @@
     "welcomeTitle": "Добро пожаловать в #{{name}}!",
     "welcomeText": "Это начало канала #{{name}}.",
     "messagesSoon": "Сообщения появятся в следующей фазе разработки.",
-    "markRead": "Отметить прочитанным"
+    "markRead": "Отметить прочитанным",
+    "onlineSummary_one": "{{online}} в сети · {{count}} участник",
+    "onlineSummary_few": "{{online}} в сети · {{count}} участника",
+    "onlineSummary_many": "{{online}} в сети · {{count}} участников",
+    "onlineSummary_other": "{{online}} в сети · {{count}} участника"
   },
   "createGuild": {
     "title": "Создайте свой сервер",
@@ -426,11 +459,15 @@
     "name": "Название сервера",
     "defaultName": "Сервер {{username}}",
     "submit": "Создать",
-    "joinTitle": "Есть приглашение?",
     "joinLabel": "Ссылка-приглашение",
     "joinPlaceholder": "https://chinchi.example/invite/AbCd1234",
     "join": "Присоединиться",
-    "invalidLink": "Вставьте ссылку-приглашение или её код."
+    "invalidLink": "Вставьте ссылку-приглашение или её код.",
+    "modes": {
+      "create": "Создать",
+      "join": "По приглашению"
+    },
+    "notFound": "Приглашение не найдено или уже не действует."
   },
   "createChannel": {
     "title": "Создать канал",
@@ -576,7 +613,14 @@
       "leave": "{{actor}} покинул(а) группу",
       "rename": "{{actor}} переименовал(а) группу: «{{name}}»",
       "renameCleared": "{{actor}} убрал(а) название группы"
-    }
+    },
+    "addToMessage": "Добавить в сообщение",
+    "attachMenu": "Файл или фото",
+    "attachUpTo": "До {{size}}",
+    "sendMessage": "Отправить сообщение",
+    "send": "Отправить",
+    "jumpToMessage": "Перейти к сообщению",
+    "copyText": "Копировать текст"
   },
   "presence": {
     "online": "В сети",
@@ -870,13 +914,20 @@
     "incomingCount_one": "запросов в друзья: {{count}}",
     "incomingCount_few": "запросов в друзья: {{count}}",
     "incomingCount_many": "запросов в друзья: {{count}}",
-    "incomingCount_other": "запросов в друзья: {{count}}"
+    "incomingCount_other": "запросов в друзья: {{count}}",
+    "secret": "Секретный чат",
+    "call": "Позвонить",
+    "more": "Ещё — {{name}}",
+    "search": "Поиск друзей",
+    "searchEmpty": "Никого не нашлось",
+    "layoutGrid": "Сеткой",
+    "layoutList": "Списком"
   },
   "voice": {
     "channelLabel": "Голосовой канал {{name}}",
     "disabled": "Голос не настроен на этом сервере Chinchi",
     "panelLabel": "Голосовое подключение",
-    "connected": "Голос подключён",
+    "connected": "В голосовом",
     "encrypted": "Звонок зашифрован",
     "connecting": "Подключение…",
     "leave": "Отключиться",
@@ -897,7 +948,6 @@
     "stream": "показывает экран",
     "membersIn": "В канале {{name}}",
     "stage": "Участники звонка",
-    "empty": "В канале пока никого нет",
     "join": "Подключиться",
     "actions": "Действия",
     "serverMute": "Выключить микрофон на сервере",
@@ -911,7 +961,34 @@
     "decline": "Отклонить",
     "call": "Позвонить",
     "joinCall": "Присоединиться к звонку",
-    "moveTo": "Переместить в «{{channel}}»"
+    "moveTo": "Переместить в «{{channel}}»",
+    "countEmpty": "пусто",
+    "countIn_one": "{{count}} в канале",
+    "countIn_few": "{{count}} в канале",
+    "countIn_many": "{{count}} в канале",
+    "countIn_other": "{{count}} в канале",
+    "foldMembers": "Свернуть участников {{name}}",
+    "unfoldMembers": "Показать участников {{name}}",
+    "silent": "без звука",
+    "dock": "Управление звонком",
+    "dockMic": "Микрофон",
+    "dockCamera": "Камера",
+    "dockScreen": "Демонстрация экрана",
+    "dockSound": "Звук",
+    "callGoing": "Идёт звонок",
+    "callLive": "Звонок · {{time}}",
+    "endToEnd": "Сквозное шифрование",
+    "expand": "Во весь экран",
+    "shrink": "Свернуть звонок",
+    "callBlock": "Звонок",
+    "dialing": "Вызываем…",
+    "emptyTitle": "Тут пока тихо",
+    "emptyHint": "Заходите первым — друзья увидят, что вы здесь.",
+    "inChannelCount_one": "В канале: {{count}}",
+    "inChannelCount_few": "В канале: {{count}}",
+    "inChannelCount_many": "В канале: {{count}}",
+    "inChannelCount_other": "В канале: {{count}}",
+    "nobody": "Никого нет"
   },
   "profile": {
     "label": "Профиль: {{name}}",
@@ -1154,7 +1231,12 @@
     "closeList": "Закрыть список тредов",
     "none": "Тредов пока нет. Начните тред из любого сообщения.",
     "openFull": "Открыть тред целиком",
-    "close": "Закрыть тред"
+    "close": "Закрыть тред",
+    "fold": "Свернуть треды #{{name}}",
+    "unfold": "Показать треды #{{name}} ({{count}})",
+    "meta": "{{size}} · последнее в {{time}}",
+    "new": "новые",
+    "metaLong": "{{size}} · последнее {{time}}"
   },
   "emojis": {
     "title": "Эмодзи",
@@ -1264,7 +1346,8 @@
     "friendRequest": {
       "title": "Запрос в друзья",
       "body": "{{name}} хочет добавить вас в друзья"
-    }
+    },
+    "popoverTitle": "Уведомления"
   },
   "unread": {
     "count_one": "{{count}} новое сообщение",
@@ -1391,7 +1474,8 @@
       "mismatchHint": "Сервер назвал автором не того, кто подписал это сообщение. Показан настоящий отправитель.",
       "unverified": "отправитель не подтверждён",
       "unverifiedHint": "Сообщение отправлено перед сменой ключей беседы, и подпись отправителя не сверялась с автором."
-    }
+    },
+    "listSubtitle": "Зашифрованная беседа"
   },
   "polls": {
     "label": "Опрос: {{question}}",
@@ -1417,7 +1501,7 @@
     "leftDays_other": "осталось {{count}} дня",
     "vote": "Проголосовать",
     "change": "Изменить голос",
-    "unvote": "Убрать голос",
+    "unvote": "Отменить голос",
     "end": "Завершить опрос",
     "create": "Создать опрос",
     "createTitle": "Новый опрос",
@@ -1436,7 +1520,14 @@
       "24": "1 день",
       "72": "3 дня",
       "168": "1 неделя"
-    }
+    },
+    "menu": "Опрос",
+    "menuHint": "Вопрос с вариантами ответа",
+    "kindOne": "Опрос · один ответ",
+    "kindSeveral": "Опрос · несколько ответов",
+    "youVoted": "вы проголосовали",
+    "voteFor": "Голосовать за «{{answer}}»",
+    "answers": "Варианты ответа"
   },
   "forward": {
     "action": "Переслать",

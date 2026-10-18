@@ -30,9 +30,9 @@ export const Dialog = ({
   return (
     <RadixDialog.Root open={open} onOpenChange={onOpenChange}>
       <RadixDialog.Portal>
-        <RadixDialog.Overlay className="fixed inset-0 z-50 bg-black/70" />
+        <RadixDialog.Overlay className="fixed inset-0 z-50 bg-[rgb(8_8_16/0.5)] backdrop-blur-[3px]" />
         <RadixDialog.Content
-          className={`fixed top-1/2 left-1/2 z-50 max-h-[90vh] w-[calc(100%-2rem)] ${SIZES[size]} -translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded-lg bg-main p-5 text-text shadow-2xl focus:outline-none`}
+          className={`fixed top-1/2 left-1/2 z-50 max-h-[90vh] w-[calc(100%-2rem)] ${SIZES[size]} -translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded-modal bg-main p-6 text-text shadow-modal focus:outline-none`}
           {...(description ? {} : { 'aria-describedby': undefined })}
           // A dialog with a form starts in its first field, ready to type (Radix would pick the
           // first focusable element, which is the close button in the header).
@@ -47,7 +47,9 @@ export const Dialog = ({
         >
           <div className="mb-4 flex items-start justify-between gap-4">
             <div>
-              <RadixDialog.Title className="text-xl font-semibold">{title}</RadixDialog.Title>
+              <RadixDialog.Title className="text-xl font-semibold tracking-[-0.015em]">
+                {title}
+              </RadixDialog.Title>
               {description ? (
                 <RadixDialog.Description className="mt-1 text-sm text-muted">
                   {description}
@@ -56,7 +58,7 @@ export const Dialog = ({
             </div>
             <RadixDialog.Close
               aria-label={t('common.close')}
-              className="rounded p-1 text-muted hover:bg-hover hover:text-text"
+              className="grid size-[34px] shrink-0 place-items-center rounded-full text-muted hover:bg-field hover:text-text"
             >
               <X aria-hidden className="size-5" />
             </RadixDialog.Close>

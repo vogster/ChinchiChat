@@ -2,6 +2,7 @@ import { expect, test } from '@playwright/test'
 
 import { registerAndOpenHome } from '../support/auth'
 import { createServerWithInvite } from '../support/guild'
+import { messageAction } from '../support/messages'
 import { newUser } from '../support/users'
 
 import type { Browser, Page } from '@playwright/test'
@@ -43,9 +44,7 @@ test('a thread grows out of a message, opens beside it and in full', async ({ br
   const { context, page } = await ownerOnServer(browser, 'Треды')
   await say(page, 'Обсудим релиз?')
 
-  const message = history(page).getByRole('listitem').filter({ hasText: 'Обсудим релиз?' })
-  await message.hover()
-  await message.getByRole('button', { name: 'Создать тред' }).click()
+  await (await messageAction(page, 'Обсудим релиз?', 'Создать тред')).click()
   const dialog = page.getByRole('dialog', { name: 'Новый тред' })
   await dialog.getByLabel('Название треда', { exact: true }).fill('Релиз')
   await dialog.getByRole('button', { name: 'Создать' }).click()
@@ -95,7 +94,7 @@ test('a server emoji is uploaded and shows up in messages', async ({ browser }) 
   const list = page.getByRole('list', { name: 'Эмодзи сервера' })
   await expect(list.getByRole('img', { name: `:${emojiName}:` })).toBeVisible()
 
-  await page.getByRole('link', { name: 'Закрыть настройки сервера' }).click()
+  await page.getByRole('button', { name: 'Закрыть настройки сервера' }).click()
   await composer(page).fill(`Привет :${emojiName}:`)
   await composer(page).press('Enter')
   await expect(history(page).getByRole('img', { name: `:${emojiName}:` })).toBeVisible()
@@ -145,8 +144,7 @@ test('an announcement reaches the channel that follows it', async ({ browser }) 
 
   await say(page, 'Вышла версия 1.0')
   const message = history(page).getByRole('listitem').filter({ hasText: 'Вышла версия 1.0' })
-  await message.hover()
-  await message.getByRole('button', { name: 'Опубликовать' }).click()
+  await (await messageAction(page, 'Вышла версия 1.0', 'Опубликовать')).click()
   await expect(message).toContainText('опубликовано')
 
   await page.getByRole('link', { name: readers }).click()

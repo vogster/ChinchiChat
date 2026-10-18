@@ -9,6 +9,7 @@ import {
   testThread,
   testUser,
 } from '../../test/fake-api'
+import { openMessageMenu } from '../../test/message-menu'
 import { renderApp } from '../../test/render-app'
 
 const GENERAL_URL = `/channels/${testGuild.id}/503`
@@ -66,7 +67,7 @@ describe('threads', () => {
     const { user } = renderApp(GENERAL_URL, { api })
 
     await user.click(await screen.findByRole('button', { name: 'Треды' }))
-    const list = await screen.findByRole('complementary', { name: 'Треды в #общий' })
+    const list = await screen.findByRole('dialog', { name: 'Треды в #общий' })
     await user.click(within(list).getByRole('link', { name: 'Тред «Релиз» — 3 сообщения' }))
 
     expect(await within(await threadPanel()).findByText('Выпускаем в пятницу')).toBeVisible()
@@ -76,7 +77,7 @@ describe('threads', () => {
     const { user } = renderApp(GENERAL_URL, { user: testUser })
 
     await user.click(await screen.findByRole('button', { name: 'Треды' }))
-    const list = await screen.findByRole('complementary', { name: 'Треды в #общий' })
+    const list = await screen.findByRole('dialog', { name: 'Треды в #общий' })
     expect(
       within(list).getByText('Тредов пока нет. Начните тред из любого сообщения.'),
     ).toBeVisible()
@@ -130,7 +131,11 @@ describe('threads', () => {
     const { user, router } = renderApp(GENERAL_URL, { api })
 
     await screen.findByText('Как дела?')
-    await user.click(within(messageRow('Как дела?')).getByRole('button', { name: 'Создать тред' }))
+    await user.click(
+      within(await openMessageMenu(messageRow('Как дела?'))).getByRole('menuitem', {
+        name: 'Создать тред',
+      }),
+    )
     const dialog = await screen.findByRole('dialog', { name: 'Новый тред' })
     const name = within(dialog).getByLabelText('Название треда', { exact: true })
     expect(name).toHaveValue('Как дела?')

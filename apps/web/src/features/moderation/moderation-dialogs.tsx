@@ -85,7 +85,7 @@ export const ModerationDialog = ({
             {TIMEOUTS.map((option) => (
               <label
                 key={option.key}
-                className="flex cursor-pointer items-center gap-2 rounded-md bg-elevated px-3 py-2 text-sm has-[:checked]:outline-2 has-[:checked]:outline-accent"
+                className="flex cursor-pointer items-center gap-2 rounded-md bg-field px-3 py-2 text-sm has-[:checked]:outline-2 has-[:checked]:outline-accent"
               >
                 <input
                   type="radio"
@@ -111,7 +111,7 @@ export const ModerationDialog = ({
               id="ban-delete"
               value={deleteSeconds}
               onChange={(event) => setDeleteSeconds(Number(event.target.value))}
-              className="rounded-md border border-border bg-rail px-3 py-2"
+              className="rounded-md border border-line bg-rail px-3 py-2"
             >
               {DELETE_WINDOWS.map((option) => (
                 <option key={option.key} value={option.seconds}>

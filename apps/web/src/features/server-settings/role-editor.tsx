@@ -98,7 +98,7 @@ export const RoleEditor = ({ role, permissions, onDeleted }: RoleEditorProps) =>
                 disabled={locked}
                 onChange={(color) => edit({ color })}
               />
-              <div className="flex flex-col divide-y divide-border">
+              <div className="flex flex-col divide-y divide-line">
                 <Switch
                   checked={draft.hoist}
                   disabled={locked}
@@ -126,7 +126,7 @@ export const RoleEditor = ({ role, permissions, onDeleted }: RoleEditorProps) =>
         />
       </SettingsCard>
 
-      <div className="sticky bottom-0 flex flex-wrap gap-2 rounded-lg border border-border bg-sidebar p-3 shadow-lg">
+      <div className="sticky bottom-3 flex flex-wrap gap-2 rounded-card bg-side p-2.5 shadow-popover">
         <Button
           type="submit"
           fullWidth={false}

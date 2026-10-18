@@ -69,7 +69,7 @@ export const ReportsList = ({ scope, load, close, canDeleteMessages = true }: Re
           id="reports-status"
           value={status}
           onChange={(event) => setStatus(event.target.value as ReportStatus)}
-          className="w-fit rounded-md border border-border bg-rail px-3 py-2"
+          className="w-fit rounded-md border border-line bg-rail px-3 py-2"
         >
           {STATUSES.map((value) => (
             <option key={value} value={value}>
@@ -83,7 +83,7 @@ export const ReportsList = ({ scope, load, close, canDeleteMessages = true }: Re
         {!isPending && reports.length === 0 ? (
           <p className="text-sm text-muted">{t(`reports.empty.${status}`)}</p>
         ) : null}
-        <ul aria-label={t('reports.listTitle')} className="flex flex-col divide-y divide-border">
+        <ul aria-label={t('reports.listTitle')} className="flex flex-col divide-y divide-line">
           {reports.map((report) => (
             <li key={report.id} className="flex flex-col gap-2 py-3">
               <p className="text-xs text-muted">
@@ -93,7 +93,7 @@ export const ReportsList = ({ scope, load, close, canDeleteMessages = true }: Re
                   time: time(report.createdAt),
                 })}
               </p>
-              <blockquote className="rounded border-l-4 border-border bg-rail px-3 py-2 text-sm break-words whitespace-pre-wrap">
+              <blockquote className="rounded border-l-4 border-line bg-rail px-3 py-2 text-sm break-words whitespace-pre-wrap">
                 {report.content || t('reports.noText')}
               </blockquote>
               <p className="text-sm">

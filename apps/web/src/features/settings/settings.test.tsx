@@ -79,8 +79,9 @@ describe('account section', () => {
   it('shows the username, email and verification status', async () => {
     renderApp('/settings/account', { user: { ...testUser, emailVerified: false } })
 
-    expect(await screen.findByText('alice@example.com')).toBeVisible()
-    expect(screen.getByText('Не подтверждён')).toBeVisible()
+    const account = await screen.findByRole('region', { name: 'Моя учётная запись' })
+    expect(await within(account).findByText('alice@example.com')).toBeVisible()
+    expect(within(account).getByText('Не подтверждён')).toBeVisible()
   })
 
   it('changes the password', async () => {

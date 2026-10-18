@@ -101,7 +101,7 @@ export const ChannelOverviewTab = ({ guildId, channel, onDone }: ChannelOverview
             placeholder={t('editChannel.topicPlaceholder')}
             onChange={(event) => setTopic(event.target.value)}
             rows={3}
-            className="resize-none rounded-md border border-border bg-rail px-3 py-2 outline-none focus:border-accent"
+            className="resize-none rounded-md border border-line bg-rail px-3 py-2 outline-none focus:border-accent"
           />
         </div>
       ) : null}
@@ -118,7 +118,7 @@ export const ChannelOverviewTab = ({ guildId, channel, onDone }: ChannelOverview
               id="channel-slowmode"
               value={slowmode}
               onChange={(event) => setSlowmode(Number(event.target.value))}
-              className="rounded-md border border-border bg-rail px-3 py-2"
+              className="rounded-md border border-line bg-rail px-3 py-2"
             >
               {slowmodeOptions(channel.rateLimitPerUser).map((seconds) => (
                 <option key={seconds} value={seconds}>
@@ -159,7 +159,7 @@ export const ChannelOverviewTab = ({ guildId, channel, onDone }: ChannelOverview
         {t('editChannel.save')}
       </Button>
 
-      <hr className="border-border" />
+      <hr className="border-line" />
 
       {confirmingDelete ? (
         <div className="flex flex-col gap-2">

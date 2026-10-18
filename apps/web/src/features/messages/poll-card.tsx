@@ -1,4 +1,4 @@
-import { BarChart3, Check } from 'lucide-react'
+import { BarChart3 } from 'lucide-react'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
@@ -7,11 +7,17 @@ import { Button } from '../../components/ui/button'
 import { errorMessage } from '../../lib/errors'
 import { useNow } from '../../lib/use-now'
 import { useCurrentUser } from '../auth/use-auth-actions'
+import { PickOne, PickSeveral, Results } from './poll-answers'
 import { usePollActions } from './use-polls'
 
 import type { Poll } from '@chinchi/shared'
 
 const HOUR = 3_600_000
+
+// Colours go with each button: one text colour per element (see AGENTS.md, Tailwind).
+const footerButton =
+  'h-7 shrink-0 rounded-full px-3 text-xs font-medium transition-colors disabled:opacity-60'
+const quietButton = `${footerButton} text-muted hover:bg-stage hover:text-text`
 
 /** "23 h left", "3 d left", "45 min left". */
 const useTimeLeft = (expiresAt: string) => {
@@ -21,79 +27,6 @@ const useTimeLeft = (expiresAt: string) => {
   if (left >= HOUR) return t('polls.leftHours', { count: Math.floor(left / HOUR) })
   return t('polls.leftMinutes', { count: Math.max(1, Math.ceil(left / 60_000)) })
 }
-
-const Results = ({ poll }: { poll: Poll }) => {
-  const { t } = useTranslation()
-  return (
-    <ul className="flex flex-col gap-1.5">
-      {poll.answers.map((answer) => {
-        const percent = poll.voters === 0 ? 0 : Math.round((answer.count / poll.voters) * 100)
-        const label = `${answer.text}: ${percent}%, ${t('polls.votes', { count: answer.count })}${
-          answer.me ? `, ${t('polls.yours')}` : ''
-        }`
-        return (
-          <li key={answer.id}>
-            <div
-              role="meter"
-              aria-label={label}
-              aria-valuemin={0}
-              aria-valuemax={100}
-              aria-valuenow={percent}
-              data-mine={answer.me}
-              className="relative overflow-hidden rounded-md border border-border px-3 py-1.5 data-[mine=true]:border-accent"
-            >
-              <span
-                aria-hidden
-                className="absolute inset-y-0 left-0 bg-accent/20"
-                style={{ width: `${percent}%` }}
-              />
-              <span className="relative flex items-center gap-2 text-sm">
-                {answer.me ? <Check aria-hidden className="size-4 text-accent" /> : null}
-                <span className="min-w-0 flex-1 truncate">{answer.text}</span>
-                <span className="text-muted">{percent}%</span>
-              </span>
-            </div>
-          </li>
-        )
-      })}
-    </ul>
-  )
-}
-
-const Choices = ({
-  poll,
-  picked,
-  onPick,
-}: {
-  poll: Poll
-  picked: readonly number[]
-  onPick: (ids: number[]) => void
-}) => (
-  <ul className="flex flex-col gap-1.5">
-    {poll.answers.map((answer) => (
-      <li key={answer.id}>
-        <label className="flex cursor-pointer items-center gap-2 rounded-md border border-border px-3 py-1.5 text-sm hover:bg-hover has-checked:border-accent">
-          <input
-            type={poll.multiple ? 'checkbox' : 'radio'}
-            name="poll-answer"
-            checked={picked.includes(answer.id)}
-            onChange={() =>
-              onPick(
-                poll.multiple
-                  ? picked.includes(answer.id)
-                    ? picked.filter((id) => id !== answer.id)
-                    : [...picked, answer.id]
-                  : [answer.id],
-              )
-            }
-            className="accent-[var(--zl-accent)]"
-          />
-          {answer.text}
-        </label>
-      </li>
-    ))}
-  </ul>
-)
 
 /** A poll in a message: choose and vote, then see the results (as everyone does once it ends). */
 export const PollCard = ({
@@ -114,68 +47,88 @@ export const PollCard = ({
   const [changing, setChanging] = useState(false)
   const [picked, setPicked] = useState<number[]>([])
   const timeLeft = useTimeLeft(poll.expiresAt)
+  // Single choice votes on a click and re-votes from the results; several answers need a button.
   const choosing = !poll.ended && (!voted || changing)
   const error = vote.error ?? end.error
+  const castVote = (ids: number[]) =>
+    vote.mutate(ids, {
+      onSuccess: () => {
+        setChanging(false)
+        setPicked([])
+      },
+    })
 
   return (
     <div
       role="group"
       aria-label={t('polls.label', { question: poll.question })}
-      className="mt-1 flex max-w-md flex-col gap-3 rounded-lg border border-border bg-elevated p-3"
+      className="flex w-[min(440px,100%)] flex-col gap-2.5 rounded-card bg-field p-3.5 text-left text-text"
     >
-      <div className="flex items-start gap-2">
-        <BarChart3 aria-hidden className="mt-0.5 size-4 shrink-0 text-muted" />
-        <div>
-          <p className="font-semibold break-words">{poll.question}</p>
-          <p className="text-xs text-muted">
-            {poll.multiple ? t('polls.pickSeveral') : t('polls.pickOne')}
-          </p>
-        </div>
+      <div className="flex flex-col gap-1.5 px-1 pt-0.5">
+        <span
+          className={`flex items-center gap-1.5 text-xs font-medium ${poll.ended ? 'text-faint' : 'text-accent-text'}`}
+        >
+          <BarChart3 aria-hidden className="size-3.5" />
+          {poll.ended
+            ? t('polls.ended')
+            : poll.multiple
+              ? t('polls.kindSeveral')
+              : t('polls.kindOne')}
+        </span>
+        <p className="text-base leading-snug font-semibold text-pretty break-words">
+          {poll.question}
+        </p>
       </div>
-      {choosing ? (
-        <Choices poll={poll} picked={picked} onPick={setPicked} />
+      {choosing && poll.multiple ? (
+        <PickSeveral poll={poll} picked={picked} onPick={setPicked} />
+      ) : choosing ? (
+        <PickOne poll={poll} onVote={(id) => castVote([id])} />
       ) : (
-        <Results poll={poll} />
+        <Results
+          poll={poll}
+          onRevote={!poll.ended && !poll.multiple ? (id) => castVote([id]) : null}
+        />
       )}
       {error ? <Alert tone="error">{errorMessage(t, error)}</Alert> : null}
-      <div className="flex flex-wrap items-center gap-2">
-        <span className="mr-auto text-xs text-muted">
-          {t('polls.votes', { count: poll.voters })} · {poll.ended ? t('polls.ended') : timeLeft}
+      <div className="flex min-h-7 flex-wrap items-center gap-x-2 gap-y-1 px-1 text-[12.5px] text-faint">
+        <span className="mr-auto min-w-0">
+          {[
+            t('polls.votes', { count: poll.voters }),
+            voted ? t('polls.youVoted') : null,
+            poll.ended ? null : timeLeft,
+          ]
+            .filter(Boolean)
+            .join(' · ')}
         </span>
-        {choosing ? (
+        {choosing && poll.multiple ? (
           <Button
             fullWidth={false}
             disabled={picked.length === 0}
             pending={vote.isPending}
-            onClick={() =>
-              vote.mutate(picked, {
-                onSuccess: () => {
-                  setChanging(false)
-                  setPicked([])
-                },
-              })
-            }
+            onClick={() => castVote(picked)}
           >
             {t('polls.vote')}
           </Button>
         ) : null}
-        {!poll.ended && voted && !changing ? (
-          <Button variant="secondary" fullWidth={false} onClick={() => setChanging(true)}>
+        {!poll.ended && voted && poll.multiple && !changing ? (
+          <button type="button" onClick={() => setChanging(true)} className={quietButton}>
             {t('polls.change')}
-          </Button>
+          </button>
         ) : null}
         {!poll.ended && voted ? (
-          <Button
-            variant="link"
-            onClick={() => vote.mutate([], { onSuccess: () => setChanging(false) })}
-          >
+          <button type="button" onClick={() => castVote([])} className={quietButton}>
             {t('polls.unvote')}
-          </Button>
+          </button>
         ) : null}
         {!poll.ended && isAuthor ? (
-          <Button variant="link" pending={end.isPending} onClick={() => end.mutate()}>
+          <button
+            type="button"
+            disabled={end.isPending}
+            onClick={() => end.mutate()}
+            className={`${footerButton} text-danger hover:bg-danger-soft`}
+          >
             {t('polls.end')}
-          </Button>
+          </button>
         ) : null}
       </div>
     </div>

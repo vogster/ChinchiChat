@@ -60,26 +60,29 @@ export const CreatePollDialog = ({
           maxLength={300}
           onChange={(event) => setQuestion(event.target.value)}
         />
-        <div className="flex flex-col gap-2">
+        <fieldset className="flex flex-col gap-1.5">
+          <legend className="px-1.5 pb-1.5 text-[12.5px] font-medium text-faint">
+            {t('polls.answers')}
+          </legend>
           {answers.map((answer, index) => (
             // Answers are edited in place; their position is their identity here.
-            <div key={index} className="flex items-end gap-2">
-              <div className="flex-1">
-                <TextField
-                  label={t('polls.answer', { number: index + 1 })}
-                  value={answer}
-                  maxLength={55}
-                  onChange={(event) =>
-                    setAnswers((all) => all.map((a, i) => (i === index ? event.target.value : a)))
-                  }
-                />
-              </div>
+            <div key={index} className="relative">
+              <input
+                aria-label={t('polls.answer', { number: index + 1 })}
+                placeholder={t('polls.answer', { number: index + 1 })}
+                value={answer}
+                maxLength={55}
+                onChange={(event) =>
+                  setAnswers((all) => all.map((a, i) => (i === index ? event.target.value : a)))
+                }
+                className="h-11 w-full rounded-field bg-field pr-11 pl-3.5 text-text outline-none placeholder:text-faint focus:ring-2 focus:ring-accent"
+              />
               {answers.length > POLL_ANSWERS_MIN ? (
                 <button
                   type="button"
                   aria-label={t('polls.removeAnswer', { number: index + 1 })}
                   onClick={() => setAnswers((all) => all.filter((_, i) => i !== index))}
-                  className="mb-2 rounded p-1 text-muted hover:text-text"
+                  className="absolute top-1.5 right-1.5 grid size-8 place-items-center rounded-full text-muted hover:bg-chip hover:text-text"
                 >
                   <X aria-hidden className="size-4" />
                 </button>
@@ -87,16 +90,16 @@ export const CreatePollDialog = ({
             </div>
           ))}
           {answers.length < POLL_ANSWERS_MAX ? (
-            <Button
-              variant="secondary"
-              fullWidth={false}
-              className="self-start"
+            <button
+              type="button"
               onClick={() => setAnswers((all) => [...all, ''])}
+              className="h-11 rounded-field border-[1.5px] border-dashed border-chip text-[13px] font-medium text-muted transition-colors hover:border-faint hover:text-text"
             >
+              <span aria-hidden>+ </span>
               {t('polls.addAnswer')}
-            </Button>
+            </button>
           ) : null}
-        </div>
+        </fieldset>
         <Switch
           checked={multiple}
           onCheckedChange={setMultiple}
@@ -104,13 +107,11 @@ export const CreatePollDialog = ({
           description={t('polls.multipleHint')}
         />
         <label className="flex flex-col gap-1.5">
-          <span className="text-xs font-bold tracking-wide text-muted uppercase">
-            {t('polls.duration')}
-          </span>
+          <span className="px-1.5 text-[12.5px] font-medium text-faint">{t('polls.duration')}</span>
           <select
             value={duration}
             onChange={(event) => setDuration(Number(event.target.value) as Duration)}
-            className="rounded-md border border-border bg-rail px-3 py-2 text-text"
+            className="h-11 rounded-field bg-field px-3.5 text-text outline-none focus:ring-2 focus:ring-accent"
           >
             {POLL_DURATIONS_HOURS.map((hours) => (
               <option key={hours} value={hours}>
@@ -120,11 +121,11 @@ export const CreatePollDialog = ({
           </select>
         </label>
         {send.error ? <Alert tone="error">{errorMessage(t, send.error)}</Alert> : null}
-        <div className="flex gap-2">
-          <Button variant="secondary" onClick={() => onOpenChange(false)}>
+        <div className="flex justify-end gap-2">
+          <Button variant="secondary" fullWidth={false} onClick={() => onOpenChange(false)}>
             {t('common.cancel')}
           </Button>
-          <Button type="submit" disabled={!ready} pending={send.isPending}>
+          <Button type="submit" fullWidth={false} disabled={!ready} pending={send.isPending}>
             {t('polls.send')}
           </Button>
         </div>

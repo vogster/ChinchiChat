@@ -16,7 +16,7 @@ export interface RoleColorPickerProps {
 }
 
 const swatch =
-  'flex size-8 items-center justify-center rounded-md border border-border focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:cursor-not-allowed'
+  'flex size-8 items-center justify-center rounded-md border border-line focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:cursor-not-allowed'
 
 export const RoleColorPicker = ({ value, onChange, disabled }: RoleColorPickerProps) => {
   const { t } = useTranslation()
@@ -48,7 +48,7 @@ export const RoleColorPicker = ({ value, onChange, disabled }: RoleColorPickerPr
           aria-label={t('serverSettings.roles.customColor')}
           value={toHexColor(value)}
           onChange={(event) => onChange(Number.parseInt(event.target.value.slice(1), 16))}
-          className="h-8 w-10 cursor-pointer rounded-md border border-border bg-transparent disabled:cursor-not-allowed"
+          className="h-8 w-10 cursor-pointer rounded-md border border-line bg-transparent disabled:cursor-not-allowed"
         />
       </div>
     </fieldset>

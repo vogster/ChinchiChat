@@ -14,7 +14,7 @@ import { ProfileForm } from './profile-form'
 import { RecoveryKeySettings } from './recovery-key-settings'
 import { SessionsList } from './sessions-list'
 import { SettingsCard, SettingsSection } from './settings-section'
-import { ThemePicker } from './theme-picker'
+import { DensityPicker, PalettePicker, ThemePicker } from './theme-picker'
 import { VoiceDevices } from './voice-devices'
 
 export const AccountPage = () => {
@@ -24,22 +24,18 @@ export const AccountPage = () => {
 
   return (
     <SettingsSection title={t('settings.account.title')}>
-      <SettingsCard>
+      <SettingsCard title={t('settings.account.credentials')}>
         <dl className="grid gap-4 sm:grid-cols-2">
           <div>
-            <dt className="text-xs font-bold tracking-wide text-muted uppercase">
-              {t('settings.account.username')}
-            </dt>
+            <dt className="text-[12.5px] text-faint">{t('settings.account.username')}</dt>
             <dd className="mt-1">{user.username}</dd>
           </div>
           <div>
-            <dt className="text-xs font-bold tracking-wide text-muted uppercase">
-              {t('settings.account.email')}
-            </dt>
+            <dt className="text-[12.5px] text-faint">{t('settings.account.email')}</dt>
             <dd className="mt-1 flex flex-wrap items-center gap-2">
               <span className="break-all">{user.email}</span>
               <span
-                className={`rounded px-1.5 py-0.5 text-[11px] font-semibold ${user.emailVerified ? 'bg-green-600 text-white' : 'bg-yellow-500 text-black'}`}
+                className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${user.emailVerified ? 'bg-secure-soft text-secure-text' : 'bg-warning-soft text-warning-text'}`}
               >
                 {user.emailVerified
                   ? t('settings.account.verified')
@@ -142,7 +138,11 @@ export const AppearancePage = () => {
       title={t('settings.appearance.title')}
       subtitle={t('settings.appearance.subtitle')}
     >
-      <ThemePicker />
+      <div className="flex flex-col gap-6">
+        <ThemePicker />
+        <PalettePicker />
+        <DensityPicker />
+      </div>
     </SettingsSection>
   )
 }

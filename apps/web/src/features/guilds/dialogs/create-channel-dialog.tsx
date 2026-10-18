@@ -20,7 +20,7 @@ export interface CreateChannelDialogProps {
 }
 
 const typeOptionClass =
-  'flex cursor-pointer items-center gap-3 rounded-md bg-sidebar px-3 py-2.5 hover:bg-hover has-[:checked]:bg-hover has-[:checked]:outline-2 has-[:checked]:outline-accent'
+  'flex cursor-pointer items-center gap-3 rounded-md bg-side px-3 py-2.5 hover:bg-chip has-[:checked]:bg-chip has-[:checked]:outline-2 has-[:checked]:outline-accent'
 
 export const CreateChannelDialog = ({
   guildId,

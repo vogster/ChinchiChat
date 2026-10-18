@@ -65,7 +65,7 @@ export const VoiceDevices = () => {
                 id={id}
                 value={preferences[key] ?? ''}
                 onChange={(event) => set({ [key]: event.target.value || null })}
-                className="rounded-md border border-border bg-rail px-3 py-2"
+                className="rounded-md border border-line bg-rail px-3 py-2"
               >
                 <option value="">{t('settings.voice.default')}</option>
                 {options.map((device, index) => (

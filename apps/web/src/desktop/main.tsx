@@ -1,3 +1,4 @@
+import '@fontsource-variable/rubik/index.css'
 import '../styles.css'
 
 import { getVersion } from '@tauri-apps/api/app'
@@ -79,5 +80,5 @@ ${notes}`
 boot().catch((error: unknown) => {
   const message = error instanceof Error ? (error.stack ?? error.message) : String(error)
   rootElement.textContent = `Chinchi could not start: ${message}`
-  rootElement.className = 'whitespace-pre-wrap p-6 font-mono text-sm text-red-400'
+  rootElement.className = 'whitespace-pre-wrap p-6 font-mono text-sm text-danger'
 })

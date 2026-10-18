@@ -2,6 +2,7 @@ import { screen, waitFor, within } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 
 import { createFakeApi, testGuild, testMessage, testUser } from '../../test/fake-api'
+import { openMessageMenu } from '../../test/message-menu'
 import { renderApp } from '../../test/render-app'
 
 const CHANNEL_URL = `/channels/${testGuild.id}/503`
@@ -13,7 +14,9 @@ const messageRow = (text: string) => screen.getByText(text).closest('li') as HTM
 const startReply = async (user: ReturnType<typeof renderApp>['user'], text: string) => {
   await screen.findByText(text)
   await user.hover(messageRow(text))
-  await user.click(within(messageRow(text)).getByRole('button', { name: 'Ответить' }))
+  await user.click(
+    within(await openMessageMenu(messageRow(text))).getByRole('menuitem', { name: 'Ответить' }),
+  )
 }
 
 describe('replying', () => {
