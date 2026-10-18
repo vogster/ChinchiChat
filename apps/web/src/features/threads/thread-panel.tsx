@@ -3,15 +3,15 @@ import { Maximize2, MessagesSquare, X } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
 import { ChannelChat } from '../guilds/channel-chat'
-import { threadsOf } from '../guilds/channel-tree'
 
 import type { Channel, GuildDetail } from '@chinchi/shared'
 import type { ReactNode } from 'react'
 
-/** What the side panel shows: the channel's threads, or one of them. */
+/** What the `thread` search param opens: the list (a popover) or one thread beside the chat. */
 export type ThreadPanelView = 'list' | (string & {})
 
-const iconButton = 'rounded p-1 text-muted hover:text-text'
+const iconButton =
+  'grid size-[34px] shrink-0 place-items-center rounded-full text-muted hover:bg-field hover:text-text'
 
 const Panel = ({
   label,
@@ -32,64 +32,9 @@ const Panel = ({
   </aside>
 )
 
-const ThreadList = ({
-  guild,
-  channel,
-  onClose,
-}: {
-  guild: GuildDetail
-  channel: Channel
-  onClose: () => void
-}) => {
-  const { t } = useTranslation()
-  const threads = threadsOf(guild.channels, channel.id)
-  return (
-    <Panel
-      label={t('threads.listLabel', { name: channel.name })}
-      header={
-        <>
-          <MessagesSquare aria-hidden className="size-5 shrink-0 text-muted" />
-          <h2 className="flex-1 truncate font-semibold">{t('threads.list')}</h2>
-          <button
-            type="button"
-            aria-label={t('threads.closeList')}
-            onClick={onClose}
-            className={iconButton}
-          >
-            <X aria-hidden className="size-4" />
-          </button>
-        </>
-      }
-    >
-      {threads.length === 0 ? (
-        <p className="p-4 text-sm text-muted">{t('threads.none')}</p>
-      ) : (
-        <ul className="flex flex-col gap-0.5 overflow-y-auto p-2">
-          {threads.map((thread) => (
-            <li key={thread.id}>
-              <Link
-                to="/channels/$guildId/$channelId"
-                params={{ guildId: guild.id, channelId: channel.id }}
-                search={{ thread: thread.id }}
-                aria-label={t('threads.chip', { name: thread.name, count: thread.messageCount })}
-                className="flex flex-col rounded px-3 py-2 hover:bg-hover"
-              >
-                <span className="truncate font-medium">{thread.name}</span>
-                <span className="text-xs text-muted">
-                  {t('threads.count', { count: thread.messageCount })}
-                </span>
-              </Link>
-            </li>
-          ))}
-        </ul>
-      )}
-    </Panel>
-  )
-}
-
 /**
- * The side panel of a text channel: its threads, or one thread to read and answer while the
- * channel stays in view. A thread that no longer exists closes the panel.
+ * The side panel of a text channel: one thread to read and answer while the channel stays in
+ * view (the list of threads is a popover). A thread that no longer exists closes the panel.
  */
 export const ThreadPanel = ({
   guild,
@@ -103,7 +48,7 @@ export const ThreadPanel = ({
   onClose: () => void
 }) => {
   const { t } = useTranslation()
-  if (view === 'list') return <ThreadList guild={guild} channel={channel} onClose={onClose} />
+  if (view === 'list') return null
 
   const thread = guild.channels.find(
     (c) => c.id === view && c.type === 'thread' && c.parentId === channel.id,

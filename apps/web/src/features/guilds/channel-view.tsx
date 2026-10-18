@@ -1,3 +1,4 @@
+import { Permission } from '@chinchi/shared'
 import { Link, useNavigate } from '@tanstack/react-router'
 import { Bell, ChevronRight, Megaphone, MessagesSquare, Pin, Rss, Search } from 'lucide-react'
 import { useState } from 'react'
@@ -6,11 +7,14 @@ import { useTranslation } from 'react-i18next'
 import { MainCard } from '../../components/layout/main-card'
 import { headerButtonClass, PageHeader, PageTitle } from '../../components/layout/page-header'
 import { FollowDialog } from '../announcements/follow-dialog'
-import { PinsDialog } from '../messages/pins-dialog'
+import { PinsPopover } from '../messages/pins-popover'
 import { NotificationSettingsDialog } from '../notifications/notification-settings-dialog'
+import { can } from '../permissions/permissions'
+import { useGuildPermissions } from '../permissions/use-guild-permissions'
 import { SearchBox } from '../search/search-box'
 import { SearchPanel } from '../search/search-panel'
 import { ThreadPanel } from '../threads/thread-panel'
+import { ThreadsPopover } from '../threads/threads-popover'
 import { ChannelChat } from './channel-chat'
 import { MembersPanel } from './members-panel'
 import { MembersStackButton } from './members-stack-button'
@@ -35,6 +39,7 @@ export const ChannelView = ({
   // Narrow screens open one side panel at a time, over the chat.
   const [narrow, setNarrow] = useState<'members' | 'search' | null>(null)
   const [showPins, setShowPins] = useState(false)
+  const canUnpin = can(useGuildPermissions(guild).inChannel(channel), Permission.ManageMessages)
   const [following, setFollowing] = useState(false)
   const [notifications, setNotifications] = useState(false)
   const [search, setSearch] = useState<string | null>(null)
@@ -114,8 +119,8 @@ export const ChannelView = ({
                 type="button"
                 aria-label={t('threads.list')}
                 title={t('threads.list')}
-                aria-pressed={thread !== undefined}
-                onClick={() => setThread(thread === undefined ? 'list' : undefined)}
+                aria-pressed={thread === 'list'}
+                onClick={() => setThread(thread === 'list' ? undefined : 'list')}
                 className={headerButtonClass}
               >
                 <MessagesSquare aria-hidden className="size-5" />
@@ -146,7 +151,8 @@ export const ChannelView = ({
               type="button"
               aria-label={t('messages.pins')}
               title={t('messages.pins')}
-              onClick={() => setShowPins(true)}
+              aria-pressed={showPins}
+              onClick={() => setShowPins((value) => !value)}
               className={headerButtonClass}
             >
               <Pin aria-hidden className="size-5" />
@@ -159,6 +165,11 @@ export const ChannelView = ({
         ) : (
           <ChannelChat guild={guild} channel={channel} autoOpenRules />
         )}
+        {thread === 'list' && channel.type === 'text' ? (
+          <ThreadsPopover guild={guild} channel={channel} onClose={() => setThread(undefined)} />
+        ) : showPins ? (
+          <PinsPopover channel={channel} canUnpin={canUnpin} onClose={() => setShowPins(false)} />
+        ) : null}
       </MainCard>
       {channel.nsfw && !nsfwOk ? null : (
         <>
@@ -185,7 +196,7 @@ export const ChannelView = ({
                 setNarrow(null)
               }}
             />
-          ) : thread !== undefined && channel.type === 'text' ? (
+          ) : thread !== undefined && thread !== 'list' && channel.type === 'text' ? (
             <ThreadPanel
               guild={guild}
               channel={channel}
@@ -198,7 +209,6 @@ export const ChannelView = ({
         </>
       )}
 
-      {showPins ? <PinsDialog channel={channel} onOpenChange={setShowPins} /> : null}
       {following ? <FollowDialog channel={channel} onOpenChange={setFollowing} /> : null}
       {notifications ? (
         <NotificationSettingsDialog

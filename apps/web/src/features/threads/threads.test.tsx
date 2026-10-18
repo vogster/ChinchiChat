@@ -66,7 +66,7 @@ describe('threads', () => {
     const { user } = renderApp(GENERAL_URL, { api })
 
     await user.click(await screen.findByRole('button', { name: 'Треды' }))
-    const list = await screen.findByRole('complementary', { name: 'Треды в #общий' })
+    const list = await screen.findByRole('dialog', { name: 'Треды в #общий' })
     await user.click(within(list).getByRole('link', { name: 'Тред «Релиз» — 3 сообщения' }))
 
     expect(await within(await threadPanel()).findByText('Выпускаем в пятницу')).toBeVisible()
@@ -76,7 +76,7 @@ describe('threads', () => {
     const { user } = renderApp(GENERAL_URL, { user: testUser })
 
     await user.click(await screen.findByRole('button', { name: 'Треды' }))
-    const list = await screen.findByRole('complementary', { name: 'Треды в #общий' })
+    const list = await screen.findByRole('dialog', { name: 'Треды в #общий' })
     expect(
       within(list).getByText('Тредов пока нет. Начните тред из любого сообщения.'),
     ).toBeVisible()

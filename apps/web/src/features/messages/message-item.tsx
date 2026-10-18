@@ -167,7 +167,7 @@ export const MessageItem = ({
       // Focusable from code only (jump to a pinned or replied-to message).
       tabIndex={-1}
       data-mentioned={mentioned || undefined}
-      className={`group relative mx-2 flex items-end gap-2.5 rounded-[20px] px-3 py-px transition-colors duration-300 ${mine ? 'flex-row-reverse' : ''} ${compact ? '' : 'mt-(--zl-message-group-gap) pt-1.5'} ${endsRun ? 'pb-1.5' : ''}`}
+      className={`group relative mx-2 flex items-end gap-2.5 rounded-[20px] px-3 py-px transition-colors duration-300 data-flash:bg-accent-soft ${mine ? 'flex-row-reverse' : ''} ${compact ? '' : 'mt-(--zl-message-group-gap) pt-1.5'} ${endsRun ? 'pb-1.5' : ''}`}
     >
       {mentioned ? (
         // A separate layer, so the highlight never fights the row's own background.

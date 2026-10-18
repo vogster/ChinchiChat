@@ -596,7 +596,8 @@
     "attachMenu": "Файл или фото",
     "attachUpTo": "До {{size}}",
     "sendMessage": "Отправить сообщение",
-    "send": "Отправить"
+    "send": "Отправить",
+    "jumpToMessage": "Перейти к сообщению"
   },
   "presence": {
     "online": "В сети",
@@ -1185,7 +1186,9 @@
     "close": "Закрыть тред",
     "fold": "Свернуть треды #{{name}}",
     "unfold": "Показать треды #{{name}} ({{count}})",
-    "meta": "{{size}} · последнее в {{time}}"
+    "meta": "{{size}} · последнее в {{time}}",
+    "new": "новые",
+    "metaLong": "{{size}} · последнее {{time}}"
   },
   "emojis": {
     "title": "Эмодзи",

@@ -588,7 +588,8 @@
     "attachMenu": "File or photo",
     "attachUpTo": "Up to {{size}}",
     "sendMessage": "Send the message",
-    "send": "Send"
+    "send": "Send",
+    "jumpToMessage": "Go to the message"
   },
   "presence": {
     "online": "Online",
@@ -1157,7 +1158,9 @@
     "close": "Close the thread",
     "fold": "Fold threads of #{{name}}",
     "unfold": "Show threads of #{{name}} ({{count}})",
-    "meta": "{{size}} · last at {{time}}"
+    "meta": "{{size}} · last at {{time}}",
+    "new": "new",
+    "metaLong": "{{size}} · last {{time}}"
   },
   "emojis": {
     "title": "Emoji",
