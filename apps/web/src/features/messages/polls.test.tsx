@@ -78,9 +78,9 @@ describe('polls', () => {
     const { user } = renderApp(CHANNEL_URL, { api })
     await screen.findByText('Куда идём в пятницу?')
 
-    expect(within(card()).getByRole('button', { name: 'Проголосовать' })).toBeDisabled()
-    await user.click(within(card()).getByRole('radio', { name: 'Кино' }))
-    await user.click(within(card()).getByRole('button', { name: 'Проголосовать' }))
+    // One answer: picking it is the vote, and the results stay hidden until then.
+    expect(within(card()).queryByRole('meter')).not.toBeInTheDocument()
+    await user.click(within(card()).getByRole('button', { name: 'Кино' }))
 
     expect(api.polls.vote).toHaveBeenCalledWith('503', '1001', [1])
     expect(await within(card()).findByRole('meter', { name: /^Кино: 40%/ })).toBeVisible()
@@ -88,6 +88,48 @@ describe('polls', () => {
       'Кино: 40%, 2 голоса, ваш ответ',
     )
     expect(within(card()).getByText(/5 голосов/)).toBeVisible()
+  })
+
+  it('let a single answer be picked again, or taken back', async () => {
+    const voted = poll({
+      answers: [
+        { id: 1, text: 'Кино', count: 2, me: true },
+        { id: 2, text: 'Бар', count: 3, me: false },
+      ],
+      voters: 5,
+    })
+    const api = withPoll(voted)
+    api.polls.vote.mockResolvedValue({
+      poll: poll({
+        answers: [
+          { id: 1, text: 'Кино', count: 1, me: false },
+          { id: 2, text: 'Бар', count: 4, me: true },
+        ],
+        voters: 5,
+      }),
+    })
+    const { user } = renderApp(CHANNEL_URL, { api })
+    await screen.findByText('Куда идём в пятницу?')
+
+    expect(within(card()).getByText(/вы проголосовали/)).toBeVisible()
+    await user.click(within(card()).getByRole('button', { name: 'Голосовать за «Бар»' }))
+    expect(api.polls.vote).toHaveBeenLastCalledWith('503', '1001', [2])
+
+    await user.click(within(card()).getByRole('button', { name: 'Отменить голос' }))
+    expect(api.polls.vote).toHaveBeenLastCalledWith('503', '1001', [])
+  })
+
+  it('with several answers, are voted with a button once something is picked', async () => {
+    const api = withPoll(poll({ multiple: true }))
+    const { user } = renderApp(CHANNEL_URL, { api })
+    await screen.findByText('Куда идём в пятницу?')
+
+    expect(within(card()).getByRole('button', { name: 'Проголосовать' })).toBeDisabled()
+    await user.click(within(card()).getByRole('checkbox', { name: 'Кино' }))
+    await user.click(within(card()).getByRole('checkbox', { name: 'Бар' }))
+    await user.click(within(card()).getByRole('button', { name: 'Проголосовать' }))
+
+    expect(api.polls.vote).toHaveBeenCalledWith('503', '1001', [1, 2])
   })
 
   it('follow counts from the gateway, keeping my own vote', async () => {

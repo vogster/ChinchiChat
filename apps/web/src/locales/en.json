@@ -1406,7 +1406,7 @@
     "leftDays_other": "{{count}} days left",
     "vote": "Vote",
     "change": "Change vote",
-    "unvote": "Remove vote",
+    "unvote": "Take back the vote",
     "end": "End poll",
     "create": "Create poll",
     "createTitle": "New poll",
@@ -1427,7 +1427,12 @@
       "168": "1 week"
     },
     "menu": "Poll",
-    "menuHint": "A question with answers to pick"
+    "menuHint": "A question with answers to pick",
+    "kindOne": "Poll · one answer",
+    "kindSeveral": "Poll · several answers",
+    "youVoted": "you voted",
+    "voteFor": "Vote for “{{answer}}”",
+    "answers": "Answers"
   },
   "forward": {
     "action": "Forward",
