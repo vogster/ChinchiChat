@@ -28,46 +28,54 @@ export const SafetyWarning = ({
     <div
       role="alert"
       aria-label={t('e2ee.safety.newDevicesLabel')}
-      className="mx-4 mt-2 flex items-start gap-3 rounded-md border border-line bg-field px-3 py-2 text-sm"
+      className="mx-4 mt-2 flex items-start gap-3.5 rounded-[24px] bg-stage p-4 text-sm"
     >
-      <ShieldAlert aria-hidden className="mt-0.5 size-4 shrink-0 text-danger" />
-      <div className="min-w-0 flex-1">
-        {people.map((person) => (
-          <div key={person.userId}>
-            {person.keyChanged ? (
-              <p>{t('e2ee.safety.keyChanged', { name: nameOf(person.userId) })}</p>
-            ) : null}
-            {person.newDevices.length > 0 ? (
-              <p>
-                {t('e2ee.safety.newDevice', {
-                  name: nameOf(person.userId),
-                  devices: names(person.newDevices),
-                })}
-              </p>
-            ) : null}
-          </div>
-        ))}
-        {status.mine.length > 0 ? (
-          <p>{t('e2ee.safety.newOwnDevice', { devices: names(status.mine) })}</p>
-        ) : null}
-      </div>
-      <div className="flex shrink-0 gap-2">
-        {people.length > 0 ? (
-          <Button variant="secondary" onClick={onCheck}>
-            {t('e2ee.safety.check')}
+      <span
+        aria-hidden
+        className="grid size-[42px] shrink-0 place-items-center rounded-[15px] bg-danger-soft text-danger"
+      >
+        <ShieldAlert className="size-5" />
+      </span>
+      <div className="flex min-w-0 flex-1 flex-col gap-3 pt-0.5 text-body">
+        <div className="flex flex-col gap-1">
+          {people.map((person) => (
+            <div key={person.userId}>
+              {person.keyChanged ? (
+                <p>{t('e2ee.safety.keyChanged', { name: nameOf(person.userId) })}</p>
+              ) : null}
+              {person.newDevices.length > 0 ? (
+                <p>
+                  {t('e2ee.safety.newDevice', {
+                    name: nameOf(person.userId),
+                    devices: names(person.newDevices),
+                  })}
+                </p>
+              ) : null}
+            </div>
+          ))}
+          {status.mine.length > 0 ? (
+            <p>{t('e2ee.safety.newOwnDevice', { devices: names(status.mine) })}</p>
+          ) : null}
+        </div>
+        <div className="flex flex-wrap gap-2">
+          {people.length > 0 ? (
+            <Button fullWidth={false} onClick={onCheck}>
+              {t('e2ee.safety.check')}
+            </Button>
+          ) : null}
+          <Button
+            variant="secondary"
+            fullWidth={false}
+            onClick={() =>
+              void safety.acknowledge([
+                ...people.map((person) => person.userId),
+                ...(status.mine.length > 0 ? [myId] : []),
+              ])
+            }
+          >
+            {t('e2ee.safety.gotIt')}
           </Button>
-        ) : null}
-        <Button
-          variant="secondary"
-          onClick={() =>
-            void safety.acknowledge([
-              ...people.map((person) => person.userId),
-              ...(status.mine.length > 0 ? [myId] : []),
-            ])
-          }
-        >
-          {t('e2ee.safety.gotIt')}
-        </Button>
+        </div>
       </div>
     </div>
   )

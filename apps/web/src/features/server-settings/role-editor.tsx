@@ -126,7 +126,7 @@ export const RoleEditor = ({ role, permissions, onDeleted }: RoleEditorProps) =>
         />
       </SettingsCard>
 
-      <div className="sticky bottom-0 flex flex-wrap gap-2 rounded-lg border border-line bg-side p-3 shadow-lg">
+      <div className="sticky bottom-3 flex flex-wrap gap-2 rounded-card bg-side p-2.5 shadow-popover">
         <Button
           type="submit"
           fullWidth={false}

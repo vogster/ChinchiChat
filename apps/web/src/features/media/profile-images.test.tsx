@@ -106,7 +106,7 @@ describe('server icon', () => {
     await user.upload(await screen.findByLabelText('Загрузить иконку'), file)
 
     await waitFor(() => expect(api.guilds.setIcon).toHaveBeenCalledWith(testGuild.id, file))
-    await user.click(screen.getByRole('link', { name: 'Закрыть настройки сервера' }))
+    await user.click(screen.getByRole('button', { name: 'Закрыть настройки сервера' }))
     const link = await screen.findByRole('link', { name: testGuild.name })
     await waitFor(() => expect(imgIn(link)).toHaveAttribute('src', ICON))
   })

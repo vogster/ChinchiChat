@@ -223,10 +223,8 @@ describe('server menu', () => {
     await user.click(
       within(await openGuildMenu(user)).getByRole('menuitem', { name: 'Настройки сервера' }),
     )
-    await waitFor(() =>
-      expect(router.state.location.pathname).toBe(`/server-settings/${testGuild.id}/overview`),
-    )
-    const page = await screen.findByRole('main')
+    const page = await screen.findByRole('dialog', { name: 'Настройки сервера' })
+    expect(router.state.location.pathname).toBe(GENERAL_URL)
     expect(within(page).getByRole('heading', { name: 'Обзор', level: 1 })).toBeVisible()
 
     const name = within(page).getByLabelText('Название сервера', {
@@ -252,7 +250,7 @@ describe('server menu', () => {
     const api = createFakeApi({ user: testUser })
     const { user } = renderApp(`/server-settings/${testGuild.id}/overview`, { api })
 
-    const page = await screen.findByRole('main')
+    const page = await screen.findByRole('dialog', { name: 'Настройки сервера' })
     await user.selectOptions(await within(page).findByLabelText('Новый владелец'), 'Боб')
     await user.click(within(page).getByRole('button', { name: 'Передать' }))
 
@@ -262,8 +260,11 @@ describe('server menu', () => {
   it('closes server settings back to the server', async () => {
     const { user, router } = renderApp(`/server-settings/${testGuild.id}`, { user: testUser })
 
-    await user.click(await screen.findByRole('link', { name: 'Закрыть настройки сервера' }))
-    await waitFor(() => expect(router.state.location.pathname).toBe(GENERAL_URL))
+    await user.click(await screen.findByRole('button', { name: 'Закрыть настройки сервера' }))
+    await waitFor(() =>
+      expect(screen.queryByRole('dialog', { name: 'Настройки сервера' })).toBeNull(),
+    )
+    expect(router.state.location.pathname).toBe(GENERAL_URL)
   })
 
   it('shows members only the actions they may take, and lets them leave', async () => {

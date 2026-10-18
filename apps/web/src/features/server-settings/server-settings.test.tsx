@@ -145,13 +145,16 @@ describe('server settings: roles', () => {
     const { gateway } = renderApp(ROLES_URL, { user: testUser })
     const list = await roleList()
 
-    act(() =>
-      gateway.emit('GUILD_ROLE_UPDATE', {
-        guildId: testGuild.id,
-        role: { ...moderators, name: 'Хранители' },
-      }),
-    )
-    expect(await within(list).findByRole('button', { name: 'Хранители' })).toBeVisible()
+    // The window opens before the gateway is up: send until it is, the update is idempotent.
+    await waitFor(() => {
+      act(() =>
+        gateway.emit('GUILD_ROLE_UPDATE', {
+          guildId: testGuild.id,
+          role: { ...moderators, name: 'Хранители' },
+        }),
+      )
+      expect(within(list).getByRole('button', { name: 'Хранители' })).toBeVisible()
+    })
   })
 })
 
@@ -220,9 +223,11 @@ describe('server settings: role hierarchy', () => {
   })
 
   it('hides sections the user may not use', async () => {
-    const { router } = renderApp(`/server-settings/${testGuild.id}`, { api: asManager() })
+    renderApp(`/server-settings/${testGuild.id}`, { api: asManager() })
 
-    await waitFor(() => expect(router.state.location.pathname).toBe(ROLES_URL))
+    // The first section Carol may open: roles.
+    const settings = await screen.findByRole('dialog', { name: 'Настройки сервера' })
+    expect(await within(settings).findByRole('heading', { name: 'Роли', level: 1 })).toBeVisible()
     const nav = await screen.findByRole('navigation', { name: 'Котики' })
     expect(within(nav).queryByRole('link', { name: 'Обзор' })).not.toBeInTheDocument()
     expect(within(nav).getByRole('link', { name: 'Роли' })).toBeVisible()

@@ -24,6 +24,7 @@ import { useNotificationResolver } from '../notifications/use-notifications'
 import { can } from '../permissions/permissions'
 import { useGuildPermissions } from '../permissions/use-guild-permissions'
 import { allowedSections } from '../server-settings/sections'
+import { withServerSettings } from '../server-settings/server-settings-search'
 import { ChannelList } from './channel-list'
 import { firstTextChannel } from './channel-tree'
 import { CreateChannelDialog } from './dialogs/create-channel-dialog'
@@ -117,12 +118,7 @@ export const GuildSidebar = ({ guildId, channelId }: GuildSidebarProps) => {
               </MenuItem>
               {canOpenSettings ? (
                 <MenuItem
-                  onSelect={() =>
-                    void navigate({
-                      to: '/server-settings/$guildId',
-                      params: { guildId: guild.id },
-                    })
-                  }
+                  onSelect={() => void navigate({ to: '.', search: withServerSettings(guild.id) })}
                   icon={<Settings aria-hidden className="size-4" />}
                 >
                   {t('guild.settings')}

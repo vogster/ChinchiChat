@@ -94,7 +94,7 @@ test('a server emoji is uploaded and shows up in messages', async ({ browser }) 
   const list = page.getByRole('list', { name: 'Эмодзи сервера' })
   await expect(list.getByRole('img', { name: `:${emojiName}:` })).toBeVisible()
 
-  await page.getByRole('link', { name: 'Закрыть настройки сервера' }).click()
+  await page.getByRole('button', { name: 'Закрыть настройки сервера' }).click()
   await composer(page).fill(`Привет :${emojiName}:`)
   await composer(page).press('Enter')
   await expect(history(page).getByRole('img', { name: `:${emojiName}:` })).toBeVisible()

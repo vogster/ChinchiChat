@@ -26,17 +26,9 @@ import { Route as InviteCodeRouteImport } from './routes/invite/$code'
 import { Route as SettingsIndexRouteImport } from './routes/settings/index'
 import { Route as SettingsSectionRouteImport } from './routes/settings/$section'
 import { Route as AppShellIndexRouteImport } from './routes/_app/_shell/index'
-import { Route as AppServerSettingsGuildIdRouteImport } from './routes/_app/server-settings/$guildId'
 import { Route as AppShellChannelsGuildIdRouteImport } from './routes/_app/_shell/channels/$guildId'
 import { Route as AppServerSettingsGuildIdIndexRouteImport } from './routes/_app/server-settings/$guildId/index'
-import { Route as AppServerSettingsGuildIdAuditLogRouteImport } from './routes/_app/server-settings/$guildId/audit-log'
-import { Route as AppServerSettingsGuildIdAutomodRouteImport } from './routes/_app/server-settings/$guildId/automod'
-import { Route as AppServerSettingsGuildIdBansRouteImport } from './routes/_app/server-settings/$guildId/bans'
-import { Route as AppServerSettingsGuildIdEmojisRouteImport } from './routes/_app/server-settings/$guildId/emojis'
-import { Route as AppServerSettingsGuildIdMembersRouteImport } from './routes/_app/server-settings/$guildId/members'
-import { Route as AppServerSettingsGuildIdOverviewRouteImport } from './routes/_app/server-settings/$guildId/overview'
-import { Route as AppServerSettingsGuildIdReportsRouteImport } from './routes/_app/server-settings/$guildId/reports'
-import { Route as AppServerSettingsGuildIdRolesRouteImport } from './routes/_app/server-settings/$guildId/roles'
+import { Route as AppServerSettingsGuildIdSectionRouteImport } from './routes/_app/server-settings/$guildId/$section'
 import { Route as AppShellChannelsGuildIdIndexRouteImport } from './routes/_app/_shell/channels/$guildId/index'
 import { Route as AppShellChannelsGuildIdChannelIdRouteImport } from './routes/_app/_shell/channels/$guildId/$channelId'
 import { Route as AppShellChannelsAtmeChannelIdRouteImport } from './routes/_app/_shell/channels/@me/$channelId'
@@ -124,12 +116,6 @@ const AppShellIndexRoute = AppShellIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AppShellRoute,
 } as any)
-const AppServerSettingsGuildIdRoute =
-  AppServerSettingsGuildIdRouteImport.update({
-    id: '/server-settings/$guildId',
-    path: '/server-settings/$guildId',
-    getParentRoute: () => AppRoute,
-  } as any)
 const AppShellChannelsGuildIdRoute = AppShellChannelsGuildIdRouteImport.update({
   id: '/channels/$guildId',
   path: '/channels/$guildId',
@@ -137,57 +123,15 @@ const AppShellChannelsGuildIdRoute = AppShellChannelsGuildIdRouteImport.update({
 } as any)
 const AppServerSettingsGuildIdIndexRoute =
   AppServerSettingsGuildIdIndexRouteImport.update({
-    id: '/',
-    path: '/',
-    getParentRoute: () => AppServerSettingsGuildIdRoute,
+    id: '/server-settings/$guildId/',
+    path: '/server-settings/$guildId/',
+    getParentRoute: () => AppRoute,
   } as any)
-const AppServerSettingsGuildIdAuditLogRoute =
-  AppServerSettingsGuildIdAuditLogRouteImport.update({
-    id: '/audit-log',
-    path: '/audit-log',
-    getParentRoute: () => AppServerSettingsGuildIdRoute,
-  } as any)
-const AppServerSettingsGuildIdAutomodRoute =
-  AppServerSettingsGuildIdAutomodRouteImport.update({
-    id: '/automod',
-    path: '/automod',
-    getParentRoute: () => AppServerSettingsGuildIdRoute,
-  } as any)
-const AppServerSettingsGuildIdBansRoute =
-  AppServerSettingsGuildIdBansRouteImport.update({
-    id: '/bans',
-    path: '/bans',
-    getParentRoute: () => AppServerSettingsGuildIdRoute,
-  } as any)
-const AppServerSettingsGuildIdEmojisRoute =
-  AppServerSettingsGuildIdEmojisRouteImport.update({
-    id: '/emojis',
-    path: '/emojis',
-    getParentRoute: () => AppServerSettingsGuildIdRoute,
-  } as any)
-const AppServerSettingsGuildIdMembersRoute =
-  AppServerSettingsGuildIdMembersRouteImport.update({
-    id: '/members',
-    path: '/members',
-    getParentRoute: () => AppServerSettingsGuildIdRoute,
-  } as any)
-const AppServerSettingsGuildIdOverviewRoute =
-  AppServerSettingsGuildIdOverviewRouteImport.update({
-    id: '/overview',
-    path: '/overview',
-    getParentRoute: () => AppServerSettingsGuildIdRoute,
-  } as any)
-const AppServerSettingsGuildIdReportsRoute =
-  AppServerSettingsGuildIdReportsRouteImport.update({
-    id: '/reports',
-    path: '/reports',
-    getParentRoute: () => AppServerSettingsGuildIdRoute,
-  } as any)
-const AppServerSettingsGuildIdRolesRoute =
-  AppServerSettingsGuildIdRolesRouteImport.update({
-    id: '/roles',
-    path: '/roles',
-    getParentRoute: () => AppServerSettingsGuildIdRoute,
+const AppServerSettingsGuildIdSectionRoute =
+  AppServerSettingsGuildIdSectionRouteImport.update({
+    id: '/server-settings/$guildId/$section',
+    path: '/server-settings/$guildId/$section',
+    getParentRoute: () => AppRoute,
   } as any)
 const AppShellChannelsGuildIdIndexRoute =
   AppShellChannelsGuildIdIndexRouteImport.update({
@@ -224,16 +168,8 @@ export interface FileRoutesByFullPath {
   '/settings/$section': typeof SettingsSectionRoute
   '/admin/': typeof AdminIndexRoute
   '/settings/': typeof SettingsIndexRoute
-  '/server-settings/$guildId': typeof AppServerSettingsGuildIdRouteWithChildren
   '/channels/$guildId': typeof AppShellChannelsGuildIdRouteWithChildren
-  '/server-settings/$guildId/audit-log': typeof AppServerSettingsGuildIdAuditLogRoute
-  '/server-settings/$guildId/automod': typeof AppServerSettingsGuildIdAutomodRoute
-  '/server-settings/$guildId/bans': typeof AppServerSettingsGuildIdBansRoute
-  '/server-settings/$guildId/emojis': typeof AppServerSettingsGuildIdEmojisRoute
-  '/server-settings/$guildId/members': typeof AppServerSettingsGuildIdMembersRoute
-  '/server-settings/$guildId/overview': typeof AppServerSettingsGuildIdOverviewRoute
-  '/server-settings/$guildId/reports': typeof AppServerSettingsGuildIdReportsRoute
-  '/server-settings/$guildId/roles': typeof AppServerSettingsGuildIdRolesRoute
+  '/server-settings/$guildId/$section': typeof AppServerSettingsGuildIdSectionRoute
   '/server-settings/$guildId/': typeof AppServerSettingsGuildIdIndexRoute
   '/channels/$guildId/$channelId': typeof AppShellChannelsGuildIdChannelIdRoute
   '/channels/@me/$channelId': typeof AppShellChannelsAtmeChannelIdRoute
@@ -254,14 +190,7 @@ export interface FileRoutesByTo {
   '/settings/$section': typeof SettingsSectionRoute
   '/admin': typeof AdminIndexRoute
   '/settings': typeof SettingsIndexRoute
-  '/server-settings/$guildId/audit-log': typeof AppServerSettingsGuildIdAuditLogRoute
-  '/server-settings/$guildId/automod': typeof AppServerSettingsGuildIdAutomodRoute
-  '/server-settings/$guildId/bans': typeof AppServerSettingsGuildIdBansRoute
-  '/server-settings/$guildId/emojis': typeof AppServerSettingsGuildIdEmojisRoute
-  '/server-settings/$guildId/members': typeof AppServerSettingsGuildIdMembersRoute
-  '/server-settings/$guildId/overview': typeof AppServerSettingsGuildIdOverviewRoute
-  '/server-settings/$guildId/reports': typeof AppServerSettingsGuildIdReportsRoute
-  '/server-settings/$guildId/roles': typeof AppServerSettingsGuildIdRolesRoute
+  '/server-settings/$guildId/$section': typeof AppServerSettingsGuildIdSectionRoute
   '/server-settings/$guildId': typeof AppServerSettingsGuildIdIndexRoute
   '/channels/$guildId/$channelId': typeof AppShellChannelsGuildIdChannelIdRoute
   '/channels/@me/$channelId': typeof AppShellChannelsAtmeChannelIdRoute
@@ -285,17 +214,9 @@ export interface FileRoutesById {
   '/settings/$section': typeof SettingsSectionRoute
   '/admin/': typeof AdminIndexRoute
   '/settings/': typeof SettingsIndexRoute
-  '/_app/server-settings/$guildId': typeof AppServerSettingsGuildIdRouteWithChildren
   '/_app/_shell/': typeof AppShellIndexRoute
   '/_app/_shell/channels/$guildId': typeof AppShellChannelsGuildIdRouteWithChildren
-  '/_app/server-settings/$guildId/audit-log': typeof AppServerSettingsGuildIdAuditLogRoute
-  '/_app/server-settings/$guildId/automod': typeof AppServerSettingsGuildIdAutomodRoute
-  '/_app/server-settings/$guildId/bans': typeof AppServerSettingsGuildIdBansRoute
-  '/_app/server-settings/$guildId/emojis': typeof AppServerSettingsGuildIdEmojisRoute
-  '/_app/server-settings/$guildId/members': typeof AppServerSettingsGuildIdMembersRoute
-  '/_app/server-settings/$guildId/overview': typeof AppServerSettingsGuildIdOverviewRoute
-  '/_app/server-settings/$guildId/reports': typeof AppServerSettingsGuildIdReportsRoute
-  '/_app/server-settings/$guildId/roles': typeof AppServerSettingsGuildIdRolesRoute
+  '/_app/server-settings/$guildId/$section': typeof AppServerSettingsGuildIdSectionRoute
   '/_app/server-settings/$guildId/': typeof AppServerSettingsGuildIdIndexRoute
   '/_app/_shell/channels/$guildId/$channelId': typeof AppShellChannelsGuildIdChannelIdRoute
   '/_app/_shell/channels/@me/$channelId': typeof AppShellChannelsAtmeChannelIdRoute
@@ -319,16 +240,8 @@ export interface FileRouteTypes {
     | '/settings/$section'
     | '/admin/'
     | '/settings/'
-    | '/server-settings/$guildId'
     | '/channels/$guildId'
-    | '/server-settings/$guildId/audit-log'
-    | '/server-settings/$guildId/automod'
-    | '/server-settings/$guildId/bans'
-    | '/server-settings/$guildId/emojis'
-    | '/server-settings/$guildId/members'
-    | '/server-settings/$guildId/overview'
-    | '/server-settings/$guildId/reports'
-    | '/server-settings/$guildId/roles'
+    | '/server-settings/$guildId/$section'
     | '/server-settings/$guildId/'
     | '/channels/$guildId/$channelId'
     | '/channels/@me/$channelId'
@@ -349,14 +262,7 @@ export interface FileRouteTypes {
     | '/settings/$section'
     | '/admin'
     | '/settings'
-    | '/server-settings/$guildId/audit-log'
-    | '/server-settings/$guildId/automod'
-    | '/server-settings/$guildId/bans'
-    | '/server-settings/$guildId/emojis'
-    | '/server-settings/$guildId/members'
-    | '/server-settings/$guildId/overview'
-    | '/server-settings/$guildId/reports'
-    | '/server-settings/$guildId/roles'
+    | '/server-settings/$guildId/$section'
     | '/server-settings/$guildId'
     | '/channels/$guildId/$channelId'
     | '/channels/@me/$channelId'
@@ -379,17 +285,9 @@ export interface FileRouteTypes {
     | '/settings/$section'
     | '/admin/'
     | '/settings/'
-    | '/_app/server-settings/$guildId'
     | '/_app/_shell/'
     | '/_app/_shell/channels/$guildId'
-    | '/_app/server-settings/$guildId/audit-log'
-    | '/_app/server-settings/$guildId/automod'
-    | '/_app/server-settings/$guildId/bans'
-    | '/_app/server-settings/$guildId/emojis'
-    | '/_app/server-settings/$guildId/members'
-    | '/_app/server-settings/$guildId/overview'
-    | '/_app/server-settings/$guildId/reports'
-    | '/_app/server-settings/$guildId/roles'
+    | '/_app/server-settings/$guildId/$section'
     | '/_app/server-settings/$guildId/'
     | '/_app/_shell/channels/$guildId/$channelId'
     | '/_app/_shell/channels/@me/$channelId'
@@ -530,13 +428,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppShellIndexRouteImport
       parentRoute: typeof AppShellRoute
     }
-    '/_app/server-settings/$guildId': {
-      id: '/_app/server-settings/$guildId'
-      path: '/server-settings/$guildId'
-      fullPath: '/server-settings/$guildId'
-      preLoaderRoute: typeof AppServerSettingsGuildIdRouteImport
-      parentRoute: typeof AppRoute
-    }
     '/_app/_shell/channels/$guildId': {
       id: '/_app/_shell/channels/$guildId'
       path: '/channels/$guildId'
@@ -546,66 +437,17 @@ declare module '@tanstack/react-router' {
     }
     '/_app/server-settings/$guildId/': {
       id: '/_app/server-settings/$guildId/'
-      path: '/'
+      path: '/server-settings/$guildId'
       fullPath: '/server-settings/$guildId/'
       preLoaderRoute: typeof AppServerSettingsGuildIdIndexRouteImport
-      parentRoute: typeof AppServerSettingsGuildIdRoute
+      parentRoute: typeof AppRoute
     }
-    '/_app/server-settings/$guildId/audit-log': {
-      id: '/_app/server-settings/$guildId/audit-log'
-      path: '/audit-log'
-      fullPath: '/server-settings/$guildId/audit-log'
-      preLoaderRoute: typeof AppServerSettingsGuildIdAuditLogRouteImport
-      parentRoute: typeof AppServerSettingsGuildIdRoute
-    }
-    '/_app/server-settings/$guildId/automod': {
-      id: '/_app/server-settings/$guildId/automod'
-      path: '/automod'
-      fullPath: '/server-settings/$guildId/automod'
-      preLoaderRoute: typeof AppServerSettingsGuildIdAutomodRouteImport
-      parentRoute: typeof AppServerSettingsGuildIdRoute
-    }
-    '/_app/server-settings/$guildId/bans': {
-      id: '/_app/server-settings/$guildId/bans'
-      path: '/bans'
-      fullPath: '/server-settings/$guildId/bans'
-      preLoaderRoute: typeof AppServerSettingsGuildIdBansRouteImport
-      parentRoute: typeof AppServerSettingsGuildIdRoute
-    }
-    '/_app/server-settings/$guildId/emojis': {
-      id: '/_app/server-settings/$guildId/emojis'
-      path: '/emojis'
-      fullPath: '/server-settings/$guildId/emojis'
-      preLoaderRoute: typeof AppServerSettingsGuildIdEmojisRouteImport
-      parentRoute: typeof AppServerSettingsGuildIdRoute
-    }
-    '/_app/server-settings/$guildId/members': {
-      id: '/_app/server-settings/$guildId/members'
-      path: '/members'
-      fullPath: '/server-settings/$guildId/members'
-      preLoaderRoute: typeof AppServerSettingsGuildIdMembersRouteImport
-      parentRoute: typeof AppServerSettingsGuildIdRoute
-    }
-    '/_app/server-settings/$guildId/overview': {
-      id: '/_app/server-settings/$guildId/overview'
-      path: '/overview'
-      fullPath: '/server-settings/$guildId/overview'
-      preLoaderRoute: typeof AppServerSettingsGuildIdOverviewRouteImport
-      parentRoute: typeof AppServerSettingsGuildIdRoute
-    }
-    '/_app/server-settings/$guildId/reports': {
-      id: '/_app/server-settings/$guildId/reports'
-      path: '/reports'
-      fullPath: '/server-settings/$guildId/reports'
-      preLoaderRoute: typeof AppServerSettingsGuildIdReportsRouteImport
-      parentRoute: typeof AppServerSettingsGuildIdRoute
-    }
-    '/_app/server-settings/$guildId/roles': {
-      id: '/_app/server-settings/$guildId/roles'
-      path: '/roles'
-      fullPath: '/server-settings/$guildId/roles'
-      preLoaderRoute: typeof AppServerSettingsGuildIdRolesRouteImport
-      parentRoute: typeof AppServerSettingsGuildIdRoute
+    '/_app/server-settings/$guildId/$section': {
+      id: '/_app/server-settings/$guildId/$section'
+      path: '/server-settings/$guildId/$section'
+      fullPath: '/server-settings/$guildId/$section'
+      preLoaderRoute: typeof AppServerSettingsGuildIdSectionRouteImport
+      parentRoute: typeof AppRoute
     }
     '/_app/_shell/channels/$guildId/': {
       id: '/_app/_shell/channels/$guildId/'
@@ -664,46 +506,16 @@ const AppShellRouteWithChildren = AppShellRoute._addFileChildren(
   AppShellRouteChildren,
 )
 
-interface AppServerSettingsGuildIdRouteChildren {
-  AppServerSettingsGuildIdAuditLogRoute: typeof AppServerSettingsGuildIdAuditLogRoute
-  AppServerSettingsGuildIdAutomodRoute: typeof AppServerSettingsGuildIdAutomodRoute
-  AppServerSettingsGuildIdBansRoute: typeof AppServerSettingsGuildIdBansRoute
-  AppServerSettingsGuildIdEmojisRoute: typeof AppServerSettingsGuildIdEmojisRoute
-  AppServerSettingsGuildIdMembersRoute: typeof AppServerSettingsGuildIdMembersRoute
-  AppServerSettingsGuildIdOverviewRoute: typeof AppServerSettingsGuildIdOverviewRoute
-  AppServerSettingsGuildIdReportsRoute: typeof AppServerSettingsGuildIdReportsRoute
-  AppServerSettingsGuildIdRolesRoute: typeof AppServerSettingsGuildIdRolesRoute
-  AppServerSettingsGuildIdIndexRoute: typeof AppServerSettingsGuildIdIndexRoute
-}
-
-const AppServerSettingsGuildIdRouteChildren: AppServerSettingsGuildIdRouteChildren =
-  {
-    AppServerSettingsGuildIdAuditLogRoute:
-      AppServerSettingsGuildIdAuditLogRoute,
-    AppServerSettingsGuildIdAutomodRoute: AppServerSettingsGuildIdAutomodRoute,
-    AppServerSettingsGuildIdBansRoute: AppServerSettingsGuildIdBansRoute,
-    AppServerSettingsGuildIdEmojisRoute: AppServerSettingsGuildIdEmojisRoute,
-    AppServerSettingsGuildIdMembersRoute: AppServerSettingsGuildIdMembersRoute,
-    AppServerSettingsGuildIdOverviewRoute:
-      AppServerSettingsGuildIdOverviewRoute,
-    AppServerSettingsGuildIdReportsRoute: AppServerSettingsGuildIdReportsRoute,
-    AppServerSettingsGuildIdRolesRoute: AppServerSettingsGuildIdRolesRoute,
-    AppServerSettingsGuildIdIndexRoute: AppServerSettingsGuildIdIndexRoute,
-  }
-
-const AppServerSettingsGuildIdRouteWithChildren =
-  AppServerSettingsGuildIdRoute._addFileChildren(
-    AppServerSettingsGuildIdRouteChildren,
-  )
-
 interface AppRouteChildren {
   AppShellRoute: typeof AppShellRouteWithChildren
-  AppServerSettingsGuildIdRoute: typeof AppServerSettingsGuildIdRouteWithChildren
+  AppServerSettingsGuildIdSectionRoute: typeof AppServerSettingsGuildIdSectionRoute
+  AppServerSettingsGuildIdIndexRoute: typeof AppServerSettingsGuildIdIndexRoute
 }
 
 const AppRouteChildren: AppRouteChildren = {
   AppShellRoute: AppShellRouteWithChildren,
-  AppServerSettingsGuildIdRoute: AppServerSettingsGuildIdRouteWithChildren,
+  AppServerSettingsGuildIdSectionRoute: AppServerSettingsGuildIdSectionRoute,
+  AppServerSettingsGuildIdIndexRoute: AppServerSettingsGuildIdIndexRoute,
 }
 
 const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
