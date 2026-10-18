@@ -15,7 +15,6 @@ export const SettingsWindow = ({
   closeLabel,
   onClose,
   nav,
-  wide = false,
   children,
 }: {
   /** The window's accessible name. */
@@ -25,8 +24,6 @@ export const SettingsWindow = ({
   closeLabel: string
   onClose: () => void
   nav: ReactNode
-  /** Roomier, for sections with tables (server settings). */
-  wide?: boolean
   children: ReactNode
 }) => {
   const { t } = useTranslation()
@@ -36,7 +33,7 @@ export const SettingsWindow = ({
         <RadixDialog.Overlay className="fixed inset-0 z-40 bg-[rgb(8_8_16/0.5)] backdrop-blur-[3px]" />
         <RadixDialog.Content
           aria-describedby={undefined}
-          className={`fixed inset-0 z-40 flex flex-col overflow-hidden bg-main text-text shadow-modal focus:outline-none md:inset-auto md:top-1/2 md:left-1/2 md:h-[min(660px,calc(100%-48px))] md:-translate-x-1/2 md:-translate-y-1/2 md:flex-row md:rounded-[32px] ${wide ? 'md:h-[min(760px,calc(100%-48px))] md:w-[min(1080px,calc(100%-48px))]' : 'md:w-[min(920px,calc(100%-48px))]'}`}
+          className="fixed inset-0 z-40 flex flex-col overflow-hidden bg-main text-text shadow-modal focus:outline-none md:inset-auto md:top-1/2 md:left-1/2 md:h-[min(660px,calc(100%-48px))] md:w-[min(920px,calc(100%-48px))] md:-translate-x-1/2 md:-translate-y-1/2 md:flex-row md:rounded-[32px]"
         >
           <RadixDialog.Title className="sr-only">{title}</RadixDialog.Title>
           <aside className="shrink-0 bg-side pr-14 md:flex md:w-60 md:flex-col md:overflow-y-auto md:p-3 md:pt-5">
@@ -49,7 +46,8 @@ export const SettingsWindow = ({
 
           {/* The bottom padding sits inside, so sticky bars (a role's "save") reach the edge. */}
           <div className="relative min-h-0 flex-1 overflow-y-auto px-4 pt-6 md:px-8 md:pt-7">
-            <div className="mx-auto max-w-3xl pr-12 pb-6 md:mx-0 md:pb-7">
+            {/* A container: sections lay out by the window's width (`@3xl:`), not the screen's. */}
+            <div className="@container mx-auto max-w-3xl pr-12 pb-6 md:mx-0 md:pb-7">
               <Suspense fallback={<p className="text-muted">{t('common.loading')}</p>}>
                 {children}
               </Suspense>

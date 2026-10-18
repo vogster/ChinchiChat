@@ -50,8 +50,8 @@ export const RolesSection = ({ guild }: { guild: GuildDetail }) => {
     >
       {error ? <Alert tone="error">{errorMessage(t, error)}</Alert> : null}
 
-      <div className="flex flex-col gap-6 lg:flex-row lg:items-start">
-        <div className="flex flex-col gap-3 lg:w-64 lg:shrink-0">
+      <div className="flex flex-col gap-6 @3xl:flex-row @3xl:items-start">
+        <div className="flex flex-col gap-3 @3xl:w-64 @3xl:shrink-0">
           <Button
             pending={actions.create.isPending}
             onClick={() =>

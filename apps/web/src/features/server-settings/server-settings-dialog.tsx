@@ -35,7 +35,6 @@ const Window = ({
       navLabel={guild.name}
       closeLabel={t('serverSettings.close')}
       onClose={() => void navigate({ to: '.', search: withServerSettings(undefined) })}
-      wide
       nav={
         <>
           <div className="flex items-center gap-2.5 px-2 pb-3 max-md:hidden">
