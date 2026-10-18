@@ -110,7 +110,8 @@ export const CallStage = ({
         layout === 'row'
           ? 'flex min-h-0 flex-1 justify-center gap-3 *:max-h-[340px] *:max-w-[420px] *:flex-1'
           : // Phones: portrait tiles, two to a row.
-            'grid grid-cols-2 gap-3 *:aspect-[3/4] md:grid-cols-[repeat(auto-fill,minmax(14rem,1fr))] md:*:aspect-video'
+            // Wider: tiles share the stage's height, never shorter than an avatar and its name.
+            'grid grid-cols-2 gap-3 *:aspect-[3/4] md:h-full md:auto-rows-[minmax(200px,1fr)] md:grid-cols-[repeat(auto-fit,minmax(16rem,1fr))] md:*:aspect-auto'
       }
     >
       {states.map((state) => {

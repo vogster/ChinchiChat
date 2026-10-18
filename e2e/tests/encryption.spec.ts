@@ -158,7 +158,10 @@ test('two people talk and call in an encrypted conversation the server cannot re
   await expect(bob.page.getByRole('region', { name: 'Голосовое подключение' })).toContainText(
     'Звонок зашифрован',
   )
-  await alice.page.getByRole('button', { name: 'Включить камеру' }).click()
+  await alice.page
+    .getByRole('region', { name: 'Управление звонком' })
+    .getByRole('button', { name: 'Камера' })
+    .click()
   const aliceVideo = bob.page
     .getByRole('list', { name: 'Участники звонка' })
     .getByRole('listitem', { name: new RegExp(`^${aliceUser.username}`) })

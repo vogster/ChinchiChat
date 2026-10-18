@@ -61,7 +61,8 @@ test('two strangers become friends and talk in a DM', async ({ browser }) => {
   // Bob blocks Alice: her composer stays, but the server refuses the message.
   await bob.page.getByRole('link', { name: 'Друзья' }).click()
   await tab(bob.page, 'Все').click()
-  await bob.page.getByRole('button', { name: `Заблокировать — ${aliceUser.username}` }).click()
+  await bob.page.getByRole('button', { name: `Ещё — ${aliceUser.username}` }).click()
+  await bob.page.getByRole('menuitem', { name: 'Заблокировать' }).click()
   await tab(bob.page, 'Заблокированные').click()
   await expect(bob.page.getByRole('list', { name: 'Заблокированные' })).toContainText(
     aliceUser.username,

@@ -66,11 +66,9 @@ if (!process.env.ONLY_WIKI) {
   await server(anna).click()
   await channel(anna, 'общий').click()
   await anna.getByText('Куда идём в пятницу?').first().waitFor()
-  const vote = anna.getByRole('button', { name: 'Проголосовать' })
-  if (await vote.isVisible()) {
-    await anna.getByRole('radio', { name: 'Настолки' }).check()
-    await vote.click()
-  }
+  // A single-choice poll votes on a click; once voted, the answer shows as a result instead.
+  const vote = anna.getByRole('button', { name: 'Настолки', exact: true })
+  if (await vote.isVisible()) await vote.click()
   const markRead = anna.getByRole('button', { name: 'Отметить прочитанным' })
   if (await markRead.isVisible()) await markRead.click()
   await shot(anna, 'chat')
@@ -86,7 +84,7 @@ if (!process.env.ONLY_WIKI) {
   for (const page of [anna, boris, vika]) {
     await server(page).click()
     await page.getByRole('button', { name: 'Голосовой канал Общий' }).click()
-    await page.getByText('Голос подключён').waitFor({ timeout: 15_000 })
+    await page.getByText('В голосовом').waitFor({ timeout: 15_000 })
   }
   await anna.waitForTimeout(2500)
   await shot(anna, 'voice')

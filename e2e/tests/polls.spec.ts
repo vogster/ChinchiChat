@@ -22,7 +22,8 @@ test('a poll is created, voted on and followed live', async ({ browser }) => {
   await acceptInvite(friend.page, invite)
 
   // The owner writes a poll from the composer.
-  await owner.page.getByRole('button', { name: 'Создать опрос' }).click()
+  await owner.page.getByRole('button', { name: 'Добавить в сообщение' }).click()
+  await owner.page.getByRole('menuitem', { name: /Опрос/ }).click()
   const dialog = owner.page.getByRole('dialog', { name: 'Новый опрос' })
   await dialog.getByLabel('Вопрос', { exact: true }).fill('Во что играем?')
   await dialog.getByLabel('Ответ 1', { exact: true }).fill('Шахматы')
@@ -32,15 +33,14 @@ test('a poll is created, voted on and followed live', async ({ browser }) => {
 
   // The friend sees it and votes; the owner's results move without a reload.
   const friendPoll = friend.page.getByRole('group', { name: 'Опрос: Во что играем?' })
-  await friendPoll.getByRole('radio', { name: 'Го' }).click()
-  await friendPoll.getByRole('button', { name: 'Проголосовать' }).click()
+  // A single-choice poll votes on a click.
+  await friendPoll.getByRole('button', { name: 'Го', exact: true }).click()
   await expect(
     friendPoll.getByRole('meter', { name: 'Го: 100%, 1 голос, ваш ответ' }),
   ).toBeVisible()
 
   const ownerPoll = owner.page.getByRole('group', { name: 'Опрос: Во что играем?' })
-  await ownerPoll.getByRole('radio', { name: 'Шахматы' }).click()
-  await ownerPoll.getByRole('button', { name: 'Проголосовать' }).click()
+  await ownerPoll.getByRole('button', { name: 'Шахматы', exact: true }).click()
   await expect(
     ownerPoll.getByRole('meter', { name: 'Шахматы: 50%, 1 голос, ваш ответ' }),
   ).toBeVisible()
