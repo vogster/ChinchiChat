@@ -1,6 +1,5 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import {
-  AtSign,
   Bell,
   Lock,
   LogOut,
@@ -15,7 +14,7 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { MainCard } from '../../components/layout/main-card'
-import { PageHeader } from '../../components/layout/page-header'
+import { headerButtonClass, PageHeader, PageTitle } from '../../components/layout/page-header'
 import { Alert } from '../../components/ui/alert'
 import { Button } from '../../components/ui/button'
 import { useApi } from '../../lib/api-context'
@@ -46,6 +45,7 @@ import {
   useTypingNotifier,
 } from '../messages/use-messages'
 import { usePendingFiles } from '../messages/use-pending-files'
+import { usePresence } from '../messages/use-presence'
 import { NotificationSettingsDialog } from '../notifications/notification-settings-dialog'
 import { SearchBox } from '../search/search-box'
 import { CallStage } from '../voice/call-stage'
@@ -65,7 +65,7 @@ const newNonce = () => crypto.randomUUID()
 
 type OpenDialog = 'rename' | 'add' | 'leave' | null
 
-const headerButton = 'rounded p-1.5 text-muted hover:text-text'
+const headerButton = headerButtonClass
 
 /** A 1:1 or group DM: the server channel view without roles, pins or moderation. */
 export const DmView = ({ channel }: { channel: PrivateChannel }) => {
@@ -94,12 +94,16 @@ export const DmView = ({ channel }: { channel: PrivateChannel }) => {
   const encryption = useEncryptedChannel(channel, me?.id)
   const encrypted = useEncryptedConversation(encryption)
   const safety = useSafety(encryption, encrypted.state === 'ready')
+  const allVerified =
+    (safety.status?.people.length ?? 0) > 0 &&
+    (safety.status?.people.every((person) => person.verified) ?? false)
   const keysReady = encrypted.state === 'ready' || encrypted.state === 'waiting'
   const canAttach = pending.enabled
 
   const isGroup = channel.type === 'group_dm'
   const name = privateChannelName(t, channel)
   const [other] = channel.recipients
+  const otherStatus = usePresence(other?.id)
   // Only a block you made is known here; the server answers anything else.
   const blocked =
     !isGroup &&
@@ -152,20 +156,35 @@ export const DmView = ({ channel }: { channel: PrivateChannel }) => {
     <>
       <MainCard>
         <PageHeader>
-          {isGroup ? (
-            <Users aria-hidden className="size-5 shrink-0 text-muted" />
-          ) : (
-            <AtSign aria-hidden className="size-5 shrink-0 text-muted" />
-          )}
-          <h1 className="truncate">{name}</h1>
-          {encryption ? (
-            // Green: at a glance, this conversation is end-to-end encrypted.
-            <span className="flex shrink-0 items-center gap-1 rounded border border-secure/60 bg-secure/10 px-1.5 py-0.5 text-xs font-medium text-secure">
-              <Lock aria-hidden className="size-3" />
-              {t('e2ee.badge')}
-            </span>
-          ) : null}
-          {encryption ? <BetaBadge /> : null}
+          <PageTitle
+            glyph={
+              encryption ? (
+                <Lock className="size-5" />
+              ) : isGroup ? (
+                <Users className="size-5" />
+              ) : (
+                '@'
+              )
+            }
+            tone={encryption ? 'secure' : 'accent'}
+            title={name}
+            subtitle={
+              encryption ? (
+                // Green: at a glance, this conversation is end-to-end encrypted.
+                <span className="mt-0.5 flex items-center gap-1.5">
+                  <span className="flex h-5 items-center gap-1 rounded-full bg-secure-soft px-2 text-[11.5px] font-medium text-secure-text">
+                    <Lock aria-hidden className="size-3" />
+                    {t('e2ee.badge')}
+                  </span>
+                  <BetaBadge />
+                </span>
+              ) : isGroup ? (
+                t('dm.groupSize', { count: channel.recipients.length + 1 })
+              ) : (
+                t(`presence.${otherStatus}`)
+              )
+            }
+          />
           {encryption ? (
             <>
               {/* Narrow screens: the field opens from this button, as in server channels. */}
@@ -174,14 +193,14 @@ export const DmView = ({ channel }: { channel: PrivateChannel }) => {
                 aria-label={t('search.open')}
                 aria-pressed={searchOpen}
                 onClick={() => setSearchOpen((value) => !value)}
-                className="ml-auto rounded p-1.5 text-muted hover:text-text aria-pressed:text-text lg:hidden"
+                className={`${headerButton} lg:hidden`}
               >
                 <Search aria-hidden className="size-5" />
               </button>
-              <SearchBox className="lg:ml-auto" onSearch={setSearch} open={searchOpen} />
+              <SearchBox onSearch={setSearch} open={searchOpen} />
             </>
           ) : null}
-          <span className={`${encryption ? '' : 'ml-auto '}flex gap-1`}>
+          <span className="flex shrink-0 gap-0.5">
             {encryption ? (
               <MissingHistoryButton ready={keysReady} className={headerButton} />
             ) : null}
@@ -191,7 +210,8 @@ export const DmView = ({ channel }: { channel: PrivateChannel }) => {
                 aria-label={t('e2ee.safety.title')}
                 title={t('e2ee.safety.title')}
                 onClick={() => setChecking(true)}
-                className={headerButton}
+                data-verified={allVerified}
+                className={`${headerButton} data-[verified=true]:text-secure-text`}
               >
                 <ShieldCheck aria-hidden className="size-5" />
               </button>
@@ -218,7 +238,7 @@ export const DmView = ({ channel }: { channel: PrivateChannel }) => {
             ) : null}
           </span>
           {isGroup ? (
-            <span className="flex gap-1">
+            <span className="flex shrink-0 gap-0.5">
               <button
                 type="button"
                 aria-label={t('dm.rename')}
@@ -242,7 +262,7 @@ export const DmView = ({ channel }: { channel: PrivateChannel }) => {
                 aria-pressed={showMembers}
                 aria-label={showMembers ? t('dm.hideMembers') : t('dm.showMembers')}
                 onClick={() => setShowMembers((value) => !value)}
-                className={`${headerButton} hidden aria-pressed:text-text lg:block`}
+                className={`${headerButton} hidden xl:grid`}
               >
                 <Users aria-hidden className="size-5" />
               </button>
@@ -251,7 +271,7 @@ export const DmView = ({ channel }: { channel: PrivateChannel }) => {
                 aria-label={t('dm.leave')}
                 title={t('dm.leave')}
                 onClick={() => setDialog('leave')}
-                className={`${headerButton} hover:text-danger`}
+                className={`${headerButton} hover:bg-danger-soft hover:text-danger`}
               >
                 <LogOut aria-hidden className="size-5" />
               </button>

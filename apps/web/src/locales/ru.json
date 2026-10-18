@@ -54,7 +54,14 @@
     "remove": "Исключить",
     "blocked": "Вы заблокировали этого пользователя. Разблокируйте его, чтобы написать.",
     "notFound": "Переписка не найдена",
-    "listLabel": "Переписка с {{name}}"
+    "listLabel": "Переписка с {{name}}",
+    "heading": "Сообщения",
+    "search": "Найти беседу",
+    "searchEmpty": "Ничего не нашлось",
+    "groupSize_one": "{{count}} участник",
+    "groupSize_few": "{{count}} участника",
+    "groupSize_many": "{{count}} участников",
+    "groupSize_other": "{{count}} участника"
   },
   "userPanel": {
     "label": "Текущий пользователь",
@@ -891,7 +898,14 @@
     "incomingCount_one": "запросов в друзья: {{count}}",
     "incomingCount_few": "запросов в друзья: {{count}}",
     "incomingCount_many": "запросов в друзья: {{count}}",
-    "incomingCount_other": "запросов в друзья: {{count}}"
+    "incomingCount_other": "запросов в друзья: {{count}}",
+    "secret": "Секретный чат",
+    "call": "Позвонить",
+    "more": "Ещё — {{name}}",
+    "search": "Поиск друзей",
+    "searchEmpty": "Никого не нашлось",
+    "layoutGrid": "Сеткой",
+    "layoutList": "Списком"
   },
   "voice": {
     "channelLabel": "Голосовой канал {{name}}",
@@ -1425,7 +1439,8 @@
       "mismatchHint": "Сервер назвал автором не того, кто подписал это сообщение. Показан настоящий отправитель.",
       "unverified": "отправитель не подтверждён",
       "unverifiedHint": "Сообщение отправлено перед сменой ключей беседы, и подпись отправителя не сверялась с автором."
-    }
+    },
+    "listSubtitle": "Зашифрованная беседа"
   },
   "polls": {
     "label": "Опрос: {{question}}",

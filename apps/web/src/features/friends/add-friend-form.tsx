@@ -16,7 +16,7 @@ export const AddFriendForm = ({ request }: { request: RelationshipActions['reque
   return (
     <form
       noValidate
-      className="flex max-w-xl flex-col gap-3 p-4"
+      className="flex max-w-xl flex-col gap-3 rounded-[24px] bg-stage p-5"
       onSubmit={(event) => {
         event.preventDefault()
         const name = username.trim()
@@ -30,7 +30,8 @@ export const AddFriendForm = ({ request }: { request: RelationshipActions['reque
         })
       }}
     >
-      <p className="text-sm text-muted">{t('friends.add.hint')}</p>
+      <h2 className="text-base font-semibold">{t('friends.tabs.add')}</h2>
+      <p className="-mt-1.5 text-sm text-muted">{t('friends.add.hint')}</p>
       <TextField
         label={t('friends.add.username')}
         value={username}

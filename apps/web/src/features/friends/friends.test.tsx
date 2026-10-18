@@ -98,9 +98,11 @@ describe('friends page', () => {
     const { user } = renderApp('/', { api })
 
     await user.click(await tab('Все'))
-    await user.click(await screen.findByRole('button', { name: 'Заблокировать — Боб' }))
+    await user.click(await screen.findByRole('button', { name: 'Ещё — Боб' }))
+    await user.click(await screen.findByRole('menuitem', { name: 'Заблокировать' }))
     await user.click(await tab(/^Ожидание/))
-    await user.click(await screen.findByRole('button', { name: 'Заблокировать — carol' }))
+    await user.click(await screen.findByRole('button', { name: 'Ещё — carol' }))
+    await user.click(await screen.findByRole('menuitem', { name: 'Заблокировать' }))
 
     expect(api.relationships.block).toHaveBeenCalledWith(testFriend.id)
     expect(api.relationships.block).toHaveBeenCalledWith(carol.id)

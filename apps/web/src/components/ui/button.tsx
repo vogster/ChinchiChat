@@ -1,6 +1,6 @@
 import type { ButtonHTMLAttributes } from 'react'
 
-type Variant = 'primary' | 'secondary' | 'danger' | 'link' | 'on-accent'
+type Variant = 'primary' | 'secondary' | 'danger' | 'secure' | 'link' | 'on-accent'
 
 /** Filled buttons are pills (radius = half the height). */
 const PILL =
@@ -10,6 +10,7 @@ const VARIANTS: Readonly<Record<Variant, string>> = {
   primary: `${PILL} bg-accent text-accent-contrast hover:brightness-110`,
   secondary: `${PILL} bg-field text-text hover:bg-chip`,
   danger: `${PILL} bg-danger text-danger-contrast hover:brightness-110`,
+  secure: `${PILL} bg-secure text-secure-contrast hover:brightness-110`,
   link: 'text-sm font-medium text-accent-text hover:underline disabled:opacity-60',
   'on-accent':
     'text-sm font-semibold text-accent-contrast underline hover:opacity-90 disabled:opacity-60',

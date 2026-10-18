@@ -43,12 +43,12 @@ const PersonCode = ({
     <section
       role="group"
       aria-label={name}
-      className="flex flex-col gap-2 rounded-md bg-elevated p-3"
+      className="flex flex-col gap-3 rounded-card bg-stage p-4"
     >
       <div className="flex items-center justify-between gap-2">
-        <span className="font-medium">{name}</span>
+        <span className="min-w-0 truncate font-semibold">{name}</span>
         <span
-          className={`flex items-center gap-1 text-xs ${verified ? 'text-green-500' : 'text-muted'}`}
+          className={`flex h-6 shrink-0 items-center gap-1 rounded-full px-2.5 text-xs font-medium ${verified ? 'bg-secure-soft text-secure-text' : 'bg-field text-muted'}`}
         >
           {verified ? <ShieldCheck aria-hidden className="size-3.5" /> : null}
           {verified ? t('e2ee.safety.verified') : t('e2ee.safety.notVerified')}
@@ -58,18 +58,18 @@ const PersonCode = ({
         <div
           role="group"
           aria-label={t('e2ee.safety.codeLabel')}
-          className="font-mono text-sm tracking-wider"
+          className="flex flex-col gap-1.5 rounded-tile bg-field p-3 font-mono text-base font-medium"
         >
           {lines(code).map((line, index) => (
             // Lines may repeat; their place is what tells them apart.
-            <p key={index}>{line}</p>
+            <p key={index} className="text-center [word-spacing:0.9em]">
+              {line}
+            </p>
           ))}
         </div>
       ) : null}
       {!verified && code ? (
-        <Button variant="secondary" onClick={() => void safety.verify(userId)}>
-          {t('e2ee.safety.codesMatch')}
-        </Button>
+        <Button onClick={() => void safety.verify(userId)}>{t('e2ee.safety.codesMatch')}</Button>
       ) : null}
     </section>
   )

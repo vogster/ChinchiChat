@@ -112,6 +112,7 @@
   /* End-to-end encrypted, "online": the green of "only you two can read this". */
   --zl-secure: oklch(0.74 0.16 150);
   --zl-secure-soft: color-mix(in oklch, var(--zl-secure) 20%, transparent);
+  --zl-secure-contrast: oklch(0.2 0.04 150);
   /* Beta, "not verified". */
   --zl-warning-soft: color-mix(in oklch, oklch(0.8 0.15 80) 22%, transparent);
   --zl-status-online: oklch(0.74 0.14 150);
@@ -197,6 +198,7 @@
   --color-danger-contrast: var(--zl-danger-contrast);
   --color-secure: var(--zl-secure);
   --color-secure-soft: var(--zl-secure-soft);
+  --color-secure-contrast: var(--zl-secure-contrast);
   --color-secure-text: var(--zl-secure-text);
   --color-warning-soft: var(--zl-warning-soft);
   --color-warning-text: var(--zl-warning-text);

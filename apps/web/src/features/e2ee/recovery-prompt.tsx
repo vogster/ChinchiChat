@@ -70,18 +70,19 @@ export const RecoveryPrompt = ({ ready }: { ready: boolean }) => {
       <div
         role="status"
         aria-label={t('e2ee.recovery.missingLabel')}
-        className="mx-4 mt-2 flex items-start gap-3 rounded-md border border-border bg-elevated px-3 py-2 text-sm"
+        className="mx-4 mt-2 flex items-start gap-3.5 rounded-[24px] bg-stage p-4 text-sm"
       >
-        <KeyRound aria-hidden className="mt-0.5 size-4 shrink-0 text-muted" />
-        <div className="flex min-w-0 flex-1 flex-col gap-2">
+        <span
+          aria-hidden
+          className="grid size-[42px] shrink-0 place-items-center rounded-[15px] bg-warning-soft text-warning-text"
+        >
+          <KeyRound className="size-5" />
+        </span>
+        <div className="flex min-w-0 flex-1 flex-col gap-3 pt-0.5 text-body">
           {approval ? <ApprovalProgress view={approval} /> : <p>{t('e2ee.recovery.missing')}</p>}
           <div className="flex flex-wrap gap-2">
             {asking || !approvals ? null : (
-              <Button
-                variant="secondary"
-                fullWidth={false}
-                onClick={() => void approvals.request()}
-              >
+              <Button variant="secure" fullWidth={false} onClick={() => void approvals.request()}>
                 {t('e2ee.approval.request')}
               </Button>
             )}
@@ -100,7 +101,7 @@ export const RecoveryPrompt = ({ ready }: { ready: boolean }) => {
               if (approval) approvals?.dismiss(approval.approvalId)
               hint.hide()
             }}
-            className="shrink-0 rounded p-1 text-muted hover:text-text"
+            className="grid size-8 shrink-0 place-items-center rounded-full text-muted hover:bg-field hover:text-text"
           >
             <X aria-hidden className="size-4" />
           </button>

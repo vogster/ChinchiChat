@@ -52,7 +52,12 @@
     "remove": "Remove",
     "blocked": "You blocked this user. Unblock them to send a message.",
     "notFound": "Conversation not found",
-    "listLabel": "Conversation with {{name}}"
+    "listLabel": "Conversation with {{name}}",
+    "heading": "Messages",
+    "search": "Find a conversation",
+    "searchEmpty": "Nothing found",
+    "groupSize_one": "{{count}} member",
+    "groupSize_other": "{{count}} members"
   },
   "userPanel": {
     "label": "Current user",
@@ -881,7 +886,14 @@
       "sent": "Request sent: {{name}}"
     },
     "incomingCount_one": "{{count}} friend request",
-    "incomingCount_other": "{{count}} friend requests"
+    "incomingCount_other": "{{count}} friend requests",
+    "secret": "Secret chat",
+    "call": "Call",
+    "more": "More — {{name}}",
+    "search": "Search friends",
+    "searchEmpty": "Nobody found",
+    "layoutGrid": "As cards",
+    "layoutList": "As a list"
   },
   "voice": {
     "channelLabel": "Voice channel {{name}}",
@@ -1391,7 +1403,8 @@
       "mismatchHint": "The server named an author other than the one who signed this message. The real sender is shown.",
       "unverified": "sender not verified",
       "unverifiedHint": "Sent just before the conversation keys changed; the signer was not checked against the author."
-    }
+    },
+    "listSubtitle": "Encrypted conversation"
   },
   "polls": {
     "label": "Poll: {{question}}",
