@@ -5,14 +5,18 @@ import { useE2ee } from './e2ee-context'
 import type { EncryptedChannel } from './client'
 import type { SafetyStatus } from './safety'
 
-/** Who has new devices and who was checked, kept current as devices come and go. */
+/**
+ * Who has new devices and who was checked, kept current as devices come and go. Loaded once the
+ * conversation is ready here, or as soon as someone asks (`refresh`, the safety window): the
+ * codes come from the people's public keys, so a device still waiting to be let in has them too.
+ */
 export const useSafety = (channel: EncryptedChannel | undefined, ready: boolean) => {
   const { client, revision } = useE2ee()
   const [status, setStatus] = useState<SafetyStatus | null>(null)
   const [asked, setAsked] = useState(0)
 
   useEffect(() => {
-    if (!channel || !client || !ready) return
+    if (!channel || !client || (!ready && asked === 0)) return
     let current = true
     client.safety
       .status(channel.memberIds)
@@ -44,7 +48,7 @@ export const useSafety = (channel: EncryptedChannel | undefined, ready: boolean)
     [client, refresh],
   )
 
-  return { status, codeWith, verify, acknowledge }
+  return { status, refresh, codeWith, verify, acknowledge }
 }
 
 export type SafetyControls = ReturnType<typeof useSafety>

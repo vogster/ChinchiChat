@@ -51,6 +51,16 @@ describe('checking who is on the other end', () => {
     expect(await within(bob).findByText('Проверен')).toBeVisible()
   })
 
+  it('shows the code even on a device still waiting to be let in', async () => {
+    // The code comes from the people's public keys, not from this device's place in the group.
+    const { user } = renderApp(URL_PATH, { api: withEncryptedDm(), e2eeStatus: 'waiting' })
+
+    await user.click(await screen.findByRole('button', { name: 'Проверка шифрования' }))
+    const dialog = await screen.findByRole('dialog', { name: 'Проверка шифрования' })
+    const bob = await within(dialog).findByRole('group', { name: 'Боб' })
+    expect(await within(bob).findByText('11111 22222 33333 44444')).toBeVisible()
+  })
+
   it('warns about an unapproved device of the other person until acknowledged', async () => {
     const { user, e2ee } = renderApp(URL_PATH, { api: withEncryptedDm() })
     e2ee.safety.status.mockResolvedValue({

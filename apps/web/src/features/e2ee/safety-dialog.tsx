@@ -86,6 +86,9 @@ export const SafetyDialog = ({
   onOpenChange: (open: boolean) => void
 }) => {
   const { t } = useTranslation()
+  const { refresh } = safety
+  // Fresh on every opening, and loaded at all on a device not let into the conversation yet.
+  useEffect(() => refresh(), [refresh])
   return (
     <Dialog
       open
@@ -94,6 +97,7 @@ export const SafetyDialog = ({
       description={t('e2ee.safety.hint')}
     >
       <div className="flex flex-col gap-3">
+        {safety.status ? null : <p className="text-sm text-muted">{t('common.loading')}</p>}
         {(safety.status?.people ?? []).map((person) => (
           <PersonCode
             key={person.userId}
