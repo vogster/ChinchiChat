@@ -97,6 +97,20 @@ const continuesRun = (row: MessageRow | undefined, firstUnreadId: string | null)
   row.message.id !== firstUnreadId
 
 /**
+ * Brings the reader down to a message they just sent, wherever in the history they were.
+ * Only their own new message: others arriving must not pull someone reading older ones.
+ */
+const useScrollToSent = (newest: Item | undefined, myId: string | undefined) => {
+  const scroller = useRef<HTMLDivElement>(null)
+  const sent = newest?.pending && newest.author?.id === myId ? newest.nonce : undefined
+  useEffect(() => {
+    // The bottom of the reversed scroller is 0.
+    if (sent && scroller.current) scroller.current.scrollTop = 0
+  }, [sent])
+  return scroller
+}
+
+/**
  * History, newest at the bottom. The scroller is `flex-col-reverse`, so the browser keeps the
  * view pinned to the newest message and loading older pages above does not move the view.
  */
@@ -154,6 +168,7 @@ export const MessageList = ({
   const messages = useDecryptedMessages(encryption, flattenPages(history.data))
   const sentinel = useRef<HTMLDivElement>(null)
   useAckLatest(channel.id, messages.at(-1)?.id)
+  const scroller = useScrollToSent(messages.at(-1), myId)
   const window_ = useRenderWindow(channel.id, groupMessages(messages))
   const { hidden, showOlder, shrink } = window_
 
@@ -197,6 +212,8 @@ export const MessageList = ({
     <div className="relative flex min-h-0 flex-1 flex-col">
       <UnreadBanner channelId={channel.id} marker={unread} />
       <div
+        ref={scroller}
+        data-scroller
         className="flex min-h-0 flex-1 flex-col-reverse overflow-y-auto"
         // Back at the newest messages (the bottom of a reversed scroller is 0): drop old rows.
         onScroll={(event) => {

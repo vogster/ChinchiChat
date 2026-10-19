@@ -58,6 +58,21 @@ describe('sending', () => {
     })
   })
 
+  it('scrolls down to your message once you send it, but not for others', async () => {
+    const { user, gateway } = renderApp(CHANNEL_URL, { user: testUser })
+    const scroller = (await history()).closest('[data-scroller]') as HTMLElement
+    // A reader somewhere up in the history (the bottom of the reversed scroller is 0).
+    scroller.scrollTop = -500
+
+    act(() => gateway.emit('MESSAGE_CREATE', testMessage('1004', { content: 'Чужое' })))
+    await screen.findByText('Чужое')
+    expect(scroller.scrollTop).toBe(-500)
+
+    await user.type(await composer(), 'Моё{Enter}')
+    await screen.findByText('Моё')
+    await waitFor(() => expect(scroller.scrollTop).toBe(0))
+  })
+
   it('keeps Shift+Enter as a newline', async () => {
     const api = createFakeApi({ user: testUser })
     const { user } = renderApp(CHANNEL_URL, { api })
