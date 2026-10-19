@@ -450,6 +450,7 @@
     "welcomeText": "Это начало канала #{{name}}.",
     "messagesSoon": "Сообщения появятся в следующей фазе разработки.",
     "markRead": "Отметить прочитанным",
+    "markCategoryRead": "Отметить категорию {{name}} прочитанной",
     "onlineSummary_one": "{{online}} в сети · {{count}} участник",
     "onlineSummary_few": "{{online}} в сети · {{count}} участника",
     "onlineSummary_many": "{{online}} в сети · {{count}} участников",

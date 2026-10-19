@@ -446,6 +446,7 @@
     "welcomeText": "This is the start of the #{{name}} channel.",
     "messagesSoon": "Messages arrive in the next development phase.",
     "markRead": "Mark as read",
+    "markCategoryRead": "Mark category {{name}} as read",
     "onlineSummary_one": "{{online}} online · {{count}} member",
     "onlineSummary_other": "{{online}} online · {{count}} members"
   },

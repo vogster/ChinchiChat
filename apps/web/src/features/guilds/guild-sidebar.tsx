@@ -33,7 +33,7 @@ import { InviteDialog } from './dialogs/invite-dialog'
 import { LeaveGuildDialog } from './dialogs/leave-guild-dialog'
 import { GuildSidebarHeader } from './guild-sidebar-header'
 import { guildQueryOptions } from './queries'
-import { useAckGuild } from './use-ack-guild'
+import { useAckChannels, useAckGuild } from './use-ack-guild'
 import { useChannelReorder } from './use-channel-reorder'
 
 import type { Channel, Snowflake } from '@chinchi/shared'
@@ -62,6 +62,7 @@ export const GuildSidebar = ({ guildId, channelId }: GuildSidebarProps) => {
   const moveChannel = useChannelReorder(guildId)
   const resolveNotifications = useNotificationResolver()
   const ackGuild = useAckGuild()
+  const ackChannels = useAckChannels()
 
   if (!guild)
     return (
@@ -180,6 +181,7 @@ export const GuildSidebar = ({ guildId, channelId }: GuildSidebarProps) => {
         onMove={(id, drop) => moveChannel(guild.channels, id, drop)}
         onEdit={(channel) => setDialog({ kind: 'edit', channel })}
         onNotifications={(category) => setDialog({ kind: 'categoryNotifications', category })}
+        onMarkRead={(unread) => ackChannels.mutate(unread)}
       />
 
       <UserPanel />

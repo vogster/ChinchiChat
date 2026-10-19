@@ -159,3 +159,31 @@ describe('marking a server read', () => {
     expect(await within(channels).findByRole('link', { name: 'мемы' })).toBeVisible()
   })
 })
+
+describe('marking a category read', () => {
+  it('offers it only when the category has something unread, and reads its channels', async () => {
+    const api = createFakeApi({ user: testUser })
+    const { user, gateway } = renderApp(GENERAL_URL, { api })
+    await history()
+    const channels = screen.getByRole('navigation', { name: 'Каналы' })
+    const button = () =>
+      within(channels).queryByRole('button', {
+        name: 'Отметить категорию Текстовые каналы прочитанной',
+      })
+    expect(button()).toBeNull()
+
+    act(() =>
+      gateway.emit('MESSAGE_CREATE', testMessage('1100', { channelId: '504', content: 'В мемах' })),
+    )
+    expect(
+      await within(channels).findByRole('link', { name: /мемы \(есть непрочитанные\)/ }),
+    ).toBeVisible()
+    await user.click(button() as HTMLElement)
+
+    await waitFor(() => expect(api.messages.ack).toHaveBeenCalledWith('504', '1100'))
+    expect(await within(channels).findByRole('link', { name: 'мемы' })).toBeVisible()
+    await waitFor(() => expect(button()).toBeNull())
+    // Nothing else goes: a channel in another category, or one already read.
+    expect(api.guilds.ack).not.toHaveBeenCalled()
+  })
+})

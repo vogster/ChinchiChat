@@ -1,4 +1,4 @@
-import { Bell, ChevronDown, Plus, Settings } from 'lucide-react'
+import { Bell, CheckCheck, ChevronDown, Plus, Settings } from 'lucide-react'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
@@ -24,6 +24,8 @@ export interface ChannelListProps {
   readonly onEdit: (channel: Channel) => void
   /** Opens what a category notifies about (its channels follow it). */
   readonly onNotifications: (category: Channel) => void
+  /** Marks a category's unread channels (given) as read. */
+  readonly onMarkRead: (unread: readonly Channel[]) => void
   /** May reorder channels (drag and drop, Alt+arrows). */
   readonly canReorder: boolean
   readonly onMove: (channelId: string, drop: ChannelDrop) => void
@@ -39,6 +41,7 @@ export const ChannelList = ({
   onCreateIn,
   onEdit,
   onNotifications,
+  onMarkRead,
   canReorder,
   onMove,
 }: ChannelListProps) => {
@@ -106,6 +109,10 @@ export const ChannelList = ({
 
       {tree.categories.map(({ category, channels: children }) => {
         const isCollapsed = collapsed.has(category.id)
+        const withThreads = children.flatMap((child) => [child, ...threadsOf(channels, child.id)])
+        const unread = withThreads.filter(
+          (child) => !isMuted(child) && (isUnread(child) || mentionCount(child) > 0),
+        )
         // A collapsed category still shows its unread channels, as in Discord.
         const visible = isCollapsed
           ? children.filter((child) => isUnread(child) || mentionCount(child) > 0)
@@ -131,6 +138,17 @@ export const ChannelList = ({
                   className={`size-3 shrink-0 transition-transform duration-200 ${isCollapsed ? '-rotate-90' : ''}`}
                 />
               </button>
+              {unread.length > 0 ? (
+                <button
+                  type="button"
+                  aria-label={t('guild.markCategoryRead', { name: category.name })}
+                  title={t('guild.markCategoryRead', { name: category.name })}
+                  onClick={() => onMarkRead(unread)}
+                  className="grid size-6 place-items-center rounded-full text-faint hover:bg-chip hover:text-text"
+                >
+                  <CheckCheck aria-hidden className="size-3.5" />
+                </button>
+              ) : null}
               <button
                 type="button"
                 aria-label={t('notifications.categoryButton', { name: category.name })}
