@@ -71,13 +71,12 @@ export const useDecryptedMessages = (
   /** The signer as the app knows them: from any message the server did attribute to them. */
   const userById = (userId: string): PublicUser | null =>
     messages.find((m) => m.author?.id === userId)?.author ?? null
-  const shown = messages.map((message): MessageItem | null => {
+  const shown = messages.map((message): Shown => {
     if (!message.ciphertext || message.pending) return message
     const key = keyOf(message)
-    // The server's attachments are ciphertext under a generic name: never shown as they are.
-    if (!read.has(key)) return { ...message, content: t('e2ee.decrypting'), attachments: [] }
+    if (!read.has(key)) return 'decrypting'
     const result = read.get(key)
-    if (!result) return null
+    if (!result) return 'unreadable'
     const { payload, sender } = result
     const encryptedFiles = (payload.files ?? []).flatMap((file) => {
       const attachment = message.attachments.find((a) => a.id === file.id)
@@ -96,32 +95,51 @@ export const useDecryptedMessages = (
       reactions: reactionsOf(message),
     }
   })
-  return foldUnreadable(messages, shown, (count) => t('e2ee.unreadable', { count }))
+  return foldRuns(messages, shown, (state, count) =>
+    state === 'decrypting' ? t('e2ee.decrypting') : t('e2ee.unreadable', { count }),
+  )
 }
+
+/** A message as shown, or why it can't be yet ('decrypting') or at all ('unreadable'). */
+type Shown = MessageItem | 'decrypting' | 'unreadable'
 
 /**
  * Messages this device can't read (sent before it joined) fold into one quiet line per run,
- * instead of a wall of "unavailable".
+ * instead of a wall of "unavailable"; so do ones still decrypting. A run keeps its first
+ * message's id, so a "decrypting" line that turns out unreadable stays the same row and the
+ * feed doesn't jump through a bubble per message on the way.
  */
-const foldUnreadable = (
+const foldRuns = (
   messages: readonly MessageItem[],
-  shown: readonly (MessageItem | null)[],
-  notice: (count: number) => string,
+  shown: readonly Shown[],
+  notice: (state: 'decrypting' | 'unreadable', count: number) => string,
 ): MessageItem[] => {
   const out: MessageItem[] = []
-  let run: MessageItem[] = []
+  let run: { state: 'decrypting' | 'unreadable'; items: MessageItem[] } | null = null
   const close = () => {
-    const first = run[0]
-    if (first) out.push({ ...first, content: '', attachments: [], notice: notice(run.length) })
-    run = []
+    const first = run?.items[0]
+    if (run && first) {
+      // The server's attachments are ciphertext under a generic name: never shown as they are.
+      out.push({
+        ...first,
+        content: '',
+        attachments: [],
+        notice: notice(run.state, run.items.length),
+      })
+    }
+    run = null
   }
   shown.forEach((item, index) => {
-    if (item) {
+    if (typeof item !== 'string') {
       close()
       out.push(item)
-    } else {
-      run.push(messages[index] as MessageItem)
+      return
     }
+    if (run?.state !== item) {
+      close()
+      run = { state: item, items: [] }
+    }
+    run.items.push(messages[index] as MessageItem)
   })
   close()
   return out

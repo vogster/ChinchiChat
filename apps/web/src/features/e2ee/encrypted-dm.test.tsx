@@ -147,6 +147,20 @@ describe('encrypted conversations', () => {
     expect(within(row).queryByRole('button', { name: 'Пожаловаться' })).not.toBeInTheDocument()
   })
 
+  it('fold messages still decrypting into one line, so the feed does not jump', async () => {
+    const api = createFakeApi({ user: testUser })
+    api.dms.list.mockResolvedValue({ channels: [encryptedDm] })
+    const base = { channelId: encryptedDm.id, guildId: null, content: '' }
+    api.messages.list.mockResolvedValue({
+      messages: ['1297', '1298', '1299'].map((id) => testMessage(id, { ...base, ciphertext: id })),
+    })
+    const { e2ee } = renderApp(URL, { api })
+    e2ee.read.mockImplementation(() => new Promise(() => {}))
+
+    expect(await screen.findByText('Расшифровка…')).toBeVisible()
+    expect(screen.getAllByText('Расшифровка…')).toHaveLength(1)
+  })
+
   it('fold messages this device can not read into one line', async () => {
     const api = createFakeApi({ user: testUser })
     api.dms.list.mockResolvedValue({ channels: [encryptedDm] })
