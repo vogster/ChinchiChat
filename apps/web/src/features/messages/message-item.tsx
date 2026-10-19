@@ -1,4 +1,4 @@
-import { Paperclip, Pin } from 'lucide-react'
+import { Megaphone, Paperclip, Pin } from 'lucide-react'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
@@ -276,6 +276,18 @@ export const MessageItem = ({
           {message.pending ? null : (
             <ReactionsBar reactions={message.reactions} onToggle={onToggleReaction} />
           )}
+          {onPublish && !editing ? (
+            // In plain sight: without publishing, the followers never get the message.
+            <Button
+              variant="link"
+              onClick={onPublish}
+              title={t('announcements.publishAction')}
+              className="inline-flex items-center gap-1 px-1"
+            >
+              <Megaphone aria-hidden className="size-3.5" />
+              {t('announcements.publish')}
+            </Button>
+          ) : null}
           {message.pending === 'failed' ? (
             <div role="alert" className="flex items-center gap-3 px-1 text-sm text-danger">
               {t('messages.failed')}

@@ -492,7 +492,7 @@
     "nsfw": "Age-restricted channel (18+)",
     "nsfwHint": "People are asked before the channel is shown.",
     "announcement": "Announcement channel",
-    "announcementHint": "Messages can be published: copies go to the channels that follow this one, on other servers too. To follow it into your channel, use “Follow” in the channel header. To send a message out, use “Publish” in its menu."
+    "announcementHint": "Messages can be published: copies go to the channels that follow this one, on other servers too. To follow it into your channel, use “Follow” in the channel header. To send a message out, use “Publish” under it: followers get nothing until you do."
   },
   "invite": {
     "title": "Invite friends to {{name}}",
@@ -1275,6 +1275,7 @@
     "followed": "Done: new announcements will arrive in the chosen channel.",
     "publish": "Publish",
     "published": "published",
+    "publishAction": "Send a copy to the channels that follow this one",
     "publishedHint": "A copy went to the channels that follow this one"
   },
   "notifications": {

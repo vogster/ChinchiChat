@@ -77,6 +77,23 @@ describe('announcement channels', () => {
     )
   })
 
+  it('offer to publish right under a message, not only in its menu', async () => {
+    const api = createFakeApi({ user: testUser })
+    api.guilds.get.mockResolvedValue(announcing())
+    api.messages.list.mockResolvedValue({
+      messages: [
+        testMessage('1100', { content: 'Свежая новость', author: testUser }),
+        testMessage('1101', { content: 'Уже разослано', author: testUser, published: true }),
+      ],
+    })
+    const { user } = renderApp(GENERAL_URL, { api })
+
+    await screen.findByText('Свежая новость')
+    expect(within(row('Уже разослано')).queryByRole('button', { name: 'Опубликовать' })).toBeNull()
+    await user.click(within(row('Свежая новость')).getByRole('button', { name: 'Опубликовать' }))
+    await waitFor(() => expect(api.announcements.publish).toHaveBeenCalledWith('503', '1100'))
+  })
+
   it('are followed into a channel of another server', async () => {
     const api = createFakeApi({ user: testUser })
     api.guilds.get.mockResolvedValue(announcing())
