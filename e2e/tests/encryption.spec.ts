@@ -391,6 +391,17 @@ test('a new browser is approved from an old one by comparing emoji', async ({ br
   await composer.fill('Встречаемся у фонтана')
   await composer.press('Enter')
   await expect(laptop.page.getByText('Встречаемся у фонтана')).toBeVisible()
+  // What the laptop has put in the history backup for this conversation (sealed, so compared
+  // as is): the message first, then the message again with Bob's reaction.
+  const laptopChannel = laptop.page.url().split('/').at(-1) as string
+  const backedUp = () =>
+    laptop.page.evaluate(async (id) => {
+      const response = await fetch(`/api/v1/users/@me/e2ee/backup/entries?channelId=${id}`)
+      const { data } = (await response.json()) as { data: { entries: { payload: string }[] } }
+      return data.entries.map((entry) => entry.payload).join('|')
+    }, laptopChannel)
+  await expect.poll(backedUp).not.toBe('')
+  const withoutReaction = await backedUp()
   // Bob reacts; the laptop reads the reaction (and so backs it up with the message).
   await bob.page.goto('/')
   await bob.page
@@ -401,6 +412,8 @@ test('a new browser is approved from an old one by comparing emoji', async ({ br
   await (await messageAction(bob.page, 'Встречаемся у фонтана', 'Отреагировать: 👍')).click()
   const laptopRow = laptop.page.getByText('Встречаемся у фонтана').locator('xpath=ancestor::li[1]')
   await expect(laptopRow.getByRole('button', { name: '👍: 1' })).toBeVisible()
+  // The backup goes up in the background: leaving before it does loses the reaction.
+  await expect.poll(backedUp).not.toBe(withoutReaction)
   await laptop.page.goto('/')
 
   // Alice signs in on her phone; the laptop stays open.
