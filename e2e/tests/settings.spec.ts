@@ -22,6 +22,7 @@ test('change display name and password from settings', async ({ page }) => {
   await expect(settings.getByText('Сохранено')).toBeVisible()
 
   await settings.getByRole('link', { name: 'Моя учётная запись' }).click()
+  await settings.getByRole('button', { name: /^Пароль/ }).click()
   await settings.getByLabel('Текущий пароль').fill(user.password)
   await settings.getByLabel('Новый пароль', { exact: true }).fill('changed-password-123')
   await settings.getByLabel('Повторите новый пароль').fill('changed-password-123')

@@ -266,14 +266,16 @@
       "email": "Email",
       "verified": "Verified",
       "unverified": "Not verified",
-      "passwordTitle": "Change password",
       "currentPassword": "Current password",
       "newPassword": "New password",
       "confirmPassword": "Confirm new password",
       "mismatch": "Passwords do not match",
       "changePassword": "Change password",
       "passwordChanged": "Password changed. You've been signed out on other devices.",
-      "credentials": "Credentials"
+      "credentials": "Credentials",
+      "security": "Sign-in and security",
+      "password": "Password",
+      "change": "Change"
     },
     "profile": {
       "title": "Profile",
@@ -331,7 +333,6 @@
     },
     "mfa": {
       "title": "Two-factor authentication",
-      "status": "Status:",
       "on": "On",
       "off": "Off",
       "text": "Signing in also needs a code from an authenticator app (Google Authenticator, Aegis, 1Password, …).",

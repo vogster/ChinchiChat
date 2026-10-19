@@ -84,10 +84,27 @@ describe('account section', () => {
     expect(within(account).getByText('Не подтверждён')).toBeVisible()
   })
 
+  it('keeps the password and two-factor forms folded into rows until opened', async () => {
+    const { user } = renderApp('/settings/account', { user: testUser })
+
+    const password = await screen.findByRole('button', { name: /^Пароль/ })
+    const mfa = screen.getByRole('button', { name: /^Двухфакторная аутентификация/ })
+    expect(mfa).toHaveTextContent('Выключена')
+    expect(password).toHaveAttribute('aria-expanded', 'false')
+    expect(screen.queryByLabelText('Текущий пароль')).not.toBeInTheDocument()
+
+    await user.click(password)
+    expect(password).toHaveAttribute('aria-expanded', 'true')
+    expect(screen.getByLabelText('Текущий пароль')).toBeVisible()
+    await user.click(mfa)
+    expect(screen.getByRole('button', { name: 'Включить 2FA' })).toBeVisible()
+  })
+
   it('changes the password', async () => {
     const api = createFakeApi({ user: testUser })
     const { user } = renderApp('/settings/account', { api })
 
+    await user.click(await screen.findByRole('button', { name: /^Пароль/ }))
     await user.type(await screen.findByLabelText('Текущий пароль'), 'old-password')
     await user.type(screen.getByLabelText('Новый пароль'), 'new-password')
     await user.type(screen.getByLabelText('Повторите новый пароль'), 'new-password')
@@ -105,6 +122,7 @@ describe('account section', () => {
     const api = createFakeApi({ user: testUser })
     const { user } = renderApp('/settings/account', { api })
 
+    await user.click(await screen.findByRole('button', { name: /^Пароль/ }))
     await user.type(await screen.findByLabelText('Текущий пароль'), 'old-password')
     await user.type(screen.getByLabelText('Новый пароль'), 'new-password')
     await user.type(screen.getByLabelText('Повторите новый пароль'), 'other-password')
@@ -119,6 +137,7 @@ describe('account section', () => {
     api.auth.changePassword.mockRejectedValueOnce(apiError(400, 'INVALID_CURRENT_PASSWORD'))
     const { user } = renderApp('/settings/account', { api })
 
+    await user.click(await screen.findByRole('button', { name: /^Пароль/ }))
     await user.type(await screen.findByLabelText('Текущий пароль'), 'nope')
     await user.type(screen.getByLabelText('Новый пароль'), 'new-password')
     await user.type(screen.getByLabelText('Повторите новый пароль'), 'new-password')

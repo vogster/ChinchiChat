@@ -15,12 +15,6 @@ export const MfaSettings = ({ enabled }: { enabled: boolean }) => {
 
   return (
     <div className="flex flex-col gap-3">
-      <p className="text-sm">
-        {t('settings.mfa.status')}{' '}
-        <span className={enabled ? 'font-semibold text-secure-text' : 'font-semibold text-muted'}>
-          {enabled ? t('settings.mfa.on') : t('settings.mfa.off')}
-        </span>
-      </p>
       <p className="text-sm text-muted">{t('settings.mfa.text')}</p>
       {enabled ? (
         <div className="flex flex-wrap gap-2">

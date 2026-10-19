@@ -9,6 +9,7 @@ test('two-factor sign-in: turn it on, then sign in with a code', async ({ page }
   await registerAndOpenHome(page, user)
 
   await page.getByRole('link', { name: 'Настройки пользователя' }).click()
+  await page.getByRole('button', { name: /^Двухфакторная аутентификация/ }).click()
   await page.getByRole('button', { name: 'Включить 2FA' }).click()
   const dialog = page.getByRole('dialog', { name: 'Двухфакторная аутентификация' })
   await dialog.getByLabel('Пароль', { exact: true }).fill(user.password)

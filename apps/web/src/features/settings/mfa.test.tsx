@@ -9,6 +9,7 @@ describe('two-factor sign-in settings', () => {
     const api = createFakeApi({ user: testUser })
     const { user } = renderApp('/settings/account', { api })
 
+    await user.click(await screen.findByRole('button', { name: /^Двухфакторная аутентификация/ }))
     await user.click(await screen.findByRole('button', { name: 'Включить 2FA' }))
     const dialog = await screen.findByRole('dialog', { name: 'Двухфакторная аутентификация' })
     await user.type(within(dialog).getByLabelText('Пароль', { exact: true }), 'password123')
@@ -44,6 +45,7 @@ describe('two-factor sign-in settings', () => {
     const api = createFakeApi({ user: { ...testUser, mfaEnabled: true } })
     const { user } = renderApp('/settings/account', { api })
 
+    await user.click(await screen.findByRole('button', { name: /^Двухфакторная аутентификация/ }))
     await user.click(await screen.findByRole('button', { name: 'Новые коды восстановления' }))
     const dialog = await screen.findByRole('dialog', { name: 'Новые коды восстановления' })
     await user.type(within(dialog).getByLabelText('Пароль', { exact: true }), 'password123')
@@ -65,6 +67,7 @@ describe('two-factor sign-in settings', () => {
     const api = createFakeApi({ user: { ...testUser, mfaEnabled: true } })
     const { user } = renderApp('/settings/account', { api })
 
+    await user.click(await screen.findByRole('button', { name: /^Двухфакторная аутентификация/ }))
     await user.click(await screen.findByRole('button', { name: 'Новые коды восстановления' }))
     let dialog = await screen.findByRole('dialog', { name: 'Новые коды восстановления' })
     await user.type(within(dialog).getByLabelText('Пароль', { exact: true }), 'password123')

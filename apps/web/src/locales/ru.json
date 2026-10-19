@@ -270,14 +270,16 @@
       "email": "Email",
       "verified": "Подтверждён",
       "unverified": "Не подтверждён",
-      "passwordTitle": "Смена пароля",
       "currentPassword": "Текущий пароль",
       "newPassword": "Новый пароль",
       "confirmPassword": "Повторите новый пароль",
       "mismatch": "Пароли не совпадают",
       "changePassword": "Сменить пароль",
       "passwordChanged": "Пароль изменён. На остальных устройствах выполнен выход.",
-      "credentials": "Учётные данные"
+      "credentials": "Учётные данные",
+      "security": "Вход и безопасность",
+      "password": "Пароль",
+      "change": "Изменить"
     },
     "profile": {
       "title": "Профиль",
@@ -335,7 +337,6 @@
     },
     "mfa": {
       "title": "Двухфакторная аутентификация",
-      "status": "Сейчас:",
       "on": "Включена",
       "off": "Выключена",
       "text": "При входе, кроме пароля, нужен код из приложения-аутентификатора (Google Authenticator, Aegis, 1Password и др.).",
