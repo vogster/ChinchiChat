@@ -2,6 +2,7 @@ import { Lock } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
 import { BetaBadge } from './beta-badge'
+import { EncryptionGuideButton } from './encryption-guide'
 
 import type { EncryptedState } from './use-encrypted-conversation'
 
@@ -23,6 +24,7 @@ export const EncryptionNotice = () => {
         </h2>
         <p className="mt-0.5 max-w-prose text-pretty text-muted">{t('e2ee.notice')}</p>
         <p className="mt-2 max-w-prose text-sm text-faint">{t('e2ee.betaNotice')}</p>
+        <EncryptionGuideButton />
       </div>
     </div>
   )

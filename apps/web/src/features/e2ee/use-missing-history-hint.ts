@@ -1,5 +1,6 @@
-import { useCallback, useSyncExternalStore } from 'react'
+import { useCallback } from 'react'
 
+import { useDeviceFlag } from '../../lib/device-flag'
 import { useCurrentUser } from '../auth/use-auth-actions'
 
 /**
@@ -8,43 +9,9 @@ import { useCurrentUser } from '../auth/use-auth-actions'
  */
 const keyFor = (userId: string) => `chinchi.recovery.missingHidden:${userId}`
 
-/** Storage blocked: the choice still holds until the page reloads. */
-const memory = new Map<string, boolean>()
-const listeners = new Set<() => void>()
-
-const subscribe = (listener: () => void) => {
-  listeners.add(listener)
-  // Another tab of this browser hid or showed it.
-  window.addEventListener('storage', listener)
-  return () => {
-    listeners.delete(listener)
-    window.removeEventListener('storage', listener)
-  }
-}
-
-const read = (key: string) => {
-  try {
-    return localStorage.getItem(key) === '1'
-  } catch {
-    return memory.get(key) ?? false
-  }
-}
-
-const write = (key: string, hidden: boolean) => {
-  memory.set(key, hidden)
-  try {
-    if (hidden) localStorage.setItem(key, '1')
-    else localStorage.removeItem(key)
-  } catch {
-    // Kept in memory only.
-  }
-  for (const listener of listeners) listener()
-}
-
 export const useMissingHistoryHint = () => {
-  const key = keyFor(useCurrentUser()?.id ?? '')
-  const hidden = useSyncExternalStore(subscribe, () => read(key))
-  const hide = useCallback(() => write(key, true), [key])
-  const show = useCallback(() => write(key, false), [key])
+  const [hidden, setHidden] = useDeviceFlag(keyFor(useCurrentUser()?.id ?? ''))
+  const hide = useCallback(() => setHidden(true), [setHidden])
+  const show = useCallback(() => setHidden(false), [setHidden])
   return { hidden, hide, show }
 }

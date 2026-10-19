@@ -15,19 +15,23 @@ const PIXEL = Buffer.from(
   'base64',
 )
 
-const openAs = async (browser: Browser) => {
+const openAs = async (browser: Browser, { guide = false }: { guide?: boolean } = {}) => {
   // Chromium's fake camera and microphone (see launch flags in the config) stand in for devices.
   const context = await browser.newContext({
     viewport: { width: 1280, height: 800 },
     permissions: ['microphone', 'camera'],
   })
+  // The encryption guide opens once per browser; only the test that looks at it sees it.
+  if (!guide) {
+    await context.addInitScript(() => localStorage.setItem('chinchi.e2ee.guideSeen', '1'))
+  }
   return { context, page: await context.newPage() }
 }
 
 test('two people talk and call in an encrypted conversation the server cannot read', async ({
   browser,
 }) => {
-  const alice = await openAs(browser)
+  const alice = await openAs(browser, { guide: true })
   const bob = await openAs(browser)
   const aliceUser = newUser()
   const bobUser = newUser()
@@ -54,6 +58,10 @@ test('two people talk and call in an encrypted conversation the server cannot re
   const members = alice.page.getByRole('complementary', { name: /Участники/ })
   await members.getByRole('button', { name: new RegExp(`^${bobUser.username},`) }).click()
   await alice.page.getByRole('button', { name: 'Зашифрованная беседа' }).click()
+  // The first encrypted conversation in this browser starts with the guide, then the key.
+  const guide = alice.page.getByRole('dialog', { name: 'Как работает шифрование' })
+  await expect(guide).toContainText('Шаг 1 из 5')
+  await guide.getByRole('button', { name: 'Закрыть' }).click()
   await expect(alice.page.getByText('Сквозное шифрование')).toBeVisible()
   await saveRecoveryKey(alice.page)
 

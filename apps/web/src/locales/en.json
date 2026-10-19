@@ -1358,6 +1358,36 @@
     "save": "Save rules"
   },
   "e2ee": {
+    "guide": {
+      "title": "How encryption works",
+      "open": "How it works",
+      "progress": "Step {{step}} of {{count}}",
+      "next": "Next",
+      "back": "Back",
+      "done": "Got it",
+      "chip": "Encryption",
+      "sampleMessage": "See you on Friday",
+      "keys": {
+        "title": "Only you hold the keys",
+        "text": "Messages, files, reactions and calls are encrypted on the participants' devices. The server stores only ciphertext: it knows who wrote to whom and when, but not what."
+      },
+      "devices": {
+        "title": "A new device",
+        "text": "Signed in on a new device? Approve it from your old one: both screens show the same emoji, compare them and press “Yes”. The new device gets the keys and the history."
+      },
+      "recovery": {
+        "title": "The recovery key",
+        "text": "Without your old device at hand, the recovery key brings the history back. Save it when the app asks: without it old messages are unavailable on a new device, and the server can't restore it."
+      },
+      "safety": {
+        "title": "Checking who you talk to",
+        "text": "The shield in the conversation header opens the safety code. Compare it with the other person in person or over another channel and mark “Codes match” — the shield turns green. If they add a new device, the app warns you."
+      },
+      "marks": {
+        "title": "What the marks mean",
+        "text": "“Decrypting…” — the message is still opening. “N messages unavailable” — they were sent before this device joined; the recovery key brings them back. “Beta” — encryption is still awaiting an independent review."
+      }
+    },
     "badge": "Encrypted",
     "start": "Encrypted conversation",
     "listState": "encrypted conversation",

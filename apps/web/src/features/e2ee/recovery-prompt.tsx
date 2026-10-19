@@ -4,8 +4,10 @@ import { useTranslation } from 'react-i18next'
 
 import { Button } from '../../components/ui/button'
 import { ApprovalEmoji } from './approval-dialog'
+import { EncryptionGuideOnce } from './encryption-guide'
 import { EnterRecoveryKeyDialog, RecoveryKeyForm, SaveRecoveryKeyDialog } from './recovery-dialogs'
 import { useApprovals } from './use-approvals'
+import { useEncryptionGuideSeen } from './use-encryption-guide'
 import { useMissingHistoryHint } from './use-missing-history-hint'
 import { recoveryReminderSnoozed, snoozeRecoveryReminder, useRecovery } from './use-recovery'
 
@@ -26,7 +28,7 @@ const ApprovalProgress = ({ view }: { view: ApprovalView }) => {
 /**
  * In an encrypted conversation: on a device that holds the recovery key, a one-time request to
  * save it; on one without it (not approved yet), a way to get the old messages: approve it from
- * another device, or type the recovery key.
+ * another device, or type the recovery key. The first time, the encryption guide comes before.
  */
 export const RecoveryPrompt = ({ ready }: { ready: boolean }) => {
   const { t } = useTranslation()
@@ -37,12 +39,15 @@ export const RecoveryPrompt = ({ ready }: { ready: boolean }) => {
   const hint = useMissingHistoryHint()
   const approval = views.find((view) => view.role === 'new')
   const { refresh } = recovery
+  const [guideSeen] = useEncryptionGuideSeen()
 
   // Approved from another device: the keys are here now.
   useEffect(() => {
     if (approval?.state === 'done') void refresh()
   }, [approval?.state, refresh])
 
+  // The guide first: it explains the recovery key this then asks to save.
+  if (!guideSeen) return <EncryptionGuideOnce />
   if (!recovery.loaded) return null
 
   if (recovery.key) {

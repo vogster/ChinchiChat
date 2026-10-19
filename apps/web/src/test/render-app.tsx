@@ -4,6 +4,8 @@ import { render } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 
 import { App } from '../app'
+import { ENCRYPTION_GUIDE_SEEN } from '../features/e2ee/use-encryption-guide'
+import { setDeviceFlag } from '../lib/device-flag'
 import { initI18n } from '../lib/i18n'
 import { createAppRouter } from '../router'
 import { createFakeApi } from './fake-api'
@@ -21,14 +23,23 @@ export interface RenderAppOptions extends FakeApiOptions {
   readonly e2eeStatus?: ConversationStatus
   /** A desktop shell around the app (see createFakeShell); none by default, like a browser. */
   readonly shell?: Shell
+  /** Show the encryption guide as on a first visit (other tests find it already seen). */
+  readonly encryptionGuide?: boolean
 }
 
 /** Renders the whole app (router, guards, providers) at `path` against a fake API. */
 export const renderApp = (
   path = '/',
-  { api: givenApi, e2eeStatus, shell, ...apiOptions }: RenderAppOptions = {},
+  {
+    api: givenApi,
+    e2eeStatus,
+    shell,
+    encryptionGuide = false,
+    ...apiOptions
+  }: RenderAppOptions = {},
 ) => {
   initI18n('ru')
+  setDeviceFlag(ENCRYPTION_GUIDE_SEEN, !encryptionGuide)
   const api = givenApi ?? createFakeApi(apiOptions)
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
@@ -42,7 +53,7 @@ export const renderApp = (
   const gateway = createFakeGateway()
   const voice = createFakeVoice()
   const e2ee = createFakeE2ee(e2eeStatus)
-  render(
+  const { unmount } = render(
     <App
       router={router}
       queryClient={queryClient}
@@ -53,5 +64,14 @@ export const renderApp = (
       shell={shell ?? null}
     />,
   )
-  return { api, router, queryClient, gateway, voice, e2ee: e2ee.client, user: userEvent.setup() }
+  return {
+    api,
+    router,
+    queryClient,
+    gateway,
+    voice,
+    e2ee: e2ee.client,
+    user: userEvent.setup(),
+    unmount,
+  }
 }
