@@ -103,15 +103,19 @@ const Tile = ({
         <span className="absolute bottom-3 left-3 flex max-w-[calc(100%-1.5rem)] items-center gap-1.5 rounded-[14px] bg-[rgb(15_15_22/0.5)] px-3 py-1.5 text-[12.5px] font-medium text-white backdrop-blur-md">
           <span className="truncate">{name}</span>
           {muted ? (
-            <span className="shrink-0 text-[11px] text-[oklch(0.82_0.12_25)]">
-              {t('voice.silent')}
-            </span>
+            <MicOff
+              aria-hidden
+              data-icon="muted"
+              className="size-3.5 shrink-0 text-[oklch(0.82_0.12_25)]"
+            />
           ) : null}
         </span>
       ) : (
         <span className="absolute bottom-3 left-3 flex max-w-[calc(100%-1.5rem)] items-center gap-1.5 rounded-full bg-side px-3 py-1 text-[13px] font-medium">
           <span className="truncate">{name}</span>
-          {muted ? <MicOff aria-hidden className="size-3.5 shrink-0 text-danger" /> : null}
+          {muted ? (
+            <MicOff aria-hidden data-icon="muted" className="size-3.5 shrink-0 text-danger" />
+          ) : null}
         </span>
       )}
     </li>

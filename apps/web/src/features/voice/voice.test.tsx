@@ -223,6 +223,18 @@ describe('in a voice channel', () => {
     await user.click(screen.getByRole('button', { name: 'Подключиться' }))
     expect(api.voice.join).toHaveBeenCalledWith(VOICE_ID, { selfMute: false, selfDeaf: false })
   })
+
+  it('marks a muted person on their tile with an icon, as in a DM call', async () => {
+    const { gateway } = renderApp(`/channels/${testGuild.id}/${VOICE_ID}`, { api: withVoice() })
+    await screen.findByRole('heading', { name: 'Общий', level: 1 })
+    gateway.emit('VOICE_STATE_UPDATE', state('200', { selfMute: true }))
+
+    const stage = await screen.findByRole('list', { name: 'Участники звонка' })
+    const bob = await within(stage).findByRole('listitem', { name: /Боб/ })
+    expect(bob).toHaveAccessibleName('Боб (микрофон выключен)')
+    expect(within(bob).queryByText('без звука')).not.toBeInTheDocument()
+    expect(bob.querySelector('[data-icon="muted"]')).not.toBeNull()
+  })
 })
 
 describe('in-voice bar', () => {
