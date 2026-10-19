@@ -13,6 +13,8 @@ export type MessageItem = Message & {
   readonly pending?: 'sending' | 'failed'
   /** Files of a message still being sent (kept so a failed send can be retried with them). */
   readonly files?: readonly File[]
+  /** How far those files have gone up, in bytes, while the message is being sent. */
+  readonly upload?: { readonly sent: number; readonly total: number }
   /** Files of an encrypted message: where the ciphertext is and what opens it. */
   readonly encryptedFiles?: readonly SealedFile[]
   /** Shown as one quiet line instead of the message (messages this device can't read). */

@@ -9,11 +9,11 @@ import {
 } from '@chinchi/shared'
 import { z } from 'zod'
 
-import { describeFile, putToStorage } from './upload'
+import { describeFile } from './upload'
 import { id, queryString } from './url'
 
-import type { FetchLike, Http } from './http'
-import type { UploadOptions } from './upload'
+import type { Http } from './http'
+import type { PutFile, UploadOptions } from './upload'
 import type {
   CreateAttachmentRequest,
   CreateMessageRequest,
@@ -30,7 +30,7 @@ const reactionPath = (channelId: Snowflake, messageId: Snowflake, emoji: string)
   `/channels/${id(channelId)}/messages/${id(messageId)}/reactions/${id(emoji)}`
 
 /** Messages and what hangs off them: files, pins, polls, reactions, search. */
-export const createMessagesApi = (request: Http, fetch: FetchLike) => {
+export const createMessagesApi = (request: Http, putFile: PutFile) => {
   const createAttachment = (channelId: Snowflake, body: CreateAttachmentRequest) =>
     request({
       method: 'POST',
@@ -156,7 +156,7 @@ export const createMessagesApi = (request: Http, fetch: FetchLike) => {
       /** Uploads a file for a message in the channel; resolves to the id for `attachmentIds`. */
       async upload(channelId: Snowflake, file: Blob, options?: UploadOptions): Promise<Snowflake> {
         const { attachment } = await createAttachment(channelId, describeFile(file, options))
-        await putToStorage(fetch, attachment, file)
+        await putFile(attachment, file, options?.onProgress)
         return attachment.id
       },
     },

@@ -2,7 +2,7 @@ import { ApiError } from '@chinchi/sdk'
 import { DEFAULT_EVERYONE_PERMISSIONS, Permission } from '@chinchi/shared'
 import { vi } from 'vitest'
 
-import type { ApiClient } from '@chinchi/sdk'
+import type { ApiClient, UploadOptions } from '@chinchi/sdk'
 import type {
   AdminGuild,
   AdminUser,
@@ -757,7 +757,9 @@ export const createFakeApi = ({ user = null, registrationMode = 'open' }: FakeAp
     },
     attachments: {
       create: vi.fn(async () => ({ attachment: testUpload })),
-      upload: vi.fn(async () => testUpload.id),
+      upload: vi.fn(
+        async (_channelId: string, _file: Blob, _options?: UploadOptions) => testUpload.id,
+      ),
     },
     instance: {
       get: vi.fn(async () => ({

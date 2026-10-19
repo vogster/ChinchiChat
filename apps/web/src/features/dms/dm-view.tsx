@@ -83,7 +83,6 @@ export const DmView = ({ channel }: { channel: PrivateChannel }) => {
   const [replyingTo, setReplyingTo] = useState<MessageItem | null>(null)
   const [replyMention, setReplyMention] = useState(true)
 
-  const send = useSendMessage(channel.id, null)
   const edit = useEditMessage(channel.id)
   const remove = useDeleteMessage(channel.id)
   const discard = useDiscardFailed(channel.id)
@@ -92,6 +91,22 @@ export const DmView = ({ channel }: { channel: PrivateChannel }) => {
   const pending = usePendingFiles()
   const encryption = useEncryptedChannel(channel, me?.id)
   const encrypted = useEncryptedConversation(encryption)
+  // Encrypted: the same optimistic message and upload progress, sent through encryption.
+  const send = useSendMessage(
+    channel.id,
+    null,
+    encryption
+      ? ({ content, nonce, files, reply }, onProgress) =>
+          encrypted.send(content, {
+            nonce,
+            ...(files ? { files } : {}),
+            ...(reply
+              ? { reply: { messageId: reply.messageId, mention: reply.mentionsAuthor } }
+              : {}),
+            onProgress,
+          })
+      : undefined,
+  )
   const safety = useSafety(encryption, encrypted.state === 'ready')
   const allVerified =
     (safety.status?.people.length ?? 0) > 0 &&
@@ -121,18 +136,6 @@ export const DmView = ({ channel }: { channel: PrivateChannel }) => {
 
   const sendContent = (content: string) => {
     typing.sent()
-    if (encryption) {
-      void encrypted
-        .send(content, {
-          nonce: newNonce(),
-          files: pending.files.map(({ file }) => file),
-          ...(replyingTo ? { reply: { messageId: replyingTo.id, mention: replyMention } } : {}),
-        })
-        .catch(() => undefined)
-      setReplyingTo(null)
-      pending.clear()
-      return
-    }
     send.mutate({
       content,
       nonce: newNonce(),

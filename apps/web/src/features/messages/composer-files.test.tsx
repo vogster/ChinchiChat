@@ -22,7 +22,11 @@ describe('attaching files', () => {
 
     await user.type(await composer(), '{Enter}')
 
-    await waitFor(() => expect(api.attachments.upload).toHaveBeenCalledWith('503', cat))
+    await waitFor(() =>
+      expect(api.attachments.upload).toHaveBeenCalledWith('503', cat, {
+        onProgress: expect.any(Function),
+      }),
+    )
     await waitFor(() =>
       expect(api.messages.create).toHaveBeenCalledWith(
         '503',
@@ -45,11 +49,36 @@ describe('attaching files', () => {
     await user.click(await within(failed).findByRole('button', { name: 'Повторить' }))
 
     await waitFor(() => expect(api.messages.create).toHaveBeenCalledTimes(2))
-    expect(api.attachments.upload).toHaveBeenLastCalledWith('503', cat)
+    expect(api.attachments.upload).toHaveBeenLastCalledWith('503', cat, {
+      onProgress: expect.any(Function),
+    })
     expect(api.messages.create).toHaveBeenLastCalledWith(
       '503',
       expect.objectContaining({ content: 'смотрите', attachmentIds: ['900'] }),
     )
+  })
+
+  it('shows how far the files have gone up while the message waits', async () => {
+    const api = createFakeApi({ user: testUser })
+    let release: () => void = () => {}
+    api.attachments.upload.mockImplementationOnce(async (_channel, _file, options) => {
+      options?.onProgress?.(5, 10)
+      await new Promise<void>((resolve) => (release = resolve))
+      return '900'
+    })
+    const { user } = renderApp(CHANNEL_URL, { api })
+
+    await user.upload(await screen.findByLabelText('Прикрепить файлы'), file('cat.png', 10))
+    await user.type(await composer(), 'смотрите{Enter}')
+
+    const sending = (await screen.findByText('смотрите')).closest('li') as HTMLElement
+    const bar = await within(sending).findByRole('progressbar', { name: 'Загрузка файлов' })
+    expect(bar).toHaveAttribute('aria-valuenow', '50')
+    expect(within(sending).getByText(/50 %/)).toBeVisible()
+
+    release()
+    await waitFor(() => expect(api.messages.create).toHaveBeenCalled())
+    await waitFor(() => expect(screen.queryByRole('progressbar')).toBeNull())
   })
 
   it('removes a file before sending', async () => {

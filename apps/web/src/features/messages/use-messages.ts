@@ -6,8 +6,10 @@ import { useApi } from '../../lib/api-context'
 import { useCurrentUser } from '../auth/use-auth-actions'
 import { messageKeys, readStatesQueryOptions } from './queries'
 import { withReaction } from './reaction-cache'
+import { overallProgress } from './upload-progress'
 
 import type { MessageItem, MessagePages, ReadStates } from './queries'
+import type { ApiClient, UploadProgress } from '@chinchi/sdk'
 import type { Message, MessageReply, Snowflake } from '@chinchi/shared'
 import type { QueryClient } from '@tanstack/react-query'
 
@@ -47,23 +49,67 @@ export const toReply = (message: Message, mentionsAuthor: boolean): MessageReply
   },
 })
 
-/** `guildId` is null in DMs. */
-export const useSendMessage = (channelId: Snowflake, guildId: Snowflake | null) => {
+/**
+ * Gets a message to the server: its files first (telling how far), then the message. The
+ * server's copy comes back, or (encrypted) only its id: the gateway's echo then replaces the
+ * optimistic one by its nonce.
+ */
+export type Deliver = (
+  input: SendInput,
+  onProgress: UploadProgress,
+) => Promise<Message | { readonly id: Snowflake }>
+
+/** An ordinary channel or DM: files as they are, then the message. */
+const plainDelivery =
+  (api: ApiClient, channelId: Snowflake): Deliver =>
+  async ({ content, nonce, reply, files = [] }, onProgress) => {
+    const progress = overallProgress(files, onProgress)
+    const attachmentIds: Snowflake[] = []
+    for (const [index, file] of files.entries()) {
+      attachmentIds.push(
+        await api.attachments.upload(channelId, file, { onProgress: progress(index) }),
+      )
+    }
+    const { message } = await api.messages.create(channelId, {
+      content,
+      nonce,
+      ...(attachmentIds.length > 0 ? { attachmentIds } : {}),
+      ...(reply ? { replyTo: reply.messageId, replyMention: reply.mentionsAuthor } : {}),
+    })
+    return message
+  }
+
+/**
+ * `guildId` is null in DMs. `deliver` replaces the plain way to the server (an encrypted
+ * conversation encrypts first); the message shows at once either way, with its upload going.
+ */
+export const useSendMessage = (
+  channelId: Snowflake,
+  guildId: Snowflake | null,
+  deliver?: Deliver,
+) => {
   const api = useApi()
   const queryClient = useQueryClient()
   const me = useCurrentUser()
 
+  /** The upload on the optimistic copy, redrawn only when the whole percent moves. */
+  const tracking = (nonce: string): UploadProgress => {
+    let shown = -1
+    return (sent, total) => {
+      const percent = total > 0 ? Math.floor((sent / total) * 100) : 100
+      if (percent === shown) return
+      shown = percent
+      updateMessages(queryClient, channelId, (page) =>
+        page.map((m) =>
+          m.pending === 'sending' && m.nonce === nonce ? { ...m, upload: { sent, total } } : m,
+        ),
+      )
+    }
+  }
+
   return useMutation({
-    mutationFn: async ({ content, nonce, reply, files = [] }: SendInput) => {
-      const attachmentIds: Snowflake[] = []
-      for (const file of files) attachmentIds.push(await api.attachments.upload(channelId, file))
-      return api.messages.create(channelId, {
-        content,
-        nonce,
-        ...(attachmentIds.length > 0 ? { attachmentIds } : {}),
-        ...(reply ? { replyTo: reply.messageId, replyMention: reply.mentionsAuthor } : {}),
-      })
-    },
+    mutationFn: (input: SendInput) =>
+      (deliver ?? plainDelivery(api, channelId))(input, tracking(input.nonce)),
     onMutate: ({ content, nonce, reply, files = [] }) => {
       const optimistic: MessageItem = {
         id: `pending-${nonce}`,
@@ -93,21 +139,33 @@ export const useSendMessage = (channelId: Snowflake, guildId: Snowflake | null) 
         reactions: [],
         nonce,
         pending: 'sending',
-        ...(files.length > 0 ? { files } : {}),
+        ...(files.length > 0
+          ? { files, upload: { sent: 0, total: files.reduce((sum, f) => sum + f.size, 0) } }
+          : {}),
       }
       updateMessages(queryClient, channelId, (page, index) =>
         index === 0 ? [...withoutNonce(nonce)(page), optimistic] : page,
       )
     },
-    onSuccess: ({ message }, { nonce }) =>
+    onSuccess: (message, { nonce }) => {
+      if (!('channelId' in message)) {
+        // Only the id: refetch in case the echo never comes (the gateway was down meanwhile).
+        void queryClient.invalidateQueries({ queryKey: messageKeys.channel(channelId) })
+        return
+      }
       updateMessages(queryClient, channelId, (page, index) => {
         if (index !== 0) return page
         const rest = withoutNonce(nonce)(page)
         return rest.some((m) => m.id === message.id) ? rest : [...rest, message]
-      }),
+      })
+    },
     onError: (_error, { nonce }) =>
       updateMessages(queryClient, channelId, (page) =>
-        page.map((m) => (m.pending && m.nonce === nonce ? { ...m, pending: 'failed' } : m)),
+        page.map((m) => {
+          if (!(m.pending && m.nonce === nonce)) return m
+          const { upload: _, ...rest } = m
+          return { ...rest, pending: 'failed' as const }
+        }),
       ),
   })
 }

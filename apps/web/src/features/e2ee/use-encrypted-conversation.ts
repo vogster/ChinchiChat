@@ -1,12 +1,14 @@
 import { useEffect, useMemo, useState } from 'react'
 
 import { useApi } from '../../lib/api-context'
+import { overallProgress } from '../messages/upload-progress'
 import { withoutMetadata } from './clean-photo'
 import { useE2ee } from './e2ee-context'
 import { encryptFile } from './file-crypto'
 
 import type { ConversationStatus, EncryptedChannel, SendOptions } from './client'
 import type { EncryptedFile } from './codec'
+import type { UploadProgress } from '@chinchi/sdk'
 import type { PrivateChannel } from '@chinchi/shared'
 
 export type EncryptedState = ConversationStatus | 'opening' | 'failed'
@@ -56,16 +58,24 @@ export const useEncryptedConversation = (channel: EncryptedChannel | undefined) 
         nonce,
         files = [],
         reply,
-      }: { nonce: string; files?: readonly File[]; reply?: SendOptions['reply'] },
+        onProgress,
+      }: {
+        nonce: string
+        files?: readonly File[]
+        reply?: SendOptions['reply']
+        onProgress?: UploadProgress
+      },
     ) => {
       if (!channel || !client) throw new Error('Not an encrypted conversation')
+      const progress = overallProgress(files, onProgress ?? (() => undefined))
       const sealed: EncryptedFile[] = []
-      for (const file of files) {
+      for (const [index, file] of files.entries()) {
         // Photos lose their location and camera details first: the server can't strip them later.
         const { blob, file: secret } = await encryptFile(await withoutMetadata(file))
         const id = await api.attachments.upload(channel.id, blob, {
           filename: 'encrypted',
           contentType: 'application/octet-stream',
+          onProgress: progress(index),
         })
         sealed.push({ id, ...secret })
       }

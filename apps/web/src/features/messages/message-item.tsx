@@ -23,6 +23,7 @@ import { QUICK_REACTIONS } from './reaction-cache'
 import { ReactionsBar } from './reactions-bar'
 import { ReplyHeader } from './reply-header'
 import { ThreadCard } from './thread-card'
+import { UploadBar } from './upload-bar'
 
 import type { EmojiPickerProps } from '../emoji/emoji-picker'
 import type { GroupPosition } from './bubble-shape'
@@ -255,6 +256,9 @@ export const MessageItem = ({
               messageId={message.id}
               authorId={message.author?.id ?? null}
             />
+          ) : null}
+          {message.pending === 'sending' && message.upload ? (
+            <UploadBar upload={message.upload} mine={mine} />
           ) : null}
           {message.pending && message.files ? (
             <ul className="flex flex-wrap gap-1.5">

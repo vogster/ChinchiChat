@@ -1,4 +1,4 @@
-import { screen, waitFor } from '@testing-library/react'
+import { screen, waitFor, within } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { createFakeApi, testFriend, testMessage, testUser } from '../../test/fake-api'
@@ -62,7 +62,11 @@ describe('files in encrypted conversations', () => {
     expect(channelId).toBe(encryptedDm.id)
     expect(blob).not.toBe(plan)
     expect(blob.size).toBe(plan.size + 16)
-    expect(options).toEqual({ filename: 'encrypted', contentType: 'application/octet-stream' })
+    expect(options).toEqual({
+      filename: 'encrypted',
+      contentType: 'application/octet-stream',
+      onProgress: expect.any(Function),
+    })
     expect(e2ee.send).toHaveBeenCalledWith(expect.objectContaining({ id: encryptedDm.id }), '', {
       nonce: expect.any(String),
       files: [
@@ -77,6 +81,30 @@ describe('files in encrypted conversations', () => {
     await waitFor(() =>
       expect(screen.queryByRole('list', { name: 'Файлы к отправке' })).not.toBeInTheDocument(),
     )
+  })
+
+  it('show the message at once, with the upload going, before it is sent', async () => {
+    const api = createFakeApi({ user: testUser })
+    api.dms.list.mockResolvedValue({ channels: [encryptedDm] })
+    let release: () => void = () => {}
+    api.attachments.upload.mockImplementationOnce(async (_channel, _file, options) => {
+      options?.onProgress?.(10, 40)
+      await new Promise<void>((resolve) => (release = resolve))
+      return '900'
+    })
+    const { user, e2ee } = renderApp(URL_PATH, { api })
+    const plan = new File(['секретный план'], 'план.txt', { type: 'text/plain' })
+
+    await user.upload(await screen.findByLabelText('Прикрепить файлы'), plan)
+    await user.type(await screen.findByRole('textbox', { name: 'Написать @Боб' }), 'держи{Enter}')
+
+    const sending = (await screen.findByText('держи')).closest('li') as HTMLElement
+    expect(
+      await within(sending).findByRole('progressbar', { name: 'Загрузка файлов' }),
+    ).toHaveAttribute('aria-valuenow', '25')
+    expect(e2ee.send).not.toHaveBeenCalled()
+    release()
+    await waitFor(() => expect(e2ee.send).toHaveBeenCalled())
   })
 
   it('are decrypted here: images show, other files download under their real name', async () => {
