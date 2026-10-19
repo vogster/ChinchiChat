@@ -1,5 +1,5 @@
-import { screen, waitFor, within } from '@testing-library/react'
-import { describe, expect, it } from 'vitest'
+import { act, screen, waitFor, within } from '@testing-library/react'
+import { describe, expect, it, vi } from 'vitest'
 
 import { apiError, createFakeApi, testGuild, testUser } from '../../test/fake-api'
 import { renderApp } from '../../test/render-app'
@@ -222,6 +222,43 @@ describe('in a voice channel', () => {
 
     await user.click(screen.getByRole('button', { name: 'Подключиться' }))
     expect(api.voice.join).toHaveBeenCalledWith(VOICE_ID, { selfMute: false, selfDeaf: false })
+  })
+
+  it('blows up a shared screen on a click, with everyone else in a strip below', async () => {
+    const { user, gateway, voice } = renderApp(GENERAL_URL, { api: withVoice() })
+    await joinFromSidebar(user)
+    await panel()
+    gateway.emit('VOICE_STATE_UPDATE', state(testUser.id))
+    gateway.emit('VOICE_STATE_UPDATE', state('200', { stream: true }))
+    const screen_ = {
+      key: 'v1',
+      userId: '200',
+      source: 'screen' as const,
+      attach: vi.fn(),
+      detach: vi.fn(),
+    }
+    act(() => voice.video([screen_]))
+
+    const stage = await screen.findByRole('list', { name: 'Участники звонка' })
+    expect(stage).toHaveAttribute('data-layout', 'grid')
+    // Only a tile with video opens up.
+    expect(within(stage).queryByRole('button', { name: /alice/ })).not.toBeInTheDocument()
+    await user.click(await within(stage).findByRole('button', { name: 'Развернуть видео: Боб' }))
+
+    expect(stage).toHaveAttribute('data-layout', 'focus')
+    const bob = within(stage).getByRole('listitem', { name: /Боб/ })
+    expect(bob).toHaveAttribute('data-focused', 'true')
+    await user.keyboard('{Escape}')
+    expect(stage).toHaveAttribute('data-layout', 'grid')
+
+    await user.click(within(stage).getByRole('button', { name: 'Развернуть видео: Боб' }))
+    await user.click(within(stage).getByRole('button', { name: 'Свернуть видео: Боб' }))
+    expect(stage).toHaveAttribute('data-layout', 'grid')
+
+    // The screen share ends while it is blown up: back to everyone.
+    await user.click(within(stage).getByRole('button', { name: 'Развернуть видео: Боб' }))
+    act(() => voice.video([]))
+    await waitFor(() => expect(stage).toHaveAttribute('data-layout', 'grid'))
   })
 
   it('marks a muted person on their tile with an icon, as in a DM call', async () => {

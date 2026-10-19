@@ -959,6 +959,8 @@
     "countIn_other": "{{count}} inside",
     "foldMembers": "Fold the people in {{name}}",
     "unfoldMembers": "Show the people in {{name}}",
+    "focus": "Blow up the video: {{name}}",
+    "unfocus": "Shrink the video: {{name}}",
     "silent": "silent",
     "dock": "Call controls",
     "dockMic": "Microphone",
