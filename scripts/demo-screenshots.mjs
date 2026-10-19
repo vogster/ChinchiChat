@@ -179,6 +179,8 @@ const WIKI_OUT = process.env.WIKI_OUT
 if (WIKI_OUT) {
   await mkdir(WIKI_OUT, { recursive: true })
   await anna.goto(`${WEB}/`)
+  // Everyone, not only who is online: without --hold the demo people are offline.
+  await anna.getByRole('tab', { name: 'Все' }).click()
   await anna.getByRole('button', { name: /Написать — Вика/ }).waitFor()
   await shot(anna, 'friends', WIKI_OUT)
 
