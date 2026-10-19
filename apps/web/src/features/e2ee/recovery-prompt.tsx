@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next'
 
 import { Button } from '../../components/ui/button'
 import { ApprovalEmoji } from './approval-dialog'
-import { EnterRecoveryKeyDialog, SaveRecoveryKeyDialog } from './recovery-dialogs'
+import { EnterRecoveryKeyDialog, RecoveryKeyForm, SaveRecoveryKeyDialog } from './recovery-dialogs'
 import { useApprovals } from './use-approvals'
 import { useMissingHistoryHint } from './use-missing-history-hint'
 import { recoveryReminderSnoozed, snoozeRecoveryReminder, useRecovery } from './use-recovery'
@@ -66,20 +66,26 @@ export const RecoveryPrompt = ({ ready }: { ready: boolean }) => {
     ) : null
   }
   return (
-    <>
-      <div
-        role="status"
-        aria-label={t('e2ee.recovery.missingLabel')}
-        className="mx-4 mt-2 flex items-start gap-3.5 rounded-[24px] bg-stage p-4 text-sm"
+    <div
+      role="status"
+      aria-label={t('e2ee.recovery.missingLabel')}
+      className="mx-4 mt-2 flex items-start gap-3.5 rounded-[24px] bg-stage p-4 text-sm"
+    >
+      <span
+        aria-hidden
+        className="grid size-[42px] shrink-0 place-items-center rounded-[15px] bg-warning-soft text-warning-text"
       >
-        <span
-          aria-hidden
-          className="grid size-[42px] shrink-0 place-items-center rounded-[15px] bg-warning-soft text-warning-text"
-        >
-          <KeyRound className="size-5" />
-        </span>
-        <div className="flex min-w-0 flex-1 flex-col gap-3 pt-0.5 text-body">
-          {approval ? <ApprovalProgress view={approval} /> : <p>{t('e2ee.recovery.missing')}</p>}
+        <KeyRound className="size-5" />
+      </span>
+      <div className="flex min-w-0 flex-1 flex-col gap-3 pt-0.5 text-body">
+        {approval ? <ApprovalProgress view={approval} /> : <p>{t('e2ee.recovery.missing')}</p>}
+        {entering ? (
+          <RecoveryKeyForm
+            recovery={recovery}
+            onDone={() => setEntering(false)}
+            onCancel={() => setEntering(false)}
+          />
+        ) : (
           <div className="flex flex-wrap gap-2">
             {asking || !approvals ? null : (
               <Button variant="secure" fullWidth={false} onClick={() => void approvals.request()}>
@@ -90,25 +96,24 @@ export const RecoveryPrompt = ({ ready }: { ready: boolean }) => {
               {t('e2ee.recovery.enter')}
             </Button>
           </div>
-        </div>
-        {asking ? null : (
-          // Lost key: no point repeating it. The chat header keeps a way back.
-          <button
-            type="button"
-            aria-label={t('e2ee.recovery.hideMissing')}
-            title={t('e2ee.recovery.hideMissing')}
-            onClick={() => {
-              if (approval) approvals?.dismiss(approval.approvalId)
-              hint.hide()
-            }}
-            className="grid size-8 shrink-0 place-items-center rounded-full text-muted hover:bg-field hover:text-text"
-          >
-            <X aria-hidden className="size-4" />
-          </button>
         )}
       </div>
-      {entering ? <EnterRecoveryKeyDialog recovery={recovery} onOpenChange={setEntering} /> : null}
-    </>
+      {asking ? null : (
+        // Lost key: no point repeating it. The chat header keeps a way back.
+        <button
+          type="button"
+          aria-label={t('e2ee.recovery.hideMissing')}
+          title={t('e2ee.recovery.hideMissing')}
+          onClick={() => {
+            if (approval) approvals?.dismiss(approval.approvalId)
+            hint.hide()
+          }}
+          className="grid size-8 shrink-0 place-items-center rounded-full text-muted hover:bg-field hover:text-text"
+        >
+          <X aria-hidden className="size-4" />
+        </button>
+      )}
+    </div>
   )
 }
 

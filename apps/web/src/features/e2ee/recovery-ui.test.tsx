@@ -62,19 +62,23 @@ describe('the recovery key', () => {
 
     const banner = await screen.findByRole('status', { name: 'Старые сообщения недоступны' })
     await user.click(within(banner).getByRole('button', { name: 'Ввести ключ восстановления' }))
-    const dialog = await screen.findByRole('dialog', { name: 'Ключ восстановления' })
-    const input = within(dialog).getByRole('textbox', { name: 'Ключ восстановления' })
+    // Right in the card, not a window over the chat.
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    const input = within(banner).getByRole('textbox', { name: 'Ключ восстановления' })
+    expect(input).toHaveFocus()
 
     e2ee.recovery.useKey.mockResolvedValueOnce('invalid')
     await user.type(input, 'ABCD{Enter}')
-    expect(await within(dialog).findByText(/не похоже на ключ восстановления/)).toBeVisible()
+    expect(await within(banner).findByText(/не похоже на ключ восстановления/)).toBeVisible()
     e2ee.recovery.useKey.mockResolvedValueOnce('wrong')
-    await user.click(within(dialog).getByRole('button', { name: 'Восстановить' }))
-    expect(await within(dialog).findByText(/не подходит к этой учётной записи/)).toBeVisible()
+    await user.click(within(banner).getByRole('button', { name: 'Восстановить' }))
+    expect(await within(banner).findByText(/не подходит к этой учётной записи/)).toBeVisible()
 
     e2ee.recovery.key.mockResolvedValue(TEST_RECOVERY_KEY)
-    await user.click(within(dialog).getByRole('button', { name: 'Восстановить' }))
-    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument())
+    await user.click(within(banner).getByRole('button', { name: 'Восстановить' }))
+    await waitFor(() =>
+      expect(screen.queryByRole('status', { name: 'Старые сообщения недоступны' })).toBeNull(),
+    )
     expect(e2ee.recovery.useKey).toHaveBeenLastCalledWith('ABCD')
     await waitFor(() =>
       expect(

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { Alert } from '../../components/ui/alert'
@@ -67,25 +67,32 @@ export const SaveRecoveryKeyDialog = ({
   )
 }
 
-/** Typing the key on a device that lacks it: history and trust come back. */
-export const EnterRecoveryKeyDialog = ({
+/**
+ * Typing the key on a device that lacks it: history and trust come back. In the missing-history
+ * card and in a window from the settings.
+ */
+export const RecoveryKeyForm = ({
   recovery,
-  onOpenChange,
+  onDone,
+  onCancel,
 }: {
   recovery: RecoveryControls
-  onOpenChange: (open: boolean) => void
+  onDone: () => void
+  onCancel: () => void
 }) => {
   const { t } = useTranslation()
   const [text, setText] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [pending, setPending] = useState(false)
+  const input = useRef<HTMLInputElement>(null)
+  useEffect(() => input.current?.focus(), [])
 
   const submit = async () => {
     setPending(true)
     setError(null)
     try {
       const result = await recovery.useKey(text)
-      if (result === 'ok') onOpenChange(false)
+      if (result === 'ok') onDone()
       else setError(t(result === 'invalid' ? 'e2ee.recovery.invalid' : 'e2ee.recovery.wrong'))
     } catch {
       setError(t('e2ee.recovery.failed'))
@@ -95,36 +102,60 @@ export const EnterRecoveryKeyDialog = ({
   }
 
   return (
+    <form
+      className="flex flex-col gap-4"
+      onSubmit={(event) => {
+        event.preventDefault()
+        void submit()
+      }}
+    >
+      <TextField
+        ref={input}
+        label={t('e2ee.recovery.enterTitle')}
+        value={text}
+        autoComplete="off"
+        spellCheck={false}
+        onChange={(event) => setText(event.target.value)}
+      />
+      {error ? <Alert tone="error">{error}</Alert> : null}
+      <div className="flex flex-wrap gap-2">
+        <Button variant="secondary" fullWidth={false} onClick={onCancel}>
+          {t('common.cancel')}
+        </Button>
+        <Button
+          type="submit"
+          fullWidth={false}
+          pending={pending}
+          disabled={text.trim().length === 0}
+        >
+          {t('e2ee.recovery.restore')}
+        </Button>
+      </div>
+    </form>
+  )
+}
+
+/** The key form as a window (from the settings). */
+export const EnterRecoveryKeyDialog = ({
+  recovery,
+  onOpenChange,
+}: {
+  recovery: RecoveryControls
+  onOpenChange: (open: boolean) => void
+}) => {
+  const { t } = useTranslation()
+  return (
     <Dialog
       open
       onOpenChange={onOpenChange}
       title={t('e2ee.recovery.enterTitle')}
       description={t('e2ee.recovery.enterHint')}
     >
-      <form
-        className="flex flex-col gap-4"
-        onSubmit={(event) => {
-          event.preventDefault()
-          void submit()
-        }}
-      >
-        <TextField
-          label={t('e2ee.recovery.enterTitle')}
-          value={text}
-          autoComplete="off"
-          spellCheck={false}
-          onChange={(event) => setText(event.target.value)}
-        />
-        {error ? <Alert tone="error">{error}</Alert> : null}
-        <div className="flex gap-2">
-          <Button variant="secondary" onClick={() => onOpenChange(false)}>
-            {t('common.cancel')}
-          </Button>
-          <Button type="submit" pending={pending} disabled={text.trim().length === 0}>
-            {t('e2ee.recovery.restore')}
-          </Button>
-        </div>
-      </form>
+      <RecoveryKeyForm
+        recovery={recovery}
+        onDone={() => onOpenChange(false)}
+        onCancel={() => onOpenChange(false)}
+      />
     </Dialog>
   )
 }
