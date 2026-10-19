@@ -16,18 +16,35 @@ const linkState =
 const sideButton =
   'grid shrink-0 place-items-center rounded-full text-faint hover:bg-chip hover:text-text'
 
-/** Unread mentions as an accent count; plain unread as a dot. */
-const UnreadMark = ({ unread, mentions }: { unread: boolean; mentions: number }) =>
-  mentions > 0 ? (
-    <span
-      aria-hidden
-      className="grid h-5 min-w-5 shrink-0 place-items-center rounded-full bg-accent px-1.5 text-[11px] font-semibold text-accent-contrast"
-    >
-      {formatMentionCount(mentions)}
-    </span>
-  ) : unread ? (
-    <span aria-hidden className="size-2 shrink-0 rounded-full bg-accent" />
-  ) : null
+/**
+ * The name with its unread marks: plain unread as a dot right after the name, unread mentions
+ * as an accent count at the row's end.
+ */
+const NameWithMarks = ({
+  name,
+  unread,
+  mentions,
+}: {
+  name: string
+  unread: boolean
+  mentions: number
+}) => (
+  <>
+    <span className="min-w-0 truncate">{name}</span>
+    {unread && mentions === 0 ? (
+      <span aria-hidden className="-ml-1 size-2 shrink-0 rounded-full bg-accent" />
+    ) : null}
+    <span className="flex-1" />
+    {mentions > 0 ? (
+      <span
+        aria-hidden
+        className="grid h-5 min-w-5 shrink-0 place-items-center rounded-full bg-accent px-1.5 text-[11px] font-semibold text-accent-contrast"
+      >
+        {formatMentionCount(mentions)}
+      </span>
+    ) : null}
+  </>
+)
 
 /** Threads hang off their channel on a drawn branch: a rounded elbow, and a line to the next. */
 const ThreadBranch = ({
@@ -57,8 +74,7 @@ const ThreadBranch = ({
           className={`flex h-8 items-center gap-2 rounded-xl px-2.5 text-[13.5px] text-muted ${linkState}`}
         >
           <MessagesSquare aria-hidden className="size-3.5 shrink-0" />
-          <span className="min-w-0 flex-1 truncate">{thread.name}</span>
-          <UnreadMark unread={isUnread(thread)} mentions={0} />
+          <NameWithMarks name={thread.name} unread={isUnread(thread)} mentions={0} />
         </Link>
       </li>
     ))}
@@ -143,8 +159,7 @@ export const ChannelRow = ({
             className="w-4 shrink-0 text-center font-medium text-faint before:content-['#']"
           />
         )}
-        <span className="min-w-0 flex-1 truncate">{channel.name}</span>
-        <UnreadMark unread={unread} mentions={mentions} />
+        <NameWithMarks name={channel.name} unread={unread} mentions={mentions} />
       </Link>
       <span className="absolute top-[7px] right-1.5 flex items-center gap-0.5">
         {editButton}
