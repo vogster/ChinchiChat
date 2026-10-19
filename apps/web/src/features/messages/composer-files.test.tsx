@@ -75,6 +75,8 @@ describe('attaching files', () => {
     const bar = await within(sending).findByRole('progressbar', { name: 'Загрузка файлов' })
     expect(bar).toHaveAttribute('aria-valuenow', '50')
     expect(within(sending).getByText(/50 %/)).toBeVisible()
+    // One pill with the file and its progress, not a second one with the name.
+    expect(within(sending).getAllByText('cat.png')).toHaveLength(1)
 
     release()
     await waitFor(() => expect(api.messages.create).toHaveBeenCalled())

@@ -257,10 +257,10 @@ export const MessageItem = ({
               authorId={message.author?.id ?? null}
             />
           ) : null}
+          {/* While the files go up: one pill with them and how far; otherwise each file's name. */}
           {message.pending === 'sending' && message.upload ? (
-            <UploadBar upload={message.upload} mine={mine} />
-          ) : null}
-          {message.pending && message.files ? (
+            <UploadBar upload={message.upload} files={message.files ?? []} />
+          ) : message.pending && message.files ? (
             <ul className="flex flex-wrap gap-1.5">
               {message.files.map((file, index) => (
                 <li
