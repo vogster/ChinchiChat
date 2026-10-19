@@ -121,6 +121,51 @@ describe('friend requests', () => {
   })
 })
 
+describe('after a declined request', () => {
+  const decline = async () => {
+    expect((await request(alice, 'bob')).statusCode).toBe(200)
+    expect((await call(bob, 'DELETE', `/${alice.id}`)).statusCode).toBe(204)
+  }
+
+  it('makes the asker wait a day before asking the same person again', async () => {
+    await decline()
+
+    for (const retry of [
+      request(alice, 'bob'),
+      call(alice, 'PUT', `/${bob.id}`, { type: 'friend' }),
+    ]) {
+      const response = await retry
+      expect(response.statusCode).toBe(429)
+      expect(response.json().code).toBe('FRIEND_REQUEST_COOLDOWN')
+    }
+    expect(await relationsOf(bob)).toEqual({})
+    const ttl = await redis.ttl(`friend-cooldown:${alice.id}:${bob.id}`)
+    expect(ttl).toBeGreaterThan(86_000)
+    expect(ttl).toBeLessThanOrEqual(86_400)
+  })
+
+  it('still lets the one who declined ask, and others ask', async () => {
+    await decline()
+
+    expect((await request(bob, 'alice')).statusCode).toBe(200)
+    expect((await request(carol, 'bob')).statusCode).toBe(200)
+  })
+
+  it('asks again once the day has passed', async () => {
+    await decline()
+    await redis.del(`friend-cooldown:${alice.id}:${bob.id}`)
+
+    expect((await request(alice, 'bob')).statusCode).toBe(200)
+  })
+
+  it('does not hold back someone who cancelled their own request', async () => {
+    expect((await request(alice, 'bob')).statusCode).toBe(200)
+    expect((await call(alice, 'DELETE', `/${bob.id}`)).statusCode).toBe(204)
+
+    expect((await request(alice, 'bob')).statusCode).toBe(200)
+  })
+})
+
 describe('blocking', () => {
   it('ends a friendship, is invisible to the blocked user and stops their requests', async () => {
     await request(alice, 'bob')

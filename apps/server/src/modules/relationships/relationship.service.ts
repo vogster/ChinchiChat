@@ -1,12 +1,14 @@
 import { userTopic } from '../../events/event-bus'
 import { badRequest, HttpError } from '../../http/http-error'
 import { toPublicUser } from '../users/user.mapper'
+import { createMemoryFriendCooldown } from './friend-cooldown'
 import { createRelationshipRepository } from './relationship.repository'
 
 import type { Database } from '../../db/client'
 import type { EventBus } from '../../events/event-bus'
 import type { PresenceLookup } from '../invites/invite.service'
 import type { UserRepository, UserRow } from '../users/user.repository'
+import type { FriendCooldown } from './friend-cooldown'
 import type { RelationshipRepository, RelationshipRow } from './relationship.repository'
 import type { Relationship, Snowflake } from '@chinchi/shared'
 
@@ -18,12 +20,16 @@ export interface RelationshipServiceDeps {
   readonly presence?: PresenceLookup | undefined
   /** Whether two users share a server (then they keep seeing each other's status). */
   readonly sharesGuild?: (a: Snowflake, b: Snowflake) => Promise<boolean>
+  /** Holds back a new request to someone who just declined one. */
+  readonly cooldown?: FriendCooldown
 }
 
 /** One message for every refused request: it must not tell who exists or who blocked you. */
 const requestFailed = () =>
   badRequest('FRIEND_REQUEST_FAILED', 'Could not send a friend request to this user')
 const unknownUser = () => new HttpError(404, 'UNKNOWN_USER', 'Unknown user')
+const coolingDown = () =>
+  new HttpError(429, 'FRIEND_REQUEST_COOLDOWN', 'This user declined your request recently')
 
 export const toRelationship = (row: RelationshipRow, user: UserRow): Relationship => ({
   user: toPublicUser(user),
@@ -39,6 +45,7 @@ export const createRelationshipService = ({
   events,
   presence,
   sharesGuild = async () => false,
+  cooldown = createMemoryFriendCooldown(),
 }: RelationshipServiceDeps) => {
   /** An ended friendship stops sharing status, unless a server still does. */
   const hidePresence = async (a: Snowflake, b: Snowflake) => {
@@ -108,6 +115,9 @@ export const createRelationshipService = ({
         throw badRequest('USER_BLOCKED', 'Unblock this user before sending a friend request')
       }
       if (theirs?.type === 'blocked') throw requestFailed()
+      // A fresh request (not accepting theirs) waits out a recent decline. The asker already
+      // saw the request disappear, so saying why tells them nothing new.
+      if (!mine && (await cooldown.active(me.id, them.id))) throw coolingDown()
       // Nothing changes: no duplicate events.
       if (mine && (mine.type === 'friend' || mine.type === 'pending_out')) {
         return { kind: 'unchanged' as const, row: mine }
@@ -164,13 +174,18 @@ export const createRelationshipService = ({
         const mine = await repo.find(me.id, target.id)
         if (!mine) return null
         await repo.remove(me.id, target.id)
-        if (mine.type === 'blocked') return { pairs: false, wereFriends: false }
+        if (mine.type === 'blocked') return { pairs: false, wereFriends: false, declined: false }
         const theirs = await repo.find(target.id, me.id)
         if (theirs && theirs.type !== 'blocked') await repo.remove(target.id, me.id)
-        return { pairs: true, wereFriends: mine.type === 'friend' }
+        return {
+          pairs: true,
+          wereFriends: mine.type === 'friend',
+          declined: mine.type === 'pending_in',
+        }
       })
       if (!removed) return
-      const { pairs, wereFriends } = removed
+      const { pairs, wereFriends, declined } = removed
+      if (declined) await cooldown.start(target.id, me.id)
       await announceRemoval(me.id, target.id)
       if (pairs) await announceRemoval(target.id, me.id)
       if (wereFriends) await hidePresence(me.id, target.id)

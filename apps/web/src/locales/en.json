@@ -175,6 +175,7 @@
     "TOO_MANY_REACTIONS": "This message already has too many different reactions.",
     "INVALID_REPLY": "You can only reply to a message in this channel.",
     "FRIEND_REQUEST_FAILED": "Couldn't send the request. Check the username.",
+    "FRIEND_REQUEST_COOLDOWN": "This person declined your request recently. You can ask again in a day.",
     "USER_BLOCKED": "You blocked this user",
     "CANNOT_MESSAGE_USER": "You can't message this user",
     "INVALID_RECIPIENTS": "Invalid list of members",

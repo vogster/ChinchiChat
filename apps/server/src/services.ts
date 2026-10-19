@@ -47,6 +47,7 @@ import { createBanRepository } from './modules/moderation/ban.repository'
 import { createModerationService } from './modules/moderation/moderation.service'
 import { createNotificationRepository } from './modules/notifications/notification.repository'
 import { createNotificationService } from './modules/notifications/notification.service'
+import { createRedisFriendCooldown } from './modules/relationships/friend-cooldown'
 import { createRelationshipRepository } from './modules/relationships/relationship.repository'
 import { createRelationshipService } from './modules/relationships/relationship.service'
 import { createOverwriteRepository } from './modules/roles/overwrite.repository'
@@ -445,6 +446,7 @@ export const createServices = (
       events,
       presence,
       sharesGuild: guilds.sharesGuild,
+      ...(redis ? { cooldown: createRedisFriendCooldown(redis) } : {}),
     }),
     dm,
     dmVisibility,
