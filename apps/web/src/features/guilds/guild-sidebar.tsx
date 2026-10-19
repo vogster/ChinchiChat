@@ -41,6 +41,7 @@ import type { Channel, Snowflake } from '@chinchi/shared'
 type OpenDialog =
   | { readonly kind: 'invite' }
   | { readonly kind: 'notifications' }
+  | { readonly kind: 'categoryNotifications'; readonly category: Channel }
   | { readonly kind: 'leave' }
   | { readonly kind: 'create'; readonly type: 'text' | 'category'; readonly parent: Channel | null }
   | { readonly kind: 'edit'; readonly channel: Channel }
@@ -178,6 +179,7 @@ export const GuildSidebar = ({ guildId, channelId }: GuildSidebarProps) => {
         canReorder={canManageChannels}
         onMove={(id, drop) => moveChannel(guild.channels, id, drop)}
         onEdit={(channel) => setDialog({ kind: 'edit', channel })}
+        onNotifications={(category) => setDialog({ kind: 'categoryNotifications', category })}
       />
 
       <UserPanel />
@@ -190,6 +192,14 @@ export const GuildSidebar = ({ guildId, channelId }: GuildSidebarProps) => {
           targetId={guild.id}
           kind="guild"
           name={guild.name}
+          onClose={() => setDialog(null)}
+        />
+      ) : null}
+      {dialog?.kind === 'categoryNotifications' ? (
+        <NotificationSettingsDialog
+          targetId={dialog.category.id}
+          kind="channel"
+          name={dialog.category.name}
           onClose={() => setDialog(null)}
         />
       ) : null}

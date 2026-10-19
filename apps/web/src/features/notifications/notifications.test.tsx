@@ -49,6 +49,28 @@ describe('notification settings', () => {
     ).toBeVisible()
   })
 
+  it('mutes a whole category from its header, and its channels with it', async () => {
+    const api = createFakeApi({ user: testUser })
+    const { user } = renderApp(GENERAL_URL, { api })
+
+    await user.click(
+      await within(await channels()).findByRole('button', {
+        name: 'Уведомления категории Текстовые каналы',
+      }),
+    )
+    const dialog = await screen.findByRole('dialog', { name: 'Уведомления: Текстовые каналы' })
+    expect(within(dialog).getByRole('radio', { name: 'Как у сервера' })).toBeChecked()
+    await user.selectOptions(within(dialog).getByLabelText('Заглушить'), 'Пока не включу')
+
+    await waitFor(() =>
+      expect(api.notifications.update).toHaveBeenCalledWith('501', { muted: true }),
+    )
+    await user.keyboard('{Escape}')
+    expect(
+      await within(await channels()).findByRole('link', { name: 'общий (заглушён)' }),
+    ).toBeVisible()
+  })
+
   it('sets what a server notifies about from the server menu', async () => {
     const api = createFakeApi({ user: testUser })
     const { user } = renderApp(GENERAL_URL, { api })

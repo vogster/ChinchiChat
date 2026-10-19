@@ -1,4 +1,4 @@
-import { ChevronDown, Plus, Settings } from 'lucide-react'
+import { Bell, ChevronDown, Plus, Settings } from 'lucide-react'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
@@ -22,6 +22,8 @@ export interface ChannelListProps {
   readonly canManage: (channel: Channel) => boolean
   readonly onCreateIn: (category: Channel) => void
   readonly onEdit: (channel: Channel) => void
+  /** Opens what a category notifies about (its channels follow it). */
+  readonly onNotifications: (category: Channel) => void
   /** May reorder channels (drag and drop, Alt+arrows). */
   readonly canReorder: boolean
   readonly onMove: (channelId: string, drop: ChannelDrop) => void
@@ -36,6 +38,7 @@ export const ChannelList = ({
   canManage,
   onCreateIn,
   onEdit,
+  onNotifications,
   canReorder,
   onMove,
 }: ChannelListProps) => {
@@ -119,13 +122,22 @@ export const ChannelList = ({
                 type="button"
                 aria-expanded={!isCollapsed}
                 onClick={() => toggle(category.id)}
-                className="flex min-w-0 flex-1 items-center gap-1 text-[12.5px] font-medium text-faint hover:text-text"
+                data-muted={isMuted(category) || undefined}
+                className="flex min-w-0 flex-1 items-center gap-1 text-[12.5px] font-medium text-faint hover:text-text data-muted:opacity-60"
               >
                 <span className="truncate">{category.name}</span>
                 <ChevronDown
                   aria-hidden
                   className={`size-3 shrink-0 transition-transform duration-200 ${isCollapsed ? '-rotate-90' : ''}`}
                 />
+              </button>
+              <button
+                type="button"
+                aria-label={t('notifications.categoryButton', { name: category.name })}
+                onClick={() => onNotifications(category)}
+                className="grid size-6 place-items-center rounded-full text-faint opacity-0 group-hover:opacity-100 hover:bg-chip hover:text-text focus:opacity-100 max-md:opacity-100"
+              >
+                <Bell aria-hidden className="size-3.5" />
               </button>
               {canManage(category) ? (
                 <button

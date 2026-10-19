@@ -1281,6 +1281,7 @@
   "notifications": {
     "title": "Notifications: {{name}}",
     "menu": "Notifications",
+    "categoryButton": "Notifications of category {{name}}",
     "channelButton": "Channel notifications",
     "dmButton": "Conversation notifications",
     "mute": "Mute",
