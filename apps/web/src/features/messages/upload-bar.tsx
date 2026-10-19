@@ -2,7 +2,10 @@ import { useTranslation } from 'react-i18next'
 
 import { formatFileSize } from './format-size'
 
-/** How far a sending message's files have gone up: a bar, the percent and the bytes. */
+const RADIUS = 15
+const CIRCUMFERENCE = 2 * Math.PI * RADIUS
+
+/** How far a sending message's files have gone up: a ring that fills, the percent and the bytes. */
 export const UploadBar = ({
   upload,
   mine,
@@ -14,21 +17,32 @@ export const UploadBar = ({
   const percent =
     upload.total > 0 ? Math.min(100, Math.floor((upload.sent / upload.total) * 100)) : 100
   return (
-    <div className={`flex w-[min(280px,100%)] flex-col gap-1 ${mine ? 'items-end' : ''}`}>
-      <div
+    <div
+      className={`flex items-center gap-2.5 rounded-full bg-field py-1 pr-3.5 pl-1 ${mine ? 'self-end' : ''}`}
+    >
+      <svg
         role="progressbar"
         aria-label={t('messages.uploadLabel')}
         aria-valuemin={0}
         aria-valuemax={100}
         aria-valuenow={percent}
-        className="h-1.5 w-full overflow-hidden rounded-full bg-field"
+        viewBox="0 0 36 36"
+        className="size-8 shrink-0 -rotate-90"
       >
-        <div
-          className="h-full rounded-full bg-accent transition-[width] duration-200 motion-reduce:transition-none"
-          style={{ width: `${percent}%` }}
+        <circle cx="18" cy="18" r={RADIUS} fill="none" strokeWidth="3.5" className="stroke-chip" />
+        <circle
+          cx="18"
+          cy="18"
+          r={RADIUS}
+          fill="none"
+          strokeWidth="3.5"
+          strokeLinecap="round"
+          strokeDasharray={CIRCUMFERENCE}
+          strokeDashoffset={CIRCUMFERENCE * (1 - percent / 100)}
+          className="stroke-accent transition-[stroke-dashoffset] duration-200 motion-reduce:transition-none"
         />
-      </div>
-      <span className="text-[11.5px] text-faint tabular-nums">
+      </svg>
+      <span className="text-[12px] text-muted tabular-nums">
         {percent < 100
           ? t('messages.uploading', {
               percent,
