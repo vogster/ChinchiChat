@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next'
 
 import { Button } from '../../components/ui/button'
 import { useApi } from '../../lib/api-context'
-import { saveTextFile } from '../../lib/save-text-file'
+import { saveTextFile } from '../../lib/save-file'
 import { instanceQueryOptions } from '../auth/queries'
 import { useCurrentUser } from '../auth/use-auth-actions'
 

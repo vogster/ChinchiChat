@@ -589,6 +589,8 @@
     "notLoaded": "This message isn't loaded — scroll up through the history.",
     "openImage": "Open image {{name}}",
     "openOriginal": "Open original",
+    "download": "Download",
+    "downloadFailed": "Could not download {{name}}",
     "attachFiles": "Attach files",
     "pendingFiles": "Files to send",
     "removeFile": "Remove {{name}}",

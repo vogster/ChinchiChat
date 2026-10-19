@@ -597,6 +597,8 @@
     "notLoaded": "Это сообщение не загружено — прокрутите историю выше.",
     "openImage": "Открыть изображение {{name}}",
     "openOriginal": "Открыть оригинал",
+    "download": "Скачать",
+    "downloadFailed": "Не удалось скачать {{name}}",
     "attachFiles": "Прикрепить файлы",
     "pendingFiles": "Файлы к отправке",
     "removeFile": "Убрать {{name}}",

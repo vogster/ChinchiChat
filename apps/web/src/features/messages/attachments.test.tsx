@@ -1,5 +1,5 @@
-import { screen, within } from '@testing-library/react'
-import { describe, expect, it } from 'vitest'
+import { screen, waitFor, within } from '@testing-library/react'
+import { describe, expect, it, vi } from 'vitest'
 
 import { createFakeApi, testGuild, testMessage, testUser } from '../../test/fake-api'
 import { renderApp } from '../../test/render-app'
@@ -66,6 +66,42 @@ describe('attachments in messages', () => {
     expect(original).toHaveAttribute('target', '_blank')
     await user.keyboard('{Escape}')
     expect(screen.queryByRole('dialog')).toBeNull()
+  })
+
+  it('downloads the original from the viewer under its own name', async () => {
+    const fetchMock = vi
+      .spyOn(globalThis, 'fetch')
+      .mockResolvedValueOnce(new Response(new Blob(['png']), { status: 200 }))
+    const saved: string[] = []
+    const click = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(function (
+      this: HTMLAnchorElement,
+    ) {
+      saved.push(this.download)
+    })
+    const { item, user } = await showWith([IMAGE])
+    await user.click(within(item).getByRole('button', { name: 'Открыть изображение cat.png' }))
+
+    const viewer = await screen.findByRole('dialog', { name: 'cat.png' })
+    await user.click(within(viewer).getByRole('button', { name: 'Скачать' }))
+
+    await waitFor(() => expect(saved).toEqual(['cat.png']))
+    expect(fetchMock).toHaveBeenCalledWith(IMAGE.url)
+    fetchMock.mockRestore()
+    click.mockRestore()
+  })
+
+  it('says so when the download from the viewer fails', async () => {
+    const fetchMock = vi
+      .spyOn(globalThis, 'fetch')
+      .mockResolvedValueOnce(new Response(null, { status: 404 }))
+    const { item, user } = await showWith([IMAGE])
+    await user.click(within(item).getByRole('button', { name: 'Открыть изображение cat.png' }))
+
+    const viewer = await screen.findByRole('dialog', { name: 'cat.png' })
+    await user.click(within(viewer).getByRole('button', { name: 'Скачать' }))
+
+    expect(await within(viewer).findByRole('alert')).toHaveTextContent('Не удалось скачать')
+    fetchMock.mockRestore()
   })
 
   it('shows other files as a download with their size', async () => {
