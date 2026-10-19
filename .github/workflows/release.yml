@@ -22,6 +22,8 @@ permissions:
 jobs:
   release:
     runs-on: ubuntu-latest
+    outputs:
+      release_id: ${{ steps.publish.outputs.release_id }}
     env:
       REGISTRY: ghcr.io/${{ github.repository_owner }}
     steps:
@@ -119,6 +121,7 @@ jobs:
           push-to-registry: true
 
       - name: Publish the release
+        id: publish
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
@@ -134,6 +137,7 @@ jobs:
             dist/backup.sh dist/restore.sh \
             dist/docker-compose.monitoring.yml dist/chinchi-dashboard.json \
             --title "Chinchi $GITHUB_REF_NAME" "$@"
+          echo "release_id=$(gh release view "$GITHUB_REF_NAME" --json databaseId -q .databaseId)" >> "$GITHUB_OUTPUT"
 
   # The desktop app for each platform, uploaded to the same release with the updater's
   # latest.json (tauri-action merges the platforms into one file). Unsigned by the OS vendors:
@@ -200,10 +204,9 @@ jobs:
         with:
           projectPath: apps/desktop
           tauriScript: pnpm tauri
-          tagName: ${{ github.ref_name }}
-          releaseName: Chinchi ${{ github.ref_name }}
-          releaseDraft: false
-          prerelease: false
+          # The release id, not the tag: given a tag, tauri-action finds the existing release
+          # and overwrites its notes with its own (empty) releaseBody.
+          releaseId: ${{ needs.release.outputs.release_id }}
           includeUpdaterJson: ${{ steps.signing.outputs.signed == 'true' }}
           updaterJsonKeepUniversal: true
           args: --config src-tauri/tauri.release.conf.json ${{ matrix.args }}
