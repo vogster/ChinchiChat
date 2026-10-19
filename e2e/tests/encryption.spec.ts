@@ -347,11 +347,11 @@ test('a new browser gets the old messages back with the recovery key', async ({ 
     ),
   ).toBeVisible()
 
+  // Typed right in the notice, not in a window.
   await banner.getByRole('button', { name: 'Ввести ключ восстановления' }).click()
-  const dialog = fresh.page.getByRole('dialog', { name: 'Ключ восстановления' })
-  await dialog.getByLabel('Ключ восстановления', { exact: true }).fill(recoveryKey.toLowerCase())
-  await dialog.getByRole('button', { name: 'Восстановить' }).click()
-  await expect(dialog).toBeHidden()
+  await banner.getByLabel('Ключ восстановления', { exact: true }).fill(recoveryKey.toLowerCase())
+  await banner.getByRole('button', { name: 'Восстановить' }).click()
+  await expect(banner).toBeHidden()
 
   // The old message reads again here, and this browser is vouched for by Alice's user key.
   await fresh.page.reload()
