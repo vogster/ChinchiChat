@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { settingsNavItemClass } from '../../components/layout/settings-shell'
 import { SettingsWindow } from '../../components/layout/settings-window'
 import { Avatar } from '../../components/ui/avatar'
+import { withAdmin } from '../admin/admin-search'
 import { useCurrentUser, useLogout } from '../auth/use-auth-actions'
 import { useShell } from '../shell/shell-context'
 import { SETTINGS_PAGES } from './settings-page-map'
@@ -81,7 +82,7 @@ const SettingsNav = ({ current }: { current: SettingsSectionKey }) => {
           </p>
           {group.sections.filter(shown).map(item)}
           {group.key === 'developers' && me?.isAdmin ? (
-            <Link to="/admin/users" className={settingsNavItemClass}>
+            <Link to="." search={withAdmin('users')} className={settingsNavItemClass}>
               {t('settings.nav.admin')}
             </Link>
           ) : null}

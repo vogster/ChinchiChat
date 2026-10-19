@@ -13,24 +13,40 @@ describe('instance administration', () => {
     await screen.findByRole('heading', { name: 'Моя учётная запись' })
     expect(screen.queryByRole('link', { name: 'Администрирование' })).not.toBeInTheDocument()
 
-    renderApp('/admin/users', { api })
+    renderApp('/?admin=users', { api })
+    const window_ = await screen.findByRole('dialog', { name: 'Администрирование' })
     expect(
-      await screen.findByText('Этот раздел только для администраторов инстанса.'),
+      await within(window_).findByText('Этот раздел только для администраторов инстанса.'),
     ).toBeVisible()
     expect(api.admin.users).not.toHaveBeenCalled()
   })
 
-  it('goes back to the settings it was opened from, not closing everything', async () => {
-    const { user, router } = renderApp('/admin/users', {
+  it('opens as a window over the page, like the other settings', async () => {
+    const { router } = renderApp('/admin/guilds', { api: createFakeApi({ user: admin }) })
+
+    const window_ = await screen.findByRole('dialog', { name: 'Администрирование' })
+    expect(await within(window_).findByRole('list', { name: 'Серверы' })).toBeVisible()
+    expect(router.state.location.pathname).toBe('/')
+    expect(router.state.location.search).toEqual({ admin: 'guilds' })
+  })
+
+  it('goes back to the settings it was opened from, or closes', async () => {
+    const { user, router } = renderApp('/?admin=users', {
       api: createFakeApi({ user: admin }),
     })
 
-    const back = await screen.findByRole('link', { name: 'Назад к настройкам' })
-    expect(screen.queryByRole('link', { name: /^Закрыть/ })).not.toBeInTheDocument()
-    await user.click(back)
-
+    const window_ = await screen.findByRole('dialog', { name: 'Администрирование' })
+    await user.click(within(window_).getByRole('link', { name: 'Назад к настройкам' }))
     await waitFor(() => expect(router.state.location.search).toEqual({ settings: 'account' }))
-    expect(router.state.location.pathname).toBe('/')
+
+    await user.click(await screen.findByRole('link', { name: 'Администрирование' }))
+    await user.click(
+      within(await screen.findByRole('dialog', { name: 'Администрирование' })).getByRole('button', {
+        name: 'Закрыть администрирование',
+      }),
+    )
+    await waitFor(() => expect(router.state.location.search).toEqual({}))
+    expect(screen.queryByRole('dialog', { name: 'Администрирование' })).not.toBeInTheDocument()
   })
 
   it('opens from the settings and suspends a user', async () => {
@@ -52,7 +68,7 @@ describe('instance administration', () => {
 
   it('searches users', async () => {
     const api = createFakeApi({ user: admin })
-    const { user } = renderApp('/admin/users', { api })
+    const { user } = renderApp('/?admin=users', { api })
 
     await user.type(await screen.findByRole('searchbox', { name: 'Поиск' }), 'bob')
 
@@ -63,7 +79,7 @@ describe('instance administration', () => {
 
   it('deletes a server after confirming', async () => {
     const api = createFakeApi({ user: admin })
-    const { user } = renderApp('/admin/guilds', { api })
+    const { user } = renderApp('/?admin=guilds', { api })
 
     const list = await screen.findByRole('list', { name: 'Серверы' })
     expect(await within(list).findByText('Котики')).toBeVisible()
@@ -76,7 +92,7 @@ describe('instance administration', () => {
 
   it('switches registration to invites and makes an invite link', async () => {
     const api = createFakeApi({ user: admin })
-    const { user } = renderApp('/admin/instance', { api })
+    const { user } = renderApp('/?admin=instance', { api })
 
     await user.selectOptions(await screen.findByLabelText('Регистрация', { exact: true }), 'invite')
     await user.click(screen.getByRole('switch', { name: 'Требовать подтверждённый email' }))

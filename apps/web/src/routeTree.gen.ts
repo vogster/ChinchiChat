@@ -10,7 +10,6 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as AppRouteImport } from './routes/_app'
-import { Route as AdminRouteImport } from './routes/admin'
 import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as RegisterRouteImport } from './routes/register'
@@ -18,10 +17,7 @@ import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as VerifyEmailRouteImport } from './routes/verify-email'
 import { Route as AppShellRouteImport } from './routes/_app/_shell'
 import { Route as AdminIndexRouteImport } from './routes/admin/index'
-import { Route as AdminGuildsRouteImport } from './routes/admin/guilds'
-import { Route as AdminInstanceRouteImport } from './routes/admin/instance'
-import { Route as AdminReportsRouteImport } from './routes/admin/reports'
-import { Route as AdminUsersRouteImport } from './routes/admin/users'
+import { Route as AdminSectionRouteImport } from './routes/admin/$section'
 import { Route as InviteCodeRouteImport } from './routes/invite/$code'
 import { Route as SettingsIndexRouteImport } from './routes/settings/index'
 import { Route as SettingsSectionRouteImport } from './routes/settings/$section'
@@ -35,11 +31,6 @@ import { Route as AppShellChannelsAtmeChannelIdRouteImport } from './routes/_app
 
 const AppRoute = AppRouteImport.update({
   id: '/_app',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AdminRoute = AdminRouteImport.update({
-  id: '/admin',
-  path: '/admin',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ForgotPasswordRoute = ForgotPasswordRouteImport.update({
@@ -72,29 +63,14 @@ const AppShellRoute = AppShellRouteImport.update({
   getParentRoute: () => AppRoute,
 } as any)
 const AdminIndexRoute = AdminIndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => AdminRoute,
+  id: '/admin/',
+  path: '/admin/',
+  getParentRoute: () => rootRouteImport,
 } as any)
-const AdminGuildsRoute = AdminGuildsRouteImport.update({
-  id: '/guilds',
-  path: '/guilds',
-  getParentRoute: () => AdminRoute,
-} as any)
-const AdminInstanceRoute = AdminInstanceRouteImport.update({
-  id: '/instance',
-  path: '/instance',
-  getParentRoute: () => AdminRoute,
-} as any)
-const AdminReportsRoute = AdminReportsRouteImport.update({
-  id: '/reports',
-  path: '/reports',
-  getParentRoute: () => AdminRoute,
-} as any)
-const AdminUsersRoute = AdminUsersRouteImport.update({
-  id: '/users',
-  path: '/users',
-  getParentRoute: () => AdminRoute,
+const AdminSectionRoute = AdminSectionRouteImport.update({
+  id: '/admin/$section',
+  path: '/admin/$section',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const InviteCodeRoute = InviteCodeRouteImport.update({
   id: '/invite/$code',
@@ -154,16 +130,12 @@ const AppShellChannelsAtmeChannelIdRoute =
 
 export interface FileRoutesByFullPath {
   '/': typeof AppShellIndexRoute
-  '/admin': typeof AdminRouteWithChildren
   '/forgot-password': typeof ForgotPasswordRoute
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
   '/reset-password': typeof ResetPasswordRoute
   '/verify-email': typeof VerifyEmailRoute
-  '/admin/guilds': typeof AdminGuildsRoute
-  '/admin/instance': typeof AdminInstanceRoute
-  '/admin/reports': typeof AdminReportsRoute
-  '/admin/users': typeof AdminUsersRoute
+  '/admin/$section': typeof AdminSectionRoute
   '/invite/$code': typeof InviteCodeRoute
   '/settings/$section': typeof SettingsSectionRoute
   '/admin/': typeof AdminIndexRoute
@@ -182,10 +154,7 @@ export interface FileRoutesByTo {
   '/register': typeof RegisterRoute
   '/reset-password': typeof ResetPasswordRoute
   '/verify-email': typeof VerifyEmailRoute
-  '/admin/guilds': typeof AdminGuildsRoute
-  '/admin/instance': typeof AdminInstanceRoute
-  '/admin/reports': typeof AdminReportsRoute
-  '/admin/users': typeof AdminUsersRoute
+  '/admin/$section': typeof AdminSectionRoute
   '/invite/$code': typeof InviteCodeRoute
   '/settings/$section': typeof SettingsSectionRoute
   '/admin': typeof AdminIndexRoute
@@ -199,17 +168,13 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/_app': typeof AppRouteWithChildren
-  '/admin': typeof AdminRouteWithChildren
   '/forgot-password': typeof ForgotPasswordRoute
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
   '/reset-password': typeof ResetPasswordRoute
   '/verify-email': typeof VerifyEmailRoute
   '/_app/_shell': typeof AppShellRouteWithChildren
-  '/admin/guilds': typeof AdminGuildsRoute
-  '/admin/instance': typeof AdminInstanceRoute
-  '/admin/reports': typeof AdminReportsRoute
-  '/admin/users': typeof AdminUsersRoute
+  '/admin/$section': typeof AdminSectionRoute
   '/invite/$code': typeof InviteCodeRoute
   '/settings/$section': typeof SettingsSectionRoute
   '/admin/': typeof AdminIndexRoute
@@ -226,16 +191,12 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
-    | '/admin'
     | '/forgot-password'
     | '/login'
     | '/register'
     | '/reset-password'
     | '/verify-email'
-    | '/admin/guilds'
-    | '/admin/instance'
-    | '/admin/reports'
-    | '/admin/users'
+    | '/admin/$section'
     | '/invite/$code'
     | '/settings/$section'
     | '/admin/'
@@ -254,10 +215,7 @@ export interface FileRouteTypes {
     | '/register'
     | '/reset-password'
     | '/verify-email'
-    | '/admin/guilds'
-    | '/admin/instance'
-    | '/admin/reports'
-    | '/admin/users'
+    | '/admin/$section'
     | '/invite/$code'
     | '/settings/$section'
     | '/admin'
@@ -270,17 +228,13 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/_app'
-    | '/admin'
     | '/forgot-password'
     | '/login'
     | '/register'
     | '/reset-password'
     | '/verify-email'
     | '/_app/_shell'
-    | '/admin/guilds'
-    | '/admin/instance'
-    | '/admin/reports'
-    | '/admin/users'
+    | '/admin/$section'
     | '/invite/$code'
     | '/settings/$section'
     | '/admin/'
@@ -296,14 +250,15 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   AppRoute: typeof AppRouteWithChildren
-  AdminRoute: typeof AdminRouteWithChildren
   ForgotPasswordRoute: typeof ForgotPasswordRoute
   LoginRoute: typeof LoginRoute
   RegisterRoute: typeof RegisterRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   VerifyEmailRoute: typeof VerifyEmailRoute
+  AdminSectionRoute: typeof AdminSectionRoute
   InviteCodeRoute: typeof InviteCodeRoute
   SettingsSectionRoute: typeof SettingsSectionRoute
+  AdminIndexRoute: typeof AdminIndexRoute
   SettingsIndexRoute: typeof SettingsIndexRoute
 }
 
@@ -314,13 +269,6 @@ declare module '@tanstack/react-router' {
       path: ''
       fullPath: '/'
       preLoaderRoute: typeof AppRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/admin': {
-      id: '/admin'
-      path: '/admin'
-      fullPath: '/admin'
-      preLoaderRoute: typeof AdminRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/forgot-password': {
@@ -367,38 +315,17 @@ declare module '@tanstack/react-router' {
     }
     '/admin/': {
       id: '/admin/'
-      path: '/'
+      path: '/admin'
       fullPath: '/admin/'
       preLoaderRoute: typeof AdminIndexRouteImport
-      parentRoute: typeof AdminRoute
+      parentRoute: typeof rootRouteImport
     }
-    '/admin/guilds': {
-      id: '/admin/guilds'
-      path: '/guilds'
-      fullPath: '/admin/guilds'
-      preLoaderRoute: typeof AdminGuildsRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/admin/instance': {
-      id: '/admin/instance'
-      path: '/instance'
-      fullPath: '/admin/instance'
-      preLoaderRoute: typeof AdminInstanceRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/admin/reports': {
-      id: '/admin/reports'
-      path: '/reports'
-      fullPath: '/admin/reports'
-      preLoaderRoute: typeof AdminReportsRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/admin/users': {
-      id: '/admin/users'
-      path: '/users'
-      fullPath: '/admin/users'
-      preLoaderRoute: typeof AdminUsersRouteImport
-      parentRoute: typeof AdminRoute
+    '/admin/$section': {
+      id: '/admin/$section'
+      path: '/admin/$section'
+      fullPath: '/admin/$section'
+      preLoaderRoute: typeof AdminSectionRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/invite/$code': {
       id: '/invite/$code'
@@ -520,34 +447,17 @@ const AppRouteChildren: AppRouteChildren = {
 
 const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
 
-interface AdminRouteChildren {
-  AdminGuildsRoute: typeof AdminGuildsRoute
-  AdminInstanceRoute: typeof AdminInstanceRoute
-  AdminReportsRoute: typeof AdminReportsRoute
-  AdminUsersRoute: typeof AdminUsersRoute
-  AdminIndexRoute: typeof AdminIndexRoute
-}
-
-const AdminRouteChildren: AdminRouteChildren = {
-  AdminGuildsRoute: AdminGuildsRoute,
-  AdminInstanceRoute: AdminInstanceRoute,
-  AdminReportsRoute: AdminReportsRoute,
-  AdminUsersRoute: AdminUsersRoute,
-  AdminIndexRoute: AdminIndexRoute,
-}
-
-const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
-
 const rootRouteChildren: RootRouteChildren = {
   AppRoute: AppRouteWithChildren,
-  AdminRoute: AdminRouteWithChildren,
   ForgotPasswordRoute: ForgotPasswordRoute,
   LoginRoute: LoginRoute,
   RegisterRoute: RegisterRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   VerifyEmailRoute: VerifyEmailRoute,
+  AdminSectionRoute: AdminSectionRoute,
   InviteCodeRoute: InviteCodeRoute,
   SettingsSectionRoute: SettingsSectionRoute,
+  AdminIndexRoute: AdminIndexRoute,
   SettingsIndexRoute: SettingsIndexRoute,
 }
 export const routeTree = rootRouteImport

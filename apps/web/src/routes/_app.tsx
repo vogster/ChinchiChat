@@ -1,5 +1,7 @@
 import { createFileRoute, Outlet } from '@tanstack/react-router'
 
+import { AdminDialog } from '../features/admin/admin-dialog'
+import { adminSearchSchema } from '../features/admin/admin-search'
 import { requireUser } from '../features/auth/require-user'
 import { ApprovalDialog } from '../features/e2ee/approval-dialog'
 import { E2eeProvider } from '../features/e2ee/e2ee-context'
@@ -15,10 +17,13 @@ import { VoiceProvider } from '../features/voice/voice-context'
 /**
  * Everything under this layout requires a signed-in user and shares one gateway connection, so
  * moving between pages does not reconnect (nor drop a voice call). The user's and a server's
- * settings open over any of these pages (`?settings=`, `?serverSettings=`) for the same reason.
+ * settings and the administration open over any of these pages (`?settings=`,
+ * `?serverSettings=`, `?admin=`) for the same reason.
  */
 export const Route = createFileRoute('/_app')({
-  validateSearch: settingsSearchSchema.extend(serverSettingsSearchSchema.shape),
+  validateSearch: settingsSearchSchema
+    .extend(serverSettingsSearchSchema.shape)
+    .extend(adminSearchSchema.shape),
   beforeLoad: ({ context, location }) => requireUser(context, location.href),
   component: () => (
     <GatewayProvider>
@@ -30,6 +35,7 @@ export const Route = createFileRoute('/_app')({
           <Outlet />
           <SettingsDialog />
           <ServerSettingsDialog />
+          <AdminDialog />
         </VoiceProvider>
       </E2eeProvider>
     </GatewayProvider>

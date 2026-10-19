@@ -1,9 +1,8 @@
-import { createFileRoute } from '@tanstack/react-router'
-
-import { ReportsList } from '../../features/reports/reports-list'
 import { useApi } from '../../lib/api-context'
+import { ReportsList } from '../reports/reports-list'
 
-const AdminReportsPage = () => {
+/** Reports on direct messages, which no server's moderators can see. */
+export const AdminReportsSection = () => {
   const api = useApi()
   return (
     <ReportsList
@@ -14,5 +13,3 @@ const AdminReportsPage = () => {
     />
   )
 }
-
-export const Route = createFileRoute('/admin/reports')({ component: AdminReportsPage })
