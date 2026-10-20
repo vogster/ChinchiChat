@@ -10,6 +10,9 @@
 # the .enc suffix; restore.sh needs the same passphrase. Without it the database dump inside
 # is plain for anyone who gets hold of the archive.
 set -eu
+# The dump inside holds every message and account: nothing here is readable by other users of
+# the host, whatever umask the shell that runs this has.
+umask 077
 
 out_dir=${1:-./backups}
 project=chinchi
@@ -64,6 +67,8 @@ else
   archive="$out_dir/chinchi-backup-$stamp.tar"
   mv "$work/backup.tar" "$archive"
 fi
+
+chmod 600 "$archive"
 
 echo "Done: $archive ($(du -h "$archive" | cut -f1))"
 if [ "$encrypt" = 1 ]; then
