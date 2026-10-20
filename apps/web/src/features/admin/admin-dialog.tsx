@@ -50,8 +50,10 @@ export const AdminDialog = () => {
             <ArrowLeft aria-hidden className="size-4 shrink-0" />
             {t('admin.back')}
           </Link>
-          {me?.isAdmin
-            ? ADMIN_SECTIONS.map((key) => (
+          {me?.isAdmin ? (
+            // The same 2px between items as in the user settings, so hover and active don't touch.
+            <div className="flex gap-1 md:flex-col md:gap-0.5">
+              {ADMIN_SECTIONS.map((key) => (
                 <Link
                   key={key}
                   to="."
@@ -62,8 +64,9 @@ export const AdminDialog = () => {
                 >
                   {t(`admin.nav.${key}`)}
                 </Link>
-              ))
-            : null}
+              ))}
+            </div>
+          ) : null}
         </>
       }
     >

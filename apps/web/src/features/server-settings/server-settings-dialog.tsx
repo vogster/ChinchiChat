@@ -46,18 +46,21 @@ const Window = ({
               <div className="truncate text-xs text-faint">{t('serverSettings.title')}</div>
             </div>
           </div>
-          {sections.map((key) => (
-            <Link
-              key={key}
-              to="."
-              search={withServerSettings(guild.id, key)}
-              aria-current={key === current ? 'page' : undefined}
-              data-status={key === current ? 'active' : undefined}
-              className={settingsNavItemClass}
-            >
-              {t(`serverSettings.nav.${key}`)}
-            </Link>
-          ))}
+          {/* The same 2px between items as in the user settings, so hover and active don't touch. */}
+          <div className="flex gap-1 md:flex-col md:gap-0.5">
+            {sections.map((key) => (
+              <Link
+                key={key}
+                to="."
+                search={withServerSettings(guild.id, key)}
+                aria-current={key === current ? 'page' : undefined}
+                data-status={key === current ? 'active' : undefined}
+                className={settingsNavItemClass}
+              >
+                {t(`serverSettings.nav.${key}`)}
+              </Link>
+            ))}
+          </div>
         </>
       }
     >
