@@ -64,10 +64,11 @@ export const QrCode = ({ value, label }: { value: string; label: string }) => {
         rx={logo.span * 0.28}
         style={EYE}
       />
-      {/* The app mark (as in the favicon), scaled into the plate. */}
+      {/* The app mark (as in the favicon), scaled into the plate; drawn so its outline, round
+          caps included, sits in the middle (the open side makes the arc lean right). */}
       <path
         transform={`translate(${markAt} ${markAt}) scale(${mark / 64})`}
-        d="M48 18a18 18 0 1 0 0 28"
+        d="M46.6 18a18 18 0 1 0 0 28"
         fill="none"
         stroke="#ffffff"
         strokeWidth={9}
