@@ -464,3 +464,57 @@ test('a new browser is approved from an old one by comparing emoji', async ({ br
 
   await Promise.all([laptop.context.close(), phone.context.close(), bob.context.close()])
 })
+
+test('an unapproved device joins only when the other person lets it in by its code', async ({
+  browser,
+}) => {
+  const alice = await openAs(browser)
+  const bob = await openAs(browser)
+  const aliceUser = newUser()
+  const bobUser = newUser()
+  await registerAndOpenHome(alice.page, aliceUser)
+  await registerAndOpenHome(bob.page, bobUser)
+  await befriend(alice.page, bob.page, aliceUser.username, bobUser.username)
+
+  await alice.page.reload()
+  await alice.page.getByRole('tab', { name: 'Все' }).click()
+  await alice.page
+    .getByRole('button', { name: new RegExp(`^${bobUser.username}`) })
+    .first()
+    .click()
+  await alice.page.getByRole('button', { name: 'Зашифрованная беседа' }).click()
+  await saveRecoveryKey(alice.page)
+  const conversation = alice.page.url()
+
+  // Bob signs in on another browser and never approves it from the first one.
+  const phone = await openAs(browser)
+  await phone.page.goto('/login')
+  await phone.page.getByLabel('Имя пользователя или email', { exact: true }).fill(bobUser.username)
+  await phone.page.getByLabel('Пароль', { exact: true }).fill(bobUser.password)
+  await phone.page.getByRole('button', { name: 'Войти' }).click()
+  await phone.page
+    .getByRole('complementary', { name: 'Личные сообщения' })
+    .getByRole('link', { name: /зашифрованная беседа/ })
+    .click()
+  const waiting = phone.page.getByRole('status', { name: 'Это устройство пока не в беседе' })
+  await expect(waiting).toBeVisible()
+  const phoneCode = (await waiting.locator('.font-mono').innerText()).trim()
+  expect(phoneCode).toMatch(/^\d{5} \d{5} \d{5} \d{5}$/)
+
+  // Alice sees the device waiting, with the same code; she lets it in.
+  await alice.page.goto(conversation)
+  const warning = alice.page.getByRole('alert', { name: 'Новые устройства' })
+  await expect(warning).toContainText(phoneCode)
+  await warning.getByRole('button', { name: /^Впустить устройство .* — / }).click()
+
+  // The phone is in: it writes, and Alice reads it.
+  const phoneComposer = phone.page.getByRole('textbox', { name: `Написать @${aliceUser.username}` })
+  await expect(phoneComposer).toBeVisible({ timeout: 30_000 })
+  await phoneComposer.fill('Пишу с телефона')
+  await phoneComposer.press('Enter')
+  await expect(alice.page.getByText('Пишу с телефона')).toBeVisible()
+
+  await phone.context.close()
+  await bob.context.close()
+  await alice.context.close()
+})

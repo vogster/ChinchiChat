@@ -310,13 +310,9 @@ export const createE2eeClient = ({ api, store, userId, deviceName }: E2eeClientO
   const crossSigning = createCrossSigning({ api, store, userId })
 
   /**
-   * Strict mode: messages are encrypted only for devices the user's key vouches for, or that
-   * the person here accepted after a warning. Off, every device the server lists is included
-   * (and unapproved ones are only pointed out).
+   * Safety codes, new-device warnings and who may be encrypted for: devices signed by the user
+   * key known here, and those the person here let in. Nothing else, whatever the server lists.
    */
-  const strictMode = async () => (await store.get<boolean>('strict')) ?? false
-
-  /** Safety codes and new-device warnings; in strict mode also who may be encrypted for. */
   const safety = createSafety({
     store,
     userId,
@@ -324,20 +320,33 @@ export const createE2eeClient = ({ api, store, userId, deviceName }: E2eeClientO
     userKeyOf: async (id) =>
       (await api.e2ee.userKey(id === userId ? '@me' : id)).userKey?.publicKey ?? null,
     thisDevice: async () => (await ready()).identity.deviceId,
-    strict: strictMode,
+    thisDeviceKey: async () => {
+      await ready()
+      return ((await store.get<StoredDevice>('device')) as StoredDevice).signaturePublicKey
+    },
   })
+
+  /** Every active device the server lists for these members (device ids). */
+  const listedDevices = async (memberIds: readonly string[]): Promise<ReadonlySet<string>> => {
+    const lists = await Promise.all(memberIds.map((memberId) => devicesOf(memberId)))
+    return new Set(
+      lists
+        .flat()
+        .filter((d) => !d.revokedAt)
+        .map((d) => d.id),
+    )
+  }
 
   /** The devices of these members a message should reach (device id → user id). */
   const devicesFor = async (
     memberIds: readonly string[],
     keys: DeviceKeys,
   ): Promise<Map<string, string>> => {
-    const strict = await strictMode()
     const expected = new Map<string, string>()
     for (const memberId of memberIds) {
-      const allowed = strict ? await safety.allowedDevices(memberId) : null
+      const allowed = await safety.allowedDevices(memberId)
       for (const d of await devicesOf(memberId)) {
-        if (!d.revokedAt && (!allowed || allowed.has(d.id))) expected.set(d.id, d.userId)
+        if (!d.revokedAt && allowed.has(d.id)) expected.set(d.id, d.userId)
       }
     }
     // This device is the one writing: it stays whatever its own standing.
@@ -556,7 +565,11 @@ export const createE2eeClient = ({ api, store, userId, deviceName }: E2eeClientO
   ) => {
     const expected = await devicesFor(channel.memberIds, keys)
     const present = members(conversation).map((m) => m.identity)
-    const gone = present.filter((m) => !expected.has(m.deviceId))
+    // In a group, a device any member let in stays in for everyone (one consent is enough):
+    // only devices gone from the members' lists leave. Two people alone: what this device
+    // does not trust goes, the other side being the only one who could have let it in.
+    const keep = channel.memberIds.length > 2 ? await listedDevices(channel.memberIds) : expected
+    const gone = present.filter((m) => !keep.has(m.deviceId))
     if (gone.length > 0) {
       const before = saveConversation(conversation)
       const made = await removeMembers(conversation, gone, options)
@@ -821,16 +834,8 @@ export const createE2eeClient = ({ api, store, userId, deviceName }: E2eeClientO
     /** Sends the history backup what is waiting (tests; the client does it on its own). */
     flushBackup: () => backup.flush(),
 
-    /** Safety codes and new-device warnings. */
+    /** Safety codes, new-device warnings, device codes and letting devices in. */
     safety,
-
-    /** Strict mode, a setting of this device: see `strictMode` above. */
-    strict: {
-      enabled: strictMode,
-      set: async (on: boolean) => {
-        await store.set('strict', on)
-      },
-    },
 
     /** A member's devices changed: forget the cached list (the next open reconciles). */
     devicesChanged: async (changedUserId: string) => {

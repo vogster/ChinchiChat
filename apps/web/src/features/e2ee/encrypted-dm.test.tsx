@@ -226,11 +226,10 @@ describe('encrypted conversations', () => {
   it('wait until another device lets this one in', async () => {
     const { e2ee } = renderApp(URL, { api: withEncryptedDm(), e2eeStatus: 'waiting' })
 
-    expect(
-      await screen.findByText(
-        /Ждём, пока другое ваше устройство или собеседник впустит это устройство/,
-      ),
-    ).toBeVisible()
+    const waiting = await screen.findByRole('status', { name: 'Это устройство пока не в беседе' })
+    expect(waiting).toHaveTextContent(/Подтвердите его со своего старого устройства/)
+    // Its code, for the other person to compare before letting it in.
+    expect(await within(waiting).findByText('70315 28446 03918 77512')).toBeVisible()
     expect(screen.queryByRole('textbox', { name: 'Написать @Боб' })).toBeNull()
     expect(e2ee.open).toHaveBeenCalled()
   })

@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
-import { createContext, useContext, useEffect, useMemo, useState } from 'react'
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react'
 
 import { useApi } from '../../lib/api-context'
 import { meQueryOptions } from '../auth/queries'
@@ -20,9 +20,15 @@ interface E2eeContextValue {
   readonly client: E2eeClientLike | null
   /** Grows with every handshake or device change: conversations open again to catch up. */
   readonly revision: number
+  /** Opens conversations again, e.g. after letting a device in, so they take it in. */
+  readonly refresh: () => void
 }
 
-const E2eeContext = createContext<E2eeContextValue>({ client: null, revision: 0 })
+const E2eeContext = createContext<E2eeContextValue>({
+  client: null,
+  revision: 0,
+  refresh: () => undefined,
+})
 
 /** One encryption client per signed-in user, kept in step with the gateway. */
 export const E2eeProvider = ({ children }: { children: ReactNode }) => {
@@ -55,7 +61,8 @@ export const E2eeProvider = ({ children }: { children: ReactNode }) => {
     [gateway, client],
   )
 
-  const value = useMemo(() => ({ client, revision }), [client, revision])
+  const refresh = useCallback(() => setRevision((value) => value + 1), [])
+  const value = useMemo(() => ({ client, revision, refresh }), [client, revision, refresh])
   return <E2eeContext.Provider value={value}>{children}</E2eeContext.Provider>
 }
 

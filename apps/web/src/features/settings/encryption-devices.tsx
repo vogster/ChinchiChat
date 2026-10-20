@@ -4,44 +4,23 @@ import { useTranslation } from 'react-i18next'
 
 import { Alert } from '../../components/ui/alert'
 import { Button } from '../../components/ui/button'
-import { Switch } from '../../components/ui/switch'
 import { useApi } from '../../lib/api-context'
 import { errorMessage } from '../../lib/errors'
 import { formatRelativeTime } from '../../lib/relative-time'
-import { useAnyE2eeClient, useThisDeviceId } from '../e2ee/e2ee-context'
+import { DeviceCodeText } from '../e2ee/device-code'
+import { useThisDeviceId } from '../e2ee/e2ee-context'
+import { useDeviceCode } from '../e2ee/use-device-code'
 
 const devicesKey = ['e2eeDevices'] as const
-const strictKey = ['e2eeStrict'] as const
-
-/**
- * Strict mode, a setting of this browser: encrypt only for devices vouched for by their
- * owner's key, or accepted here after a warning. Off, every device the server lists is
- * included, and unapproved ones are only pointed out.
- */
-const StrictModeSwitch = () => {
+/** A device's code next to its name: read it out to someone who is letting the device in. */
+const CodeOf = ({ signaturePublicKey }: { signaturePublicKey: string }) => {
   const { t } = useTranslation()
-  const client = useAnyE2eeClient()
-  const queryClient = useQueryClient()
-  const { data: enabled = false } = useQuery({
-    queryKey: strictKey,
-    queryFn: () => (client ? client.strict.enabled() : false),
-    enabled: client !== null,
-  })
-  const toggle = useMutation({
-    mutationFn: (on: boolean) => (client ? client.strict.set(on) : Promise.resolve()),
-    onSettled: () => queryClient.invalidateQueries({ queryKey: strictKey }),
-  })
-  return (
-    <div className="rounded-lg bg-side px-4">
-      <Switch
-        checked={enabled}
-        onCheckedChange={(on) => toggle.mutate(on)}
-        disabled={client === null || toggle.isPending}
-        label={t('settings.encryptionDevices.strict')}
-        description={t('settings.encryptionDevices.strictHint')}
-      />
+  const code = useDeviceCode(signaturePublicKey)
+  return code ? (
+    <div className="text-xs text-muted">
+      {t('e2ee.device.code')} <DeviceCodeText code={code} className="text-body" />
     </div>
-  )
+  ) : null
 }
 
 /**
@@ -66,7 +45,6 @@ export const EncryptionDevices = () => {
   return (
     <div className="flex flex-col gap-4">
       {remove.error ? <Alert tone="error">{errorMessage(t, remove.error)}</Alert> : null}
-      <StrictModeSwitch />
       <ul
         aria-label={t('settings.encryptionDevices.title')}
         className="divide-y divide-line rounded-lg bg-side px-4"
@@ -88,6 +66,7 @@ export const EncryptionDevices = () => {
                   time: formatRelativeTime(device.createdAt, i18n.language),
                 })}
               </div>
+              <CodeOf signaturePublicKey={device.signaturePublicKey} />
             </div>
             {/* Not before this browser is known: removing its own keys by mistake is easy. */}
             {thisDevice === null || device.id === thisDevice ? null : (

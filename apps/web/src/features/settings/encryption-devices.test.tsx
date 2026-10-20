@@ -44,18 +44,15 @@ describe('encryption devices in settings', () => {
     await waitFor(() => expect(within(list).queryByText('Чужой ноутбук')).not.toBeInTheDocument())
   })
 
-  it('turns strict mode on for this browser', async () => {
+  it('shows each device’s code, to read out to someone letting it in; no strict switch', async () => {
     const api = createFakeApi({ user: testUser })
     api.e2ee.myDevices.mockResolvedValue({ devices: [device('700', 'Chrome на Windows')] })
-    const { user, e2ee } = renderApp('/settings/sessions', { api })
+    const { e2ee } = renderApp('/settings/sessions', { api })
 
-    const toggle = await screen.findByRole('switch', { name: 'Только подтверждённые устройства' })
-    expect(toggle).toHaveAttribute('aria-checked', 'false')
-    expect(toggle).toHaveAccessibleDescription(/Сообщения шифруются только для устройств/)
-    e2ee.strict.enabled.mockResolvedValue(true)
-    await user.click(toggle)
-
-    expect(e2ee.strict.set).toHaveBeenCalledWith(true)
-    await waitFor(() => expect(toggle).toHaveAttribute('aria-checked', 'true'))
+    const list = await screen.findByRole('list', { name: 'Ключи шифрования' })
+    const here = await within(list).findByRole('listitem', { name: 'Chrome на Windows' })
+    expect(await within(here).findByText('48213 90177 35260 11849')).toBeVisible()
+    expect(e2ee.safety.deviceCode).toHaveBeenCalledWith('a2V5')
+    expect(screen.queryByRole('switch', { name: /Только подтверждённые/ })).toBeNull()
   })
 })

@@ -2,7 +2,9 @@ import { Lock } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
 import { BetaBadge } from './beta-badge'
+import { DeviceCodeText } from './device-code'
 import { EncryptionGuideButton } from './encryption-guide'
+import { useThisDeviceCode } from './use-device-code'
 
 import type { EncryptedState } from './use-encrypted-conversation'
 
@@ -30,9 +32,37 @@ export const EncryptionNotice = () => {
   )
 }
 
+/**
+ * In place of the composer while no one has let this device in: how it gets in, and its code
+ * for the other person to compare before letting it in.
+ */
+const WaitingToBeLetIn = () => {
+  const { t } = useTranslation()
+  const code = useThisDeviceCode()
+  return (
+    <div
+      role="status"
+      aria-label={t('e2ee.waitingTitle')}
+      className="mx-4 mb-4 flex items-start gap-3 rounded-[22px] bg-field px-4 py-3 text-[13px] text-muted"
+    >
+      <Lock aria-hidden className="mt-0.5 size-4 shrink-0 text-secure-text" />
+      <div className="flex min-w-0 flex-col gap-1">
+        <p className="font-medium text-body">{t('e2ee.waitingTitle')}</p>
+        <p>{t('e2ee.waiting')}</p>
+        {code ? (
+          <p>
+            {t('e2ee.device.code')} <DeviceCodeText code={code} className="text-body" />
+          </p>
+        ) : null}
+      </div>
+    </div>
+  )
+}
+
 /** In place of the composer while this device can't write yet. */
 export const EncryptionStatus = ({ state }: { state: Exclude<EncryptedState, 'ready'> }) => {
   const { t } = useTranslation()
+  if (state === 'waiting') return <WaitingToBeLetIn />
   return (
     <p
       role="status"

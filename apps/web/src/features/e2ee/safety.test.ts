@@ -9,10 +9,10 @@ const BOB = '2'
 
 const setup = () => {
   const delivery = createFakeDelivery()
-  const client = (userId: string, name = 'Браузер') =>
+  const client = (userId: string, name = 'Браузер', store = createMemoryStore()) =>
     createE2eeClient({
       api: delivery.apiFor(userId),
-      store: createMemoryStore(),
+      store,
       userId,
       deviceName: name,
     })
@@ -24,6 +24,9 @@ const setup = () => {
   }
   return { delivery, client, approved }
 }
+
+const pendingNames = async (alice: ReturnType<ReturnType<typeof setup>['client']>) =>
+  (await alice.safety.status([ALICE, BOB])).people[0]?.newDevices.map((d) => d.name)
 
 describe('checking who is on the other end', () => {
   it('shows both people the same code, kept when they approve a new device themselves', async () => {
@@ -41,7 +44,7 @@ describe('checking who is on the other end', () => {
     expect(await alice.safety.codeWith(BOB)).toBe(code)
   })
 
-  it('stay verified through approved devices; warn only about an unapproved one', async () => {
+  it('let in on their own the devices a person approved; an unapproved one waits for consent', async () => {
     const { client, approved } = setup()
     const alice = client(ALICE)
     const bob = client(BOB)
@@ -55,17 +58,48 @@ describe('checking who is on the other end', () => {
       { userId: BOB, verified: true, newDevices: [], keyChanged: false },
     ])
 
-    // A device nobody approved: the server could have slipped it in.
+    // A device nobody approved: the server could have slipped it in. It waits for Alice.
     await client(BOB, 'Неизвестный').ready()
     await alice.devicesChanged(BOB)
     const [person] = (await alice.safety.status([ALICE, BOB])).people
     expect(person?.newDevices.map((d) => d.name)).toEqual(['Неизвестный'])
     expect(person?.verified).toBe(true)
-    await alice.safety.acknowledge(BOB)
-    expect((await alice.safety.status([ALICE, BOB])).people[0]?.newDevices).toEqual([])
+    const stranger = person?.newDevices[0]?.id as string
+    expect(await alice.safety.allowedDevices(BOB)).not.toContain(stranger)
+
+    await alice.safety.acceptDevice(BOB, stranger)
+    expect(await pendingNames(alice)).toEqual([])
+    expect(await alice.safety.allowedDevices(BOB)).toContain(stranger)
   })
 
-  it('see a reset of keys: a new code, no longer verified, and a warning', async () => {
+  it('even at first sight: only the devices the person approved are let in without asking', async () => {
+    const { client } = setup()
+    const bob = client(BOB)
+    await bob.ready()
+    await client(BOB, 'Неизвестный').ready()
+    const alice = client(ALICE)
+    await alice.ready()
+
+    expect(await pendingNames(alice)).toEqual(['Неизвестный'])
+  })
+
+  it('give each device a code both sides read the same, 20 digits', async () => {
+    const { client } = setup()
+    const alice = client(ALICE)
+    const bob = client(BOB)
+    await Promise.all([alice.ready(), bob.ready()])
+    const phone = client(BOB, 'Телефон')
+    await phone.ready()
+    await alice.devicesChanged(BOB)
+
+    const [listed] = (await alice.safety.status([ALICE, BOB])).people[0]?.newDevices ?? []
+    const seenByAlice = await alice.safety.deviceCode(listed?.signaturePublicKey as string)
+    expect(seenByAlice).toMatch(/^\d{20}$/)
+    expect(await phone.safety.thisDeviceCode()).toBe(seenByAlice)
+    expect(await bob.safety.thisDeviceCode()).not.toBe(seenByAlice)
+  })
+
+  it('see a reset of keys: a new code, no longer verified, its devices wait for consent', async () => {
     const { client } = setup()
     const alice = client(ALICE)
     const bob = client(BOB)
@@ -75,7 +109,8 @@ describe('checking who is on the other end', () => {
     const before = await alice.safety.codeWith(BOB)
     const oldKey = await bob.recovery.key()
 
-    // Bob lost everything, key included, and starts over on a new browser.
+    // Bob lost everything, key included, and starts over on a new browser — or someone posing
+    // as him did: the new key signs the new browser, but Alice never saw that key.
     const fresh = client(BOB, 'Новый браузер')
     await fresh.recovery.reset()
     await alice.devicesChanged(BOB)
@@ -86,11 +121,34 @@ describe('checking who is on the other end', () => {
       verified: false,
       keyChanged: true,
     })
-    await alice.safety.acknowledge(BOB)
+    // A reset drops every signature: the old browser and the new one both wait.
+    expect(await pendingNames(alice)).toEqual(['Браузер', 'Новый браузер'])
+
+    // Alice accepts the new key: the device it signs passes, the old unsigned one still waits.
+    await alice.safety.acceptKey(BOB)
     expect((await alice.safety.status([ALICE, BOB])).people[0]?.keyChanged).toBe(false)
+    expect(await pendingNames(alice)).toEqual(['Браузер'])
   })
 
-  it('warn about an unapproved device on my own account (not this one)', async () => {
+  it('keep the devices accepted with "got it" before consent was required', async () => {
+    const { client } = setup()
+    const bob = client(BOB)
+    await bob.ready()
+    const phone = client(BOB, 'Телефон')
+    await phone.ready()
+    const store = createMemoryStore()
+    // What an earlier version left: the user key seen, the phone acknowledged by id.
+    const alice = client(ALICE, 'Браузер', store)
+    await alice.ready()
+    const [listed] = (await alice.safety.status([ALICE, BOB])).people[0]?.newDevices ?? []
+    await store.set(`safety:seen:${BOB}`, [listed?.id])
+    await store.delete(`safety:accepted:${BOB}`)
+
+    expect(await pendingNames(alice)).toEqual([])
+    expect(await alice.safety.allowedDevices(BOB)).toContain(listed?.id)
+  })
+
+  it('warn about an unapproved device on my own account (not this one), and never let it in', async () => {
     const { client, approved } = setup()
     const alice = client(ALICE)
     await alice.ready()
@@ -100,8 +158,11 @@ describe('checking who is on the other end', () => {
     await client(ALICE, 'Чужой ноутбук').ready()
     await alice.devicesChanged(ALICE)
 
-    expect((await alice.safety.status([ALICE])).mine.map((d) => d.name)).toEqual(['Чужой ноутбук'])
+    const mine = (await alice.safety.status([ALICE])).mine
+    expect(mine.map((d) => d.name)).toEqual(['Чужой ноутбук'])
+    expect(await alice.safety.allowedDevices(ALICE)).not.toContain(mine[0]?.id)
     await alice.safety.acknowledge(ALICE)
     expect((await alice.safety.status([ALICE])).mine).toEqual([])
+    expect(await alice.safety.allowedDevices(ALICE)).not.toContain(mine[0]?.id)
   })
 })

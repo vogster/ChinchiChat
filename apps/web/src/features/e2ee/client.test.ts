@@ -25,6 +25,13 @@ const relay = async (from: E2eeClient, to: E2eeClient, text: string) => {
   return (await to.read(DM, sent))?.payload ?? null
 }
 
+/** The person here lets in every device of someone that waits (having compared its code). */
+const letIn = async (who: E2eeClient, ownerId: string) => {
+  await who.devicesChanged(ownerId)
+  const [person] = (await who.safety.status([ownerId])).people
+  for (const device of person?.newDevices ?? []) await who.safety.acceptDevice(ownerId, device.id)
+}
+
 describe('e2ee client', () => {
   it('sets up a conversation the other side joins, and both read each other', async () => {
     const { client } = setup()
@@ -105,6 +112,7 @@ describe('e2ee client', () => {
     // Bob's phone joins: a new epoch. Bob's laptop reads the older message only afterwards.
     const bobPhone = client(BOB, 'Телефон').client
     await bobPhone.ready()
+    await letIn(alice, BOB)
     await alice.open(DM)
     await bob.open(DM)
 
@@ -129,12 +137,11 @@ describe('e2ee client', () => {
     ).toEqual([])
   })
 
-  it('in strict mode encrypts only for approved devices, until a warned person accepts one', async () => {
+  it('encrypts only for approved devices, until the other person lets one in', async () => {
     const { client } = setup()
     const alice = client(ALICE).client
     const bob = client(BOB).client
     await bob.ready()
-    await alice.strict.set(true)
     await alice.open(DM)
     // Bob signs in on a phone and never approves it from the laptop.
     const bobPhone = client(BOB, 'Телефон').client
@@ -151,8 +158,12 @@ describe('e2ee client', () => {
       'Телефон',
     ])
 
-    // Alice says "got it": the phone is hers to trust from now on.
-    await alice.safety.acknowledge(BOB)
+    // Bob's own laptop does not let his unapproved phone in either.
+    await bob.open(DM)
+    expect(await bobPhone.read(DM, await bob.send(DM, 'С ноутбука'))).toBeNull()
+
+    // Alice compares the phone's code with Bob and lets it in.
+    await letIn(alice, BOB)
     const accepted = await alice.send(DM, 'И для телефона')
     expect(await bobPhone.read(DM, accepted)).toMatchObject({ payload: { text: 'И для телефона' } })
   })
@@ -167,8 +178,9 @@ describe('e2ee client', () => {
 
     const bobPhone = client(BOB, 'Телефон').client
     await bobPhone.ready()
-    // Any member notices the new device when it next opens the conversation.
-    await bob.open(DM)
+    // Alice lets it in; her client adds it to the conversation when it next opens it.
+    await letIn(alice, BOB)
+    await alice.open(DM)
     await bobPhone.open(DM)
 
     expect(await bobPhone.read(DM, before)).toBeNull()
@@ -242,6 +254,30 @@ describe('e2ee client', () => {
     expect(await alice.read(DM, edited)).toMatchObject({ payload: { text: 'Встреча в 6' } })
     // The original stays readable by what it was (an older copy of the message).
     expect(await bob.read(DM, sent)).toMatchObject({ payload: { text: 'Встреча в 5' } })
+  })
+
+  it('in a group, a device one member let in stays: the others do not take it out again', async () => {
+    const { client } = setup()
+    const CAROL = '3'
+    const group = { id: '601', memberIds: [ALICE, BOB, CAROL] }
+    const alice = client(ALICE).client
+    const bob = client(BOB).client
+    const carol = client(CAROL).client
+    await Promise.all([bob.ready(), carol.ready()])
+    await alice.open(group)
+    await bob.open(group)
+
+    // Carol's unapproved phone: Alice lets it in, Bob has not.
+    const carolPhone = client(CAROL, 'Телефон').client
+    await carolPhone.ready()
+    await letIn(alice, CAROL)
+    await alice.open(group)
+    await bob.devicesChanged(CAROL)
+    await bob.open(group)
+
+    expect(await carolPhone.read(group, await bob.send(group, 'От Боба'))).toMatchObject({
+      payload: { text: 'От Боба' },
+    })
   })
 
   it('never encrypts for someone removed from a group, even before anyone reopens it', async () => {
@@ -321,6 +357,7 @@ describe('e2ee client', () => {
     // A new device joins: a new epoch and a new key, which the old one can't follow.
     const bobPhone = client(BOB, 'Телефон').client
     await bobPhone.ready()
+    await letIn(alice, BOB)
     await alice.open(DM)
     const second = await bob.callKey(DM)
     expect(second?.epoch).toBeGreaterThan(first?.epoch ?? 0)

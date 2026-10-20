@@ -391,9 +391,7 @@
       "subtitle": "Browsers holding the keys to your encrypted conversations. Remove one you don't recognise: from the next message on it can't read encrypted conversations. Sign it out in the list above.",
       "added": "Added {{time}}",
       "remove": "Remove",
-      "removeLabel": "Remove the keys of device {{name}}",
-      "strict": "Approved devices only",
-      "strictHint": "Messages are encrypted only for devices their owner approved with their key, and those you accepted yourself after a warning. Other devices get none of your messages until you press “Got it” in the conversation. A setting of this browser."
+      "removeLabel": "Remove the keys of device {{name}}"
     },
     "app": {
       "title": "Application",
@@ -1366,6 +1364,10 @@
     "save": "Save rules"
   },
   "e2ee": {
+    "device": {
+      "code": "Device code:",
+      "codeHint": "This device's code. It is compared by voice or in person before the device is let into a conversation."
+    },
     "guide": {
       "title": "How encryption works",
       "open": "How it works",
@@ -1381,7 +1383,7 @@
       },
       "devices": {
         "title": "A new device",
-        "text": "Signed in on a new device? Approve it from your old one: both screens show the same emoji, compare them and press “Yes”. The new device gets the keys and the history."
+        "text": "Signed in on a new device? Approve it from your old one: both screens show the same emoji, compare them and press “Yes”. The device gets the keys and the history. Without that, the other person can let it in after comparing its device code with you."
       },
       "recovery": {
         "title": "The recovery key",
@@ -1403,7 +1405,8 @@
     "notice": "The server can't see this conversation's messages: they are encrypted on the members' devices. So there are no link previews or bots here, and search runs on your device only. A new device gets the old messages once you approve it from another one or enter your recovery key.",
     "decrypting": "Decrypting…",
     "opening": "Setting up encryption on this device…",
-    "waiting": "Waiting for another of your devices or the other person to let this device in. Open the conversation there — it takes a second.",
+    "waiting": "Approve it from your old device or with the recovery key, and it joins on its own. Or read the code below to the other person: once they compare it, they can let this device in.",
+    "waitingTitle": "This device is not in the conversation yet",
     "failed": "Couldn't set up encryption. Reload the page or try again later.",
     "fileDecrypting": "Decrypting {{name}}…",
     "fileFailed": "Couldn't decrypt {{name}}",
@@ -1415,13 +1418,18 @@
       "verified": "Verified",
       "notVerified": "Not verified",
       "codesMatch": "Codes match",
+      "waitingDevice": "{{name}} has a new device: {{device}} (signed in {{time}}). It was not approved from another device of {{name}}, so it joins the conversation only if you let it in.",
+      "compareDeviceCode": "Compare the code with {{name}} by voice or in person. If it doesn't match or you're not sure, don't let it in: this is how a server could slip in a device of its own.",
+      "letIn": "Let in",
+      "letInLabel": "Let in device {{device}} — {{name}}",
+      "acceptKey": "Accept the new key",
+      "acceptKeyLabel": "Accept the new key — {{name}}",
       "newDevicesLabel": "New devices",
-      "newDevice": "{{name}} has an unapproved device: {{devices}}. It wasn't approved from another of their devices — if you're not sure it's them, compare safety codes.",
       "newOwnDevice": "An unapproved device on your account: {{devices}}. If it wasn't you, remove it in “Settings → Devices” and change your password.",
       "check": "Check",
       "gotIt": "Got it",
       "codeLabel": "Safety code",
-      "keyChanged": "{{name}} reset their encryption keys — for example, they lost all their devices. Compare safety codes again."
+      "keyChanged": "{{name}} reset their encryption keys — for example, they lost all their devices, or someone is posing as {{name}}. Compare safety codes again: until you accept the new key, devices of {{name}} stay out of the conversation."
     },
     "recovery": {
       "saveTitle": "Save your recovery key",

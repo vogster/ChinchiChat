@@ -11,7 +11,7 @@ import type { SafetyStatus } from './safety'
  * codes come from the people's public keys, so a device still waiting to be let in has them too.
  */
 export const useSafety = (channel: EncryptedChannel | undefined, ready: boolean) => {
-  const { client, revision } = useE2ee()
+  const { client, revision, refresh: reopen } = useE2ee()
   const [status, setStatus] = useState<SafetyStatus | null>(null)
   const [asked, setAsked] = useState(0)
 
@@ -40,6 +40,23 @@ export const useSafety = (channel: EncryptedChannel | undefined, ready: boolean)
     },
     [client, refresh],
   )
+  /** Lets a device in, then opens the conversation again so it is added at once. */
+  const acceptDevice = useCallback(
+    async (userId: string, deviceId: string) => {
+      await client?.safety.acceptDevice(userId, deviceId)
+      refresh()
+      reopen()
+    },
+    [client, refresh, reopen],
+  )
+  const acceptKey = useCallback(
+    async (userId: string) => {
+      await client?.safety.acceptKey(userId)
+      refresh()
+      reopen()
+    },
+    [client, refresh, reopen],
+  )
   const acknowledge = useCallback(
     async (userIds: readonly string[]) => {
       for (const userId of userIds) await client?.safety.acknowledge(userId)
@@ -48,7 +65,7 @@ export const useSafety = (channel: EncryptedChannel | undefined, ready: boolean)
     [client, refresh],
   )
 
-  return { status, refresh, codeWith, verify, acknowledge }
+  return { status, refresh, codeWith, verify, acknowledge, acceptDevice, acceptKey }
 }
 
 export type SafetyControls = ReturnType<typeof useSafety>

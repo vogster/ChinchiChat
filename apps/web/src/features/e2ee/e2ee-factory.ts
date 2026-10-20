@@ -20,7 +20,6 @@ export type E2eeClientLike = Pick<
   | 'devicesChanged'
   | 'callKey'
   | 'safety'
-  | 'strict'
   | 'recovery'
   | 'approvals'
   | 'react'
