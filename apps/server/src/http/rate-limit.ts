@@ -19,9 +19,9 @@ export const FAIL_CLOSED = Object.freeze({ skipOnError: false })
 export const GLOBAL_RATE_LIMIT = Object.freeze({ max: 300, timeWindow: MINUTE_MS })
 /** Credential guessing protection. */
 export const LOGIN_RATE_LIMIT = Object.freeze({ max: 10, timeWindow: MINUTE_MS, ...FAIL_CLOSED })
-/** New QR sign-ins per address: the sign-in page asks again every two minutes. */
+/** New QR sign-ins per address: every visit to the sign-in page asks, and again every two minutes. */
 export const QR_LOGIN_CREATE_RATE_LIMIT = Object.freeze({
-  max: 20,
+  max: 60,
   timeWindow: MINUTE_MS,
   ...FAIL_CLOSED,
 })

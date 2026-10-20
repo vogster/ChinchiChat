@@ -12,21 +12,41 @@ import type { ApproveQrLoginRequest, CreateQrLoginRequest } from '@chinchi/share
 const FRIENDS = { name: 'Друзья', level: 1 } as const
 
 describe('signing in with a QR code, on the new device', () => {
-  it('shows the QR and the short code, and goes back to the password', async () => {
+  it('shows the QR and the short code beside the password fields', async () => {
     const api = createFakeApi()
-    const { user } = renderApp('/login', { api })
-
-    await user.click(await screen.findByRole('button', { name: 'Войти по QR-коду' }))
+    renderApp('/login', { api })
 
     expect(await screen.findByRole('img', { name: 'QR-код для входа' })).toBeVisible()
     expect(screen.getByText('KQ7M-2PXD')).toBeVisible()
+    expect(screen.getByLabelText('Пароль')).toBeVisible()
+    expect(screen.queryByRole('button', { name: 'Войти по QR-коду' })).toBeNull()
     // The new device sends its key, so encryption can follow it.
     const body = api.auth.qr.create.mock.calls[0]?.[0] as CreateQrLoginRequest
     expect(body.publicKey).toMatch(/^[A-Za-z0-9+/]{43}=$/)
     expect(api.auth.qr.claim).toHaveBeenCalledWith(testQrTicket.id, testQrTicket.secret)
+  })
 
-    await user.click(screen.getByRole('button', { name: 'Войти с паролем' }))
-    expect(await screen.findByLabelText('Пароль')).toBeVisible()
+  it('keeps the QR behind a button on a phone, with a way back', async () => {
+    vi.stubGlobal('matchMedia', (query: string) => ({
+      matches: false,
+      media: query,
+      addEventListener: () => undefined,
+      removeEventListener: () => undefined,
+    }))
+    try {
+      const api = createFakeApi()
+      const { user } = renderApp('/login', { api })
+
+      await user.click(await screen.findByRole('button', { name: 'Войти по QR-коду' }))
+      expect(await screen.findByRole('img', { name: 'QR-код для входа' })).toBeVisible()
+      expect(screen.queryByLabelText('Пароль')).toBeNull()
+
+      await user.click(screen.getByRole('button', { name: 'Войти с паролем' }))
+      expect(await screen.findByLabelText('Пароль')).toBeVisible()
+      expect(screen.queryByRole('img', { name: 'QR-код для входа' })).toBeNull()
+    } finally {
+      vi.unstubAllGlobals()
+    }
   })
 
   it('signs in once approved, taking the recovery key handed over with it', async () => {
@@ -36,9 +56,7 @@ describe('signing in with a QR code, on the new device', () => {
       const sealed = await sealForNewDevice(id, body.publicKey ?? '', TEST_RECOVERY_KEY)
       return { state: 'approved' as const, user: testUser, ...sealed }
     })
-    const { user, router, e2ee } = renderApp('/login', { api })
-
-    await user.click(await screen.findByRole('button', { name: 'Войти по QR-коду' }))
+    const { router, e2ee } = renderApp('/login', { api })
 
     expect(await screen.findByRole('heading', FRIENDS)).toBeVisible()
     expect(router.state.location.pathname).toBe('/')
@@ -48,9 +66,7 @@ describe('signing in with a QR code, on the new device', () => {
   it('starts over with a new QR when the old one is gone', async () => {
     const api = createFakeApi()
     api.auth.qr.claim.mockRejectedValueOnce(apiError(404, 'UNKNOWN_QR_LOGIN'))
-    const { user } = renderApp('/login', { api })
-
-    await user.click(await screen.findByRole('button', { name: 'Войти по QR-коду' }))
+    renderApp('/login', { api })
 
     await vi.waitFor(() => expect(api.auth.qr.create).toHaveBeenCalledTimes(2))
   })

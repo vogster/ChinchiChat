@@ -16,14 +16,27 @@ import { useLogin } from './use-auth-actions'
 
 import type { LoginRequest } from '@chinchi/shared'
 
-export const LoginForm = ({ redirectTo }: { redirectTo?: string | undefined }) => {
+/** `qrBeside`: the sign-in QR is shown next to the form, so no button opens it. */
+export const LoginForm = ({
+  redirectTo,
+  qrBeside = false,
+}: {
+  redirectTo?: string | undefined
+  qrBeside?: boolean
+}) => {
   const [ticket, setTicket] = useState<string | null>(null)
   const [withQr, setWithQr] = useState(false)
   if (ticket) {
     return <MfaStep ticket={ticket} redirectTo={redirectTo} onRestart={() => setTicket(null)} />
   }
   if (withQr) return <QrLoginPanel redirectTo={redirectTo} onBack={() => setWithQr(false)} />
-  return <PasswordStep redirectTo={redirectTo} onMfa={setTicket} onQr={() => setWithQr(true)} />
+  return (
+    <PasswordStep
+      redirectTo={redirectTo}
+      onMfa={setTicket}
+      onQr={qrBeside ? undefined : () => setWithQr(true)}
+    />
+  )
 }
 
 const PasswordStep = ({
@@ -33,7 +46,7 @@ const PasswordStep = ({
 }: {
   redirectTo: string | undefined
   onMfa: (ticket: string) => void
-  onQr: () => void
+  onQr: (() => void) | undefined
 }) => {
   const { t } = useTranslation()
   const login = useLogin(redirectTo, onMfa)
@@ -75,14 +88,16 @@ const PasswordStep = ({
       <Button type="submit" pending={login.isPending}>
         {t('auth.login.submit')}
       </Button>
-      <Button
-        variant="secondary"
-        className="inline-flex items-center justify-center gap-2"
-        onClick={onQr}
-      >
-        <QrCodeIcon aria-hidden className="size-4" />
-        {t('auth.qr.show')}
-      </Button>
+      {onQr ? (
+        <Button
+          variant="secondary"
+          className="inline-flex items-center justify-center gap-2"
+          onClick={onQr}
+        >
+          <QrCodeIcon aria-hidden className="size-4" />
+          {t('auth.qr.show')}
+        </Button>
+      ) : null}
 
       <p className="text-sm text-muted">
         {t('auth.login.noAccount')}{' '}

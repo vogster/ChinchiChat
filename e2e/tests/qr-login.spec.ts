@@ -11,11 +11,11 @@ const FRIENDS = { name: 'Друзья', level: 1 } as const
 const showQr = async (browser: Browser) => {
   const context = await browser.newContext({ viewport: { width: 1280, height: 800 } })
   const page = await context.newPage()
-  await page.goto('/login')
+  // On a wide screen the QR is beside the password fields from the start.
   const created = page.waitForResponse(
     (response) => response.url().endsWith('/api/v1/auth/qr') && response.status() === 201,
   )
-  await page.getByRole('button', { name: 'Войти по QR-коду' }).click()
+  await page.goto('/login')
   const { ticket } = (await (await created).json()).data as {
     ticket: { url: string; code: string }
   }

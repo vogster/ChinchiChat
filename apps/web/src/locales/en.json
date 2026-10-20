@@ -128,6 +128,7 @@
       "back": "Sign in again"
     },
     "qr": {
+      "title": "Sign in with a QR code",
       "show": "Sign in with a QR code",
       "codeLabel": "Sign-in QR code",
       "manualCode": "No camera? Enter the code:",
@@ -136,7 +137,8 @@
       "step2": "Point the camera at the code, or enter the code in Settings → Devices.",
       "step3": "Confirm the sign-in — this page signs in by itself.",
       "signingIn": "Sign-in confirmed, signing in…",
-      "back": "Sign in with a password"
+      "back": "Sign in with a password",
+      "hint": "Scan it with the phone where you are signed in, or enter the code in Settings → Devices."
     },
     "qrApprove": {
       "title": "Sign-in on a new device",
