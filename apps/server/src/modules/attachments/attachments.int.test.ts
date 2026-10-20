@@ -24,6 +24,10 @@ const PNG = Uint8Array.from(
   ),
 )
 const TEXT = new TextEncoder().encode('hello, world')
+/** An EBML (WebM) header and a few bytes: enough for the signature check. */
+const WEBM = Uint8Array.from([
+  0x1a, 0x45, 0xdf, 0xa3, 0x9f, 0x42, 0x86, 0x81, 0x01, 0x42, 0xf7, 0x81, 0x01,
+])
 
 let owner: TestActor
 let member: TestActor
@@ -243,6 +247,13 @@ describe('sending messages with attachments', () => {
     expect(response.json().code).toBe('INVALID_ATTACHMENT')
   })
 
+  it('rejects files declared as voice audio that are not', async () => {
+    const fake = await upload(member, TEXT, { filename: 'voice.webm', contentType: 'audio/webm' })
+    const response = await sendWith(member, [fake.id])
+    expect(response.statusCode).toBe(400)
+    expect(response.json().code).toBe('INVALID_ATTACHMENT')
+  })
+
   it('requires ATTACH_FILES to send attachments', async () => {
     const image = await upload(member, PNG)
     await call(owner, 'PUT', `/channels/${textId}/permissions/${guild.id}`, {
@@ -304,6 +315,19 @@ describe('GET /api/v1/attachments/:id/:filename', () => {
     expect(file.headers.get('content-disposition')).toMatch(/^inline; /)
     expect(new Uint8Array(await file.arrayBuffer())).toEqual(PNG)
     expect((await download(owner, attachment.url)).headers.location).toBe(response.headers.location)
+  })
+
+  it('serves voice audio inline with its type, so a player can play it', async () => {
+    const voice = await upload(member, WEBM, {
+      filename: 'voice-2026-10-21-14-05.webm',
+      contentType: 'audio/webm',
+    })
+    const [attachment] = (await sendWith(member, [voice.id])).json().data.message.attachments
+
+    const file = await fetch((await download(member, attachment.url)).headers.location as string)
+    expect(file.headers.get('content-type')).toBe('audio/webm')
+    expect(file.headers.get('content-disposition')).toMatch(/^inline; /)
+    expect(new Uint8Array(await file.arrayBuffer())).toEqual(WEBM)
   })
 
   it('makes everything that is not a safe image a download', async () => {

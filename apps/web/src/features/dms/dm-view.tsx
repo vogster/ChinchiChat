@@ -146,6 +146,17 @@ export const DmView = ({ channel }: { channel: PrivateChannel }) => {
     pending.clear()
   }
 
+  /** A recorded voice message goes out at once, as a message with just that file. */
+  const sendVoice = (file: File) => {
+    send.mutate({
+      content: '',
+      nonce: newNonce(),
+      ...(replyingTo ? { reply: toReply(replyingTo, replyMention) } : {}),
+      files: [file],
+    })
+    setReplyingTo(null)
+  }
+
   const editLast = () => {
     const loaded = flattenPages(
       queryClient.getQueryData<MessagePages>(messageKeys.channel(channel.id)),
@@ -397,6 +408,7 @@ export const DmView = ({ channel }: { channel: PrivateChannel }) => {
               onTyping={typing.typed}
               onEditLast={editLast}
               attach={canAttach ? { count: pending.files.length, onAdd: pending.add } : null}
+              voice={canAttach ? { onSend: sendVoice } : null}
               pollChannelId={encryption ? null : channel.id}
               reply={
                 replyingTo

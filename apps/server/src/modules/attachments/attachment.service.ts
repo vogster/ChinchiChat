@@ -1,10 +1,11 @@
 import {
   ATTACHMENTS_PER_MESSAGE_MAX,
   DEFAULT_CONTENT_TYPE,
+  isInlineAudio,
   isInlineImage,
   Permission,
 } from '@chinchi/shared'
-import { detectImageType, SNIFF_BYTES } from '@chinchi/shared'
+import { detectAudioType, detectImageType, SNIFF_BYTES } from '@chinchi/shared'
 import { stripMetadata, UnreadableImage } from '@chinchi/shared'
 
 import { badRequest, HttpError } from '../../http/http-error'
@@ -49,6 +50,9 @@ export interface CreateUploadInput {
   readonly contentType: string
 }
 
+/** What a browser may show in the page: safe raster images and voice audio. */
+const isInline = (contentType: string) => isInlineImage(contentType) || isInlineAudio(contentType)
+
 const uploadsDisabled = () => badRequest('UPLOADS_DISABLED', 'File uploads are disabled')
 const invalidAttachment = () =>
   badRequest('INVALID_ATTACHMENT', 'Attachment is missing, expired or invalid')
@@ -85,6 +89,12 @@ export const createAttachmentService = ({
     if (!(await store.copy(uploadKey(row), key))) return null
     const stat = await store.stat(key)
     if (!stat || stat.size !== row.size) return null
+    if (isInlineAudio(row.contentType)) {
+      // A voice message plays inline: it has to be the audio it claims to be.
+      return detectAudioType(await store.readStart(key, SNIFF_BYTES)) === row.contentType
+        ? row
+        : null
+    }
     if (!isInlineImage(row.contentType)) return row
     if (detectImageType(await store.readStart(key, SNIFF_BYTES)) !== row.contentType) return null
     if (row.size > PREVIEW_MAX_INPUT_BYTES) return row
@@ -273,10 +283,10 @@ export const createAttachmentService = ({
             })
           : await store.presignGet(attachmentKey(row, messageId), {
               filename: row.filename,
-              // Anything but a safe image is opaque bytes: never loadable as a script or
-              // stylesheet, even if storage ends up on the app's own origin.
-              contentType: isInlineImage(row.contentType) ? row.contentType : DEFAULT_CONTENT_TYPE,
-              inline: isInlineImage(row.contentType),
+              // Anything but a safe image or voice audio is opaque bytes: never loadable as a
+              // script or stylesheet, even if storage ends up on the app's own origin.
+              contentType: isInline(row.contentType) ? row.contentType : DEFAULT_CONTENT_TYPE,
+              inline: isInline(row.contentType),
               ...signing,
             })
       // Cache at most until the end of the window: the URL is valid for another one after it.

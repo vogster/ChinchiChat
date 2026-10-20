@@ -1,6 +1,6 @@
 import { MESSAGE_MAX_LENGTH } from '@chinchi/shared'
-import { ArrowUp, AtSign, Smile, X } from 'lucide-react'
-import { useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { ArrowUp, AtSign, Mic, Smile, X } from 'lucide-react'
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { CommandSuggestions } from '../commands/command-suggestions'
@@ -8,6 +8,9 @@ import { parseCommand, suggestCommands } from '../commands/parse-command'
 import { EmojiPicker } from '../emoji/emoji-picker'
 import { MentionSuggestions } from '../mentions/mention-suggestions'
 import { useMentionSuggestions } from '../mentions/use-mention-suggestions'
+import { RecordingBar } from '../voice-messages/recording-bar'
+import { pickRecordingFormat } from '../voice-messages/recording-format'
+import { useVoiceRecorder } from '../voice-messages/use-voice-recorder'
 import { ComposerMenu } from './composer-menu'
 import { CreatePollDialog } from './create-poll-dialog'
 
@@ -38,6 +41,12 @@ export interface ComposerProps {
   readonly pollChannelId?: Snowflake | null
   /** What `@` and `#` suggest: people, roles, channels. */
   readonly mentions?: readonly MentionCandidate[] | null
+  /** Voice messages: the microphone button records one and sends it as a file. */
+  readonly voice?: ComposerVoice | null
+}
+
+export interface ComposerVoice {
+  readonly onSend: (file: File) => void
 }
 
 export interface ComposerCommands {
@@ -108,6 +117,7 @@ export const Composer = ({
   commands = null,
   pollChannelId = null,
   mentions = null,
+  voice = null,
 }: ComposerProps) => {
   const { t } = useTranslation()
   const [creatingPoll, setCreatingPoll] = useState(false)
@@ -117,6 +127,11 @@ export const Composer = ({
   const suggestions = commands ? suggestCommands(value, commands.list) : []
   const ref = useRef<HTMLTextAreaElement>(null)
   const fileInput = useRef<HTMLInputElement>(null)
+  const recorder = useVoiceRecorder((file) => voice?.onSend(file))
+  const [canRecord] = useState(() => pickRecordingFormat() !== null)
+  const { stop } = recorder
+  const cancelRecording = useCallback(() => stop(false), [stop])
+  const sendRecording = useCallback(() => stop(true), [stop])
   const mention = useMentionSuggestions({
     value,
     candidates: mentions,
@@ -222,6 +237,8 @@ export const Composer = ({
   }
 
   const left = MESSAGE_MAX_LENGTH - value.length
+  // Nothing typed and no files: the send button becomes the microphone.
+  const showMic = voice !== null && canRecord && value.trim() === '' && (attach?.count ?? 0) === 0
 
   return (
     <div className="px-3 pb-3 md:px-4">
@@ -238,7 +255,15 @@ export const Composer = ({
       <div
         className={`flex items-end gap-2 bg-field p-1.5 ${reply ? 'rounded-b-composer' : 'rounded-composer'}`}
       >
-        {attach ? (
+        {recorder.recording ? (
+          <RecordingBar
+            seconds={recorder.seconds}
+            level={recorder.level}
+            onCancel={cancelRecording}
+            onSend={sendRecording}
+          />
+        ) : null}
+        {recorder.recording ? null : attach ? (
           <input
             ref={fileInput}
             type="file"
@@ -253,7 +278,7 @@ export const Composer = ({
             }}
           />
         ) : null}
-        {attach || pollChannelId ? (
+        {!recorder.recording && (attach || pollChannelId) ? (
           <ComposerMenu
             onPickFiles={attach ? () => fileInput.current?.click() : null}
             onCreatePoll={pollChannelId ? () => setCreatingPoll(true) : null}
@@ -261,6 +286,7 @@ export const Composer = ({
         ) : null}
         <textarea
           ref={ref}
+          hidden={recorder.recording}
           onPaste={(event) => {
             const files = [...event.clipboardData.files]
             if (!attach || files.length === 0) return
@@ -280,25 +306,39 @@ export const Composer = ({
           onKeyDown={onKeyDown}
           className="max-h-60 min-h-[38px] flex-1 resize-none self-center bg-transparent px-1.5 py-[9px] leading-5 outline-none placeholder:text-faint"
         />
-        <EmojiPicker
-          label={t('emoji.picker')}
-          trigger={<Smile aria-hidden className="size-5" />}
-          triggerClassName="grid size-[38px] shrink-0 place-items-center self-end rounded-full text-muted transition-colors hover:bg-stage hover:text-text"
-          onSelect={insert}
-          custom={customEmojis}
-        />
-        <button
-          type="button"
-          aria-label={t('messages.sendMessage')}
-          title={t('messages.sendMessage')}
-          onClick={submit}
-          className="flex h-[38px] min-w-[38px] shrink-0 items-center justify-center gap-1.5 self-end rounded-full bg-accent text-accent-contrast transition hover:brightness-110 md:px-4"
-        >
-          <ArrowUp aria-hidden className="size-5 md:hidden" />
-          <span aria-hidden className="hidden text-[13px] font-semibold md:inline">
-            {t('messages.send')}
-          </span>
-        </button>
+        {recorder.recording ? null : (
+          <EmojiPicker
+            label={t('emoji.picker')}
+            trigger={<Smile aria-hidden className="size-5" />}
+            triggerClassName="grid size-[38px] shrink-0 place-items-center self-end rounded-full text-muted transition-colors hover:bg-stage hover:text-text"
+            onSelect={insert}
+            custom={customEmojis}
+          />
+        )}
+        {recorder.recording ? null : showMic ? (
+          <button
+            type="button"
+            aria-label={t('voiceMessage.record')}
+            title={t('voiceMessage.record')}
+            onClick={() => void recorder.start()}
+            className="grid size-[38px] shrink-0 place-items-center self-end rounded-full bg-accent text-accent-contrast transition hover:brightness-110"
+          >
+            <Mic aria-hidden className="size-5" />
+          </button>
+        ) : (
+          <button
+            type="button"
+            aria-label={t('messages.sendMessage')}
+            title={t('messages.sendMessage')}
+            onClick={submit}
+            className="flex h-[38px] min-w-[38px] shrink-0 items-center justify-center gap-1.5 self-end rounded-full bg-accent text-accent-contrast transition hover:brightness-110 md:px-4"
+          >
+            <ArrowUp aria-hidden className="size-5 md:hidden" />
+            <span aria-hidden className="hidden text-[13px] font-semibold md:inline">
+              {t('messages.send')}
+            </span>
+          </button>
+        )}
         {value.length >= COUNTER_FROM ? (
           <span
             className={`self-center text-xs ${left < 0 ? 'text-danger' : 'text-faint'}`}
@@ -308,6 +348,11 @@ export const Composer = ({
           </span>
         ) : null}
       </div>
+      {recorder.error ? (
+        <p className="mt-1 px-3 text-xs text-danger" role="alert">
+          {t(recorder.error === 'denied' ? 'voiceMessage.denied' : 'voiceMessage.failed')}
+        </p>
+      ) : null}
       {missing.length > 0 ? (
         <p className="mt-1 px-3 text-xs text-danger" role="alert">
           {t('commands.missing', { options: missing.join(', ') })}

@@ -1,8 +1,9 @@
-import { isInlineImage } from '@chinchi/shared'
+import { isInlineAudio, isInlineImage } from '@chinchi/shared'
 import { Download, FileText } from 'lucide-react'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
+import { VoicePlayer } from '../voice-messages/voice-player'
 import { formatFileSize } from './format-size'
 import { ImageViewer } from './image-viewer'
 
@@ -25,7 +26,13 @@ const fit = (width: number | null, height: number | null) => {
   return { width: Math.round(width * scale), height: Math.round(height * scale) }
 }
 
-/** A message's files: images open in the viewer, everything else downloads. */
+const fetchBlob = async (url: string) => {
+  const response = await fetch(url)
+  if (!response.ok) throw new Error(`Download failed: ${response.status}`)
+  return response.blob()
+}
+
+/** A message's files: images open in the viewer, voice plays here, everything else downloads. */
 export const AttachmentList = ({ attachments }: { attachments: readonly Attachment[] }) => {
   const { t, i18n } = useTranslation()
   const [viewing, setViewing] = useState<Attachment | null>(null)
@@ -35,7 +42,9 @@ export const AttachmentList = ({ attachments }: { attachments: readonly Attachme
     <ul className="flex max-w-full flex-col items-start gap-1.5">
       {attachments.map((attachment) => (
         <li key={attachment.id}>
-          {isInlineImage(attachment.contentType) ? (
+          {isInlineAudio(attachment.contentType) ? (
+            <VoicePlayer name={attachment.filename} load={() => fetchBlob(attachment.url)} />
+          ) : isInlineImage(attachment.contentType) ? (
             <button
               type="button"
               aria-label={t('messages.openImage', { name: attachment.filename })}

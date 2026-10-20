@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { createFakeApi, testFriend, testMessage, testUser } from '../../test/fake-api'
 import { fakeCiphertext } from '../../test/fake-e2ee'
+import { fakeAudioDecoding, WEBM_BYTES } from '../../test/fake-media'
 import { renderApp } from '../../test/render-app'
 import { encryptFile } from './file-crypto'
 
@@ -168,5 +169,38 @@ describe('files in encrypted conversations', () => {
     renderApp(URL_PATH, { api })
 
     expect(await screen.findByText(/Не удалось расшифровать файл кот\.png/)).toBeVisible()
+  })
+  it('play voice messages decrypted on this device, only if they are audio', async () => {
+    fakeAudioDecoding()
+    const voice = await encryptFile(new File([WEBM_BYTES], 'voice.webm', { type: 'audio/webm' }))
+    const fake = await encryptFile(new File(['<html>'], 'fake.webm', { type: 'audio/webm' }))
+    const voiceBytes = new Uint8Array(await voice.blob.arrayBuffer())
+    const fakeBytes = new Uint8Array(await fake.blob.arrayBuffer())
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (url: string) => new Response(url.includes('/901/') ? voiceBytes : fakeBytes)),
+    )
+    const api = createFakeApi({ user: testUser })
+    api.dms.list.mockResolvedValue({ channels: [encryptedDm] })
+    api.messages.list.mockResolvedValue({
+      messages: [
+        testMessage('1301', {
+          channelId: encryptedDm.id,
+          guildId: null,
+          content: '',
+          ciphertext: fakeCiphertext('Послушай', [
+            { id: '901', ...voice.file },
+            { id: '902', ...fake.file },
+          ]),
+          attachments: [stored('901', voice.blob.size), stored('902', fake.blob.size)],
+        }),
+      ],
+    })
+    renderApp(URL_PATH, { api })
+
+    expect(
+      await screen.findByRole('button', { name: 'Воспроизвести голосовое, 0:42' }),
+    ).toBeEnabled()
+    expect(await screen.findByText('Не удалось открыть голосовое fake.webm')).toBeVisible()
   })
 })

@@ -101,6 +101,18 @@ export const ChannelChat = ({
     pending.clear()
   }
 
+  /** A recorded voice message goes out at once, as a message with just that file. */
+  const sendVoice = (file: File) => {
+    slowmode.sent()
+    send.mutate({
+      content: '',
+      nonce: newNonce(),
+      ...(replyingTo ? { reply: toReply(replyingTo, replyMention) } : {}),
+      files: [file],
+    })
+    setReplyingTo(null)
+  }
+
   const startReply = (message: MessageItem) => {
     setReplyingTo(message)
     setReplyMention(true)
@@ -213,6 +225,7 @@ export const ChannelChat = ({
               guild.emojis.length > 0 ? { title: guild.name, emojis: guild.emojis } : null
             }
             attach={canAttach ? { count: pending.files.length, onAdd: pending.add } : null}
+            voice={canAttach ? { onSend: sendVoice } : null}
             pollChannelId={channel.id}
             reply={
               replyingTo

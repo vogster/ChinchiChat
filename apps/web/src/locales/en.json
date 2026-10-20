@@ -1604,5 +1604,19 @@
     "update": {
       "prompt": "Chinchi {{version}} is out. Install it now? The app will restart."
     }
+  },
+  "voiceMessage": {
+    "record": "Record a voice message",
+    "recording": "Recording a voice message",
+    "cancel": "Cancel recording",
+    "send": "Send voice message",
+    "escHint": "Esc to cancel",
+    "denied": "No access to the microphone — allow it in the browser settings.",
+    "failed": "Could not record or play the voice message.",
+    "play": "Play voice message, {{duration}}",
+    "pause": "Pause",
+    "position": "Position in the voice message",
+    "positionText": "{{time}} of {{duration}}",
+    "failedFile": "Could not open the voice message {{name}}"
   }
 }

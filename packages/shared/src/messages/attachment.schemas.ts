@@ -13,6 +13,13 @@ export type InlineImageType = (typeof INLINE_IMAGE_TYPES)[number]
 export const isInlineImage = (contentType: string): contentType is InlineImageType =>
   (INLINE_IMAGE_TYPES as readonly string[]).includes(contentType)
 
+/** Containers of voice messages, which `<audio>` plays (checked by their bytes, as images). */
+export const INLINE_AUDIO_TYPES = ['audio/webm', 'audio/ogg', 'audio/mp4'] as const
+export type InlineAudioType = (typeof INLINE_AUDIO_TYPES)[number]
+
+export const isInlineAudio = (contentType: string): contentType is InlineAudioType =>
+  (INLINE_AUDIO_TYPES as readonly string[]).includes(contentType)
+
 // eslint-disable-next-line no-control-regex
 const CONTROL_CHARS = /[\u0000-\u001f\u007f]/g
 

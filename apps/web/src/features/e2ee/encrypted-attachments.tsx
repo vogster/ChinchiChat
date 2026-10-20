@@ -1,9 +1,10 @@
-import { detectImageType, isInlineImage } from '@chinchi/shared'
+import { detectAudioType, detectImageType, isInlineAudio, isInlineImage } from '@chinchi/shared'
 import { FileText, Lock } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { formatFileSize } from '../messages/format-size'
+import { VoicePlayer } from '../voice-messages/voice-player'
 import { decryptFile } from './file-crypto'
 
 import type { SealedFile } from './codec'
@@ -20,6 +21,14 @@ const open = async (file: Pick<SealedFile, 'url' | 'key' | 'iv'>): Promise<Uint8
 
 const asBlobUrl = (bytes: Uint8Array, type: string) =>
   URL.createObjectURL(new Blob([new Uint8Array(bytes)], { type }))
+
+/** A voice message decrypted here; played only if the bytes really are audio. */
+const openVoice = async (file: SealedFile): Promise<Blob> => {
+  const bytes = await open(file)
+  const type = detectAudioType(bytes)
+  if (!type) throw new Error('Not audio')
+  return new Blob([new Uint8Array(bytes)], { type })
+}
 
 const Failed = ({ name }: { name: string }) => {
   const { t } = useTranslation()
@@ -126,7 +135,9 @@ export const EncryptedAttachments = ({ files }: { files: readonly SealedFile[] }
     <ul className="mt-1 flex flex-col items-start gap-1.5">
       {files.map((file) => (
         <li key={file.id}>
-          {isInlineImage(file.type) && file.size <= AUTO_DECRYPT_MAX ? (
+          {isInlineAudio(file.type) && file.size <= AUTO_DECRYPT_MAX ? (
+            <VoicePlayer name={file.name} load={() => openVoice(file)} />
+          ) : isInlineImage(file.type) && file.size <= AUTO_DECRYPT_MAX ? (
             <SealedImage file={file} />
           ) : (
             <SealedDownload file={file} />

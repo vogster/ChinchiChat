@@ -5,6 +5,7 @@ import {
   contentTypeSchema,
   createAttachmentRequestSchema,
   FILENAME_MAX_LENGTH,
+  isInlineAudio,
   isInlineImage,
 } from './attachment.schemas'
 
@@ -70,5 +71,15 @@ describe('isInlineImage', () => {
     // SVG can carry scripts.
     expect(isInlineImage('image/svg+xml')).toBe(false)
     expect(isInlineImage('text/html')).toBe(false)
+  })
+})
+
+describe('isInlineAudio', () => {
+  it('is true only for the containers voice messages come in', () => {
+    expect(isInlineAudio('audio/webm')).toBe(true)
+    expect(isInlineAudio('audio/ogg')).toBe(true)
+    expect(isInlineAudio('audio/mp4')).toBe(true)
+    expect(isInlineAudio('audio/webm;codecs=opus')).toBe(false)
+    expect(isInlineAudio('video/webm')).toBe(false)
   })
 })
