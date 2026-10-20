@@ -76,7 +76,7 @@ describe('checking who is on the other end', () => {
     })
 
     const warning = await screen.findByRole('alert', { name: 'Новые устройства' })
-    expect(warning).toHaveTextContent('У Боб новое устройство: Телефон')
+    expect(warning).toHaveTextContent('Боб: новое устройство — Телефон')
     // Its code, to compare with Bob by voice before letting it in.
     expect(await within(warning).findByText('48213 90177 35260 11849')).toBeVisible()
     expect(within(warning).queryByRole('button', { name: 'Понятно' })).toBeNull()
