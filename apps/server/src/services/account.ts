@@ -6,6 +6,8 @@ import { createMemoryLoginThrottle, createRedisLoginThrottle } from '../modules/
 import { createMfaRepository } from '../modules/auth/mfa.repository'
 import { createMfaService } from '../modules/auth/mfa.service'
 import { createMemoryMfaTickets, createRedisMfaTickets } from '../modules/auth/mfa-tickets'
+import { createQrLoginService } from '../modules/auth/qr-login.service'
+import { createMemoryQrLoginStore, createRedisQrLoginStore } from '../modules/auth/qr-login.store'
 import { createSecretBox } from '../modules/auth/secret-box'
 
 import type { Config } from '../config/env'
@@ -105,5 +107,10 @@ export const createAccountServices = ({
       await loginThrottle.resetLogin(user.email)
     },
   })
-  return { loginThrottle, mfa, auth, accountEmails }
+  const qrLogin = createQrLoginService({
+    store: redis ? createRedisQrLoginStore(redis) : createMemoryQrLoginStore(),
+    signInAs: (userId, client) => auth.signInAs(userId, client),
+    publicUrl: config.publicUrl,
+  })
+  return { loginThrottle, mfa, auth, accountEmails, qrLogin }
 }

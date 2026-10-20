@@ -6,6 +6,7 @@ import type { ApiClient, UploadOptions } from '@chinchi/sdk'
 import type {
   AdminGuild,
   AdminUser,
+  ApproveQrLoginRequest,
   AttachmentUpload,
   AuditLogEntry,
   BackupEntry,
@@ -14,6 +15,7 @@ import type {
   Channel,
   ClaimedKeyPackage,
   Command,
+  CreateQrLoginRequest,
   CurrentUser,
   Device,
   DeviceApproval,
@@ -29,6 +31,7 @@ import type {
   NotificationSetting,
   Poll,
   PrivateChannel,
+  QrLoginClaim,
   RegistrationMode,
   Relationship,
   ReorderChannelsRequest,
@@ -347,6 +350,23 @@ export const testInstanceInvite: InstanceInvite = {
   createdAt: '2026-10-15T10:00:00.000Z',
 }
 
+/** A QR sign-in as the new device holds it, and as the approving one sees it. */
+export const testQrTicket = {
+  id: 'qrloginabcdefghij',
+  secret: 'S'.repeat(43),
+  code: 'KQ7M-2PXD',
+  url: 'http://localhost:5173/?qr=qrloginabcdefghij',
+  expiresAt: '2099-01-01T00:00:00.000Z',
+}
+export const testQrLogin = {
+  id: testQrTicket.id,
+  userAgent:
+    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/130.0 Safari/537.36',
+  ipAddress: '203.0.113.5',
+  createdAt: '2026-10-21T10:00:00.000Z',
+  publicKey: null as string | null,
+}
+
 export const createFakeApi = ({ user = null, registrationMode = 'open' }: FakeApiOptions = {}) => {
   const signedInAs = { user: testUser }
 
@@ -479,6 +499,15 @@ export const createFakeApi = ({ user = null, registrationMode = 'open' }: FakeAp
       changePassword: vi.fn(async () => null),
       forgotPassword: vi.fn(async () => null),
       resetPassword: vi.fn(async () => null),
+      qr: {
+        create: vi.fn(async (_body: CreateQrLoginRequest) => ({ ticket: { ...testQrTicket } })),
+        find: vi.fn(async (_id: string) => ({ login: { ...testQrLogin } })),
+        findByCode: vi.fn(async (_code: string) => ({ login: { ...testQrLogin } })),
+        approve: vi.fn(async (_id: string, _body: ApproveQrLoginRequest) => undefined),
+        claim: vi.fn(async (_id: string, _secret: string): Promise<QrLoginClaim> => ({
+          state: 'pending',
+        })),
+      },
     },
     sessions: {
       list: vi.fn(async () => ({ sessions: [...testSessions] })),

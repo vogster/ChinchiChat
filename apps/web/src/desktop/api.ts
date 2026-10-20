@@ -24,7 +24,10 @@ export const createDesktopApi = ({ instanceUrl, fetch, token }: DesktopApiOption
   const api = createApiClient({ baseUrl: `${instanceUrl}/api/v1`, fetch, getToken: token.get })
 
   const keeping =
-    <A extends unknown[], R extends { token?: string | undefined } | { mfaTicket: string }>(
+    <
+      A extends unknown[],
+      R extends { token?: string | undefined } | { mfaTicket: string } | { state: 'pending' },
+    >(
       call: (...args: A) => Promise<R>,
     ) =>
     async (...args: A): Promise<R> => {
@@ -40,6 +43,7 @@ export const createDesktopApi = ({ instanceUrl, fetch, token }: DesktopApiOption
       register: keeping(api.auth.register),
       login: keeping(api.auth.login),
       loginMfa: keeping(api.auth.loginMfa),
+      qr: { ...api.auth.qr, claim: keeping(api.auth.qr.claim) },
       logout: async () => {
         try {
           await api.auth.logout()

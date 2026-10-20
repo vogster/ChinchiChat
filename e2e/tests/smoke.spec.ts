@@ -24,7 +24,7 @@ test('pages load without unexpected console errors', async ({ page }) => {
   page.on('pageerror', (error) => errors.push(error.message))
 
   await page.goto('/login')
-  await expect(page.getByRole('button', { name: 'Войти' })).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Войти', exact: true })).toBeVisible()
   await page.goto('/register')
   await expect(page.getByRole('button', { name: 'Продолжить' })).toBeVisible()
 

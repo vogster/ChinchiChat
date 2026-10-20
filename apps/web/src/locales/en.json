@@ -126,6 +126,32 @@
       "invalid": "Enter the 6-digit code or a recovery code",
       "submit": "Verify",
       "back": "Sign in again"
+    },
+    "qr": {
+      "show": "Sign in with a QR code",
+      "codeLabel": "Sign-in QR code",
+      "manualCode": "No camera? Enter the code:",
+      "preparing": "Preparing the code…",
+      "step1": "Open Chinchi where you are already signed in, e.g. on your phone.",
+      "step2": "Point the camera at the code, or enter the code in Settings → Devices.",
+      "step3": "Confirm the sign-in — this page signs in by itself.",
+      "signingIn": "Sign-in confirmed, signing in…",
+      "back": "Sign in with a password"
+    },
+    "qrApprove": {
+      "title": "Sign-in on a new device",
+      "question": "Let this device into your account?",
+      "loading": "Loading…",
+      "device": "Device",
+      "address": "Address",
+      "when": "When",
+      "warning": "Confirm only a code from your own screen. If someone sent you the code, it is a scam: they would get into your account.",
+      "handOver": "Hand over encrypted conversations",
+      "handOverHint": "The new device gets the recovery key and can read the history.",
+      "yes": "Let in",
+      "no": "Cancel",
+      "done": "Done: the device is signing in.",
+      "close": "OK"
     }
   },
   "validation": {
@@ -241,7 +267,9 @@
     "E2EE_CALLS_UNSUPPORTED": "This browser can't encrypt calls. Open the conversation in a recent Chrome, Edge, Firefox or Safari.",
     "CANNOT_CONNECT": "This member can’t join that channel",
     "EMAIL_NOT_VERIFIED": "Confirm your email first — the link is waiting in your inbox",
-    "RATE_LIMIT_UNAVAILABLE": "The service is briefly unavailable, try again in a minute"
+    "RATE_LIMIT_UNAVAILABLE": "The service is briefly unavailable, try again in a minute",
+    "UNKNOWN_QR_LOGIN": "The sign-in code has expired or was used — refresh it on the new device.",
+    "QR_LOGIN_USED": "This sign-in was already confirmed."
   },
   "settings": {
     "title": "User settings",
@@ -422,6 +450,14 @@
       "account": "Account",
       "app": "App",
       "developers": "For developers"
+    },
+    "qrSignIn": {
+      "title": "Sign in on another device",
+      "subtitle": "No password needed: choose “Sign in with a QR code” on the new device.",
+      "hint": "Point your phone camera at the QR code, or enter the code under it.",
+      "code": "Code from the other device",
+      "invalid": "The code is 8 letters and digits, e.g. KQ7M-2PXD",
+      "submit": "Continue"
     }
   },
   "guild": {

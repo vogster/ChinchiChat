@@ -25,7 +25,7 @@ const logout = async (page: Page) => {
 const login = async (page: Page, identifier: string, password: string) => {
   await page.getByLabel('Имя пользователя или email').fill(identifier)
   await page.getByLabel('Пароль', { exact: true }).fill(password)
-  await page.getByRole('button', { name: 'Войти' }).click()
+  await page.getByRole('button', { name: 'Войти', exact: true }).click()
 }
 
 test('register → verify email → log out → log in', async ({ page }) => {
@@ -93,7 +93,7 @@ test('forgot password → reset via email → log in with the new password', asy
   await expect(page.getByRole('alert')).toBeVisible()
 
   await page.getByLabel('Пароль', { exact: true }).fill('a-brand-new-password')
-  await page.getByRole('button', { name: 'Войти' }).click()
+  await page.getByRole('button', { name: 'Войти', exact: true }).click()
   await expect(page.getByRole('heading', { name: 'Друзья', level: 1 })).toBeVisible()
 })
 

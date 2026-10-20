@@ -153,7 +153,7 @@ export const createServices = (
   })
   const profileEvents = createProfileEvents({ events, guilds, relationships, dms: dmRows })
 
-  const { loginThrottle, mfa, auth, accountEmails } = createAccountServices({
+  const { loginThrottle, mfa, auth, accountEmails, qrLogin } = createAccountServices({
     config,
     db,
     events,
@@ -424,6 +424,7 @@ export const createServices = (
     views,
     auth,
     accountEmails,
+    qrLogin,
     guild,
     channel,
     invite,

@@ -3,6 +3,9 @@ import {
   customStatusSchema,
   instanceInfoSchema,
   loginResultSchema,
+  qrLoginClaimSchema,
+  qrLoginInfoSchema,
+  qrLoginTicketSchema,
   recoveryCodesSchema,
   sessionInfoSchema,
   totpSetupSchema,
@@ -14,7 +17,9 @@ import { id } from './url'
 
 import type { Http } from './http'
 import type {
+  ApproveQrLoginRequest,
   ChangePasswordRequest,
+  CreateQrLoginRequest,
   LoginRequest,
   MfaConfirmRequest,
   MfaLoginRequest,
@@ -27,6 +32,8 @@ import type {
 const authResult = z.object({ user: currentUserSchema, token: z.string().optional() })
 const userResult = z.object({ user: currentUserSchema })
 const nothing = z.null()
+const qrTicketResult = z.object({ ticket: qrLoginTicketSchema })
+const qrInfoResult = z.object({ login: qrLoginInfoSchema })
 
 /** Accounts: signing up and in, two-factor, sessions, the profile, the instance. */
 export const createAuthApi = (request: Http) => ({
@@ -54,6 +61,29 @@ export const createAuthApi = (request: Http) => ({
         body: { token, password },
         data: nothing,
       }),
+    /** Signing in from a signed-in device: the new one asks, the signed-in one approves. */
+    qr: {
+      create: (body: CreateQrLoginRequest) =>
+        request({ method: 'POST', path: '/auth/qr', body, data: qrTicketResult }),
+      find: (id: string) =>
+        request({ method: 'GET', path: `/auth/qr/${encodeURIComponent(id)}`, data: qrInfoResult }),
+      findByCode: (code: string) =>
+        request({
+          method: 'GET',
+          path: `/auth/qr/code/${encodeURIComponent(code)}`,
+          data: qrInfoResult,
+        }),
+      approve: (id: string, body: ApproveQrLoginRequest) =>
+        request({ method: 'POST', path: `/auth/qr/${encodeURIComponent(id)}/approve`, body }),
+      /** Waiting, or signed in (cookie, or `token` in bearer mode). */
+      claim: (id: string, secret: string) =>
+        request({
+          method: 'POST',
+          path: `/auth/qr/${encodeURIComponent(id)}/claim`,
+          body: { secret },
+          data: qrLoginClaimSchema,
+        }),
+    },
   },
   mfa: {
     setup: (password: string) =>

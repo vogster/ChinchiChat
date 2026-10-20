@@ -15,6 +15,7 @@ import { RecoveryKeySettings } from './recovery-key-settings'
 import { SessionsList } from './sessions-list'
 import { SettingsRow } from './settings-row'
 import { SettingsCard, SettingsSection } from './settings-section'
+import { SignInOtherDevice } from './sign-in-other-device'
 import { DensityPicker, PalettePicker, ThemePicker } from './theme-picker'
 import { VoiceDevices } from './voice-devices'
 
@@ -123,6 +124,12 @@ export const SessionsPage = () => {
         subtitle={t('settings.sessions.subtitle')}
       >
         <SessionsList />
+      </SettingsSection>
+      <SettingsSection
+        title={t('settings.qrSignIn.title')}
+        subtitle={t('settings.qrSignIn.subtitle')}
+      >
+        <SignInOtherDevice />
       </SettingsSection>
       <SettingsSection
         title={t('settings.encryptionDevices.title')}

@@ -1,10 +1,12 @@
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react'
 
 import { useApi } from '../../lib/api-context'
 import { meQueryOptions } from '../auth/queries'
 import { useGateway } from '../realtime/gateway-context'
 import { useE2eeFactory } from './e2ee-factory'
+import { takeHandedRecoveryKey } from './handed-recovery'
+import { recoveryKeys } from './recovery-query'
 
 import type { E2eeClientLike } from './e2ee-factory'
 import type { DeviceApproval } from '@chinchi/shared'
@@ -36,15 +38,26 @@ export const E2eeProvider = ({ children }: { children: ReactNode }) => {
   const me = useMe()
   const factory = useE2eeFactory()
   const gateway = useGateway()
+  const queryClient = useQueryClient()
   const userId = me?.id
   const client = useMemo(() => (userId ? factory(userId, api) : null), [userId, api, factory])
   const [revision, setRevision] = useState(0)
 
   // Every signed-in browser is a device from the start, so conversations started by others
-  // include it (a device added later can't read what came before).
+  // include it (a device added later can't read what came before). A recovery key handed over
+  // at sign-in is taken at once: the device gets the user key and history with it.
   useEffect(() => {
-    void client?.ready().catch(() => undefined)
-  }, [client])
+    if (!client || !userId) return
+    const handed = takeHandedRecoveryKey(userId)
+    const start = handed
+      ? client.recovery.useKey(handed).then(async (result) => {
+          if (result !== 'ok') return
+          await queryClient.invalidateQueries({ queryKey: recoveryKeys })
+          setRevision((value) => value + 1)
+        })
+      : client.ready()
+    void start.catch(() => undefined)
+  }, [client, userId, queryClient])
 
   useEffect(
     () =>

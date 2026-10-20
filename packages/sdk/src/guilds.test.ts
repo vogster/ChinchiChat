@@ -212,6 +212,25 @@ const DATA: Record<string, unknown> = {
   },
   backupEntries: { entries: [{ messageId: '3', channelId: '4', payload: 'AAAA' }] },
   keyPackageCount: { count: 3 },
+  qrTicket: {
+    ticket: {
+      id: 'abcdefghijklmnop',
+      secret: 'S'.repeat(43),
+      code: 'KQ7M-2PXD',
+      url: 'https://chat.example.com/?qr=abcdefghijklmnop',
+      expiresAt: '2026-10-21T10:02:00.000Z',
+    },
+  },
+  qrInfo: {
+    login: {
+      id: 'abcdefghijklmnop',
+      userAgent: 'Chrome',
+      ipAddress: '203.0.113.5',
+      createdAt: '2026-10-21T10:00:00.000Z',
+      publicKey: null,
+    },
+  },
+  qrClaim: { state: 'pending' },
   claimed: { keyPackages: [{ deviceId: '7', keyPackageId: '8', package: 'AAAA' }] },
   handshakes: { handshakes: [] },
   customStatus: { customStatus: { text: 'Обедаю', emoji: null, expiresAt: null } },
@@ -227,6 +246,35 @@ const DATA: Record<string, unknown> = {
 type Case = readonly [string, (api: ApiClient) => Promise<unknown>, string, string, string | null]
 
 const cases: Case[] = [
+  ['auth.qr.create', (api) => api.auth.qr.create({}), 'POST', '/auth/qr', 'qrTicket'],
+  [
+    'auth.qr.find',
+    (api) => api.auth.qr.find('abcdefghijklmnop'),
+    'GET',
+    '/auth/qr/abcdefghijklmnop',
+    'qrInfo',
+  ],
+  [
+    'auth.qr.findByCode',
+    (api) => api.auth.qr.findByCode('KQ7M-2PXD'),
+    'GET',
+    '/auth/qr/code/KQ7M-2PXD',
+    'qrInfo',
+  ],
+  [
+    'auth.qr.approve',
+    (api) => api.auth.qr.approve('abcdefghijklmnop', {}),
+    'POST',
+    '/auth/qr/abcdefghijklmnop/approve',
+    null,
+  ],
+  [
+    'auth.qr.claim',
+    (api) => api.auth.qr.claim('abcdefghijklmnop', 'S'.repeat(43)),
+    'POST',
+    '/auth/qr/abcdefghijklmnop/claim',
+    'qrClaim',
+  ],
   ['guilds.list', (api) => api.guilds.list(), 'GET', '/users/@me/guilds', 'guilds'],
   ['guilds.create', (api) => api.guilds.create({ name: 'Cats' }), 'POST', '/guilds', 'guild'],
   ['guilds.get', (api) => api.guilds.get('1'), 'GET', '/guilds/1', 'guild'],

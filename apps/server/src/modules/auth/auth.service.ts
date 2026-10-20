@@ -182,6 +182,17 @@ export const createAuthService = ({
       return startSession(user, client)
     },
 
+    /**
+     * Signs in a user someone already vouched for: a signed-in device of theirs approved this
+     * sign-in (QR). That approval stands for the password and the second factor.
+     */
+    async signInAs(userId: Snowflake, client: ClientInfo): Promise<AuthResult> {
+      const user = await users.findById(userId)
+      if (!user) throw new HttpError(404, 'UNKNOWN_USER', 'Unknown user')
+      if (user.suspendedAt) throw forbidden('ACCOUNT_SUSPENDED', 'This account is suspended')
+      return startSession(user, client)
+    },
+
     async completeMfaLogin(ticket: string, code: string, client: ClientInfo): Promise<AuthResult> {
       if (!mfa) throw unauthorized('INVALID_MFA_TICKET', 'Sign in again')
       const user = await mfa.completeLogin(ticket, code)

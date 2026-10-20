@@ -43,6 +43,6 @@ test('change display name and password from settings', async ({ page }) => {
   await expect(page).toHaveURL(/\/login$/)
   await page.getByLabel('Имя пользователя или email').fill(user.username)
   await page.getByLabel('Пароль', { exact: true }).fill('changed-password-123')
-  await page.getByRole('button', { name: 'Войти' }).click()
+  await page.getByRole('button', { name: 'Войти', exact: true }).click()
   await expect(page.getByRole('heading', { name: 'Друзья', level: 1 })).toBeVisible()
 })

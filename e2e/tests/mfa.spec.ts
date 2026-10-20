@@ -34,7 +34,7 @@ test('two-factor sign-in: turn it on, then sign in with a code', async ({ page }
     await expect(page).toHaveURL(/\/login$/)
     await page.getByLabel('Имя пользователя или email').fill(user.username)
     await page.getByLabel('Пароль', { exact: true }).fill(user.password)
-    await page.getByRole('button', { name: 'Войти' }).click()
+    await page.getByRole('button', { name: 'Войти', exact: true }).click()
     await page.getByLabel('Код подтверждения', { exact: true }).fill(code)
     await page.getByRole('button', { name: 'Подтвердить' }).click()
     await expect(page.getByRole('heading', { name: 'Друзья', level: 1 })).toBeVisible()

@@ -1,5 +1,6 @@
 export * from './auth/auth.schemas'
 export * from './auth/mfa.schemas'
+export * from './auth/qr-login.schemas'
 export * from './dms/private-channel.schemas'
 export * from './e2ee/approval.schemas'
 export * from './e2ee/backup.schemas'

@@ -3,10 +3,9 @@ import { useCallback, useEffect } from 'react'
 
 import { useCurrentUser } from '../auth/use-auth-actions'
 import { useAnyE2eeClient, useE2ee } from './e2ee-context'
+import { recoveryKeys } from './recovery-query'
 
 import type { UseKeyResult } from './history-backup'
-
-const recoveryKey = ['e2eeRecovery'] as const
 const SNOOZED = 'chinchi.recovery.later'
 
 /** "Later" holds until the tab closes: no reminder on every conversation in between. */
@@ -35,7 +34,7 @@ export const useRecovery = (enabled = true) => {
   const queryClient = useQueryClient()
   const userId = useCurrentUser()?.id
   const { data } = useQuery({
-    queryKey: [...recoveryKey, userId],
+    queryKey: [...recoveryKeys, userId],
     queryFn: async () => {
       const recovery = client?.recovery
       if (!recovery) return { key: null, saved: true }
@@ -45,7 +44,7 @@ export const useRecovery = (enabled = true) => {
     enabled: enabled && client !== null,
   })
   const refresh = useCallback(
-    () => queryClient.invalidateQueries({ queryKey: recoveryKey }),
+    () => queryClient.invalidateQueries({ queryKey: recoveryKeys }),
     [queryClient],
   )
   const { revision } = useE2ee()

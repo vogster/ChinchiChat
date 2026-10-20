@@ -307,6 +307,7 @@ export const buildApp = (
         sessionTtlDays: config.sessionTtlDays,
         // Also when NODE_ENV is left unset on a site served over HTTPS.
         secureCookies: config.env === 'production' || config.publicUrl.startsWith('https:'),
+        qrLogin: services.qrLogin,
       })
       api.register(accountRoutes, { accountEmails: services.accountEmails })
       api.register(mfaRoutes, { mfaService: services.mfa })

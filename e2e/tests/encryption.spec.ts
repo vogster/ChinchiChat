@@ -334,7 +334,7 @@ test('a new browser gets the old messages back with the recovery key', async ({ 
     .getByLabel('Имя пользователя или email', { exact: true })
     .fill(aliceUser.username)
   await fresh.page.getByLabel('Пароль', { exact: true }).fill(aliceUser.password)
-  await fresh.page.getByRole('button', { name: 'Войти' }).click()
+  await fresh.page.getByRole('button', { name: 'Войти', exact: true }).click()
   await fresh.page
     .getByRole('complementary', { name: 'Личные сообщения' })
     .getByRole('link', { name: /зашифрованная беседа/ })
@@ -423,7 +423,7 @@ test('a new browser is approved from an old one by comparing emoji', async ({ br
     .getByLabel('Имя пользователя или email', { exact: true })
     .fill(aliceUser.username)
   await phone.page.getByLabel('Пароль', { exact: true }).fill(aliceUser.password)
-  await phone.page.getByRole('button', { name: 'Войти' }).click()
+  await phone.page.getByRole('button', { name: 'Войти', exact: true }).click()
   await phone.page
     .getByRole('complementary', { name: 'Личные сообщения' })
     .getByRole('link', { name: /зашифрованная беседа/ })
@@ -491,7 +491,7 @@ test('an unapproved device joins only when the other person lets it in by its co
   await phone.page.goto('/login')
   await phone.page.getByLabel('Имя пользователя или email', { exact: true }).fill(bobUser.username)
   await phone.page.getByLabel('Пароль', { exact: true }).fill(bobUser.password)
-  await phone.page.getByRole('button', { name: 'Войти' }).click()
+  await phone.page.getByRole('button', { name: 'Войти', exact: true }).click()
   await phone.page
     .getByRole('complementary', { name: 'Личные сообщения' })
     .getByRole('link', { name: /зашифрованная беседа/ })

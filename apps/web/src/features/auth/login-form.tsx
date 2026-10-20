@@ -1,6 +1,7 @@
 import { loginRequestSchema } from '@chinchi/shared'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Link } from '@tanstack/react-router'
+import { QrCode as QrCodeIcon } from 'lucide-react'
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { useTranslation } from 'react-i18next'
@@ -10,24 +11,29 @@ import { Button } from '../../components/ui/button'
 import { TextField } from '../../components/ui/text-field'
 import { errorMessage } from '../../lib/errors'
 import { MfaStep } from './mfa-step'
+import { QrLoginPanel } from './qr-login-panel'
 import { useLogin } from './use-auth-actions'
 
 import type { LoginRequest } from '@chinchi/shared'
 
 export const LoginForm = ({ redirectTo }: { redirectTo?: string | undefined }) => {
   const [ticket, setTicket] = useState<string | null>(null)
+  const [withQr, setWithQr] = useState(false)
   if (ticket) {
     return <MfaStep ticket={ticket} redirectTo={redirectTo} onRestart={() => setTicket(null)} />
   }
-  return <PasswordStep redirectTo={redirectTo} onMfa={setTicket} />
+  if (withQr) return <QrLoginPanel redirectTo={redirectTo} onBack={() => setWithQr(false)} />
+  return <PasswordStep redirectTo={redirectTo} onMfa={setTicket} onQr={() => setWithQr(true)} />
 }
 
 const PasswordStep = ({
   redirectTo,
   onMfa,
+  onQr,
 }: {
   redirectTo: string | undefined
   onMfa: (ticket: string) => void
+  onQr: () => void
 }) => {
   const { t } = useTranslation()
   const login = useLogin(redirectTo, onMfa)
@@ -68,6 +74,14 @@ const PasswordStep = ({
 
       <Button type="submit" pending={login.isPending}>
         {t('auth.login.submit')}
+      </Button>
+      <Button
+        variant="secondary"
+        className="inline-flex items-center justify-center gap-2"
+        onClick={onQr}
+      >
+        <QrCodeIcon aria-hidden className="size-4" />
+        {t('auth.qr.show')}
       </Button>
 
       <p className="text-sm text-muted">

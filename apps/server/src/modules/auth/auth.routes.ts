@@ -1,18 +1,33 @@
 import {
+  approveQrLoginRequestSchema,
   changePasswordRequestSchema,
+  claimQrLoginRequestSchema,
+  createQrLoginRequestSchema,
   currentUserSchema,
   loginRequestSchema,
   mfaLoginRequestSchema,
+  qrLoginCodeSchema,
+  qrLoginIdSchema,
+  qrLoginInfoSchema,
+  qrLoginTicketSchema,
   registerRequestSchema,
 } from '@chinchi/shared'
 import { z } from 'zod'
 
-import { LOGIN_RATE_LIMIT, REGISTER_RATE_LIMIT } from '../../http/rate-limit'
+import {
+  LOGIN_RATE_LIMIT,
+  perUserRateLimit,
+  QR_LOGIN_CLAIM_RATE_LIMIT,
+  QR_LOGIN_CREATE_RATE_LIMIT,
+  REGISTER_RATE_LIMIT,
+} from '../../http/rate-limit'
+import { ok } from '../../http/responses'
 import { toCurrentUser } from '../users/user.mapper'
 import { requireAuth, requireHuman, SESSION_COOKIE } from './auth.plugin'
 
 import type { AccountEmailService } from './account-email.service'
 import type { AuthResult, AuthService, ClientInfo } from './auth.service'
+import type { QrLoginService } from './qr-login.service'
 import type { FastifyReply, FastifyRequest } from 'fastify'
 import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod'
 
@@ -21,6 +36,8 @@ export interface AuthRoutesOptions {
   readonly accountEmails: AccountEmailService
   readonly sessionTtlDays: number
   readonly secureCookies: boolean
+  /** Signing in from a signed-in device (QR or short code). */
+  readonly qrLogin: QrLoginService
 }
 
 const authResponse = z.object({
@@ -48,7 +65,7 @@ const wantsBearer = (request: FastifyRequest): boolean =>
 
 export const authRoutes: FastifyPluginAsyncZod<AuthRoutesOptions> = async (
   app,
-  { authService, accountEmails, sessionTtlDays, secureCookies },
+  { authService, accountEmails, sessionTtlDays, secureCookies, qrLogin },
 ) => {
   const cookieOptions = {
     httpOnly: true,
@@ -62,8 +79,9 @@ export const authRoutes: FastifyPluginAsyncZod<AuthRoutesOptions> = async (
     reply: FastifyReply,
     status: 200 | 201,
     { user, token }: AuthResult,
+    extra: Record<string, unknown> = {},
   ) => {
-    const payload = { success: true as const, data: { user: toCurrentUser(user) } }
+    const payload = { success: true as const, data: { ...extra, user: toCurrentUser(user) } }
     if (wantsBearer(request)) {
       return reply.status(status).send({ ...payload, data: { ...payload.data, token } })
     }
@@ -111,6 +129,85 @@ export const authRoutes: FastifyPluginAsyncZod<AuthRoutesOptions> = async (
       const { ticket, code } = request.body
       const result = await authService.completeMfaLogin(ticket, code, clientInfo(request))
       return sendAuth(request, reply, 200, result)
+    },
+  )
+
+  const qrParams = z.object({ id: qrLoginIdSchema })
+  const infoResponse = ok(z.object({ login: qrLoginInfoSchema }))
+
+  app.post(
+    '/auth/qr',
+    {
+      schema: {
+        body: createQrLoginRequestSchema,
+        response: { 201: ok(z.object({ ticket: qrLoginTicketSchema })) },
+      },
+      config: { rateLimit: QR_LOGIN_CREATE_RATE_LIMIT },
+    },
+    async (request, reply) => {
+      const ticket = await qrLogin.create(request.body.publicKey ?? null, clientInfo(request))
+      return reply.status(201).send({ success: true as const, data: { ticket } })
+    },
+  )
+
+  app.get(
+    '/auth/qr/:id',
+    { schema: { params: qrParams, response: { 200: infoResponse } } },
+    async (request) => {
+      requireHuman(request)
+      return { success: true as const, data: { login: await qrLogin.find(request.params.id) } }
+    },
+  )
+
+  app.get(
+    '/auth/qr/code/:code',
+    {
+      schema: { params: z.object({ code: qrLoginCodeSchema }), response: { 200: infoResponse } },
+      // Codes are short: guessing them is slowed down for each account.
+      config: { rateLimit: perUserRateLimit('qr-login-code', 20) },
+    },
+    async (request) => {
+      requireHuman(request)
+      return {
+        success: true as const,
+        data: { login: await qrLogin.findByCode(request.params.code) },
+      }
+    },
+  )
+
+  app.post(
+    '/auth/qr/:id/approve',
+    {
+      schema: { params: qrParams, body: approveQrLoginRequestSchema },
+      config: { rateLimit: perUserRateLimit('qr-login-approve', 10) },
+    },
+    async (request, reply) => {
+      const user = requireHuman(request)
+      await qrLogin.approve(request.params.id, user.user.id, request.body)
+      return reply.status(204).send()
+    },
+  )
+
+  app.post(
+    '/auth/qr/:id/claim',
+    {
+      schema: { params: qrParams, body: claimQrLoginRequestSchema },
+      config: { rateLimit: QR_LOGIN_CLAIM_RATE_LIMIT },
+    },
+    async (request, reply) => {
+      const outcome = await qrLogin.claim(
+        request.params.id,
+        request.body.secret,
+        clientInfo(request),
+      )
+      if (outcome.state === 'pending') {
+        return reply.send({ success: true as const, data: { state: 'pending' as const } })
+      }
+      return sendAuth(request, reply, 200, outcome.result, {
+        state: 'approved',
+        sealed: outcome.sealed,
+        approverKey: outcome.approverKey,
+      })
     },
   )
 

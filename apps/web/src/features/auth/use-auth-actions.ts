@@ -11,7 +11,7 @@ import type { LoginRequest, MfaLoginRequest, RegisterRequest } from '@chinchi/sh
 export const useCurrentUser = () => useQuery(meQueryOptions(useApi())).data ?? null
 
 /** Shared success path for login and registration: cache the user, go where they were headed. */
-const useSignedIn = (redirectTo?: string) => {
+export const useSignedIn = (redirectTo?: string) => {
   const queryClient = useQueryClient()
   const navigate = useNavigate()
   return async ({ user }: { user: NonNullable<ReturnType<typeof useCurrentUser>> }) => {
