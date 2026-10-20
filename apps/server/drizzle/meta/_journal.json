@@ -386,6 +386,13 @@
       "when": 1792538016363,
       "tag": "0054_email_change",
       "breakpoints": true
+    },
+    {
+      "idx": 55,
+      "version": "7",
+      "when": 1792539069567,
+      "tag": "0055_anonymous_polls",
+      "breakpoints": true
     }
   ]
 }

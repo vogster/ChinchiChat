@@ -187,11 +187,12 @@ const DATA: Record<string, unknown> = {
   poll: {
     poll: {
       question: 'Куда?',
-      answers: [{ id: 1, text: 'Кино', count: 1, me: true }],
+      answers: [{ id: 1, text: 'Кино', count: 1, me: true, sample: [] }],
       multiple: false,
       expiresAt: '2026-10-15T12:00:00.000Z',
       ended: false,
       voters: 1,
+      anonymous: false,
     },
   },
   approval: {
@@ -326,6 +327,13 @@ const cases: Case[] = [
     'poll',
   ],
   ['polls.end', (api) => api.polls.end('1', '2'), 'POST', '/channels/1/polls/2/expire', 'poll'],
+  [
+    'polls.voters',
+    (api) => api.polls.voters('1', '2', 3, { limit: 10, after: '5' }),
+    'GET',
+    '/channels/1/polls/2/answers/3/voters?limit=10&after=5',
+    'reactionUsers',
+  ],
   [
     'reactions.setEncrypted',
     (api) => api.reactions.setEncrypted('1', '2', 'AAAA'),

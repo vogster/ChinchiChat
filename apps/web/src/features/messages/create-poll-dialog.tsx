@@ -29,6 +29,7 @@ export const CreatePollDialog = ({
   const [question, setQuestion] = useState('')
   const [answers, setAnswers] = useState<string[]>(['', ''])
   const [multiple, setMultiple] = useState(false)
+  const [anonymous, setAnonymous] = useState(false)
   const [duration, setDuration] = useState<Duration>(24)
   const send = useMutation({
     mutationFn: () =>
@@ -38,6 +39,7 @@ export const CreatePollDialog = ({
           question: question.trim(),
           answers: answers.map((answer) => answer.trim()),
           multiple,
+          anonymous,
           durationHours: duration,
         },
       }),
@@ -105,6 +107,12 @@ export const CreatePollDialog = ({
           onCheckedChange={setMultiple}
           label={t('polls.multiple')}
           description={t('polls.multipleHint')}
+        />
+        <Switch
+          checked={anonymous}
+          onCheckedChange={setAnonymous}
+          label={t('polls.anonymousSwitch')}
+          description={t('polls.anonymousHint')}
         />
         <label className="flex flex-col gap-1.5">
           <span className="px-1.5 text-[12.5px] font-medium text-faint">{t('polls.duration')}</span>

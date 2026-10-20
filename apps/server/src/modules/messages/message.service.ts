@@ -135,6 +135,7 @@ export const createMessageService = (input: MessageServiceDeps) => {
             question: poll.question,
             answers: poll.answers,
             multiple: poll.multiple,
+            anonymous: poll.anonymous,
             expiresAt: new Date(now().getTime() + poll.durationHours * 3_600_000),
           },
         )

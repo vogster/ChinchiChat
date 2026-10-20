@@ -1,7 +1,7 @@
 import { act, screen, waitFor, within } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 
-import { createFakeApi, testGuild, testMessage, testUser } from '../../test/fake-api'
+import { createFakeApi, testFriend, testGuild, testMessage, testUser } from '../../test/fake-api'
 import { renderApp } from '../../test/render-app'
 
 import type { Poll } from '@chinchi/shared'
@@ -13,13 +13,14 @@ const IN_A_DAY = new Date(Date.now() + 24 * 3_600_000).toISOString()
 const poll = (overrides: Partial<Poll> = {}): Poll => ({
   question: 'Куда идём в пятницу?',
   answers: [
-    { id: 1, text: 'Кино', count: 1, me: false },
-    { id: 2, text: 'Бар', count: 3, me: false },
+    { id: 1, text: 'Кино', count: 1, me: false, sample: [] },
+    { id: 2, text: 'Бар', count: 3, me: false, sample: [] },
   ],
   multiple: false,
   expiresAt: IN_A_DAY,
   ended: false,
   voters: 4,
+  anonymous: false,
   ...overrides,
 })
 
@@ -47,6 +48,7 @@ describe('polls', () => {
     await user.click(within(dialog).getByRole('button', { name: 'Добавить ответ' }))
     await user.type(within(dialog).getByLabelText('Ответ 3', { exact: true }), 'И то и другое')
     await user.click(within(dialog).getByRole('switch', { name: 'Несколько ответов' }))
+    await user.click(within(dialog).getByRole('switch', { name: 'Анонимный опрос' }))
     await user.selectOptions(within(dialog).getByLabelText('Длительность', { exact: true }), '72')
     await user.click(within(dialog).getByRole('button', { name: 'Отправить опрос' }))
 
@@ -57,6 +59,7 @@ describe('polls', () => {
           question: 'Пицца или суши?',
           answers: ['Пицца', 'Суши', 'И то и другое'],
           multiple: true,
+          anonymous: true,
           durationHours: 72,
         },
       }),
@@ -69,8 +72,8 @@ describe('polls', () => {
     api.polls.vote.mockResolvedValue({
       poll: poll({
         answers: [
-          { id: 1, text: 'Кино', count: 2, me: true },
-          { id: 2, text: 'Бар', count: 3, me: false },
+          { id: 1, text: 'Кино', count: 2, me: true, sample: [] },
+          { id: 2, text: 'Бар', count: 3, me: false, sample: [] },
         ],
         voters: 5,
       }),
@@ -93,8 +96,8 @@ describe('polls', () => {
   it('let a single answer be picked again, or taken back', async () => {
     const voted = poll({
       answers: [
-        { id: 1, text: 'Кино', count: 2, me: true },
-        { id: 2, text: 'Бар', count: 3, me: false },
+        { id: 1, text: 'Кино', count: 2, me: true, sample: [] },
+        { id: 2, text: 'Бар', count: 3, me: false, sample: [] },
       ],
       voters: 5,
     })
@@ -102,8 +105,8 @@ describe('polls', () => {
     api.polls.vote.mockResolvedValue({
       poll: poll({
         answers: [
-          { id: 1, text: 'Кино', count: 1, me: false },
-          { id: 2, text: 'Бар', count: 4, me: true },
+          { id: 1, text: 'Кино', count: 1, me: false, sample: [] },
+          { id: 2, text: 'Бар', count: 4, me: true, sample: [] },
         ],
         voters: 5,
       }),
@@ -135,8 +138,8 @@ describe('polls', () => {
   it('follow counts from the gateway, keeping my own vote', async () => {
     const mine = poll({
       answers: [
-        { id: 1, text: 'Кино', count: 1, me: true },
-        { id: 2, text: 'Бар', count: 3, me: false },
+        { id: 1, text: 'Кино', count: 1, me: true, sample: [] },
+        { id: 2, text: 'Бар', count: 3, me: false, sample: [] },
       ],
     })
     const { gateway } = renderApp(CHANNEL_URL, { api: withPoll(mine) })
@@ -149,8 +152,8 @@ describe('polls', () => {
         messageId: '1001',
         poll: poll({
           answers: [
-            { id: 1, text: 'Кино', count: 1, me: false },
-            { id: 2, text: 'Бар', count: 4, me: false },
+            { id: 1, text: 'Кино', count: 1, me: false, sample: [] },
+            { id: 2, text: 'Бар', count: 4, me: false, sample: [] },
           ],
           voters: 5,
         }),
@@ -173,5 +176,41 @@ describe('polls', () => {
     expect(await within(card()).findByText(/Опрос завершён/)).toBeVisible()
     expect(within(card()).queryByRole('radio')).not.toBeInTheDocument()
     expect(within(card()).getByRole('meter', { name: /^Бар: 75%/ })).toBeVisible()
+  })
+
+  it('show who picked an answer as avatars, and list them on a click', async () => {
+    const api = withPoll(
+      poll({
+        answers: [
+          { id: 1, text: 'Кино', count: 1, me: true, sample: [ME] },
+          { id: 2, text: 'Бар', count: 3, me: false, sample: [testFriend] },
+        ],
+      }),
+    )
+    const { user } = renderApp(CHANNEL_URL, { api })
+
+    await screen.findByRole('group', { name: 'Опрос: Куда идём в пятницу?' })
+    await user.click(within(card()).getByRole('button', { name: 'Кто выбрал «Бар»' }))
+
+    const dialog = await screen.findByRole('dialog', { name: 'Выбрали «Бар»' })
+    expect(await within(dialog).findByText('Боб')).toBeVisible()
+    expect(api.polls.voters).toHaveBeenCalledWith('503', '1001', 2, { limit: 100 })
+  })
+
+  it('show no voters in an anonymous poll', async () => {
+    const api = withPoll(
+      poll({
+        anonymous: true,
+        answers: [
+          { id: 1, text: 'Кино', count: 1, me: true, sample: [] },
+          { id: 2, text: 'Бар', count: 3, me: false, sample: [] },
+        ],
+      }),
+    )
+    renderApp(CHANNEL_URL, { api })
+
+    await screen.findByRole('group', { name: 'Опрос: Куда идём в пятницу?' })
+    expect(within(card()).getByText(/анонимный/)).toBeVisible()
+    expect(within(card()).queryByRole('button', { name: /Кто выбрал/ })).toBeNull()
   })
 })

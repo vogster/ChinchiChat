@@ -1588,7 +1588,14 @@
     "kindSeveral": "Poll · several answers",
     "youVoted": "you voted",
     "voteFor": "Vote for “{{answer}}”",
-    "answers": "Answers"
+    "answers": "Answers",
+    "voters": "Who picked “{{answer}}”",
+    "votersTitle": "Picked “{{answer}}”",
+    "votersList": "Voters",
+    "votersLoading": "Loading…",
+    "anonymous": "anonymous",
+    "anonymousSwitch": "Anonymous poll",
+    "anonymousHint": "Only the counts show, not who voted."
   },
   "forward": {
     "action": "Forward",

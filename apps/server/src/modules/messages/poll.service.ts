@@ -8,7 +8,7 @@ import type { ChannelService } from '../channels/channel.service'
 import type { ChannelEvents } from '../channels/channel-events'
 import type { MessageRepository } from './message.repository'
 import type { PollRepository } from './poll.repository'
-import type { Poll, Snowflake } from '@chinchi/shared'
+import type { Poll, PublicUser, Snowflake } from '@chinchi/shared'
 
 export interface PollServiceDeps {
   readonly polls: PollRepository
@@ -75,6 +75,20 @@ export const createPollService = ({
       }
       await polls.vote(messageId, userId, answerIds)
       return announce(channel, messageId, userId)
+    },
+
+    /** Who picked an answer; never for an anonymous poll. */
+    async voters(
+      channelId: Snowflake,
+      messageId: Snowflake,
+      userId: Snowflake,
+      answerId: number,
+      page: { after?: Snowflake | undefined; limit: number },
+    ): Promise<PublicUser[]> {
+      const { poll } = await locate(channelId, messageId, userId)
+      if (!poll.answerIds.includes(answerId)) throw badRequest('UNKNOWN_ANSWER', 'No such answer')
+      if (poll.anonymous) throw forbidden('POLL_ANONYMOUS', 'This poll does not show who voted')
+      return polls.voters(messageId, answerId, page)
     },
 
     /** Its author ends a poll early. */

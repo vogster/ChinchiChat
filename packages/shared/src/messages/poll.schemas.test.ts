@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest'
 import { createPollSchema, pollVoteRequestSchema } from './poll.schemas'
 
 describe('creating a poll', () => {
-  it('takes a question and 2–10 answers, one choice and a day by default', () => {
+  it('takes a question and 2–10 answers, one choice, a day and open voting by default', () => {
     expect(
       createPollSchema.parse({ question: ' Куда идём? ', answers: ['Кино', ' Бар '] }),
     ).toEqual({
@@ -11,6 +11,7 @@ describe('creating a poll', () => {
       answers: ['Кино', 'Бар'],
       multiple: false,
       durationHours: 24,
+      anonymous: false,
     })
   })
 

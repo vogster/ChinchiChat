@@ -1634,7 +1634,14 @@
     "kindSeveral": "Опрос · несколько ответов",
     "youVoted": "вы проголосовали",
     "voteFor": "Голосовать за «{{answer}}»",
-    "answers": "Варианты ответа"
+    "answers": "Варианты ответа",
+    "voters": "Кто выбрал «{{answer}}»",
+    "votersTitle": "Выбрали «{{answer}}»",
+    "votersList": "Проголосовавшие",
+    "votersLoading": "Загружаем…",
+    "anonymous": "анонимный",
+    "anonymousSwitch": "Анонимный опрос",
+    "anonymousHint": "Видно только, сколько голосов, но не кто голосовал."
   },
   "forward": {
     "action": "Переслать",

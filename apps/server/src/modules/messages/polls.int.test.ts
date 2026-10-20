@@ -29,6 +29,9 @@ const createPoll = async (poll: object, content = '') =>
 const vote = (actor: TestActor, messageId: string, answerIds: number[]) =>
   call(actor, 'PUT', `/channels/${channelId}/polls/${messageId}/answers/@me`, { answerIds })
 
+const votersOf = (actor: TestActor, messageId: string, answerId: number, query = '') =>
+  call(actor, 'GET', `/channels/${channelId}/polls/${messageId}/answers/${answerId}/voters${query}`)
+
 beforeAll(async () => {
   await app.listen({ host: '127.0.0.1', port: 0 })
 })
@@ -142,5 +145,53 @@ describe('polls', () => {
     ).json().data.message as { id: string; poll: unknown }
     expect(plain.poll).toBeNull()
     expect((await vote(bob, plain.id, [1])).json().code).toBe('UNKNOWN_POLL')
+  })
+
+  describe('who voted', () => {
+    it('shows a few voters per answer with the poll, and lists them all on request', async () => {
+      const message = await createPoll({ question: 'Пицца?', answers: ['Да', 'Нет'] })
+      expect(message.poll).toMatchObject({ anonymous: false })
+      await vote(alice, message.id, [1])
+      const voted = (await vote(bob, message.id, [1])).json().data.poll
+
+      expect(voted.answers[0].sample.map((u: { username: string }) => u.username).sort()).toEqual([
+        'alice',
+        'bob',
+      ])
+      expect(voted.answers[1].sample).toEqual([])
+
+      const listed = await votersOf(bob, message.id, 1)
+      expect(listed.statusCode).toBe(200)
+      const users = listed.json().data.users as { id: string; username: string }[]
+      expect(users.map((u) => u.username).sort()).toEqual(['alice', 'bob'])
+      // Page by page, after the last id seen.
+      const first = (await votersOf(bob, message.id, 1, '?limit=1')).json().data.users
+      const next = (await votersOf(bob, message.id, 1, `?limit=1&after=${first[0].id}`)).json().data
+        .users
+      expect([...first, ...next].map((u: { id: string }) => u.id)).toEqual(users.map((u) => u.id))
+    })
+
+    it('stay hidden in an anonymous poll', async () => {
+      const message = await createPoll({
+        question: 'Тайно?',
+        answers: ['Да', 'Нет'],
+        anonymous: true,
+      })
+      const voted = (await vote(bob, message.id, [1])).json().data.poll
+
+      expect(voted).toMatchObject({ anonymous: true, voters: 1 })
+      expect(voted.answers[0]).toMatchObject({ count: 1, me: true, sample: [] })
+      const listed = await votersOf(alice, message.id, 1)
+      expect(listed.statusCode).toBe(403)
+      expect(listed.json().code).toBe('POLL_ANONYMOUS')
+    })
+
+    it('are only for people who can read the channel, and real answers', async () => {
+      const message = await createPoll({ question: 'Пицца?', answers: ['Да', 'Нет'] })
+      const outsider = await signUp(app, { username: 'eve', email: 'eve@example.com' })
+
+      expect((await votersOf(outsider, message.id, 1)).statusCode).toBe(404)
+      expect((await votersOf(bob, message.id, 7)).json().code).toBe('UNKNOWN_ANSWER')
+    })
   })
 })

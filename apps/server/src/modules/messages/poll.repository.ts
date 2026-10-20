@@ -1,9 +1,12 @@
-import { and, asc, count, countDistinct, eq, inArray } from 'drizzle-orm'
+import { POLL_VOTER_SAMPLE } from '@chinchi/shared'
+import { and, asc, count, countDistinct, eq, gt, inArray, lte, sql } from 'drizzle-orm'
 
-import { pollAnswers, polls, pollVotes } from '../../db/schema'
+import { pollAnswers, polls, pollVotes, users } from '../../db/schema'
+import { toPublicUser } from '../users/user.mapper'
 
 import type { DbExecutor } from '../../db/client'
-import type { Poll, Snowflake } from '@chinchi/shared'
+import type { UserRow } from '../users/user.repository'
+import type { Poll, PublicUser, Snowflake } from '@chinchi/shared'
 
 export type PollRow = typeof polls.$inferSelect
 
@@ -12,6 +15,7 @@ export interface NewPoll {
   readonly question: string
   readonly answers: readonly string[]
   readonly multiple: boolean
+  readonly anonymous: boolean
   readonly expiresAt: Date
 }
 
@@ -21,6 +25,7 @@ export const insertPoll = async (tx: DbExecutor, messageId: Snowflake, poll: New
     messageId,
     question: poll.question,
     multiple: poll.multiple,
+    anonymous: poll.anonymous,
     expiresAt: poll.expiresAt,
   })
   await tx
@@ -29,6 +34,29 @@ export const insertPoll = async (tx: DbExecutor, messageId: Snowflake, poll: New
 }
 
 export const createPollRepository = (db: DbExecutor, now: () => Date = () => new Date()) => {
+  /** The first few voters of each answer (by id), for polls that show who voted. */
+  const samples = async (messageIds: readonly Snowflake[]) => {
+    if (messageIds.length === 0) return []
+    const ranked = db
+      .select({
+        messageId: pollVotes.messageId,
+        answerId: pollVotes.answerId,
+        userId: pollVotes.userId,
+        rank: sql<number>`row_number() over (partition by ${pollVotes.messageId}, ${pollVotes.answerId} order by ${pollVotes.userId})`.as(
+          'rank',
+        ),
+      })
+      .from(pollVotes)
+      .where(inArray(pollVotes.messageId, [...messageIds]))
+      .as('ranked')
+    return db
+      .select({ messageId: ranked.messageId, answerId: ranked.answerId, user: users })
+      .from(ranked)
+      .innerJoin(users, eq(users.id, ranked.userId))
+      .where(lte(ranked.rank, POLL_VOTER_SAMPLE))
+      .orderBy(asc(ranked.userId))
+  }
+
   /** Polls of these messages with counts, and `me` for the viewer (none for broadcasts). */
   const summaries = async (
     messageIds: readonly Snowflake[],
@@ -40,7 +68,8 @@ export const createPollRepository = (db: DbExecutor, now: () => Date = () => new
     const rows = await db.select().from(polls).where(inArray(polls.messageId, ids))
     if (rows.length === 0) return result
     const withPolls = rows.map((row) => row.messageId)
-    const [answers, counts, voters, mine] = await Promise.all([
+    const shown = rows.filter((row) => !row.anonymous).map((row) => row.messageId)
+    const [answers, counts, voters, mine, sampled] = await Promise.all([
       db
         .select()
         .from(pollAnswers)
@@ -62,6 +91,7 @@ export const createPollRepository = (db: DbExecutor, now: () => Date = () => new
             .from(pollVotes)
             .where(and(inArray(pollVotes.messageId, withPolls), eq(pollVotes.userId, viewerId)))
         : [],
+      samples(shown),
     ])
     const at = now().getTime()
     for (const row of rows) {
@@ -69,12 +99,17 @@ export const createPollRepository = (db: DbExecutor, now: () => Date = () => new
         counts.find((c) => c.messageId === row.messageId && c.answerId === answerId)?.n ?? 0
       const isMine = (answerId: number) =>
         mine.some((m) => m.messageId === row.messageId && m.answerId === answerId)
+      const sampleOf = (answerId: number): PublicUser[] =>
+        sampled
+          .filter((s) => s.messageId === row.messageId && s.answerId === answerId)
+          .map((s) => toPublicUser(s.user as UserRow))
       result.set(row.messageId, {
         question: row.question,
         multiple: row.multiple,
         expiresAt: row.expiresAt.toISOString(),
         ended: row.endedAt !== null || row.expiresAt.getTime() <= at,
         voters: voters.find((v) => v.messageId === row.messageId)?.n ?? 0,
+        anonymous: row.anonymous,
         answers: answers
           .filter((a) => a.messageId === row.messageId)
           .map((a) => ({
@@ -82,6 +117,7 @@ export const createPollRepository = (db: DbExecutor, now: () => Date = () => new
             text: a.text,
             count: countOf(a.answerId),
             me: isMine(a.answerId),
+            sample: sampleOf(a.answerId),
           })),
       })
     }
@@ -113,6 +149,28 @@ export const createPollRepository = (db: DbExecutor, now: () => Date = () => new
             .values(answerIds.map((answerId) => ({ messageId, answerId, userId })))
         }
       })
+    },
+
+    /** Who picked an answer, a page at a time in id order. */
+    async voters(
+      messageId: Snowflake,
+      answerId: number,
+      { after, limit }: { after?: Snowflake | undefined; limit: number },
+    ): Promise<PublicUser[]> {
+      const rows = await db
+        .select({ user: users })
+        .from(pollVotes)
+        .innerJoin(users, eq(users.id, pollVotes.userId))
+        .where(
+          and(
+            eq(pollVotes.messageId, messageId),
+            eq(pollVotes.answerId, answerId),
+            ...(after ? [gt(pollVotes.userId, after)] : []),
+          ),
+        )
+        .orderBy(asc(pollVotes.userId))
+        .limit(limit)
+      return rows.map((row) => toPublicUser(row.user as UserRow))
     },
 
     async end(messageId: Snowflake): Promise<void> {

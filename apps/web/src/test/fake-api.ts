@@ -193,13 +193,14 @@ const { channels: _channels, ...guildSummary } = testGuild
 export const testPoll: Poll = {
   question: 'Опрос',
   answers: [
-    { id: 1, text: 'Да', count: 0, me: false },
-    { id: 2, text: 'Нет', count: 0, me: false },
+    { id: 1, text: 'Да', count: 0, me: false, sample: [] },
+    { id: 2, text: 'Нет', count: 0, me: false, sample: [] },
   ],
   multiple: false,
   expiresAt: '2026-10-17T12:00:00.000Z',
   ended: false,
   voters: 0,
+  anonymous: false,
 }
 
 export const testApproval: DeviceApproval = {
@@ -773,6 +774,11 @@ export const createFakeApi = ({ user = null, registrationMode = 'open' }: FakeAp
       unpin: vi.fn(async () => undefined),
     },
     polls: {
+      voters: vi.fn(
+        async (_channelId: string, _messageId: string, _answerId: number, _query?: object) => ({
+          users: [testFriend],
+        }),
+      ),
       vote: vi.fn(
         async (_channelId: string, _messageId: string, _answerIds: readonly number[]) => ({
           poll: testPoll,

@@ -14,6 +14,8 @@ export const polls = pgTable('polls', {
   expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
   /** Set when the author ended it before it expired. */
   endedAt: timestamp('ended_at', { withTimezone: true }),
+  /** Who voted for what stays hidden; only counts are shown. */
+  anonymous: boolean('anonymous').notNull().default(false),
 })
 
 /** A poll's answers, numbered from 1 in the order they were written. */

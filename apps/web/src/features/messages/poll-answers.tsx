@@ -1,7 +1,10 @@
 import { Check } from 'lucide-react'
+import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
-import type { Poll } from '@chinchi/shared'
+import { VotersDialog, VoterStack } from './poll-voters'
+
+import type { Poll, PollAnswer } from '@chinchi/shared'
 
 const rowClass =
   'relative flex min-h-[46px] w-full items-center gap-2.5 overflow-hidden rounded-tile bg-stage py-2 pr-3.5 pl-3 text-left'
@@ -77,11 +80,16 @@ export const PickSeveral = ({
 export const Results = ({
   poll,
   onRevote,
+  channelId,
+  messageId,
 }: {
   poll: Poll
   onRevote: ((id: number) => void) | null
+  channelId: string
+  messageId: string
 }) => {
   const { t } = useTranslation()
+  const [listing, setListing] = useState<PollAnswer | null>(null)
   const top = Math.max(...poll.answers.map((answer) => answer.count))
   return (
     <ul className="flex flex-col gap-1.5">
@@ -113,6 +121,9 @@ export const Results = ({
               >
                 {answer.text}
               </span>
+              {poll.anonymous ? null : (
+                <VoterStack answer={answer} onOpen={() => setListing(answer)} />
+              )}
               <span className="relative min-w-[38px] shrink-0 text-right text-[13px] font-semibold">
                 {percent}%
               </span>
@@ -128,6 +139,14 @@ export const Results = ({
           </li>
         )
       })}
+      {listing ? (
+        <VotersDialog
+          channelId={channelId}
+          messageId={messageId}
+          answer={listing}
+          onOpenChange={(open) => !open && setListing(null)}
+        />
+      ) : null}
     </ul>
   )
 }

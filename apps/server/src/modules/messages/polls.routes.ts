@@ -1,4 +1,10 @@
-import { pollSchema, pollVoteRequestSchema, snowflakeSchema } from '@chinchi/shared'
+import {
+  pollSchema,
+  pollVoteRequestSchema,
+  pollVotersQuerySchema,
+  publicUserSchema,
+  snowflakeSchema,
+} from '@chinchi/shared'
 import { z } from 'zod'
 
 import { requireAuth } from '../auth/auth.plugin'
@@ -13,6 +19,11 @@ export interface PollsRoutesOptions {
 
 const params = z.object({ channelId: snowflakeSchema, messageId: snowflakeSchema })
 const pollResponse = z.object({ success: z.literal(true), data: z.object({ poll: pollSchema }) })
+const answerParams = params.extend({ answerId: z.coerce.number().int().min(1).max(32_767) })
+const votersResponse = z.object({
+  success: z.literal(true),
+  data: z.object({ users: z.array(publicUserSchema) }),
+})
 
 /** Every vote is an event to the whole channel: about one a second per user is plenty. */
 const VOTE_RATE_LIMIT = Object.freeze({ ...SEND_RATE_LIMIT, max: 15 })
@@ -52,6 +63,28 @@ export const pollsRoutes: FastifyPluginAsyncZod<PollsRoutesOptions> = async (
         success: true as const,
         data: { poll: await pollService.end(channelId, messageId, requireAuth(request).user.id) },
       }
+    },
+  )
+
+  app.get(
+    '/channels/:channelId/polls/:messageId/answers/:answerId/voters',
+    {
+      schema: {
+        params: answerParams,
+        querystring: pollVotersQuerySchema,
+        response: { 200: votersResponse },
+      },
+    },
+    async (request) => {
+      const { channelId, messageId, answerId } = request.params
+      const users = await pollService.voters(
+        channelId,
+        messageId,
+        requireAuth(request).user.id,
+        answerId,
+        request.query,
+      )
+      return { success: true as const, data: { users } }
     },
   )
 }

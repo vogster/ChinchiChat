@@ -69,11 +69,16 @@ export const PollCard = ({
           className={`flex items-center gap-1.5 text-xs font-medium ${poll.ended ? 'text-faint' : 'text-accent-text'}`}
         >
           <BarChart3 aria-hidden className="size-3.5" />
-          {poll.ended
-            ? t('polls.ended')
-            : poll.multiple
-              ? t('polls.kindSeveral')
-              : t('polls.kindOne')}
+          {[
+            poll.ended
+              ? t('polls.ended')
+              : poll.multiple
+                ? t('polls.kindSeveral')
+                : t('polls.kindOne'),
+            poll.anonymous ? t('polls.anonymous') : null,
+          ]
+            .filter(Boolean)
+            .join(' · ')}
         </span>
         <p className="text-base leading-snug font-semibold text-pretty break-words">
           {poll.question}
@@ -86,6 +91,8 @@ export const PollCard = ({
       ) : (
         <Results
           poll={poll}
+          channelId={channelId}
+          messageId={messageId}
           onRevote={!poll.ended && !poll.multiple ? (id) => castVote([id]) : null}
         />
       )}

@@ -18,6 +18,7 @@ import type {
   CreateAttachmentRequest,
   CreateMessageRequest,
   ListMessagesQuery,
+  PollVotersQuery,
   SearchMessagesQuery,
   Snowflake,
 } from '@chinchi/shared'
@@ -117,6 +118,18 @@ export const createMessagesApi = (request: Http, putFile: PutFile) => {
           path: `/channels/${id(channelId)}/polls/${id(messageId)}/answers/@me`,
           body: { answerIds: [...answerIds] },
           data: pollResult,
+        }),
+      /** Who picked an answer, a page at a time (403 `POLL_ANONYMOUS` in an anonymous poll). */
+      voters: (
+        channelId: Snowflake,
+        messageId: Snowflake,
+        answerId: number,
+        query: PollVotersQuery = {},
+      ) =>
+        request({
+          method: 'GET',
+          path: `/channels/${id(channelId)}/polls/${id(messageId)}/answers/${answerId}/voters${queryString(query)}`,
+          data: z.object({ users: z.array(publicUserSchema) }),
         }),
       /** Its author ends a poll early. */
       end: (channelId: Snowflake, messageId: Snowflake) =>

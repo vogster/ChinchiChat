@@ -1,0 +1,1 @@
+ALTER TABLE "polls" ADD COLUMN "anonymous" boolean DEFAULT false NOT NULL;
