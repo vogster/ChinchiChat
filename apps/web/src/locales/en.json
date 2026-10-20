@@ -455,8 +455,8 @@
     },
     "qrSignIn": {
       "title": "Sign in on another device",
-      "subtitle": "No password needed: choose “Sign in with a QR code” on the new device.",
-      "hint": "Point your phone camera at the QR code, or enter the code under it.",
+      "subtitle": "Let a new device in without a password: enter the code it shows under the QR code on its sign-in page.",
+      "hint": "Pointing a phone camera at the QR is easier — and it carries over encrypted conversations too.",
       "code": "Code from the other device",
       "invalid": "The code is 8 letters and digits, e.g. KQ7M-2PXD",
       "submit": "Continue"
