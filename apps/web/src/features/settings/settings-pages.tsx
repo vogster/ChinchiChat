@@ -1,7 +1,10 @@
+import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
+import { Button } from '../../components/ui/button'
 import { useCurrentUser } from '../auth/use-auth-actions'
 import { AppSettings } from './app-settings'
+import { ChangeEmailDialog } from './change-email-dialog'
 import { ChangePasswordForm } from './change-password-form'
 import { DataExport } from './data-export'
 import { DeleteAccount } from './delete-account'
@@ -22,6 +25,7 @@ import { VoiceDevices } from './voice-devices'
 export const AccountPage = () => {
   const { t } = useTranslation()
   const user = useCurrentUser()
+  const [changingEmail, setChangingEmail] = useState(false)
   if (!user) return null
 
   return (
@@ -43,9 +47,13 @@ export const AccountPage = () => {
                   ? t('settings.account.verified')
                   : t('settings.account.unverified')}
               </span>
+              <Button variant="link" onClick={() => setChangingEmail(true)}>
+                {t('settings.changeEmail.open')}
+              </Button>
             </dd>
           </div>
         </dl>
+        {changingEmail ? <ChangeEmailDialog onOpenChange={setChangingEmail} /> : null}
       </SettingsCard>
 
       <SettingsCard title={t('settings.account.security')}>

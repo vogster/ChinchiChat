@@ -309,7 +309,11 @@ export const buildApp = (
         secureCookies: config.env === 'production' || config.publicUrl.startsWith('https:'),
         qrLogin: services.qrLogin,
       })
-      api.register(accountRoutes, { accountEmails: services.accountEmails })
+      api.register(accountRoutes, {
+        accountEmails: services.accountEmails,
+        loginThrottle: services.loginThrottle,
+        mfa: services.mfa,
+      })
       api.register(mfaRoutes, { mfaService: services.mfa })
       api.register(sessionsRoutes, { authService: services.auth })
       api.register(usersRoutes, {

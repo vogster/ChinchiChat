@@ -18,6 +18,7 @@ import { id } from './url'
 import type { Http } from './http'
 import type {
   ApproveQrLoginRequest,
+  ChangeEmailRequest,
   ChangePasswordRequest,
   CreateQrLoginRequest,
   LoginRequest,
@@ -54,6 +55,11 @@ export const createAuthApi = (request: Http) => ({
       request({ method: 'POST', path: '/auth/password/forgot', body: { email }, data: nothing }),
     changePassword: (body: ChangePasswordRequest) =>
       request({ method: 'POST', path: '/auth/password/change', body, data: nothing }),
+    /** Sends a link to the new address; nothing changes until it is followed. */
+    changeEmail: (body: ChangeEmailRequest) =>
+      request({ method: 'POST', path: '/users/@me/email', body, data: nothing }),
+    confirmEmailChange: (token: string) =>
+      request({ method: 'POST', path: '/auth/email/confirm', body: { token }, data: userResult }),
     resetPassword: (token: string, password: string) =>
       request({
         method: 'POST',

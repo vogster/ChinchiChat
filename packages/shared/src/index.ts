@@ -1,4 +1,5 @@
 export * from './auth/auth.schemas'
+export * from './auth/email-change.schemas'
 export * from './auth/mfa.schemas'
 export * from './auth/qr-login.schemas'
 export * from './dms/private-channel.schemas'

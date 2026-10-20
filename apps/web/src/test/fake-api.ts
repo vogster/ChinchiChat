@@ -12,6 +12,7 @@ import type {
   BackupEntry,
   Ban,
   Bot,
+  ChangeEmailRequest,
   Channel,
   ClaimedKeyPackage,
   Command,
@@ -496,6 +497,10 @@ export const createFakeApi = ({ user = null, registrationMode = 'open' }: FakeAp
       logout: vi.fn(async () => undefined),
       verifyEmail: vi.fn(async () => ({ user: { ...testUser, emailVerified: true } })),
       resendVerification: vi.fn(async () => null),
+      changeEmail: vi.fn(async (_body: ChangeEmailRequest) => null),
+      confirmEmailChange: vi.fn(async (_token: string) => ({
+        user: { ...testUser, email: 'new@example.com', emailVerified: true },
+      })),
       changePassword: vi.fn(async () => null),
       forgotPassword: vi.fn(async () => null),
       resetPassword: vi.fn(async () => null),

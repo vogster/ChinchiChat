@@ -42,7 +42,7 @@ const linkEmail = ({
   ].join(''),
 })
 
-type EmailKind = 'verification' | 'reset' | 'lockout'
+type EmailKind = 'verification' | 'reset' | 'lockout' | 'changeEmail' | 'emailChanged'
 
 const TEXTS: Record<
   Locale,
@@ -71,6 +71,18 @@ const TEXTS: Record<
       action: 'Задать новый пароль',
       footer: 'Ссылка действует 1 час. Такое письмо приходит не чаще раза в 15 минут.',
     },
+    changeEmail: {
+      subject: 'Chinchi: подтвердите новый email',
+      body: 'Этот адрес указали как новый email учётной записи в Chinchi. Подтвердите его — после этого входить и получать письма вы будете здесь.',
+      action: 'Подтвердить новый email',
+      footer: 'Ссылка действует 24 часа. Если вы ничего не меняли, просто проигнорируйте письмо.',
+    },
+    emailChanged: {
+      subject: 'Chinchi: email изменён',
+      body: 'Email вашей учётной записи изменён на {email}. Письма теперь приходят туда. Если это сделали не вы — сбросьте пароль по кнопке и напишите администратору сервера.',
+      action: 'Сбросить пароль',
+      footer: 'Это уведомление; отвечать на него не нужно.',
+    },
   },
   en: {
     greeting: (username) => `Hi, ${username}!`,
@@ -92,6 +104,18 @@ const TEXTS: Record<
       action: 'Set a new password',
       footer: 'The link works for 1 hour. This email comes at most once in 15 minutes.',
     },
+    changeEmail: {
+      subject: 'Chinchi: confirm your new email',
+      body: 'This address was given as the new email of a Chinchi account. Confirm it, and you will sign in and get emails here.',
+      action: 'Confirm new email',
+      footer: "The link works for 24 hours. If you didn't change anything, just ignore this email.",
+    },
+    emailChanged: {
+      subject: 'Chinchi: email changed',
+      body: "Your account's email was changed to {email}. Emails go there now. If it wasn't you, reset your password with the button and tell the server's admin.",
+      action: 'Reset password',
+      footer: 'This is a notice; no need to reply.',
+    },
   },
 }
 
@@ -106,3 +130,30 @@ export const verificationEmail = emailOf('verification')
 export const passwordResetEmail = emailOf('reset')
 /** Sent once per lock window; its reset link also lifts the lock. */
 export const lockoutEmail = emailOf('lockout')
+/** To the new address: its link confirms the change. */
+export const changeEmailEmail = emailOf('changeEmail')
+
+/** To the old address once the change is done, naming the new one only half. */
+export const emailChangedEmail = (
+  to: string,
+  username: string,
+  newEmail: string,
+  link: string,
+  locale: Locale = 'ru',
+): MailMessage => {
+  const texts = TEXTS[locale]
+  const { body, ...rest } = texts.emailChanged
+  return linkEmail({
+    to,
+    link,
+    greeting: texts.greeting(username),
+    body: body.replace('{email}', maskEmail(newEmail)),
+    ...rest,
+  })
+}
+
+/** "n***@example.com": enough to recognise, not enough to hand someone a new address. */
+export const maskEmail = (email: string): string => {
+  const at = email.lastIndexOf('@')
+  return at > 0 ? `${email[0]}***${email.slice(at)}` : '***'
+}

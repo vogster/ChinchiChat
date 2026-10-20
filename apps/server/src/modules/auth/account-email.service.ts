@@ -1,6 +1,12 @@
 import { publishRevokedSessions } from '../../events/internal-events'
 import { badRequest, conflict } from '../../http/http-error'
-import { lockoutEmail, passwordResetEmail, verificationEmail } from '../../mail/templates'
+import {
+  changeEmailEmail,
+  emailChangedEmail,
+  lockoutEmail,
+  passwordResetEmail,
+  verificationEmail,
+} from '../../mail/templates'
 
 import type { Locale } from '@chinchi/shared'
 
@@ -20,6 +26,7 @@ const HOUR_MS = 60 * 60 * 1000
 const TOKEN_TTL_MS: Readonly<Record<EmailTokenPurpose, number>> = {
   verify_email: 24 * HOUR_MS,
   reset_password: HOUR_MS,
+  change_email: 24 * HOUR_MS,
 }
 
 export interface AccountEmailServiceDeps {
@@ -51,7 +58,11 @@ export const createAccountEmailService = ({
   now = () => new Date(),
   onPasswordReset = async () => undefined,
 }: AccountEmailServiceDeps) => {
-  const issueToken = async (userId: Snowflake, purpose: EmailTokenPurpose): Promise<string> => {
+  const issueToken = async (
+    userId: Snowflake,
+    purpose: EmailTokenPurpose,
+    newEmail?: string,
+  ): Promise<string> => {
     // Same 256-bit generator as session tokens; only the hash is stored.
     const { token, tokenHash } = generateSessionToken()
     await emailTokens.insert({
@@ -60,6 +71,7 @@ export const createAccountEmailService = ({
       purpose,
       tokenHash,
       expiresAt: new Date(now().getTime() + TOKEN_TTL_MS[purpose]),
+      ...(newEmail ? { newEmail } : {}),
     })
     return token
   }
@@ -128,6 +140,44 @@ export const createAccountEmailService = ({
       dispatch(
         lockoutEmail(user.email, user.username, link('/reset-password', token), localeOf(user)),
       )
+    },
+
+    /**
+     * Sends a link to the new address (identity already confirmed by the caller). An address
+     * someone else has gets nothing, and the answer is the same: whether it is taken stays hidden.
+     */
+    async requestEmailChange(user: UserRow, email: string): Promise<void> {
+      if (email.toLowerCase() === user.email.toLowerCase()) {
+        throw badRequest('SAME_EMAIL', 'This is already the email of the account')
+      }
+      // Only the newest link works: an older one may point at a mistyped address.
+      await emailTokens.discardUnused(user.id, 'change_email', now())
+      if (await users.findByEmail(email)) return
+      const token = await issueToken(user.id, 'change_email', email)
+      dispatch(
+        changeEmailEmail(email, user.username, link('/confirm-email', token), localeOf(user)),
+      )
+    },
+
+    /** Follows the link from the new address: the account moves there, the old one is told. */
+    async confirmEmailChange(token: string): Promise<UserRow> {
+      const current = now()
+      const change = await emailTokens.consumeEmailChange(hashSessionToken(token), current)
+      if (!change) throw invalidToken()
+      const before = await users.findById(change.userId)
+      const after = await users.updateEmail(change.userId, change.newEmail, current)
+      if (after === 'taken') throw conflict('EMAIL_TAKEN', 'This email is already taken')
+      if (!before || !after) throw invalidToken()
+      dispatch(
+        emailChangedEmail(
+          before.email,
+          before.username,
+          after.email,
+          `${publicUrl}/forgot-password`,
+          localeOf(before),
+        ),
+      )
+      return after
     },
 
     /** Sets a new password and signs the user out everywhere. */

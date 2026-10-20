@@ -13,6 +13,7 @@ export interface NewEmailToken {
   readonly purpose: EmailTokenPurpose
   readonly tokenHash: string
   readonly expiresAt: Date
+  readonly newEmail?: string
 }
 
 export const createEmailTokenRepository = (db: Database) => ({
@@ -56,6 +57,26 @@ export const createEmailTokenRepository = (db: Database) => ({
       )
       .returning({ userId: emailTokens.userId })
     return row?.userId ?? null
+  },
+
+  /** Like `consume`, for a change of address: the owner and the address the link confirms. */
+  async consumeEmailChange(
+    tokenHash: string,
+    now: Date,
+  ): Promise<{ userId: Snowflake; newEmail: string } | null> {
+    const [row] = await db
+      .update(emailTokens)
+      .set({ usedAt: now })
+      .where(
+        and(
+          eq(emailTokens.tokenHash, tokenHash),
+          eq(emailTokens.purpose, 'change_email'),
+          isNull(emailTokens.usedAt),
+          gt(emailTokens.expiresAt, now),
+        ),
+      )
+      .returning({ userId: emailTokens.userId, newEmail: emailTokens.newEmail })
+    return row?.newEmail ? { userId: row.userId, newEmail: row.newEmail } : null
   },
 })
 

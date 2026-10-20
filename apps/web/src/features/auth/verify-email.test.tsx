@@ -47,7 +47,7 @@ describe('verify email banner', () => {
       await screen.findByText((_, element) =>
         element?.getAttribute('role') === 'status'
           ? element.textContent ===
-            'Подтвердите email — мы отправили письмо на alice@example.com.Отправить ещё раз'
+            'Подтвердите email — мы отправили письмо на alice@example.com.Изменить emailОтправить ещё раз'
           : false,
       ),
     ).toBeVisible()

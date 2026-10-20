@@ -96,6 +96,21 @@ export const createUserRepository = (db: Database) => ({
     return user ?? null
   },
 
+  /** A confirmed new address (verified by the link); 'taken' if someone has it meanwhile. */
+  async updateEmail(id: Snowflake, email: string, at: Date): Promise<UserRow | 'taken' | null> {
+    try {
+      const [user] = await db
+        .update(users)
+        .set({ email, emailVerifiedAt: at, updatedAt: at })
+        .where(eq(users.id, id))
+        .returning()
+      return user ?? null
+    } catch (error) {
+      if (uniqueViolationConstraint(error) === 'users_email_lower_idx') return 'taken'
+      throw error
+    }
+  },
+
   /** Changes only the fields given. */
   async updateProfile(
     id: Snowflake,

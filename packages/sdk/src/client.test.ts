@@ -430,6 +430,19 @@ describe('endpoints', () => {
       '/auth/password/change',
     ],
     [
+      'auth.changeEmail',
+      (api: ReturnType<typeof createApiClient>) =>
+        api.auth.changeEmail({ email: 'new@example.com', password: 'p' }),
+      'POST',
+      '/users/@me/email',
+    ],
+    [
+      'auth.confirmEmailChange',
+      (api: ReturnType<typeof createApiClient>) => api.auth.confirmEmailChange('t'.repeat(43)),
+      'POST',
+      '/auth/email/confirm',
+    ],
+    [
       'sessions.list',
       (api: ReturnType<typeof createApiClient>) => api.sessions.list(),
       'GET',
@@ -444,12 +457,10 @@ describe('endpoints', () => {
   ])('%s calls %s %s', async (_name, call, method, path) => {
     const bodies: Record<string, unknown> = {
       '/auth/verify-email': { success: true, data: { user } },
+      '/auth/email/confirm': { success: true, data: { user } },
       '/auth/sessions': { success: true, data: { sessions: [] } },
     }
-    const body =
-      method === 'GET' || path === '/auth/verify-email'
-        ? bodies[path]
-        : { success: true, data: null }
+    const body = bodies[path] ?? { success: true, data: null }
     const response =
       method === 'DELETE' ? new Response(null, { status: 204 }) : jsonResponse(200, body)
     const { api, fetch } = setup(response)

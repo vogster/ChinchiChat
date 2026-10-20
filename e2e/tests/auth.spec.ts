@@ -108,3 +108,29 @@ test('a protected page returns there after logging in', async ({ page }) => {
 
   await expect(page).toHaveURL(/\/\?tab=friends$/)
 })
+
+test('a mistyped email is fixed from the banner: the account moves to the confirmed address', async ({
+  page,
+}) => {
+  const user = newUser()
+  await register(page, user)
+  const fixed = `fixed_${user.email}`
+
+  await page.getByRole('button', { name: 'Изменить email' }).click()
+  const dialog = page.getByRole('dialog', { name: 'Изменить email' })
+  await dialog.getByLabel('Новый email', { exact: true }).fill(fixed)
+  await dialog.getByLabel('Пароль', { exact: true }).fill(user.password)
+  await dialog.getByRole('button', { name: 'Отправить ссылку' }).click()
+  await expect(dialog.getByText(`Ссылка отправлена на ${fixed}`)).toBeVisible()
+  await dialog.getByRole('button', { name: 'Понятно' }).click()
+
+  const token = await tokenFromEmail(fixed, /новый email/i, '/confirm-email')
+  await page.goto(`/confirm-email#token=${token}`)
+  await expect(page.getByText(`теперь email учётной записи — ${fixed}`)).toBeVisible()
+  await page.getByRole('link', { name: 'Перейти в Chinchi' }).click()
+  await expect(page.getByText(/Подтвердите email/)).toHaveCount(0)
+
+  await logout(page)
+  await login(page, fixed, user.password)
+  await expect(page.getByRole('heading', { name: 'Друзья', level: 1 })).toBeVisible()
+})

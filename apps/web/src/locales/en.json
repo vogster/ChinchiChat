@@ -154,6 +154,11 @@
       "no": "Cancel",
       "done": "Done: the device is signing in.",
       "close": "OK"
+    },
+    "confirmEmail": {
+      "title": "New email",
+      "pending": "Confirming the address…",
+      "done": "Done: the account's email is now {{email}}."
     }
   },
   "validation": {
@@ -271,7 +276,8 @@
     "EMAIL_NOT_VERIFIED": "Confirm your email first — the link is waiting in your inbox",
     "RATE_LIMIT_UNAVAILABLE": "The service is briefly unavailable, try again in a minute",
     "UNKNOWN_QR_LOGIN": "The sign-in code has expired or was used — refresh it on the new device.",
-    "QR_LOGIN_USED": "This sign-in was already confirmed."
+    "QR_LOGIN_USED": "This sign-in was already confirmed.",
+    "SAME_EMAIL": "This is already the email of your account."
   },
   "settings": {
     "title": "User settings",
@@ -460,6 +466,17 @@
       "code": "Code from the other device",
       "invalid": "The code is 8 letters and digits, e.g. KQ7M-2PXD",
       "submit": "Continue"
+    },
+    "changeEmail": {
+      "open": "Change email",
+      "title": "Change email",
+      "subtitle": "We'll send a link to the new address. The email changes once you open it.",
+      "email": "New email",
+      "password": "Password",
+      "code": "Code from the app",
+      "submit": "Send the link",
+      "sent": "The link went to {{email}}. Open the email to finish the change. No email? Check the address and spam.",
+      "done": "OK"
     }
   },
   "guild": {

@@ -4,6 +4,7 @@ import { Trans, useTranslation } from 'react-i18next'
 
 import { errorMessage } from '../../lib/errors'
 import { useNow } from '../../lib/use-now'
+import { ChangeEmailDialog } from '../settings/change-email-dialog'
 import { useCurrentUser, useResendVerification } from './use-auth-actions'
 
 /** After sending, the button rests this long so the next email is not one click away. */
@@ -36,6 +37,7 @@ export const VerifyEmailBanner = () => {
   const user = useCurrentUser()
   const resend = useResendVerification()
   const [sentAt, setSentAt] = useState<number | null>(null)
+  const [changing, setChanging] = useState(false)
 
   if (!user || user.emailVerified) return null
 
@@ -60,6 +62,15 @@ export const VerifyEmailBanner = () => {
           <span className="ml-1.5 text-danger">{errorMessage(t, resend.error)}</span>
         ) : null}
       </span>
+      {/* A typo at sign-up is fixed here, not by writing to support. */}
+      <button
+        type="button"
+        onClick={() => setChanging(true)}
+        className="h-8 shrink-0 rounded-full px-3 text-[12.5px] font-semibold whitespace-nowrap text-accent-text transition hover:bg-stage"
+      >
+        {t('settings.changeEmail.open')}
+      </button>
+      {changing ? <ChangeEmailDialog onOpenChange={setChanging} /> : null}
       <ResendButton
         key={sentAt ?? 'never'}
         sentAt={sentAt}

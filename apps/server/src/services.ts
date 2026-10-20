@@ -394,6 +394,7 @@ export const createServices = (
     instanceSettings,
     role,
     mfa,
+    loginThrottle,
     repositories: {
       users,
       sessions,

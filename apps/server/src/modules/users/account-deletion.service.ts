@@ -4,7 +4,7 @@ import { guildMembers, guilds, users } from '../../db/schema'
 import { guildTopic } from '../../events/event-bus'
 import { publishRevokedSessions } from '../../events/internal-events'
 import { badRequest, HttpError } from '../../http/http-error'
-import { confirmPassword } from '../auth/reauth'
+import { confirmIdentity } from '../auth/reauth'
 import { profileImageKey } from '../media/media-paths'
 
 import type { Database } from '../../db/client'
@@ -105,15 +105,7 @@ export const createAccountDeletion = ({
 
   return {
     async deleteSelf(user: UserRow, password: string, code?: string): Promise<void> {
-      if (!(await confirmPassword(loginThrottle, user, password))) {
-        throw new HttpError(400, 'INVALID_CURRENT_PASSWORD', 'Current password is incorrect')
-      }
-      if (user.totpSecret) {
-        if (!code) throw badRequest('MFA_CODE_REQUIRED', 'Enter a code from your authenticator')
-        if (!mfa || !(await mfa.verify(user, code))) {
-          throw badRequest('INVALID_MFA_CODE', 'The code is wrong or was already used')
-        }
-      }
+      await confirmIdentity({ throttle: loginThrottle, mfa }, user, password, code)
       await remove(user.id, { withOwnedGuilds: false })
     },
 
