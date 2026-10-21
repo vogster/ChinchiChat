@@ -53,7 +53,7 @@ const QrSignInLink = ({ url, label }: { url: string; label: string }) => {
         type="button"
         aria-expanded={shown}
         onClick={() => setShown((value) => !value)}
-        className="inline-flex items-center gap-1 rounded-md bg-side px-1.5 py-0.5 align-baseline text-xs font-medium text-danger hover:bg-stage"
+        className="inline-flex items-center gap-1 rounded-md bg-side px-1.5 py-0.5 text-left align-baseline text-xs font-medium text-danger hover:bg-stage"
       >
         <ShieldAlert aria-hidden className="size-3.5 shrink-0" />
         {label}
