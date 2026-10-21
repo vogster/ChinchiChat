@@ -21,6 +21,9 @@ pub fn run() {
         // Requests leave through Rust, so the webview's origin never meets the instance's CORS.
         .plugin(tauri_plugin_http::init())
         .plugin(tauri_plugin_notification::init())
+        // "Save as" for downloads: the dialog picks the path, fs writes it (the dialog allows it).
+        .plugin(tauri_plugin_dialog::init())
+        .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_process::init())
         .setup(|app| {

@@ -2,6 +2,7 @@ import { screen, waitFor, within } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import { createFakeApi, testGuild, testMessage, testUser } from '../../test/fake-api'
+import { createFakeShell } from '../../test/fake-shell'
 import { renderApp } from '../../test/render-app'
 
 import type { Attachment } from '@chinchi/shared'
@@ -51,8 +52,10 @@ describe('attachments in messages', () => {
     api.media.download.mockResolvedValue(new Blob(['png'], { type: 'image/png' }))
     vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:preview')
     const fetchMock = vi.spyOn(globalThis, 'fetch')
+    const shell = createFakeShell()
     const { user } = renderApp(`/channels/${testGuild.id}/503`, {
       api,
+      shell: shell.shell,
       mediaBase: 'https://chat.example.com',
     })
     const item = (await screen.findByText('файлы')).closest('li') as HTMLElement
@@ -61,13 +64,16 @@ describe('attachments in messages', () => {
     await waitFor(() => expect(image).toHaveAttribute('src', 'blob:preview'))
     expect(api.media.download).toHaveBeenCalledWith(IMAGE.previewUrl)
 
-    // The file link points at the server for the browser, but the click goes through the API.
+    // The file link points at the server, but the click fetches the bytes through the API and
+    // hands them to the shell's "Save as" instead of the webview's own download.
     const link = within(item).getByRole('link', { name: /report\.pdf/ })
     expect(link).toHaveAttribute('href', `https://chat.example.com${FILE.url}`)
+    api.media.download.mockResolvedValueOnce(new Blob(['pdf'], { type: 'application/pdf' }))
     const click = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => {})
     await user.click(link)
     await waitFor(() => expect(api.media.download).toHaveBeenCalledWith(FILE.url))
-    await waitFor(() => expect(click).toHaveBeenCalled())
+    await waitFor(() => expect(shell.saved().map((file) => file.name)).toEqual(['report.pdf']))
+    expect(click).not.toHaveBeenCalled()
     expect(fetchMock).not.toHaveBeenCalled()
   })
 

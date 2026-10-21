@@ -1,5 +1,8 @@
+import { downloadDir, join } from '@tauri-apps/api/path'
 import { getCurrentWindow } from '@tauri-apps/api/window'
 import * as autostart from '@tauri-apps/plugin-autostart'
+import { save } from '@tauri-apps/plugin-dialog'
+import { writeFile } from '@tauri-apps/plugin-fs'
 import { register, unregister } from '@tauri-apps/plugin-global-shortcut'
 
 import { DEFAULT_SHELL_PREFERENCES } from '../features/shell/shell'
@@ -68,4 +71,12 @@ export const createTauriShell = ({
   },
   changeInstance: onChangeInstance,
   window: createTauriWindow(),
+  saveFile: async (name, blob) => {
+    // Starts in Downloads, like a browser would; without one, wherever the dialog opens.
+    const downloads = await downloadDir().catch(() => null)
+    const path = await save({ defaultPath: downloads ? await join(downloads, name) : name })
+    if (!path) return false
+    await writeFile(path, new Uint8Array(await blob.arrayBuffer()))
+    return true
+  },
 })

@@ -23,6 +23,7 @@ export const createFakeShell = ({
   let autostartEnabled = autostart
   const bound = new Map<string, (pressed: boolean) => void>()
   let maximized = false
+  const saved: { name: string; blob: Blob }[] = []
   const maximizedListeners = new Set<(maximized: boolean) => void>()
   const setMaximized = (next: boolean) => {
     maximized = next
@@ -52,6 +53,10 @@ export const createFakeShell = ({
       }
     }),
     changeInstance: vi.fn(async () => undefined),
+    saveFile: vi.fn(async (name: string, blob: Blob) => {
+      saved.push({ name, blob })
+      return true
+    }),
     window: {
       minimize: vi.fn(async () => undefined),
       toggleMaximize: vi.fn(async () => setMaximized(!maximized)),
@@ -74,6 +79,8 @@ export const createFakeShell = ({
     press: (shortcut: string) => bound.get(shortcut)?.(true),
     release: (shortcut: string) => bound.get(shortcut)?.(false),
     maximized: () => maximized,
+    /** Files the user "saved" through the shell's dialog. */
+    saved: () => saved,
     /** The OS maximizes or restores the window (a double-click on the title bar, Win+Up). */
     setMaximized,
   }

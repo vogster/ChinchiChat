@@ -3,9 +3,9 @@ import { useTranslation } from 'react-i18next'
 
 import { Button } from '../../components/ui/button'
 import { useApi } from '../../lib/api-context'
-import { saveTextFile } from '../../lib/save-file'
 import { instanceQueryOptions } from '../auth/queries'
 import { useCurrentUser } from '../auth/use-auth-actions'
+import { useSaveFile } from '../shell/use-save-file'
 
 /** Recovery codes, shown once: the user has to keep them somewhere. */
 export const RecoveryCodes = ({ codes, onDone }: { codes: string[]; onDone: () => void }) => {
@@ -13,12 +13,18 @@ export const RecoveryCodes = ({ codes, onDone }: { codes: string[]; onDone: () =
   const me = useCurrentUser()
   const { data: instance } = useQuery(instanceQueryOptions(useApi()))
   const username = me?.username ?? ''
+  const save = useSaveFile()
 
   // Which account and server the codes are for: a file found months later must say so.
   const download = () =>
-    saveTextFile(
+    void save(
       `chinchi-recovery-codes-${username}.txt`,
-      `${t('settings.mfa.codesFile', { instance: instance?.name ?? 'Chinchi', username })}\n\n${codes.join('\n')}\n`,
+      new Blob(
+        [
+          `${t('settings.mfa.codesFile', { instance: instance?.name ?? 'Chinchi', username })}\n\n${codes.join('\n')}\n`,
+        ],
+        { type: 'text/plain' },
+      ),
     )
 
   return (

@@ -4,9 +4,9 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { useApi } from '../../lib/api-context'
-import { saveBlob } from '../../lib/save-file'
 import { useMediaBase, useMediaUrl } from '../media/media-base'
 import { useProtectedMedia } from '../media/use-protected-media'
+import { useSaveFile } from '../shell/use-save-file'
 import { VoicePlayer } from '../voice-messages/voice-player'
 import { formatFileSize } from './format-size'
 import { ImageViewer } from './image-viewer'
@@ -68,10 +68,11 @@ const FileLink = ({ attachment }: { attachment: Attachment }) => {
   const api = useApi()
   const media = useMediaUrl()
   const viaApi = useMediaBase() !== null
+  const save = useSaveFile()
   const [failed, setFailed] = useState(false)
   const download = async () => {
     try {
-      saveBlob(attachment.filename, await api.media.download(attachment.url))
+      await save(attachment.filename, await api.media.download(attachment.url))
     } catch {
       setFailed(true)
     }

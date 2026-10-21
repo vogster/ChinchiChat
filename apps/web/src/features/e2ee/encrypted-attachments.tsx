@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next'
 
 import { useApi } from '../../lib/api-context'
 import { formatFileSize } from '../messages/format-size'
+import { useSaveFile } from '../shell/use-save-file'
 import { VoicePlayer } from '../voice-messages/voice-player'
 import { decryptFile } from './file-crypto'
 
@@ -91,18 +92,14 @@ const SealedImage = ({ file }: { file: SealedFile }) => {
 const SealedDownload = ({ file }: { file: SealedFile }) => {
   const { t, i18n } = useTranslation()
   const api = useApi()
+  const save = useSaveFile()
   const [state, setState] = useState<'idle' | 'loading' | 'failed'>('idle')
 
   const download = async () => {
     setState('loading')
     try {
-      const url = asBlobUrl(await open(api.media.download, file), 'application/octet-stream')
-      const link = document.createElement('a')
-      link.href = url
-      link.download = file.name
-      link.click()
-      // Give the browser a moment to start the download before letting go of the bytes.
-      setTimeout(() => URL.revokeObjectURL(url), 60_000)
+      const bytes = await open(api.media.download, file)
+      await save(file.name, new Blob([new Uint8Array(bytes)], { type: 'application/octet-stream' }))
       setState('idle')
     } catch {
       setState('failed')

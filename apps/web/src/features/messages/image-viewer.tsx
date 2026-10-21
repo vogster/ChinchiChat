@@ -5,10 +5,11 @@ import { useTranslation } from 'react-i18next'
 import { Button } from '../../components/ui/button'
 import { Dialog } from '../../components/ui/dialog'
 import { useApi } from '../../lib/api-context'
-import { saveBlob } from '../../lib/save-file'
 import { useMediaUrl } from '../media/media-base'
 import { useProtectedMedia } from '../media/use-protected-media'
+import { useSaveFile } from '../shell/use-save-file'
 
+import type { SaveFile } from '../shell/use-save-file'
 import type { Download as DownloadFile } from '@chinchi/sdk'
 import type { Attachment } from '@chinchi/shared'
 
@@ -21,13 +22,14 @@ export interface ImageViewerProps {
  * Fetched rather than a plain `<a download>`: images are served inline from the file domain,
  * and browsers ignore `download` on another origin.
  */
-const downloadImage = async (download: DownloadFile, image: Attachment) =>
-  saveBlob(image.filename, await download(image.url))
+const downloadImage = async (download: DownloadFile, save: SaveFile, image: Attachment) =>
+  save(image.filename, await download(image.url))
 
 /** The original image, as large as the window allows; Escape or the close button closes it. */
 export const ImageViewer = ({ image, onOpenChange }: ImageViewerProps) => {
   const { t } = useTranslation()
   const api = useApi()
+  const save = useSaveFile()
   const media = useMediaUrl()
   const src = useProtectedMedia(image.url)
   const [state, setState] = useState<'idle' | 'loading' | 'failed'>('idle')
@@ -35,7 +37,7 @@ export const ImageViewer = ({ image, onOpenChange }: ImageViewerProps) => {
   const download = async () => {
     setState('loading')
     try {
-      await downloadImage(api.media.download, image)
+      await downloadImage(api.media.download, save, image)
       setState('idle')
     } catch {
       setState('failed')

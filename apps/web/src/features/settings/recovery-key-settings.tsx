@@ -7,10 +7,12 @@ import { Dialog } from '../../components/ui/dialog'
 import { EnterRecoveryKeyDialog, RecoveryKeyText } from '../e2ee/recovery-dialogs'
 import { downloadRecoveryKey } from '../e2ee/recovery-file'
 import { useRecovery } from '../e2ee/use-recovery'
+import { useSaveFile } from '../shell/use-save-file'
 
 /** The recovery key: shown again on a device that holds it, typed in on one that doesn't. */
 export const RecoveryKeySettings = () => {
   const { t } = useTranslation()
+  const save = useSaveFile()
   const recovery = useRecovery()
   const [shown, setShown] = useState(false)
   const [copied, setCopied] = useState(false)
@@ -101,7 +103,7 @@ export const RecoveryKeySettings = () => {
           variant="secondary"
           fullWidth={false}
           onClick={() => {
-            downloadRecoveryKey(recovery.key as string, t('e2ee.recovery.fileNote'))
+            void downloadRecoveryKey(save, recovery.key as string, t('e2ee.recovery.fileNote'))
             void recovery.markSaved()
           }}
         >
