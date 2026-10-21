@@ -29,7 +29,7 @@ export const MembersStackButton = ({
   return (
     <button
       type="button"
-      className={`h-[38px] shrink-0 items-center rounded-full transition-colors hover:bg-field aria-pressed:bg-field ${online.length > 0 ? 'pr-[13px] pl-1.5' : 'w-[38px] justify-center text-muted'} ${className}`}
+      className={`h-[38px] shrink-0 items-center rounded-full transition-colors hover:bg-field aria-pressed:bg-field ${online.length > 0 ? 'px-1.5' : 'w-[38px] justify-center text-muted'} ${className}`}
       {...props}
     >
       {online.length > 0 ? (
@@ -40,7 +40,9 @@ export const MembersStackButton = ({
               name={member.nickname ?? member.user.displayName ?? member.user.username}
               src={member.user.avatarUrl}
               id={member.user.id}
-              className="-mr-[7px] size-[26px] border-2 border-main text-[10px]"
+              // Overlap from the second face on: a negative margin on the last one would squeeze
+              // a lone avatar into an oval.
+              className="size-[26px] border-2 border-main text-[10px] not-first:-ml-[7px]"
             />
           ))}
         </span>
