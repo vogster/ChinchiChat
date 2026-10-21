@@ -98,12 +98,15 @@ describe('attachments in messages', () => {
     })
     const item = (await screen.findByText('файлы')).closest('li') as HTMLElement
 
-    await user.click(within(item).getByRole('link', { name: /report\.pdf/ }))
+    const link = within(item).getByRole('link', { name: /report\.pdf/ })
+    vi.spyOn(link, 'offsetWidth', 'get').mockReturnValue(270)
+    await user.click(link)
 
-    expect(
-      await within(item).findByRole('progressbar', { name: 'Загрузка report.pdf' }),
-    ).toHaveAttribute('aria-valuenow', '25')
+    const bar = await within(item).findByRole('progressbar', { name: 'Загрузка report.pdf' })
+    expect(bar).toHaveAttribute('aria-valuenow', '25')
     expect(within(item).getByText(/^Загрузка 25 %/)).toBeVisible()
+    // The card takes the link's place without the message jumping in width.
+    expect(bar.closest('[style*="width"]')).toHaveStyle({ width: '270px' })
     expect(within(item).getByRole('button', { name: 'Отменить загрузку report.pdf' })).toHaveFocus()
     await user.keyboard('{Enter}')
 

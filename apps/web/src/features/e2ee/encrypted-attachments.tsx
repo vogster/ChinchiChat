@@ -113,7 +113,7 @@ const SealedDownload = ({ file, autoFocus = false }: { file: SealedFile; autoFoc
   const { i18n } = useTranslation()
   const api = useApi()
   const save = useSaveFile()
-  const { state, progress, start, cancel, trigger, progressBox } =
+  const { state, progress, width, start, cancel, trigger, progressBox } =
     useCancellableDownload<HTMLButtonElement>({
       expectedBytes: sealedSize(file.size),
       load: async (options) =>
@@ -132,6 +132,7 @@ const SealedDownload = ({ file, autoFocus = false }: { file: SealedFile; autoFoc
         progress={progress}
         onCancel={cancel}
         focusCancel
+        width={width}
       />
     )
   }

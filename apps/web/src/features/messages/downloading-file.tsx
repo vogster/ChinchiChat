@@ -17,11 +17,14 @@ export const DownloadingFile = ({
   name,
   progress,
   onCancel,
+  width,
   ref,
 }: {
   name: string
   progress: Progress
   onCancel: () => void
+  /** The link's width, kept while it is replaced. */
+  width?: number | undefined
   ref?: Ref<HTMLDivElement>
 }) => {
   const { t, i18n } = useTranslation()
@@ -33,7 +36,8 @@ export const DownloadingFile = ({
   return (
     <div
       ref={ref}
-      className="flex w-[min(340px,100%)] items-center gap-3 rounded-[18px] bg-field p-2.5"
+      style={width ? { width } : undefined}
+      className="flex max-w-full items-center gap-3 rounded-[18px] bg-field p-2.5"
     >
       <span className="relative size-[42px] shrink-0">
         <ProgressRing
@@ -53,7 +57,7 @@ export const DownloadingFile = ({
       </span>
       <span className="min-w-0 flex-1">
         <span className="block truncate font-medium">{name}</span>
-        <span className="block text-xs text-faint tabular-nums">
+        <span className="block truncate text-xs text-faint tabular-nums">
           {percent < 100
             ? t('messages.downloadProgress', {
                 percent,

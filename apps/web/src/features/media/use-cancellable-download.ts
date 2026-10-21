@@ -18,9 +18,10 @@ export interface CancellableDownloadOptions {
 
 /**
  * A file fetched on a click and handed over, with how far it got and a way to stop it. While
- * it runs, a progress card stands where the trigger was; the focus goes back to the trigger if
- * it was on the card. A run that was cancelled may still settle later (decrypting cannot stop
- * midway): it is ignored. Leaving the page stops the download.
+ * it runs, a progress card stands where the trigger was, as wide as it (`width`, so the message
+ * does not jump); the focus goes back to the trigger if it was on the card. A run that was
+ * cancelled may still settle later (decrypting cannot stop midway): it is ignored. Leaving the
+ * page stops the download.
  */
 export const useCancellableDownload = <T extends HTMLElement>({
   expectedBytes,
@@ -29,6 +30,7 @@ export const useCancellableDownload = <T extends HTMLElement>({
   autoFocus = false,
 }: CancellableDownloadOptions) => {
   const [state, setState] = useState<DownloadState>('idle')
+  const [width, setWidth] = useState<number | undefined>(undefined)
   const { progress, onProgress, reset } = useDownloadProgress(expectedBytes)
   const abort = useRef<AbortController | null>(null)
   const trigger = useRef<T>(null)
@@ -52,6 +54,7 @@ export const useCancellableDownload = <T extends HTMLElement>({
     const controller = new AbortController()
     abort.current = controller
     reset()
+    setWidth(trigger.current?.offsetWidth || undefined)
     setState('loading')
     try {
       const blob = await load({ signal: controller.signal, onProgress })
@@ -69,5 +72,5 @@ export const useCancellableDownload = <T extends HTMLElement>({
     settle('idle')
   }
 
-  return { state, progress, start, cancel, trigger, progressBox }
+  return { state, progress, width, start, cancel, trigger, progressBox }
 }

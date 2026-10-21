@@ -72,7 +72,7 @@ const FileLink = ({ attachment }: { attachment: Attachment }) => {
   const media = useMediaUrl()
   const viaApi = useMediaBase() !== null
   const save = useSaveFile()
-  const { state, progress, start, cancel, trigger, progressBox } =
+  const { state, progress, width, start, cancel, trigger, progressBox } =
     useCancellableDownload<HTMLAnchorElement>({
       expectedBytes: attachment.size,
       load: (options) => api.media.download(attachment.url, options),
@@ -85,6 +85,7 @@ const FileLink = ({ attachment }: { attachment: Attachment }) => {
         name={attachment.filename}
         progress={progress}
         onCancel={cancel}
+        width={width}
       />
     )
   }

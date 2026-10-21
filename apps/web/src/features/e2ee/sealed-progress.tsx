@@ -18,6 +18,7 @@ export const SealedProgress = ({
   progress,
   onCancel,
   focusCancel = false,
+  width,
   ref,
 }: {
   name: string
@@ -25,6 +26,8 @@ export const SealedProgress = ({
   onCancel: () => void
   /** Started by a click: the cancel button takes the focus the file button had. */
   focusCancel?: boolean
+  /** The file button's width, kept while it is replaced. */
+  width?: number | undefined
   ref?: Ref<HTMLDivElement>
 }) => {
   const { t, i18n } = useTranslation()
@@ -38,6 +41,7 @@ export const SealedProgress = ({
   return (
     <div
       ref={ref}
+      style={width ? { width } : undefined}
       className="flex max-w-sm items-center gap-3 rounded-md border border-line bg-field px-3 py-2"
     >
       <span className="relative size-8 shrink-0">
@@ -55,14 +59,16 @@ export const SealedProgress = ({
       <span className="min-w-0">
         <span className="block truncate text-accent">{name}</span>
         <span className="flex items-center gap-1 text-xs text-muted tabular-nums">
-          <Lock aria-hidden className="size-3" />
-          {percent < 100
-            ? t('e2ee.fileProgress', {
-                percent,
-                received: formatFileSize(progress.received, i18n.language),
-                total: formatFileSize(progress.total, i18n.language),
-              })
-            : t('e2ee.fileDecrypting')}
+          <Lock aria-hidden className="size-3 shrink-0" />
+          <span className="truncate">
+            {percent < 100
+              ? t('e2ee.fileProgress', {
+                  percent,
+                  received: formatFileSize(progress.received, i18n.language),
+                  total: formatFileSize(progress.total, i18n.language),
+                })
+              : t('e2ee.fileDecrypting')}
+          </span>
         </span>
       </span>
     </div>
