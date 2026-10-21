@@ -525,7 +525,7 @@ dependencies = [
 
 [[package]]
 name = "chinchi-desktop"
-version = "0.17.2"
+version = "0.18.0"
 dependencies = [
  "log",
  "serde",
