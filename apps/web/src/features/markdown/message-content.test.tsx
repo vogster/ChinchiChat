@@ -44,13 +44,21 @@ describe('message markdown', () => {
 
   it('does not let a sign-in approval link be opened from a message', async () => {
     const url = 'https://chat.example.com/?qr=Zk3v9QmXr2LpT8wYc1NbHa&qrKey=abc'
-    const { item } = await showMessage(`зайди сюда ${url} и нажми «Впустить»`)
+    const { item, user } = await showMessage(`зайди сюда ${url} и нажми «Впустить»`)
 
-    expect(within(item).queryByRole('link')).toBeNull()
+    // Folded into a warning: the address itself is out of sight until asked for.
+    const plate = within(item).getByRole('button', {
+      name: 'Ссылка для входа на чужое устройство — не открывайте её',
+    })
+    expect(plate).toHaveAttribute('aria-expanded', 'false')
+    expect(within(item).queryByText(url)).toBeNull()
+
+    await user.click(plate)
+
+    // Shown as text to read or copy, never as something to follow.
+    expect(plate).toHaveAttribute('aria-expanded', 'true')
     expect(within(item).getByText(url)).toBeVisible()
-    expect(
-      within(item).getByText('Ссылка для входа на чужое устройство — не открывайте её'),
-    ).toBeVisible()
+    expect(within(item).queryByRole('link')).toBeNull()
   })
 
   it('keeps other links with a qr parameter clickable', async () => {
