@@ -1,6 +1,6 @@
 [package]
 name = "chinchi-desktop"
-version = "0.18.0"
+version = "0.18.1"
 description = "Chinchi for the desktop"
 authors = ["Chinchi contributors"]
 license = "AGPL-3.0-only"
