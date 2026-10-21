@@ -10,8 +10,8 @@ import type { Progress } from './use-download-progress'
 import type { Ref } from 'react'
 
 /**
- * A sealed file being opened, labelled as decryption (what the person cares about): a ring
- * that fills as the ciphertext comes down, with a cross in the middle to stop it.
+ * A sealed file being opened, in two steps it names: the ciphertext comes down (a ring that
+ * fills, with a cross in the middle to stop it), then it is decrypted here in one go.
  */
 export const SealedProgress = ({
   name,
@@ -41,7 +41,7 @@ export const SealedProgress = ({
       className="flex max-w-sm items-center gap-3 rounded-md border border-line bg-field px-3 py-2"
     >
       <span className="relative size-8 shrink-0">
-        <ProgressRing percent={percent} label={t('e2ee.fileDecryptingName', { name })} />
+        <ProgressRing percent={percent} label={t('e2ee.fileLoadingName', { name })} />
         <button
           ref={cancel}
           type="button"

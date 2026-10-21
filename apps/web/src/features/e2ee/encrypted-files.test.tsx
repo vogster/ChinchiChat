@@ -222,11 +222,12 @@ describe('files in encrypted conversations', () => {
 
     await user.click(await screen.findByRole('button', { name: /^отчёт\.pdf/ }))
 
-    expect(
-      await screen.findByRole('progressbar', { name: 'Расшифровка отчёт.pdf' }),
-    ).toHaveAttribute('aria-valuenow', '25')
-    expect(screen.getByText(/^Расшифровка 25 %/)).toBeVisible()
-    const cancel = screen.getByRole('button', { name: 'Отменить расшифровку отчёт.pdf' })
+    expect(await screen.findByRole('progressbar', { name: 'Загрузка отчёт.pdf' })).toHaveAttribute(
+      'aria-valuenow',
+      '25',
+    )
+    expect(screen.getByText(/^Загрузка 25 %/)).toBeVisible()
+    const cancel = screen.getByRole('button', { name: 'Отменить загрузку отчёт.pdf' })
     expect(cancel).toHaveFocus()
     await user.keyboard('{Enter}')
 
@@ -239,10 +240,29 @@ describe('files in encrypted conversations', () => {
     // Started again, it starts from nothing.
     api.media.download.mockImplementation(() => new Promise<Blob>(() => {}))
     await user.click(file)
-    expect(
-      await screen.findByRole('progressbar', { name: 'Расшифровка отчёт.pdf' }),
-    ).toHaveAttribute('aria-valuenow', '0')
+    expect(await screen.findByRole('progressbar', { name: 'Загрузка отчёт.pdf' })).toHaveAttribute(
+      'aria-valuenow',
+      '0',
+    )
     expect(api.media.download).toHaveBeenCalledTimes(2)
+  })
+
+  it('say they are decrypting once the whole file is here', async () => {
+    const doc = await encryptFile(new File(['отчёт'], 'отчёт.pdf', { type: 'application/pdf' }))
+    const api = createFakeApi({ user: testUser })
+    api.dms.list.mockResolvedValue({ channels: [encryptedDm] })
+    api.messages.list.mockResolvedValue({
+      messages: [sealedMessage([{ id: '902', ...doc.file }], [stored('902', doc.blob.size)])],
+    })
+    api.media.download.mockImplementation((_path, options) => {
+      options?.onProgress?.(40, 40)
+      return new Promise<Blob>(() => {})
+    })
+    const { user } = renderApp(URL_PATH, { api })
+
+    await user.click(await screen.findByRole('button', { name: /^отчёт\.pdf/ }))
+
+    expect(await screen.findByText('Расшифровка…')).toBeVisible()
   })
 
   it('let an image that is still loading be stopped; it then waits for a click', async () => {
@@ -263,8 +283,8 @@ describe('files in encrypted conversations', () => {
     )
     const { user } = renderApp(URL_PATH, { api })
 
-    expect(await screen.findByRole('progressbar', { name: 'Расшифровка кот.png' })).toBeVisible()
-    await user.click(screen.getByRole('button', { name: 'Отменить расшифровку кот.png' }))
+    expect(await screen.findByRole('progressbar', { name: 'Загрузка кот.png' })).toBeVisible()
+    await user.click(screen.getByRole('button', { name: 'Отменить загрузку кот.png' }))
 
     expect(signal?.aborted).toBe(true)
     expect(await screen.findByRole('button', { name: /^кот\.png/ })).toHaveFocus()
