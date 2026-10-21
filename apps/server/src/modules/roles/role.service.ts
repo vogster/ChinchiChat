@@ -12,6 +12,7 @@ import { badRequest, forbidden, HttpError } from '../../http/http-error'
 import { isGuildChannel } from '../channels/channel.repository'
 import { toRole } from '../guilds/guild.mapper'
 import { activeTimeout } from '../guilds/guild.mapper'
+import { outranks } from '../guilds/outranks'
 
 import type { EventBus } from '../../events/event-bus'
 import type { ChannelRepository } from '../channels/channel.repository'
@@ -48,6 +49,8 @@ export interface RoleServiceDeps {
 }
 
 const unknownRole = () => new HttpError(404, 'UNKNOWN_ROLE', 'Unknown role')
+const unknownMember = () =>
+  new HttpError(404, 'UNKNOWN_MEMBER', 'That user is not a member of this server')
 const hierarchy = () =>
   forbidden('ROLE_HIERARCHY', 'You can only manage roles below your highest role')
 const invalidEveryone = (what: string) =>
@@ -98,6 +101,26 @@ export const createRoleService = ({
   const assertGrantable = (actor: GuildAccess, permissions: bigint) => {
     if ((permissions & ~grantable(actor)) !== 0n) {
       throw forbidden('MISSING_PERMISSIONS', 'You can only grant permissions you have')
+    }
+  }
+
+  /**
+   * Whose roles the caller may change: their own, or a member below their highest role (the
+   * owner: anyone). Without it, a manager could strip a senior of a role or pin one on them.
+   */
+  const assertChangeable = async (
+    guildId: Snowflake,
+    actor: GuildAccess,
+    actorId: Snowflake,
+    targetId: Snowflake,
+  ) => {
+    if (targetId === actorId) return
+    const target = await access.requireMember(guildId, targetId).catch((error: unknown) => {
+      if (error instanceof HttpError) throw unknownMember()
+      throw error
+    })
+    if (!outranks(actor, target)) {
+      throw forbidden('ROLE_HIERARCHY', 'You can only change the roles of members below you')
     }
   }
 
@@ -246,10 +269,12 @@ export const createRoleService = ({
       userId: Snowflake,
     ): Promise<void> {
       if (roleId === guildId) throw invalidEveryone('assigned')
-      await manageable(guildId, roleId, userId)
-      if (!(await guilds.findMember(guildId, targetId))) {
-        throw new HttpError(404, 'UNKNOWN_MEMBER', 'That user is not a member of this server')
-      }
+      const { actor, role } = await manageable(guildId, roleId, userId)
+      // Giving a role gives its permissions: only those the caller could grant themselves.
+      // New roles land at the bottom, so position alone would let a manager take Administrator.
+      assertGrantable(actor, role.permissions)
+      await assertChangeable(guildId, actor, userId, targetId)
+      if (!(await guilds.findMember(guildId, targetId))) throw unknownMember()
       await roles.addMemberRole(guildId, targetId, roleId)
       await publishMemberRoles(guildId, targetId)
       await audit.record({
@@ -268,7 +293,8 @@ export const createRoleService = ({
       userId: Snowflake,
     ): Promise<void> {
       if (roleId === guildId) throw invalidEveryone('removed')
-      await manageable(guildId, roleId, userId)
+      const { actor } = await manageable(guildId, roleId, userId)
+      await assertChangeable(guildId, actor, userId, targetId)
       await roles.removeMemberRole(guildId, targetId, roleId)
       await publishMemberRoles(guildId, targetId)
       await audit.record({

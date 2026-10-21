@@ -4,6 +4,7 @@ import {
   computeBasePermissions,
   computeChannelPermissions,
   has,
+  highestPosition,
   parsePermissions,
   Permission,
 } from '@chinchi/shared'
@@ -64,6 +65,29 @@ export const grantablePermissions = (guild: GuildDetail, userId: string): bigint
 /** May the user edit, assign or delete this role (permission and hierarchy)? */
 export const canManageGuildRole = (guild: GuildDetail, userId: string, role: Role): boolean =>
   canManageRole(permissionContext(guild, userId), role)
+
+/**
+ * May the user give this role to someone: manage it, and hold every permission it carries
+ * (giving a role gives its permissions). The server checks the same.
+ */
+export const canAssignGuildRole = (guild: GuildDetail, userId: string, role: Role): boolean =>
+  canManageGuildRole(guild, userId, role) &&
+  (parsePermissions(role.permissions) & ~grantablePermissions(guild, userId)) === 0n
+
+/**
+ * May the user change this member's roles: their own, or a member below their highest role (the
+ * owner: anyone's; nobody: the owner's). The server checks the same.
+ */
+export const canChangeMemberRoles = (
+  guild: GuildDetail,
+  userId: string,
+  member: { readonly userId: string; readonly roleIds: readonly string[] },
+): boolean => {
+  if (member.userId === userId || guild.ownerId === userId) return true
+  if (member.userId === guild.ownerId) return false
+  const roles = permissionContext(guild, userId).roles
+  return highestPosition(guild.myRoleIds, roles) > highestPosition(member.roleIds, roles)
+}
 
 /** Roles highest first, as Discord lists them. */
 export const sortRoles = (roles: readonly Role[]): Role[] =>
