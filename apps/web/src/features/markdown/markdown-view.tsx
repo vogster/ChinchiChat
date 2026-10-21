@@ -65,7 +65,10 @@ const Inline = ({ node, resolve }: { node: InlineNode; resolve: MentionResolver 
         return (
           <span>
             <span className="break-all">{node.url}</span>{' '}
-            <span className="text-xs font-medium text-danger">{resolve.labels.qrSignInLink}</span>
+            {/* Its own background: it has to read on any bubble, the sender's accent one too. */}
+            <span className="rounded-md bg-side px-1.5 py-0.5 text-xs font-medium text-danger">
+              {resolve.labels.qrSignInLink}
+            </span>
           </span>
         )
       }

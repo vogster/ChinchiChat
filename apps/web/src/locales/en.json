@@ -139,7 +139,7 @@
       "step3": "Pick the number from this page there — this page signs in by itself.",
       "signingIn": "Sign-in confirmed, signing in…",
       "back": "Sign in with a password",
-      "hint": "Scan it with the phone where you are signed in, or enter the code in Settings → Devices."
+      "hint": "Scan it with the phone where you are signed in, or enter the code in Settings → Devices, then pick this number there."
     },
     "newSignIn": {
       "title": "New sign-in to your account",
