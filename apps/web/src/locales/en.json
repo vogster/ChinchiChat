@@ -158,7 +158,7 @@
       "device": "Device",
       "address": "Address",
       "when": "When",
-      "warning": "Confirm only a code from your own screen. If someone sent you the code, it is a scam: they would get into your account.",
+      "warning": "Pick only the number on your own new device. If someone told you the number or sent it, it is a scam: they would get into your account.",
       "handOver": "Hand over encrypted conversations",
       "handOverHint": "The new device gets the recovery key and can read the history.",
       "no": "Cancel",

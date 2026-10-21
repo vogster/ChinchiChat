@@ -51,7 +51,7 @@ export const QrLoginPanel = ({
       ) : error ? null : (
         <p className="text-sm text-muted">{t('auth.qr.preparing')}</p>
       )}
-      {onBack ? (
+      {match !== null ? null : onBack ? (
         <ol className="list-decimal space-y-1 pl-5 text-left text-sm text-muted">
           <li>{t('auth.qr.step1')}</li>
           <li>{t('auth.qr.step2')}</li>

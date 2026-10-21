@@ -73,8 +73,9 @@ describe('signing in with a QR code, on the new device', () => {
     const number = await screen.findByRole('status', { name: 'Число для подтверждения' })
     expect(number).toHaveTextContent('47')
     expect(screen.getByText('Выберите это число на устройстве, где вы уже вошли')).toBeVisible()
-    // The QR has done its job: the number takes its place.
+    // The QR has done its job: the number takes its place, and the scan hint goes with it.
     expect(screen.queryByRole('img', { name: 'QR-код для входа' })).toBeNull()
+    expect(screen.queryByText(/Наведите камеру/)).toBeNull()
   })
 
   it('starts over with a new QR when the old one is gone', async () => {
