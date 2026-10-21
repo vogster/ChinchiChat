@@ -18,6 +18,11 @@ export interface FileSecret {
 
 const ALGORITHM = 'AES-GCM'
 const IV_BYTES = 12
+/** AES-GCM appends a 16-byte authentication tag. */
+const TAG_BYTES = 16
+
+/** How big the ciphertext of a plain file of `size` bytes is. */
+export const sealedSize = (size: number) => size + TAG_BYTES
 
 /** Copies into a buffer of its own, as WebCrypto wants (not a view into something shared). */
 const own = (bytes: Uint8Array): Uint8Array<ArrayBuffer> => new Uint8Array(bytes)

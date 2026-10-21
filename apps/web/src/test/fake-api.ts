@@ -2,7 +2,7 @@ import { ApiError } from '@chinchi/sdk'
 import { DEFAULT_EVERYONE_PERMISSIONS, Permission } from '@chinchi/shared'
 import { vi } from 'vitest'
 
-import type { ApiClient, UploadOptions } from '@chinchi/sdk'
+import type { ApiClient, DownloadOptions, UploadOptions } from '@chinchi/sdk'
 import type {
   AdminGuild,
   AdminUser,
@@ -804,7 +804,7 @@ export const createFakeApi = ({ user = null, registrationMode = 'open' }: FakeAp
       ),
     },
     media: {
-      download: vi.fn(async (path: string) => {
+      download: vi.fn(async (path: string, _options?: DownloadOptions) => {
         const response = await fetch(path)
         if (!response.ok) throw new Error(`Download failed: ${response.status}`)
         return response.blob()

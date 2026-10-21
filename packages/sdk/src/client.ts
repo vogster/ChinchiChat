@@ -13,7 +13,7 @@ import { createFetchPut, createXhrPut } from './upload'
 
 import type { HttpOptions } from './http'
 
-export type { Download } from './download'
+export type { Download, DownloadOptions, DownloadProgress } from './download'
 export type { ApiErrorDetail } from './errors'
 export { ApiError, isApiError } from './errors'
 export type { PutFile, UploadOptions, UploadProgress } from './upload'
