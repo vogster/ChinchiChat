@@ -803,6 +803,13 @@ export const createFakeApi = ({ user = null, registrationMode = 'open' }: FakeAp
         async (_channelId: string, _file: Blob, _options?: UploadOptions) => testUpload.id,
       ),
     },
+    media: {
+      download: vi.fn(async (path: string) => {
+        const response = await fetch(path)
+        if (!response.ok) throw new Error(`Download failed: ${response.status}`)
+        return response.blob()
+      }),
+    },
     instance: {
       get: vi.fn(async () => ({
         instance: {

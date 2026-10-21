@@ -3,28 +3,32 @@ import { FileText, Lock } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
+import { useApi } from '../../lib/api-context'
 import { formatFileSize } from '../messages/format-size'
 import { VoicePlayer } from '../voice-messages/voice-player'
 import { decryptFile } from './file-crypto'
 
 import type { SealedFile } from './codec'
+import type { Download } from '@chinchi/sdk'
 
 /** Images up to this size decrypt as soon as they show; anything else waits for a click. */
 const AUTO_DECRYPT_MAX = 20 * 1024 * 1024
 
 /** Downloads the ciphertext and opens it here; the server never sees the plain bytes. */
-const open = async (file: Pick<SealedFile, 'url' | 'key' | 'iv'>): Promise<Uint8Array> => {
-  const response = await fetch(file.url)
-  if (!response.ok) throw new Error(`Download failed: ${response.status}`)
-  return decryptFile(new Uint8Array(await response.arrayBuffer()), file)
+const open = async (
+  download: Download,
+  file: Pick<SealedFile, 'url' | 'key' | 'iv'>,
+): Promise<Uint8Array> => {
+  const blob = await download(file.url)
+  return decryptFile(new Uint8Array(await blob.arrayBuffer()), file)
 }
 
 const asBlobUrl = (bytes: Uint8Array, type: string) =>
   URL.createObjectURL(new Blob([new Uint8Array(bytes)], { type }))
 
 /** A voice message decrypted here; played only if the bytes really are audio. */
-const openVoice = async (file: SealedFile): Promise<Blob> => {
-  const bytes = await open(file)
+const openVoice = async (download: Download, file: SealedFile): Promise<Blob> => {
+  const bytes = await open(download, file)
   const type = detectAudioType(bytes)
   if (!type) throw new Error('Not audio')
   return new Blob([new Uint8Array(bytes)], { type })
@@ -42,6 +46,7 @@ const Failed = ({ name }: { name: string }) => {
 /** Shown inline only if the decrypted bytes really are an image the browser may render. */
 const SealedImage = ({ file }: { file: SealedFile }) => {
   const { t } = useTranslation()
+  const { download } = useApi().media
   const [state, setState] = useState<{ url: string } | 'loading' | 'file' | 'failed'>('loading')
 
   // Primitive deps: the file object is rebuilt on every render of the message list.
@@ -49,7 +54,7 @@ const SealedImage = ({ file }: { file: SealedFile }) => {
   useEffect(() => {
     let current = true
     let url: string | null = null
-    open({ url: source, key, iv }).then(
+    open(download, { url: source, key, iv }).then(
       (bytes) => {
         const type = detectImageType(bytes)
         if (!current) return
@@ -63,7 +68,7 @@ const SealedImage = ({ file }: { file: SealedFile }) => {
       current = false
       if (url) URL.revokeObjectURL(url)
     }
-  }, [source, key, iv])
+  }, [download, source, key, iv])
 
   if (state === 'failed') return <Failed name={file.name} />
   if (state === 'file') return <SealedDownload file={file} />
@@ -85,12 +90,13 @@ const SealedImage = ({ file }: { file: SealedFile }) => {
 /** Decrypts on click and hands the file over under its real name. */
 const SealedDownload = ({ file }: { file: SealedFile }) => {
   const { t, i18n } = useTranslation()
+  const api = useApi()
   const [state, setState] = useState<'idle' | 'loading' | 'failed'>('idle')
 
   const download = async () => {
     setState('loading')
     try {
-      const url = asBlobUrl(await open(file), 'application/octet-stream')
+      const url = asBlobUrl(await open(api.media.download, file), 'application/octet-stream')
       const link = document.createElement('a')
       link.href = url
       link.download = file.name
@@ -130,13 +136,14 @@ const SealedDownload = ({ file }: { file: SealedFile }) => {
 
 /** The files of an encrypted message, opened on this device. */
 export const EncryptedAttachments = ({ files }: { files: readonly SealedFile[] }) => {
+  const api = useApi()
   if (files.length === 0) return null
   return (
     <ul className="mt-1 flex flex-col items-start gap-1.5">
       {files.map((file) => (
         <li key={file.id}>
           {isInlineAudio(file.type) && file.size <= AUTO_DECRYPT_MAX ? (
-            <VoicePlayer name={file.name} load={() => openVoice(file)} />
+            <VoicePlayer name={file.name} load={() => openVoice(api.media.download, file)} />
           ) : isInlineImage(file.type) && file.size <= AUTO_DECRYPT_MAX ? (
             <SealedImage file={file} />
           ) : (

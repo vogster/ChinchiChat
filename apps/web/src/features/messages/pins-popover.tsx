@@ -8,13 +8,13 @@ import { HeaderPopover } from '../../components/ui/header-popover'
 import { useApi } from '../../lib/api-context'
 import { errorMessage } from '../../lib/errors'
 import { useMemberNames } from '../guilds/use-member-names'
-import { useMediaUrl } from '../media/media-base'
+import { useProtectedMedia } from '../media/use-protected-media'
 import { formatMessageTime } from './format-time'
 import { jumpToMessage } from './jump-to-message'
 import { pinsQueryOptions } from './queries'
 import { usePinMessage } from './use-messages'
 
-import type { Channel } from '@chinchi/shared'
+import type { Attachment, Channel } from '@chinchi/shared'
 
 /** Server emoji as their `:name:`, not the raw `<:name:id>` they are stored as. */
 const CUSTOM_EMOJI = /<a?:([A-Za-z0-9_]{2,32}):\d+>/g
@@ -27,12 +27,23 @@ export interface PinsPopoverProps {
 }
 
 /** The channel's pinned messages, most recently pinned first, dropped from the header. */
+const PinImage = ({ image }: { image: Attachment }) => {
+  const src = useProtectedMedia(image.previewUrl ?? image.url)
+  return (
+    <img
+      src={src ?? undefined}
+      alt={image.filename}
+      loading="lazy"
+      className="max-h-40 w-full rounded-tile object-cover"
+    />
+  )
+}
+
 export const PinsPopover = ({ channel, canUnpin, onClose }: PinsPopoverProps) => {
   const { t, i18n } = useTranslation()
   const pins = useQuery(pinsQueryOptions(useApi(), channel.id))
   const unpin = usePinMessage(channel.id)
   const nameOf = useMemberNames(channel.guildId)
-  const media = useMediaUrl()
   const [notLoaded, setNotLoaded] = useState<string | null>(null)
 
   return (
@@ -80,14 +91,7 @@ export const PinsPopover = ({ channel, canUnpin, onClose }: PinsPopoverProps) =>
                   {message.content.replace(CUSTOM_EMOJI, ':$1:')}
                 </p>
               ) : null}
-              {image ? (
-                <img
-                  src={media(image.previewUrl ?? image.url)}
-                  alt={image.filename}
-                  loading="lazy"
-                  className="max-h-40 w-full rounded-tile object-cover"
-                />
-              ) : null}
+              {image ? <PinImage image={image} /> : null}
               <button
                 type="button"
                 onClick={() => {

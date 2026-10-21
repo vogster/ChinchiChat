@@ -1,5 +1,5 @@
 import { screen, waitFor, within } from '@testing-library/react'
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import { createFakeApi, testGuild, testMessage, testUser } from '../../test/fake-api'
 import { renderApp } from '../../test/render-app'
@@ -39,6 +39,38 @@ const showWith = async (attachments: Attachment[]) => {
 }
 
 describe('attachments in messages', () => {
+  afterEach(() => {
+    vi.restoreAllMocks()
+  })
+
+  it('in the desktop, fetches pictures and files through the API with the session', async () => {
+    const api = createFakeApi({ user: testUser })
+    api.messages.list.mockResolvedValue({
+      messages: [testMessage('1001', { content: 'файлы', attachments: [IMAGE, FILE] })],
+    })
+    api.media.download.mockResolvedValue(new Blob(['png'], { type: 'image/png' }))
+    vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:preview')
+    const fetchMock = vi.spyOn(globalThis, 'fetch')
+    const { user } = renderApp(`/channels/${testGuild.id}/503`, {
+      api,
+      mediaBase: 'https://chat.example.com',
+    })
+    const item = (await screen.findByText('файлы')).closest('li') as HTMLElement
+
+    const image = within(item).getByRole('img', { name: 'cat.png' })
+    await waitFor(() => expect(image).toHaveAttribute('src', 'blob:preview'))
+    expect(api.media.download).toHaveBeenCalledWith(IMAGE.previewUrl)
+
+    // The file link points at the server for the browser, but the click goes through the API.
+    const link = within(item).getByRole('link', { name: /report\.pdf/ })
+    expect(link).toHaveAttribute('href', `https://chat.example.com${FILE.url}`)
+    const click = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => {})
+    await user.click(link)
+    await waitFor(() => expect(api.media.download).toHaveBeenCalledWith(FILE.url))
+    await waitFor(() => expect(click).toHaveBeenCalled())
+    expect(fetchMock).not.toHaveBeenCalled()
+  })
+
   it('shows images by their preview, sized to avoid layout jumps', async () => {
     const { item } = await showWith([IMAGE])
 

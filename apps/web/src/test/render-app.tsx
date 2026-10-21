@@ -23,6 +23,8 @@ export interface RenderAppOptions extends FakeApiOptions {
   readonly e2eeStatus?: ConversationStatus
   /** A desktop shell around the app (see createFakeShell); none by default, like a browser. */
   readonly shell?: Shell
+  /** The instance the page is not on (the desktop); none by default, like a browser. */
+  readonly mediaBase?: string
   /** Show the encryption guide as on a first visit (other tests find it already seen). */
   readonly encryptionGuide?: boolean
 }
@@ -34,6 +36,7 @@ export const renderApp = (
     api: givenApi,
     e2eeStatus,
     shell,
+    mediaBase,
     encryptionGuide = false,
     ...apiOptions
   }: RenderAppOptions = {},
@@ -62,6 +65,7 @@ export const renderApp = (
       voice={voice.factory}
       e2ee={e2ee.factory}
       shell={shell ?? null}
+      mediaBase={mediaBase ?? null}
     />,
   )
   return {
