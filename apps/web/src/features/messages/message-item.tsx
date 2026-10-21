@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next'
 
 import { Avatar } from '../../components/ui/avatar'
 import { Button } from '../../components/ui/button'
+import { isQrSignInLink } from '../auth/qr-login-search'
 import { InteractionHeader } from '../commands/interaction-header'
 import { EncryptedAttachments } from '../e2ee/encrypted-attachments'
 import { EmojiPicker } from '../emoji/emoji-picker'
@@ -273,9 +274,12 @@ export const MessageItem = ({
               ))}
             </ul>
           ) : null}
-          {message.embeds.map((embed) => (
-            <EmbedCard key={embed.url} embed={embed} />
-          ))}
+          {message.embeds
+            // A sign-in approval link is never made clickable, its preview card included.
+            .filter((embed) => !isQrSignInLink(embed.url))
+            .map((embed) => (
+              <EmbedCard key={embed.url} embed={embed} />
+            ))}
           {thread ? <ThreadCard thread={thread} /> : null}
           {message.pending ? null : (
             <ReactionsBar reactions={message.reactions} onToggle={onToggleReaction} />

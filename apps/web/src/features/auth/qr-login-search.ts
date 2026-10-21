@@ -12,6 +12,18 @@ export const qrLoginSearchSchema = z.object({
 
 export type QrLoginSearch = z.infer<typeof qrLoginSearchSchema>
 
+/**
+ * A link that would open the approval of someone's sign-in. Sent in a chat it is a lure ("open
+ * this and press Let in"), so messages never make it clickable; a real one comes by camera.
+ */
+export const isQrSignInLink = (url: string): boolean => {
+  try {
+    return qrLoginIdSchema.safeParse(new URL(url).searchParams.get('qr')).success
+  } catch {
+    return false
+  }
+}
+
 /** Search params that open the approval of a sign-in (or with undefined close it). */
 export const withQrLogin =
   (qr: string | undefined) =>

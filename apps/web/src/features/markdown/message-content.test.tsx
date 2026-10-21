@@ -42,6 +42,25 @@ describe('message markdown', () => {
     expect(within(item).queryByRole('link', { name: /javascript/ })).toBeNull()
   })
 
+  it('does not let a sign-in approval link be opened from a message', async () => {
+    const url = 'https://chat.example.com/?qr=Zk3v9QmXr2LpT8wYc1NbHa&qrKey=abc'
+    const { item } = await showMessage(`зайди сюда ${url} и нажми «Впустить»`)
+
+    expect(within(item).queryByRole('link')).toBeNull()
+    expect(within(item).getByText(url)).toBeVisible()
+    expect(
+      within(item).getByText('Ссылка для входа на чужое устройство — не открывайте её'),
+    ).toBeVisible()
+  })
+
+  it('keeps other links with a qr parameter clickable', async () => {
+    const { item } = await showMessage('https://shop.example.com/item?qr=1')
+
+    expect(
+      within(item).getByRole('link', { name: 'https://shop.example.com/item?qr=1' }),
+    ).toBeVisible()
+  })
+
   it('shows mentions by name and links channel mentions', async () => {
     const { item, user, router } = await showMessage(
       `<@200> <@&510> <#503> @everyone <@999> <#888>`,

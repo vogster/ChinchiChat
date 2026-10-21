@@ -2,6 +2,7 @@ import { isSafeUrl } from '@chinchi/markdown'
 import { Link } from '@tanstack/react-router'
 import { useState } from 'react'
 
+import { isQrSignInLink } from '../auth/qr-login-search'
 import { CustomEmoji } from '../emoji/custom-emoji'
 
 import type { MentionResolver } from './mention-context'
@@ -60,6 +61,14 @@ const Inline = ({ node, resolve }: { node: InlineNode; resolve: MentionResolver 
         <code className="rounded bg-field px-1 py-0.5 font-mono text-[0.85em]">{node.value}</code>
       )
     case 'link':
+      if (isQrSignInLink(node.url)) {
+        return (
+          <span>
+            <span className="break-all">{node.url}</span>{' '}
+            <span className="text-xs font-medium text-danger">{resolve.labels.qrSignInLink}</span>
+          </span>
+        )
+      }
       // The parser only emits http(s) links; checked again because this is the last line.
       return isSafeUrl(node.url) ? (
         <a

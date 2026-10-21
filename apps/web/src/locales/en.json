@@ -911,6 +911,7 @@
   },
   "markdown": {
     "showSpoiler": "Show spoiler",
+    "qrSignInLink": "A link to sign in someone else's device — don't open it",
     "unknownUser": "unknown-user",
     "unknownRole": "unknown-role",
     "unknownChannel": "unknown-channel"
