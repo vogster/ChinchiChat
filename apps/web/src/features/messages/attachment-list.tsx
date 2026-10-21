@@ -3,6 +3,7 @@ import { Download, FileText } from 'lucide-react'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
+import { useMediaUrl } from '../media/media-base'
 import { VoicePlayer } from '../voice-messages/voice-player'
 import { formatFileSize } from './format-size'
 import { ImageViewer } from './image-viewer'
@@ -36,6 +37,7 @@ const fetchBlob = async (url: string) => {
 export const AttachmentList = ({ attachments }: { attachments: readonly Attachment[] }) => {
   const { t, i18n } = useTranslation()
   const [viewing, setViewing] = useState<Attachment | null>(null)
+  const media = useMediaUrl()
   if (attachments.length === 0) return null
 
   return (
@@ -43,7 +45,7 @@ export const AttachmentList = ({ attachments }: { attachments: readonly Attachme
       {attachments.map((attachment) => (
         <li key={attachment.id}>
           {isInlineAudio(attachment.contentType) ? (
-            <VoicePlayer name={attachment.filename} load={() => fetchBlob(attachment.url)} />
+            <VoicePlayer name={attachment.filename} load={() => fetchBlob(media(attachment.url))} />
           ) : isInlineImage(attachment.contentType) ? (
             <button
               type="button"
@@ -53,7 +55,7 @@ export const AttachmentList = ({ attachments }: { attachments: readonly Attachme
             >
               <img
                 data-native-menu
-                src={attachment.previewUrl ?? attachment.url}
+                src={media(attachment.previewUrl ?? attachment.url)}
                 alt={attachment.filename}
                 loading="lazy"
                 {...fit(attachment.width, attachment.height)}
@@ -62,7 +64,7 @@ export const AttachmentList = ({ attachments }: { attachments: readonly Attachme
             </button>
           ) : (
             <a
-              href={attachment.url}
+              href={media(attachment.url)}
               download={attachment.filename}
               aria-label={`${attachment.filename} (${formatFileSize(attachment.size, i18n.language)})`}
               className="group/file flex w-[min(340px,100%)] items-center gap-3 rounded-[18px] bg-field p-2.5 transition hover:brightness-105"

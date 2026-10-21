@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next'
 import { Button } from '../../components/ui/button'
 import { Dialog } from '../../components/ui/dialog'
 import { saveBlob } from '../../lib/save-file'
+import { useMediaUrl } from '../media/media-base'
 
 import type { Attachment } from '@chinchi/shared'
 
@@ -26,6 +27,7 @@ const downloadImage = async (image: Attachment) => {
 /** The original image, as large as the window allows; Escape or the close button closes it. */
 export const ImageViewer = ({ image, onOpenChange }: ImageViewerProps) => {
   const { t } = useTranslation()
+  const media = useMediaUrl()
   const [state, setState] = useState<'idle' | 'loading' | 'failed'>('idle')
 
   const download = async () => {
@@ -41,7 +43,7 @@ export const ImageViewer = ({ image, onOpenChange }: ImageViewerProps) => {
   return (
     <Dialog open onOpenChange={onOpenChange} title={image.filename} size="lg">
       <img
-        src={image.url}
+        src={media(image.url)}
         alt={image.filename}
         className="mx-auto max-h-[75vh] w-auto max-w-full rounded object-contain"
       />

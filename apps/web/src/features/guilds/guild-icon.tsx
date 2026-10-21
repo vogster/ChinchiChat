@@ -1,4 +1,5 @@
 import { generatedAvatar } from '../../lib/generated-avatar'
+import { useMediaUrl } from '../media/media-base'
 import { guildInitials } from './initials'
 
 /**
@@ -16,8 +17,9 @@ export const GuildIcon = ({
   iconUrl: string | null
   className?: string
 }) => {
+  const media = useMediaUrl()
   if (iconUrl) {
-    return <img src={iconUrl} alt="" aria-hidden className="size-full object-cover" />
+    return <img src={media(iconUrl)} alt="" aria-hidden className="size-full object-cover" />
   }
   const initials = guildInitials(name)
   return (

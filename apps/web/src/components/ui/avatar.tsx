@@ -1,3 +1,4 @@
+import { useMediaUrl } from '../../features/media/media-base'
 import { generatedAvatar } from '../../lib/generated-avatar'
 
 /**
@@ -20,10 +21,11 @@ export const Avatar = ({
   /** The corner radius: a circle, or a squircle such as `rounded-[14px]` for 40px. */
   rounded?: string
 }) => {
+  const media = useMediaUrl()
   if (src || id) {
     return (
       <img
-        src={src ?? generatedAvatar('user', id as string)}
+        src={src ? media(src) : generatedAvatar('user', id as string)}
         alt=""
         aria-hidden
         loading="lazy"

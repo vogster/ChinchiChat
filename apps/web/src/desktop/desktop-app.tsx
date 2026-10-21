@@ -78,6 +78,7 @@ export const DesktopApp = ({ settings, initial, fetch, shell: shellFor }: Deskto
       api={connection.api}
       gateway={connection.gateway}
       shell={shell}
+      mediaBase={connection.instanceUrl}
     />
   ) : (
     <InstancePicker

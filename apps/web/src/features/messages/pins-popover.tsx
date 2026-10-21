@@ -8,6 +8,7 @@ import { HeaderPopover } from '../../components/ui/header-popover'
 import { useApi } from '../../lib/api-context'
 import { errorMessage } from '../../lib/errors'
 import { useMemberNames } from '../guilds/use-member-names'
+import { useMediaUrl } from '../media/media-base'
 import { formatMessageTime } from './format-time'
 import { jumpToMessage } from './jump-to-message'
 import { pinsQueryOptions } from './queries'
@@ -31,6 +32,7 @@ export const PinsPopover = ({ channel, canUnpin, onClose }: PinsPopoverProps) =>
   const pins = useQuery(pinsQueryOptions(useApi(), channel.id))
   const unpin = usePinMessage(channel.id)
   const nameOf = useMemberNames(channel.guildId)
+  const media = useMediaUrl()
   const [notLoaded, setNotLoaded] = useState<string | null>(null)
 
   return (
@@ -80,7 +82,7 @@ export const PinsPopover = ({ channel, canUnpin, onClose }: PinsPopoverProps) =>
               ) : null}
               {image ? (
                 <img
-                  src={image.previewUrl ?? image.url}
+                  src={media(image.previewUrl ?? image.url)}
                   alt={image.filename}
                   loading="lazy"
                   className="max-h-40 w-full rounded-tile object-cover"

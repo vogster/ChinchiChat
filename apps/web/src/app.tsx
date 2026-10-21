@@ -2,6 +2,7 @@ import { QueryClientProvider } from '@tanstack/react-query'
 import { RouterProvider } from '@tanstack/react-router'
 
 import { E2eeFactoryProvider } from './features/e2ee/e2ee-context'
+import { MediaBaseProvider } from './features/media/media-base'
 import { GatewayFactoryProvider } from './features/realtime/gateway-context'
 import { createBrowserGateway } from './features/realtime/gateway-factory'
 import { ShellProvider } from './features/shell/shell-context'
@@ -30,6 +31,8 @@ export interface AppProps {
   readonly e2ee?: E2eeClientFactory
   /** The desktop shell around the app; none in a browser. */
   readonly shell?: Shell | null
+  /** Where the server's pictures live when the page does not (the desktop's instance). */
+  readonly mediaBase?: string | null
 }
 
 /** Keeps the browser's MLS client unless a test brings its own. */
@@ -49,18 +52,21 @@ export const App = ({
   voice = createLiveKitRoom,
   e2ee,
   shell = null,
+  mediaBase = null,
 }: AppProps) => (
   <ApiProvider api={api}>
     <ShellProvider shell={shell}>
-      <GatewayFactoryProvider value={gateway}>
-        <MaybeE2eeFactory factory={e2ee}>
-          <VoiceRoomFactoryProvider value={voice}>
-            <QueryClientProvider client={queryClient}>
-              <RouterProvider router={router} />
-            </QueryClientProvider>
-          </VoiceRoomFactoryProvider>
-        </MaybeE2eeFactory>
-      </GatewayFactoryProvider>
+      <MediaBaseProvider base={mediaBase}>
+        <GatewayFactoryProvider value={gateway}>
+          <MaybeE2eeFactory factory={e2ee}>
+            <VoiceRoomFactoryProvider value={voice}>
+              <QueryClientProvider client={queryClient}>
+                <RouterProvider router={router} />
+              </QueryClientProvider>
+            </VoiceRoomFactoryProvider>
+          </MaybeE2eeFactory>
+        </GatewayFactoryProvider>
+      </MediaBaseProvider>
     </ShellProvider>
   </ApiProvider>
 )

@@ -1,5 +1,7 @@
 import { isSafeUrl } from '@chinchi/markdown'
 
+import { useMediaUrl } from '../media/media-base'
+
 /** Preview pictures are stored by this server (a path here) or, at worst, plain https. */
 const isImageUrl = (url: string) =>
   (url.startsWith('/') && !url.startsWith('//') && !url.startsWith('/\\')) || isSafeUrl(url)
@@ -21,6 +23,7 @@ const hostOf = (url: string) => {
 export const EmbedCard = ({ embed }: { embed: Embed }) => {
   const title = embed.title ?? embed.url
   const host = hostOf(embed.url)
+  const media = useMediaUrl()
   return (
     <article
       aria-label={title}
@@ -48,7 +51,7 @@ export const EmbedCard = ({ embed }: { embed: Embed }) => {
       {embed.image && isImageUrl(embed.image.url) ? (
         <img
           data-native-menu
-          src={embed.image.url}
+          src={media(embed.image.url)}
           width={embed.image.width}
           height={embed.image.height}
           alt=""

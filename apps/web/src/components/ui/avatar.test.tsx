@@ -2,6 +2,7 @@ import { render } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 
 import { GuildIcon } from '../../features/guilds/guild-icon'
+import { MediaBaseProvider } from '../../features/media/media-base'
 import { Avatar } from './avatar'
 
 describe('Avatar', () => {
@@ -16,6 +17,20 @@ describe('Avatar', () => {
 
     const deleted = render(<Avatar name="удалённый" src={null} />)
     expect(deleted.container.textContent).toBe('У')
+  })
+
+  it('loads the picture from the instance when the page lives elsewhere (the desktop)', () => {
+    const { container } = render(
+      <MediaBaseProvider base="https://chat.example.com">
+        <Avatar name="Алиса" src="/api/v1/avatars/100/7.webp" id="100" />
+        <GuildIcon id="500" name="Котики" iconUrl="/api/v1/icons/500/9.webp" />
+      </MediaBaseProvider>,
+    )
+    const sources = [...container.querySelectorAll('img')].map((img) => img.getAttribute('src'))
+    expect(sources).toEqual([
+      'https://chat.example.com/api/v1/avatars/100/7.webp',
+      'https://chat.example.com/api/v1/icons/500/9.webp',
+    ])
   })
 })
 
