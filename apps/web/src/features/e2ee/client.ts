@@ -17,6 +17,7 @@ import { ApiError } from '@chinchi/sdk'
 
 import { decodePayload, encodePayload, fromBase64, toBase64 } from './codec'
 import { createCrossSigning } from './cross-signing'
+import { createDeviceAdditions } from './device-additions'
 import { createDeviceApproval } from './device-approval'
 import { createEncryptedReactions } from './encrypted-reactions'
 import { createHistoryBackup } from './history-backup'
@@ -204,6 +205,7 @@ export const createE2eeClient = ({ api, store, userId, deviceName }: E2eeClientO
   const devicesByUser = new Map<string, Promise<Device[]>>()
   const conversations = new Map<string, Conversation>()
   const queues = new Map<string, Promise<unknown>>()
+  const additions = createDeviceAdditions()
 
   /** One operation at a time per conversation: MLS state moves in a line. */
   const serial = <T>(channelId: string, task: () => Promise<T>): Promise<T> => {
@@ -567,8 +569,12 @@ export const createE2eeClient = ({ api, store, userId, deviceName }: E2eeClientO
     const present = members(conversation).map((m) => m.identity)
     // In a group, a device any member let in stays in for everyone (one consent is enough):
     // only devices gone from the members' lists leave. Two people alone: what this device
-    // does not trust goes, the other side being the only one who could have let it in.
-    const keep = channel.memberIds.length > 2 ? await listedDevices(channel.memberIds) : expected
+    // does not trust of the other person's goes, the other side being the only one who could
+    // have let it in. My own devices still listed stay: one I would not add, the other let in.
+    const keep =
+      channel.memberIds.length > 2
+        ? await listedDevices(channel.memberIds)
+        : new Set([...expected.keys(), ...(await listedDevices([userId]))])
     const gone = present.filter((m) => !keep.has(m.deviceId))
     if (gone.length > 0) {
       const before = saveConversation(conversation)
@@ -576,7 +582,9 @@ export const createE2eeClient = ({ api, store, userId, deviceName }: E2eeClientO
       if (!(await commit(channel.id, before, made, Number(epoch(conversation)), keys))) return false
       conversation = made.conversation
     }
-    const missing = [...expected].filter(([id]) => !present.some((m) => m.deviceId === id))
+    const missing = [...expected].filter(
+      ([id]) => !present.some((m) => m.deviceId === id) && additions.allowed(channel.id, id),
+    )
     if (missing.length === 0) return true
     const claimed = (
       await Promise.all(
@@ -594,7 +602,7 @@ export const createE2eeClient = ({ api, store, userId, deviceName }: E2eeClientO
       claimed.map((k) => fromBase64(k.package)),
       options,
     )
-    return commit(
+    const added = await commit(
       channel.id,
       before,
       made,
@@ -602,6 +610,13 @@ export const createE2eeClient = ({ api, store, userId, deviceName }: E2eeClientO
       keys,
       claimed.map((k) => ({ deviceId: k.deviceId, keyPackageId: k.keyPackageId })),
     )
+    if (added) {
+      additions.record(
+        channel.id,
+        claimed.map((k) => ({ deviceId: k.deviceId, ownerId: expected.get(k.deviceId) ?? '' })),
+      )
+    }
+    return added
   }
 
   /**
@@ -691,6 +706,7 @@ export const createE2eeClient = ({ api, store, userId, deviceName }: E2eeClientO
       conversations.clear()
       devicesByUser.clear()
       queues.clear()
+      additions.clear()
     },
 
     open,
@@ -837,9 +853,13 @@ export const createE2eeClient = ({ api, store, userId, deviceName }: E2eeClientO
     /** Safety codes, new-device warnings, device codes and letting devices in. */
     safety,
 
-    /** A member's devices changed: forget the cached list (the next open reconciles). */
+    /**
+     * A member's devices changed: forget the cached list (the next open reconciles), and add
+     * their devices again even where someone took them out before.
+     */
     devicesChanged: async (changedUserId: string) => {
       devicesByUser.delete(changedUserId)
+      additions.forgetOwner(changedUserId)
     },
   }
 }

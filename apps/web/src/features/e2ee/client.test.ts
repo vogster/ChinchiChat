@@ -32,6 +32,10 @@ const letIn = async (who: E2eeClient, ownerId: string) => {
   for (const device of person?.newDevices ?? []) await who.safety.acceptDevice(ownerId, device.id)
 }
 
+/** Commits posted so far, in every conversation. */
+const commitCount = (delivery: ReturnType<typeof createFakeDelivery>) =>
+  delivery.handshakes.filter((h) => h.kind === 'commit').length
+
 describe('e2ee client', () => {
   it('sets up a conversation the other side joins, and both read each other', async () => {
     const { client } = setup()
@@ -278,6 +282,64 @@ describe('e2ee client', () => {
     expect(await carolPhone.read(group, await bob.send(group, 'От Боба'))).toMatchObject({
       payload: { text: 'От Боба' },
     })
+  })
+
+  it('in a DM, a device the other person let in stays: its owner does not take it out again', async () => {
+    const { client, delivery } = setup()
+    const alice = client(ALICE).client
+    const bob = client(BOB).client
+    await bob.ready()
+    await alice.open(DM)
+
+    // Bob's unapproved phone: Alice compares its code and lets it in.
+    const bobPhone = client(BOB, 'Телефон').client
+    await bobPhone.ready()
+    await letIn(alice, BOB)
+    await alice.open(DM)
+    // Bob's laptop does not let it in itself, but leaves it be: Alice did.
+    await bob.devicesChanged(BOB)
+    await bob.open(DM)
+    const settled = commitCount(delivery)
+    await alice.open(DM)
+    await bob.open(DM)
+
+    expect(commitCount(delivery)).toBe(settled)
+    expect(await bobPhone.read(DM, await bob.send(DM, 'С ноутбука'))).toMatchObject({
+      payload: { text: 'С ноутбука' },
+    })
+  })
+
+  it('stops adding back a device another member keeps taking out', async () => {
+    const { client, delivery } = setup()
+    const alice = client(ALICE).client
+    const bob = client(BOB).client
+    await bob.ready()
+    await alice.open(DM)
+    // Alice's tablet, let in by Bob.
+    const aliceTablet = client(ALICE, 'Планшет').client
+    await aliceTablet.ready()
+    await letIn(bob, ALICE)
+    await bob.open(DM)
+    await aliceTablet.open(DM)
+    // Bob's phone: Alice's laptop lets it in, her tablet does not (each keeps its own consent).
+    const bobPhone = client(BOB, 'Телефон').client
+    await bobPhone.ready()
+    await letIn(alice, BOB)
+    await aliceTablet.devicesChanged(BOB)
+
+    // Every commit wakes the other up (a handshake): the laptop adds the phone, the tablet
+    // takes it out. It has to settle rather than go on for ever.
+    for (let round = 0; round < 4; round += 1) {
+      await alice.open(DM)
+      await aliceTablet.open(DM)
+    }
+    const settled = commitCount(delivery)
+    for (let round = 0; round < 3; round += 1) {
+      await alice.open(DM)
+      await aliceTablet.open(DM)
+    }
+
+    expect(commitCount(delivery)).toBe(settled)
   })
 
   it('never encrypts for someone removed from a group, even before anyone reopens it', async () => {
