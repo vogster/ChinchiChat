@@ -33,15 +33,26 @@ const claim = (id: string, secret: string, headers: Record<string, string> = NEW
     payload: { secret },
   })
 
-/** The number each new device shows, so approvals pick the right one unless a test says so. */
-const shown = new Map<string, number>()
+/** Each new device's secret, so a test can read the number it shows. */
+const secrets = new Map<string, string>()
 
-const approve = (id: string, by: TestActor, payload: object = {}) =>
+const look = (id: string, by: TestActor) =>
+  app.inject({ method: 'GET', url: `/api/v1/auth/qr/${id}`, headers: by.headers })
+
+/** The number the new device shows once the approver opened the sign-in (and 10 if it can't). */
+const numberShown = async (id: string, by: TestActor): Promise<number> => {
+  await look(id, by)
+  const seen = (await claim(id, secrets.get(id) ?? '')).json().data
+  return seen?.state === 'scanned' ? (seen.match as number) : 10
+}
+
+/** Approves with the number the new device shows, unless a test picks one itself. */
+const approve = async (id: string, by: TestActor, payload: object = {}) =>
   app.inject({
     method: 'POST',
     url: `/api/v1/auth/qr/${id}/approve`,
     headers: by.headers,
-    payload: { match: shown.get(id) ?? 10, ...payload },
+    payload: { match: 'match' in payload ? undefined : await numberShown(id, by), ...payload },
   })
 
 const ticket = async (payload: object = {}) => {
@@ -52,9 +63,8 @@ const ticket = async (payload: object = {}) => {
     secret: string
     code: string
     url: string
-    match: number
   }
-  shown.set(created.id, created.match)
+  secrets.set(created.id, created.secret)
   return created
 }
 
@@ -169,7 +179,7 @@ describe('signing in with a QR code', () => {
 
     expect((await approve(id, alice)).statusCode).toBe(204)
     const bob = await signUp(app, { username: 'bob', email: 'bob@example.com' })
-    const again = await approve(id, bob)
+    const again = await approve(id, bob, { match: 10 })
     expect(again.statusCode).toBe(409)
     expect(again.json().code).toBe('QR_LOGIN_USED')
   })
@@ -198,31 +208,27 @@ describe('signing in with a QR code', () => {
     expect(response.json().code).toBe('ACCOUNT_SUSPENDED')
   })
 
-  it('asks the approver to pick the number the new device shows', async () => {
-    const { id, match } = await ticket()
-    expect(match).toBeGreaterThanOrEqual(10)
-    expect(match).toBeLessThanOrEqual(99)
+  it('shows the number on the new device only once the approver opened the sign-in', async () => {
+    const created = await ticket()
+    expect(created).not.toHaveProperty('match')
+    // Before the scan the new device just waits, with nothing but its QR to show.
+    expect((await claim(created.id, created.secret)).json().data).toEqual({ state: 'pending' })
 
-    const seen = await app.inject({
-      method: 'GET',
-      url: `/api/v1/auth/qr/${id}`,
-      headers: alice.headers,
-    })
+    const seen = await look(created.id, alice)
     const choices = seen.json().data.login.choices as number[]
     expect(choices).toHaveLength(3)
     expect(new Set(choices).size).toBe(3)
-    expect(choices).toContain(match)
+
+    const scanned = (await claim(created.id, created.secret)).json().data
+    expect(scanned).toEqual({ state: 'scanned', match: expect.any(Number) })
+    expect(choices).toContain(scanned.match)
     // The same choices every time it is looked at, so the order gives nothing away on refresh.
-    const again = await app.inject({
-      method: 'GET',
-      url: `/api/v1/auth/qr/${id}`,
-      headers: alice.headers,
-    })
-    expect(again.json().data.login.choices).toEqual(choices)
+    expect((await look(created.id, alice)).json().data.login.choices).toEqual(choices)
   })
 
   it('burns the sign-in when the wrong number is picked: no second guess', async () => {
-    const { id, secret, match } = await ticket()
+    const { id, secret } = await ticket()
+    const match = await numberShown(id, alice)
 
     const wrong = await approve(id, alice, { match: match === 99 ? 98 : match + 1 })
     expect(wrong.statusCode).toBe(403)

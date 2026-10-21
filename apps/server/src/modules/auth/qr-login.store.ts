@@ -14,6 +14,8 @@ export interface QrLogin {
   /** The number the new device shows, and it among the decoys the approver picks from. */
   readonly match: number
   readonly choices: readonly number[]
+  /** The approver opened it: the new device may show the number now. */
+  readonly seen: boolean
   readonly userAgent: string | null
   readonly ipAddress: string | null
   readonly createdAt: string

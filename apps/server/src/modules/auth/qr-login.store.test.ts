@@ -12,6 +12,7 @@ const login: QrLogin = {
   publicKey: null,
   match: 47,
   choices: [23, 47, 81],
+  seen: false,
   userAgent: null,
   ipAddress: null,
   createdAt: '2026-10-21T10:00:00.000Z',

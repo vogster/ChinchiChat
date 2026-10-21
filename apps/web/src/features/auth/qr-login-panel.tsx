@@ -19,7 +19,7 @@ export const QrLoginPanel = ({
   onBack?: () => void
 }) => {
   const { t } = useTranslation()
-  const { ticket, error, approved } = useQrLogin(redirectTo)
+  const { ticket, match, error, approved } = useQrLogin(redirectTo)
 
   return (
     <div className="flex flex-col items-center gap-4 text-center">
@@ -27,6 +27,17 @@ export const QrLoginPanel = ({
       {error ? <Alert tone="error">{errorMessage(t, error)}</Alert> : null}
       {approved ? (
         <Alert tone="success">{t('auth.qr.signingIn')}</Alert>
+      ) : match !== null ? (
+        <div className="flex flex-col items-center gap-3 py-4">
+          <span
+            role="status"
+            aria-label={t('auth.qr.matchLabel')}
+            className="text-6xl font-semibold tabular-nums"
+          >
+            {match}
+          </span>
+          <p className="max-w-60 text-sm text-muted">{t('auth.qr.pickThis')}</p>
+        </div>
       ) : ticket ? (
         <>
           <QrCode value={ticket.url} label={t('auth.qr.codeLabel')} />
@@ -34,12 +45,6 @@ export const QrLoginPanel = ({
             <span className="text-xs text-muted">{t('auth.qr.manualCode')}</span>
             <span className="font-mono text-lg font-semibold tracking-widest" aria-live="polite">
               {ticket.code}
-            </span>
-          </div>
-          <div className="flex flex-col gap-1">
-            <span className="text-xs text-muted">{t('auth.qr.matchLabel')}</span>
-            <span className="text-4xl font-semibold tabular-nums" aria-live="polite">
-              {ticket.match}
             </span>
           </div>
         </>

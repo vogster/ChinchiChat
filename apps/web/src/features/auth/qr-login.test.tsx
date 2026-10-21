@@ -18,9 +18,8 @@ describe('signing in with a QR code, on the new device', () => {
 
     expect(await screen.findByRole('img', { name: 'QR-код для входа' })).toBeVisible()
     expect(screen.getByText('KQ7M-2PXD')).toBeVisible()
-    // The number to pick on the other device: it is on this screen only, not in the QR.
-    expect(screen.getByText('Число для подтверждения')).toBeVisible()
-    expect(screen.getByText('47')).toBeVisible()
+    // No number yet: it comes once a signed-in device opens the sign-in.
+    expect(screen.queryByRole('status', { name: 'Число для подтверждения' })).toBeNull()
     expect(screen.getByLabelText('Пароль')).toBeVisible()
     expect(screen.queryByRole('button', { name: 'Войти по QR-коду' })).toBeNull()
     // The new device sends its key, so encryption can follow it.
@@ -64,6 +63,18 @@ describe('signing in with a QR code, on the new device', () => {
     expect(await screen.findByRole('heading', FRIENDS)).toBeVisible()
     expect(router.state.location.pathname).toBe('/')
     await vi.waitFor(() => expect(e2ee.recovery.useKey).toHaveBeenCalledWith(TEST_RECOVERY_KEY))
+  })
+
+  it('shows the number to pick once the other device opened the sign-in', async () => {
+    const api = createFakeApi()
+    api.auth.qr.claim.mockResolvedValue({ state: 'scanned', match: 47 })
+    renderApp('/login', { api })
+
+    const number = await screen.findByRole('status', { name: 'Число для подтверждения' })
+    expect(number).toHaveTextContent('47')
+    expect(screen.getByText('Выберите это число на устройстве, где вы уже вошли')).toBeVisible()
+    // The QR has done its job: the number takes its place.
+    expect(screen.queryByRole('img', { name: 'QR-код для входа' })).toBeNull()
   })
 
   it('starts over with a new QR when the old one is gone', async () => {

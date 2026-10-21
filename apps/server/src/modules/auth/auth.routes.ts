@@ -203,6 +203,9 @@ export const authRoutes: FastifyPluginAsyncZod<AuthRoutesOptions> = async (
       if (outcome.state === 'pending') {
         return reply.send({ success: true as const, data: { state: 'pending' as const } })
       }
+      if (outcome.state === 'scanned') {
+        return reply.send({ success: true as const, data: outcome })
+      }
       return sendAuth(request, reply, 200, outcome.result, {
         state: 'approved',
         sealed: outcome.sealed,

@@ -20,8 +20,9 @@ const opaque = (min: number, max: number) =>
 export const qrLoginIdSchema = opaque(16, 64)
 
 /**
- * The new device shows a two-digit number; the approver picks it among this many. Approving
- * then takes the new device's screen, not just a link: one sent in a chat gets no number.
+ * Once the approver opens the sign-in, the new device shows a two-digit number; the approver
+ * picks it among this many. Approving then takes the new device's screen, not just a link: one
+ * sent in a chat gets no number.
  */
 export const QR_MATCH_CHOICES = 3
 export const qrMatchSchema = z.number().int().min(10).max(99)
@@ -49,8 +50,6 @@ export const qrLoginTicketSchema = z.object({
   /** What the QR holds: the instance's web address that opens the approval, with the key. */
   url: z.url(),
   expiresAt: z.iso.datetime(),
-  /** Shown big on the new device; the approver has to pick it. */
-  match: qrMatchSchema,
 })
 
 /** What the approving device is shown before it says yes. */
@@ -82,9 +81,13 @@ export const approveQrLoginRequestSchema = z
 
 export const claimQrLoginRequestSchema = z.strictObject({ secret: opaque(32, 128) })
 
-/** Still waiting, or signed in (with the sealed secrets when encryption was handed over). */
+/**
+ * Still waiting; opened by the approver (the new device shows the number to pick); or signed in
+ * (with the sealed secrets when encryption was handed over).
+ */
 export const qrLoginClaimSchema = z.union([
   z.object({ state: z.literal('pending') }),
+  z.object({ state: z.literal('scanned'), match: qrMatchSchema }),
   z.object({
     state: z.literal('approved'),
     user: currentUserSchema,

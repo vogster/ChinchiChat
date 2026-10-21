@@ -360,7 +360,6 @@ export const testQrTicket = {
   code: 'KQ7M-2PXD',
   url: 'http://localhost:5173/?qr=qrloginabcdefghij',
   expiresAt: '2099-01-01T00:00:00.000Z',
-  match: 47,
 }
 export const testQrLogin = {
   id: testQrTicket.id,

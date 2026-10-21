@@ -72,6 +72,11 @@ export const createQrLoginService = ({
     return login
   }
 
+  const opened = async (login: QrLogin) => {
+    if (!login.seen) await store.update({ ...login, seen: true })
+    return login
+  }
+
   return {
     async create(publicKey: string | null, client: ClientInfo): Promise<QrLoginTicket> {
       const { token: secret, tokenHash: secretHash } = generateSessionToken()
@@ -82,6 +87,7 @@ export const createQrLoginService = ({
         secretHash,
         publicKey,
         ...newChoices(),
+        seen: false,
         userAgent: client.userAgent?.slice(0, USER_AGENT_MAX_LENGTH) ?? null,
         ipAddress: client.ipAddress ?? null,
         createdAt: created.toISOString(),
@@ -99,16 +105,16 @@ export const createQrLoginService = ({
         code: `${login.code.slice(0, 4)}-${login.code.slice(4)}`,
         url: `${publicUrl}/?${query.toString()}`,
         expiresAt: new Date(created.getTime() + QR_LOGIN_SECONDS * 1000).toISOString(),
-        match: login.match,
       }
     },
 
-    find: async (id: string) => toInfo(await waiting(id)),
+    /** For the approver, who has it open now: the new device may show its number from here. */
+    find: async (id: string) => toInfo(await opened(await waiting(id))),
 
     async findByCode(code: string) {
       const login = await store.findByCode(code)
       if (!login) throw unknownLogin()
-      return toInfo(login)
+      return toInfo(await opened(login))
     },
 
     async approve(id: string, userId: Snowflake, body: ApproveQrLoginRequest) {
@@ -127,11 +133,18 @@ export const createQrLoginService = ({
       })
     },
 
-    /** Pending until approved; then the session, once (the ticket goes with it). */
+    /**
+     * Pending until the approver opens it, then the number to show; once approved, the session,
+     * once (the ticket goes with it).
+     */
     async claim(id: string, secret: string, client: ClientInfo) {
       const login = await store.find(id)
       if (!login || login.secretHash !== hashSessionToken(secret)) throw unknownLogin()
-      if (!login.approvedBy) return { state: 'pending' as const }
+      if (!login.approvedBy) {
+        return login.seen
+          ? { state: 'scanned' as const, match: login.match }
+          : { state: 'pending' as const }
+      }
       await store.delete(login)
       const result = await signInAs(login.approvedBy, client)
       await onSignedIn(login.approvedBy, {
