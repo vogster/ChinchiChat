@@ -11,6 +11,9 @@ export interface QrLogin {
   /** SHA-256 of the secret only the new device has; it alone claims the session. */
   readonly secretHash: string
   readonly publicKey: string | null
+  /** The number the new device shows, and it among the decoys the approver picks from. */
+  readonly match: number
+  readonly choices: readonly number[]
   readonly userAgent: string | null
   readonly ipAddress: string | null
   readonly createdAt: string

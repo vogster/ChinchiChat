@@ -1,3 +1,4 @@
+import { isApiError } from '@chinchi/sdk'
 import { useNavigate, useSearch } from '@tanstack/react-router'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -14,6 +15,9 @@ import { useQrApproval } from './use-qr-approval'
 
 import type { QrLoginSearch } from './qr-login-search'
 
+/** A sign-in that can't go on after this answer: a wrong number ends it, as does expiry. */
+const FINAL_ERRORS = new Set(['QR_LOGIN_MISMATCH', 'QR_LOGIN_USED', 'UNKNOWN_QR_LOGIN'])
+
 const Approval = ({
   id,
   scannedKey,
@@ -27,6 +31,7 @@ const Approval = ({
   const { login, canHandOver, approve } = useQrApproval(id, scannedKey)
   const [handOver, setHandOver] = useState(true)
   const info = login.data
+  const over = approve.isError && isApiError(approve.error) && FINAL_ERRORS.has(approve.error.code)
 
   return (
     <Dialog
@@ -43,6 +48,10 @@ const Approval = ({
             <Alert tone="success">{t('auth.qrApprove.done')}</Alert>
             <Button onClick={onClose}>{t('auth.qrApprove.close')}</Button>
           </>
+        ) : over ? (
+          <Button variant="secondary" onClick={onClose}>
+            {t('auth.qrApprove.close')}
+          </Button>
         ) : info ? (
           <>
             <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 rounded-field bg-side px-4 py-3 text-sm">
@@ -66,14 +75,27 @@ const Approval = ({
                 description={t('auth.qrApprove.handOverHint')}
               />
             ) : null}
-            <div className="flex gap-2">
-              <Button variant="secondary" onClick={onClose}>
-                {t('auth.qrApprove.no')}
-              </Button>
-              <Button pending={approve.isPending} onClick={() => approve.mutate(handOver)}>
-                {t('auth.qrApprove.yes')}
-              </Button>
+            <p className="text-sm font-medium">{t('auth.qrApprove.pickNumber')}</p>
+            <div
+              role="group"
+              aria-label={t('auth.qrApprove.numbers')}
+              className="grid grid-cols-3 gap-2"
+            >
+              {info.choices.map((number) => (
+                <Button
+                  key={number}
+                  variant="secondary"
+                  disabled={approve.isPending}
+                  onClick={() => approve.mutate({ match: number, handOver })}
+                  className="text-2xl tabular-nums"
+                >
+                  {number}
+                </Button>
+              ))}
             </div>
+            <Button variant="secondary" onClick={onClose}>
+              {t('auth.qrApprove.no')}
+            </Button>
           </>
         ) : login.isError ? (
           <Button variant="secondary" onClick={onClose}>

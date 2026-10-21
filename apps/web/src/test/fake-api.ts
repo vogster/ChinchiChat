@@ -360,6 +360,7 @@ export const testQrTicket = {
   code: 'KQ7M-2PXD',
   url: 'http://localhost:5173/?qr=qrloginabcdefghij',
   expiresAt: '2099-01-01T00:00:00.000Z',
+  match: 47,
 }
 export const testQrLogin = {
   id: testQrTicket.id,
@@ -368,6 +369,7 @@ export const testQrLogin = {
   ipAddress: '203.0.113.5',
   createdAt: '2026-10-21T10:00:00.000Z',
   publicKey: null as string | null,
+  choices: [23, 47, 81],
 }
 
 export const createFakeApi = ({ user = null, registrationMode = 'open' }: FakeApiOptions = {}) => {

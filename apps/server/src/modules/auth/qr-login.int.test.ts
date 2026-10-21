@@ -27,13 +27,29 @@ const claim = (id: string, secret: string, headers: Record<string, string> = NEW
     payload: { secret },
   })
 
+/** The number each new device shows, so approvals pick the right one unless a test says so. */
+const shown = new Map<string, number>()
+
 const approve = (id: string, by: TestActor, payload: object = {}) =>
-  app.inject({ method: 'POST', url: `/api/v1/auth/qr/${id}/approve`, headers: by.headers, payload })
+  app.inject({
+    method: 'POST',
+    url: `/api/v1/auth/qr/${id}/approve`,
+    headers: by.headers,
+    payload: { match: shown.get(id) ?? 10, ...payload },
+  })
 
 const ticket = async (payload: object = {}) => {
   const response = await create(payload)
   expect(response.statusCode).toBe(201)
-  return response.json().data.ticket as { id: string; secret: string; code: string; url: string }
+  const created = response.json().data.ticket as {
+    id: string
+    secret: string
+    code: string
+    url: string
+    match: number
+  }
+  shown.set(created.id, created.match)
+  return created
 }
 
 beforeEach(async () => {
@@ -131,7 +147,7 @@ describe('signing in with a QR code', () => {
       method: 'POST',
       url: `/api/v1/auth/qr/${id}/approve`,
       headers: { origin: WEB_ORIGIN },
-      payload: {},
+      payload: { match: 10 },
     })
     expect(anonymous.statusCode).toBe(401)
     expect(
@@ -173,6 +189,52 @@ describe('signing in with a QR code', () => {
     const response = await claim(id, secret)
     expect(response.statusCode).toBe(403)
     expect(response.json().code).toBe('ACCOUNT_SUSPENDED')
+  })
+
+  it('asks the approver to pick the number the new device shows', async () => {
+    const { id, match } = await ticket()
+    expect(match).toBeGreaterThanOrEqual(10)
+    expect(match).toBeLessThanOrEqual(99)
+
+    const seen = await app.inject({
+      method: 'GET',
+      url: `/api/v1/auth/qr/${id}`,
+      headers: alice.headers,
+    })
+    const choices = seen.json().data.login.choices as number[]
+    expect(choices).toHaveLength(3)
+    expect(new Set(choices).size).toBe(3)
+    expect(choices).toContain(match)
+    // The same choices every time it is looked at, so the order gives nothing away on refresh.
+    const again = await app.inject({
+      method: 'GET',
+      url: `/api/v1/auth/qr/${id}`,
+      headers: alice.headers,
+    })
+    expect(again.json().data.login.choices).toEqual(choices)
+  })
+
+  it('burns the sign-in when the wrong number is picked: no second guess', async () => {
+    const { id, secret, match } = await ticket()
+
+    const wrong = await approve(id, alice, { match: match === 99 ? 98 : match + 1 })
+    expect(wrong.statusCode).toBe(403)
+    expect(wrong.json().code).toBe('QR_LOGIN_MISMATCH')
+
+    expect((await approve(id, alice, { match })).statusCode).toBe(404)
+    expect((await claim(id, secret)).statusCode).toBe(404)
+  })
+
+  it('wants a number to approve', async () => {
+    const { id } = await ticket()
+
+    const response = await app.inject({
+      method: 'POST',
+      url: `/api/v1/auth/qr/${id}/approve`,
+      headers: alice.headers,
+      payload: {},
+    })
+    expect(response.statusCode).toBe(400)
   })
 
   it('rejects a malformed code or key', async () => {

@@ -128,6 +128,7 @@
       "back": "Sign in again"
     },
     "qr": {
+      "matchLabel": "Number to confirm",
       "title": "Sign in with a QR code",
       "show": "Sign in with a QR code",
       "codeLabel": "Sign-in QR code",
@@ -135,12 +136,14 @@
       "preparing": "Preparing the code…",
       "step1": "Open Chinchi where you are already signed in, e.g. on your phone.",
       "step2": "Point the camera at the code, or enter the code in Settings → Devices.",
-      "step3": "Confirm the sign-in — this page signs in by itself.",
+      "step3": "Pick the number from this page there — this page signs in by itself.",
       "signingIn": "Sign-in confirmed, signing in…",
       "back": "Sign in with a password",
       "hint": "Scan it with the phone where you are signed in, or enter the code in Settings → Devices."
     },
     "qrApprove": {
+      "pickNumber": "Which number does the new device show?",
+      "numbers": "Number from the new device",
       "title": "Sign-in on a new device",
       "question": "Let this device into your account?",
       "loading": "Loading…",
@@ -150,7 +153,6 @@
       "warning": "Confirm only a code from your own screen. If someone sent you the code, it is a scam: they would get into your account.",
       "handOver": "Hand over encrypted conversations",
       "handOverHint": "The new device gets the recovery key and can read the history.",
-      "yes": "Let in",
       "no": "Cancel",
       "done": "Done: the device is signing in.",
       "close": "OK"
@@ -277,6 +279,7 @@
     "RATE_LIMIT_UNAVAILABLE": "The service is briefly unavailable, try again in a minute",
     "UNKNOWN_QR_LOGIN": "The sign-in code has expired or was used — refresh it on the new device.",
     "QR_LOGIN_USED": "This sign-in was already confirmed.",
+    "QR_LOGIN_MISMATCH": "The number didn't match the new device. This sign-in is cancelled: if it was you, start over.",
     "SAME_EMAIL": "This is already the email of your account."
   },
   "settings": {

@@ -36,6 +36,12 @@ export const QrLoginPanel = ({
               {ticket.code}
             </span>
           </div>
+          <div className="flex flex-col gap-1">
+            <span className="text-xs text-muted">{t('auth.qr.matchLabel')}</span>
+            <span className="text-4xl font-semibold tabular-nums" aria-live="polite">
+              {ticket.match}
+            </span>
+          </div>
         </>
       ) : error ? null : (
         <p className="text-sm text-muted">{t('auth.qr.preparing')}</p>

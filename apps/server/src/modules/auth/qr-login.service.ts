@@ -1,5 +1,5 @@
 import { randomBytes, randomInt } from 'node:crypto'
-import { QR_LOGIN_SECONDS } from '@chinchi/shared'
+import { QR_LOGIN_SECONDS, QR_MATCH_CHOICES } from '@chinchi/shared'
 
 import { conflict, HttpError } from '../../http/http-error'
 import { generateSessionToken, hashSessionToken } from './session-token'
@@ -15,6 +15,16 @@ const USER_AGENT_MAX_LENGTH = 512
 
 const unknownLogin = () =>
   new HttpError(404, 'UNKNOWN_QR_LOGIN', 'This sign-in code is unknown or has expired')
+const mismatch = () =>
+  new HttpError(403, 'QR_LOGIN_MISMATCH', 'That is not the number on the new device')
+
+/** Distinct two-digit numbers in a random order; the new device shows one of them. */
+const newChoices = () => {
+  const picked = new Set<number>()
+  while (picked.size < QR_MATCH_CHOICES) picked.add(randomInt(10, 100))
+  const choices = [...picked]
+  return { choices, match: choices[randomInt(QR_MATCH_CHOICES)] as number }
+}
 
 const newCode = () => Array.from({ length: CODE_LENGTH }, () => ALPHABET[randomInt(32)]).join('')
 
@@ -24,6 +34,7 @@ const toInfo = (login: QrLogin): QrLoginInfo => ({
   ipAddress: login.ipAddress,
   createdAt: login.createdAt,
   publicKey: login.publicKey,
+  choices: [...login.choices],
 })
 
 export interface QrLoginServiceDeps {
@@ -61,6 +72,7 @@ export const createQrLoginService = ({
         code: newCode(),
         secretHash,
         publicKey,
+        ...newChoices(),
         userAgent: client.userAgent?.slice(0, USER_AGENT_MAX_LENGTH) ?? null,
         ipAddress: client.ipAddress ?? null,
         createdAt: created.toISOString(),
@@ -78,6 +90,7 @@ export const createQrLoginService = ({
         code: `${login.code.slice(0, 4)}-${login.code.slice(4)}`,
         url: `${publicUrl}/?${query.toString()}`,
         expiresAt: new Date(created.getTime() + QR_LOGIN_SECONDS * 1000).toISOString(),
+        match: login.match,
       }
     },
 
@@ -92,6 +105,11 @@ export const createQrLoginService = ({
     async approve(id: string, userId: Snowflake, body: ApproveQrLoginRequest) {
       const login = await waiting(id)
       if (login.approvedBy) throw conflict('QR_LOGIN_USED', 'This sign-in was already approved')
+      // One guess: a wrong number ends the sign-in, and the new device starts over.
+      if (body.match !== login.match) {
+        await store.delete(login)
+        throw mismatch()
+      }
       await store.update({
         ...login,
         approvedBy: userId,

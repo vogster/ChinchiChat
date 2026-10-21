@@ -10,6 +10,8 @@ const login: QrLogin = {
   code: 'KQ7M2PXD',
   secretHash: 'hash',
   publicKey: null,
+  match: 47,
+  choices: [23, 47, 81],
   userAgent: null,
   ipAddress: null,
   createdAt: '2026-10-21T10:00:00.000Z',

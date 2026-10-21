@@ -26,12 +26,13 @@ export const useQrApproval = (id: string, scannedKey: string | undefined) => {
   const newKey = login.data?.publicKey
   const canHandOver = Boolean(scannedKey && newKey === scannedKey && recoveryKey.data)
   const approve = useMutation({
-    mutationFn: async (handOver: boolean) => {
+    /** `match`: the number picked, which has to be the one on the new device. */
+    mutationFn: async ({ match, handOver }: { match: number; handOver: boolean }) => {
       const sealed =
         handOver && canHandOver && scannedKey && recoveryKey.data
           ? await sealForNewDevice(id, scannedKey, recoveryKey.data)
           : {}
-      await api.auth.qr.approve(id, sealed)
+      await api.auth.qr.approve(id, { match, ...sealed })
     },
   })
   return { login, canHandOver, approve }
