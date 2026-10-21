@@ -1,4 +1,5 @@
 import { isApiError } from '@chinchi/sdk'
+import { describeUserAgent } from '@chinchi/shared'
 import { useNavigate, useSearch } from '@tanstack/react-router'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -9,7 +10,6 @@ import { Dialog } from '../../components/ui/dialog'
 import { Switch } from '../../components/ui/switch'
 import { errorMessage } from '../../lib/errors'
 import { formatRelativeTime } from '../../lib/relative-time'
-import { describeUserAgent } from '../settings/user-agent'
 import { withQrLogin } from './qr-login-search'
 import { useQrApproval } from './use-qr-approval'
 

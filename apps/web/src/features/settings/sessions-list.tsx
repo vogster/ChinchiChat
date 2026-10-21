@@ -1,3 +1,4 @@
+import { describeUserAgent } from '@chinchi/shared'
 import { useMutation, useQueryClient, useSuspenseQuery } from '@tanstack/react-query'
 import { Monitor } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
@@ -8,7 +9,6 @@ import { useApi } from '../../lib/api-context'
 import { errorMessage } from '../../lib/errors'
 import { formatRelativeTime } from '../../lib/relative-time'
 import { authKeys, sessionsQueryOptions } from '../auth/queries'
-import { describeUserAgent } from './user-agent'
 
 import type { SessionInfo } from '@chinchi/shared'
 

@@ -1,3 +1,5 @@
+import { describeUserAgent } from '@chinchi/shared'
+
 import { publishRevokedSessions } from '../../events/internal-events'
 import { badRequest, conflict } from '../../http/http-error'
 import {
@@ -5,6 +7,7 @@ import {
   emailChangedEmail,
   lockoutEmail,
   passwordResetEmail,
+  qrSignInEmail,
   verificationEmail,
 } from '../../mail/templates'
 
@@ -139,6 +142,29 @@ export const createAccountEmailService = ({
       const token = await issueToken(user.id, 'reset_password')
       dispatch(
         lockoutEmail(user.email, user.username, link('/reset-password', token), localeOf(user)),
+      )
+    },
+
+    /** Someone signed in by a QR: the owner learns the device and address, and where to act. */
+    async notifyQrSignIn(
+      userId: Snowflake,
+      client: { userAgent: string | null; ipAddress: string | null },
+    ): Promise<void> {
+      const user = await users.findById(userId)
+      if (!user) return
+      const locale = localeOf(user)
+      const unknown = locale === 'en' ? 'unknown' : 'неизвестно'
+      dispatch(
+        qrSignInEmail(
+          user.email,
+          user.username,
+          {
+            device: describeUserAgent(client.userAgent) ?? unknown,
+            ip: client.ipAddress ?? unknown,
+          },
+          `${publicUrl}/?settings=sessions`,
+          locale,
+        ),
       )
     },
 

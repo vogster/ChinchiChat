@@ -3,12 +3,18 @@ import { afterAll, beforeEach, describe, expect, it } from 'vitest'
 
 import { SESSION_COOKIE, WEB_ORIGIN } from '../../../test/auth-helpers'
 import { signUp } from '../../../test/guild-helpers'
+import { createOutbox } from '../../../test/outbox'
 import { createTestApp, resetState } from '../../../test/test-app'
 import { users } from '../../db/schema'
+import { userTopic } from '../../events/event-bus'
 
 import type { TestActor } from '../../../test/guild-helpers'
 
-const { app, db, redis, close } = createTestApp({ env: { RATE_LIMIT: 'off' } })
+const outbox = createOutbox()
+const { app, db, redis, events, close } = createTestApp({
+  env: { RATE_LIMIT: 'off' },
+  mailer: outbox.mailer,
+})
 
 const KEY = 'B'.repeat(43) + '='
 const APPROVER_KEY = 'C'.repeat(43) + '='
@@ -54,6 +60,7 @@ const ticket = async (payload: object = {}) => {
 
 beforeEach(async () => {
   await resetState(db, redis)
+  outbox.clear()
   alice = await signUp(app, { username: 'alice', email: 'alice@example.com' })
 })
 
@@ -235,6 +242,27 @@ describe('signing in with a QR code', () => {
       payload: {},
     })
     expect(response.statusCode).toBe(400)
+  })
+
+  it('tells the owner about the sign-in, by email and in their open sessions', async () => {
+    const { id, secret } = await ticket()
+    const before = events.published.length
+    await approve(id, alice)
+    // Approving alone tells nobody: the session only exists once the new device claims it.
+    expect(events.published.slice(before).some((e) => e.type === 'SESSION_CREATE')).toBe(false)
+
+    await claim(id, secret)
+
+    const mail = await outbox.waitForMessage('alice@example.com', /новый вход/i)
+    expect(mail.text).toContain('Chrome · Windows')
+    expect(mail.text).toContain('/?settings=sessions')
+    expect(events.published.slice(before)).toContainEqual(
+      expect.objectContaining({
+        topic: userTopic(alice.id),
+        type: 'SESSION_CREATE',
+        data: expect.objectContaining({ qrLoginId: id, userAgent: NEW_DEVICE['user-agent'] }),
+      }),
+    )
   })
 
   it('rejects a malformed code or key', async () => {

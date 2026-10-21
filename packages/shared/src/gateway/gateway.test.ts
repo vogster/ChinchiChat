@@ -105,6 +105,7 @@ describe('dispatchSchemas', () => {
         'RELATIONSHIP_ADD',
         'RELATIONSHIP_REMOVE',
         'RESUMED',
+        'SESSION_CREATE',
         'TYPING_START',
         'USER_UPDATE',
         'VOICE_MOVE',

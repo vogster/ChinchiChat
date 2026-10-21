@@ -95,6 +95,18 @@ export const qrLoginClaimSchema = z.union([
   }),
 ])
 
+/**
+ * Someone signed in to the account by a QR (to all of its open sessions): the one that
+ * approved it knows the id and stays quiet, the others ask "was it you?".
+ */
+export const qrSignInEventSchema = z.object({
+  qrLoginId: qrLoginIdSchema,
+  userAgent: z.string().nullable(),
+  ipAddress: z.string().nullable(),
+  createdAt: z.iso.datetime(),
+})
+
+export type QrSignInEvent = z.infer<typeof qrSignInEventSchema>
 export type CreateQrLoginRequest = z.infer<typeof createQrLoginRequestSchema>
 export type QrLoginTicket = z.infer<typeof qrLoginTicketSchema>
 export type QrLoginInfo = z.infer<typeof qrLoginInfoSchema>

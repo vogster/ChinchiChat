@@ -141,6 +141,13 @@
       "back": "Sign in with a password",
       "hint": "Scan it with the phone where you are signed in, or enter the code in Settings → Devices."
     },
+    "newSignIn": {
+      "title": "New sign-in to your account",
+      "question": "Someone signed in to your account by a QR code. Was it you?",
+      "hint": "If not, end that session in the devices list and change your password.",
+      "me": "It was me",
+      "notMe": "It wasn't me"
+    },
     "qrApprove": {
       "pickNumber": "Which number does the new device show?",
       "numbers": "Number from the new device",

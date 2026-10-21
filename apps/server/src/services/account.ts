@@ -1,3 +1,4 @@
+import { userTopic } from '../events/event-bus'
 import { createLogMailer } from '../mail/mailer'
 import { createAccountEmailService } from '../modules/auth/account-email.service'
 import { createAuthService } from '../modules/auth/auth.service'
@@ -111,6 +112,10 @@ export const createAccountServices = ({
     store: redis ? createRedisQrLoginStore(redis) : createMemoryQrLoginStore(),
     signInAs: (userId, client) => auth.signInAs(userId, client),
     publicUrl: config.publicUrl,
+    onSignedIn: async (userId, event) => {
+      await accountEmails.notifyQrSignIn(userId, event)
+      await events.publish({ topic: userTopic(userId), type: 'SESSION_CREATE', data: event })
+    },
   })
   return { loginThrottle, mfa, auth, accountEmails, qrLogin }
 }

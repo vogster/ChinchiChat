@@ -1,5 +1,6 @@
 import { z } from 'zod'
 
+import { qrSignInEventSchema } from '../auth/qr-login.schemas'
 import { privateChannelSchema } from '../dms/private-channel.schemas'
 import { deviceApprovalSchema } from '../e2ee/approval.schemas'
 import { handshakeSchema } from '../e2ee/e2ee.schemas'
@@ -184,6 +185,8 @@ export const dispatchSchemas = {
   E2EE_HANDSHAKE: handshakeSchema,
   /** Someone in a shared encrypted conversation added or removed a device. */
   E2EE_DEVICES_UPDATE: z.object({ userId: snowflakeSchema }),
+  /** A new session by a QR sign-in (to all of the user's sessions). */
+  SESSION_CREATE: qrSignInEventSchema,
   /** A device approval moved on (to all of the user's sessions). */
   E2EE_APPROVAL_UPDATE: deviceApprovalSchema,
   /** Another device of the same user changed notification settings (null: back to defaults). */

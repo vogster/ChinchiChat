@@ -6,7 +6,13 @@ import { generateSessionToken, hashSessionToken } from './session-token'
 
 import type { AuthResult, ClientInfo } from './auth.service'
 import type { QrLogin, QrLoginStore } from './qr-login.store'
-import type { ApproveQrLoginRequest, QrLoginInfo, QrLoginTicket, Snowflake } from '@chinchi/shared'
+import type {
+  ApproveQrLoginRequest,
+  QrLoginInfo,
+  QrLoginTicket,
+  QrSignInEvent,
+  Snowflake,
+} from '@chinchi/shared'
 
 /** Crockford base32: no I, L, O or U, so a code read aloud or typed is hard to get wrong. */
 const ALPHABET = '0123456789ABCDEFGHJKMNPQRSTVWXYZ'
@@ -43,6 +49,8 @@ export interface QrLoginServiceDeps {
   readonly signInAs: (userId: Snowflake, client: ClientInfo) => Promise<AuthResult>
   /** The web address the QR points at (`PUBLIC_URL`). */
   readonly publicUrl: string
+  /** After the new device got its session: tell the owner (best effort, never blocks it). */
+  readonly onSignedIn?: (userId: Snowflake, event: QrSignInEvent) => Promise<void>
   readonly now?: () => Date
 }
 
@@ -55,6 +63,7 @@ export const createQrLoginService = ({
   store,
   signInAs,
   publicUrl,
+  onSignedIn = async () => undefined,
   now = () => new Date(),
 }: QrLoginServiceDeps) => {
   const waiting = async (id: string) => {
@@ -125,6 +134,12 @@ export const createQrLoginService = ({
       if (!login.approvedBy) return { state: 'pending' as const }
       await store.delete(login)
       const result = await signInAs(login.approvedBy, client)
+      await onSignedIn(login.approvedBy, {
+        qrLoginId: login.id,
+        userAgent: client.userAgent?.slice(0, USER_AGENT_MAX_LENGTH) ?? null,
+        ipAddress: client.ipAddress ?? null,
+        createdAt: now().toISOString(),
+      }).catch(() => undefined)
       return {
         state: 'approved' as const,
         result,

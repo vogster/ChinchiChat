@@ -42,7 +42,7 @@ const linkEmail = ({
   ].join(''),
 })
 
-type EmailKind = 'verification' | 'reset' | 'lockout' | 'changeEmail' | 'emailChanged'
+type EmailKind = 'verification' | 'reset' | 'lockout' | 'changeEmail' | 'emailChanged' | 'qrSignIn'
 
 const TEXTS: Record<
   Locale,
@@ -83,6 +83,12 @@ const TEXTS: Record<
       action: 'Сбросить пароль',
       footer: 'Это уведомление; отвечать на него не нужно.',
     },
+    qrSignIn: {
+      subject: 'Chinchi: новый вход по QR-коду',
+      body: 'В вашу учётную запись вошли по QR-коду с нового устройства: {device}, адрес {ip}. Если это были вы — ничего делать не нужно. Если нет — завершите этот сеанс в «Настройки → Устройства» и смените пароль.',
+      action: 'Открыть устройства',
+      footer: 'Это уведомление; отвечать на него не нужно.',
+    },
   },
   en: {
     greeting: (username) => `Hi, ${username}!`,
@@ -114,6 +120,12 @@ const TEXTS: Record<
       subject: 'Chinchi: email changed',
       body: "Your account's email was changed to {email}. Emails go there now. If it wasn't you, reset your password with the button and tell the server's admin.",
       action: 'Reset password',
+      footer: 'This is a notice; no need to reply.',
+    },
+    qrSignIn: {
+      subject: 'Chinchi: new sign-in by QR code',
+      body: 'Someone signed in to your account by a QR code on a new device: {device}, address {ip}. If it was you, nothing to do. If not, end that session in Settings → Devices and change your password.',
+      action: 'Open devices',
       footer: 'This is a notice; no need to reply.',
     },
   },
@@ -148,6 +160,25 @@ export const emailChangedEmail = (
     link,
     greeting: texts.greeting(username),
     body: body.replace('{email}', maskEmail(newEmail)),
+    ...rest,
+  })
+}
+
+/** After a QR sign-in: which device and address, and where to end the session if not theirs. */
+export const qrSignInEmail = (
+  to: string,
+  username: string,
+  { device, ip }: { device: string; ip: string },
+  link: string,
+  locale: Locale = 'ru',
+): MailMessage => {
+  const texts = TEXTS[locale]
+  const { body, ...rest } = texts.qrSignIn
+  return linkEmail({
+    to,
+    link,
+    greeting: texts.greeting(username),
+    body: body.replace('{device}', device).replace('{ip}', ip),
     ...rest,
   })
 }
