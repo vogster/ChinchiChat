@@ -1,14 +1,50 @@
 import { decodeSnowflake } from '@chinchi/shared'
+import { useQuery } from '@tanstack/react-query'
 import { Link } from '@tanstack/react-router'
 import { MessagesSquare } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
+import { Avatar } from '../../components/ui/avatar'
 import { HeaderPopover } from '../../components/ui/header-popover'
+import { useApi } from '../../lib/api-context'
 import { threadsOf } from '../guilds/channel-tree'
 import { formatMessageTime } from '../messages/format-time'
 import { isUnread, useReadStates } from '../messages/use-messages'
 
-import type { Channel, GuildDetail } from '@chinchi/shared'
+import type { Channel, GuildDetail, ThreadPreview } from '@chinchi/shared'
+
+/** "Аня: текст" under a thread's name, with a small avatar, as one line. */
+const LastMessage = ({ preview }: { preview: ThreadPreview }) => {
+  const { t } = useTranslation()
+  const name = preview.authorName ?? t('messages.deletedUser')
+  const text =
+    preview.content.replace(/<a?:([A-Za-z0-9_]{2,32}):\d+>/g, ':$1:') ||
+    t('messages.replyAttachments', { count: preview.attachmentCount })
+  return (
+    <span className="flex min-w-0 items-center gap-1.5 text-[13px] text-muted">
+      <Avatar
+        name={name}
+        src={preview.author?.avatarUrl ?? null}
+        id={preview.author?.id}
+        className="size-4 shrink-0"
+      />
+      <span className="min-w-0 truncate">
+        <span className="font-medium text-text">{name}:</span> {text}
+      </span>
+    </span>
+  )
+}
+
+/** The newest message of each thread; asked again whenever a thread gets a new one. */
+const useThreadPreviews = (channelId: string, lastIds: string) => {
+  const api = useApi()
+  return useQuery({
+    queryKey: ['threadPreviews', channelId, lastIds],
+    queryFn: async () => (await api.channels.threadPreviews(channelId)).previews,
+    enabled: lastIds !== '',
+    placeholderData: (previous) => previous,
+  })
+}
 
 /** The channel's threads, dropped from the header; one click opens a thread beside the chat. */
 export const ThreadsPopover = ({
@@ -23,6 +59,11 @@ export const ThreadsPopover = ({
   const { t, i18n } = useTranslation()
   const readStates = useReadStates()
   const threads = threadsOf(guild.channels, channel.id)
+  const lastIds = threads
+    .map((thread) => thread.lastMessageId)
+    .filter(Boolean)
+    .join(',')
+  const { data: previews } = useThreadPreviews(channel.id, lastIds)
 
   return (
     <HeaderPopover
@@ -39,6 +80,7 @@ export const ThreadsPopover = ({
           {threads.map((thread) => {
             const unread =
               readStates !== undefined && isUnread(thread.lastMessageId, readStates[thread.id])
+            const preview = previews?.find((p) => p.threadId === thread.id)
             return (
               <li key={thread.id}>
                 <Link
@@ -56,6 +98,7 @@ export const ThreadsPopover = ({
                       </span>
                     ) : null}
                   </span>
+                  {preview ? <LastMessage preview={preview} /> : null}
                   <span className="text-xs text-faint">
                     {thread.lastMessageId
                       ? t('threads.metaLong', {

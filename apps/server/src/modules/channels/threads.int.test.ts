@@ -241,3 +241,39 @@ describe('threads after review', () => {
     expect(invite.statusCode).toBe(400)
   })
 })
+
+describe('the last message of each thread', () => {
+  const previews = (actor: TestActor, parentId = textId) =>
+    api(actor, 'GET', `/channels/${parentId}/threads/previews`)
+
+  it('comes for every thread of a channel: who wrote it, by their name here, and a short text', async () => {
+    const first = (await startThread(owner, { name: 'Релиз' })).json().data.channel.id as string
+    const second = (await startThread(owner, { name: 'Дизайн' })).json().data.channel.id as string
+    await send(owner, first, 'Собираем в пятницу')
+    await api(member, 'PATCH', `/guilds/${guild.id}/members/${member.id}`, {
+      nickname: 'Мемберша',
+    })
+    await send(member, first, `Я за! ${'очень '.repeat(40)}длинное сообщение`)
+
+    const response = await previews(owner)
+
+    expect(response.statusCode).toBe(200)
+    const list = response.json().data.previews as {
+      threadId: string
+      authorName: string
+      author: { id: string } | null
+      content: string
+    }[]
+    // A thread nobody wrote in yet has nothing to show.
+    expect(list.map((p) => p.threadId)).toEqual([first])
+    expect(list[0]).toMatchObject({ authorName: 'Мемберша', author: { id: member.id } })
+    expect(list[0]?.content.startsWith('Я за! очень')).toBe(true)
+    expect(list[0]?.content.length).toBeLessThanOrEqual(120)
+    expect(second).toBeDefined()
+  })
+
+  it('is only for those who can read the channel', async () => {
+    const outsider = await signUp(app, { username: 'eve', email: 'eve@example.com' })
+    expect((await previews(outsider)).statusCode).toBe(404)
+  })
+})

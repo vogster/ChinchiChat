@@ -6,6 +6,7 @@ import {
   inviteSchema,
   memberSchema,
   roleSchema,
+  threadPreviewSchema,
 } from '@chinchi/shared'
 import { z } from 'zod'
 
@@ -107,6 +108,13 @@ export const createGuildsApi = (request: Http) => ({
         path: `/channels/${id(channelId)}/threads`,
         body,
         data: channelResult,
+      }),
+    /** The newest message of each thread of a channel, for the thread list. */
+    threadPreviews: (channelId: Snowflake) =>
+      request({
+        method: 'GET',
+        path: `/channels/${id(channelId)}/threads/previews`,
+        data: z.object({ previews: z.array(threadPreviewSchema) }),
       }),
     create: (guildId: Snowflake, body: CreateChannelRequest) =>
       request({

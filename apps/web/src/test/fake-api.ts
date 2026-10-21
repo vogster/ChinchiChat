@@ -40,6 +40,7 @@ import type {
   Role,
   SessionInfo,
   SetCustomStatusRequest,
+  ThreadPreview,
   UpdateNotificationSettingRequest,
   UploadLimits,
   UserKey,
@@ -569,6 +570,7 @@ export const createFakeApi = ({ user = null, registrationMode = 'open' }: FakeAp
     },
     channels: {
       createThread: vi.fn(async () => ({ channel: testThread })),
+      threadPreviews: vi.fn(async (_channelId: string) => ({ previews: [] as ThreadPreview[] })),
       create: vi.fn(async () => ({ channel: testGuild.channels[2] as Channel })),
       // Answers with the channels as reordered, like the server.
       reorder: vi.fn(async (_guildId: string, items: ReorderChannelsRequest) => ({

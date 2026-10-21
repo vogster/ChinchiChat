@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest'
 
 import {
   createFakeApi,
+  testFriend,
   testGuild,
   testHistory,
   testMessage,
@@ -71,6 +72,36 @@ describe('threads', () => {
     await user.click(within(list).getByRole('link', { name: 'Тред «Релиз» — 3 сообщения' }))
 
     expect(await within(await threadPanel()).findByText('Выпускаем в пятницу')).toBeVisible()
+  })
+
+  it('show the last message of each thread in the list', async () => {
+    const api = withThread()
+    api.guilds.get.mockResolvedValue({
+      guild: {
+        ...testGuild,
+        channels: [...testGuild.channels, { ...testThread, lastMessageId: '7000' }],
+      },
+    })
+    api.channels.threadPreviews.mockResolvedValue({
+      previews: [
+        {
+          threadId: testThread.id,
+          messageId: '7000',
+          author: testFriend,
+          authorName: 'Боб',
+          content: 'Выпускаем в пятницу <:cat:600>',
+          attachmentCount: 0,
+        },
+      ],
+    })
+    const { user } = renderApp(GENERAL_URL, { api })
+
+    await user.click(await screen.findByRole('button', { name: 'Треды' }))
+    const list = await screen.findByRole('dialog', { name: 'Треды в #общий' })
+
+    expect(await within(list).findByText('Боб:')).toBeVisible()
+    expect(within(list).getByText(/Выпускаем в пятницу :cat:/)).toBeVisible()
+    expect(api.channels.threadPreviews).toHaveBeenCalledWith('503')
   })
 
   it('say when a channel has none yet', async () => {

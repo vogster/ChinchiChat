@@ -1,4 +1,9 @@
-import { channelSchema, createThreadRequestSchema, snowflakeSchema } from '@chinchi/shared'
+import {
+  channelSchema,
+  createThreadRequestSchema,
+  snowflakeSchema,
+  threadPreviewSchema,
+} from '@chinchi/shared'
 import { z } from 'zod'
 
 import { addressBucket } from '../../http/address-bucket'
@@ -43,6 +48,28 @@ export const threadsRoutes: FastifyPluginAsyncZod<ThreadsRoutesOptions> = async 
         request.body,
       )
       return reply.status(201).send({ success: true as const, data: { channel } })
+    },
+  )
+
+  app.get(
+    '/channels/:channelId/threads/previews',
+    {
+      schema: {
+        params: z.object({ channelId: snowflakeSchema }),
+        response: {
+          200: z.object({
+            success: z.literal(true),
+            data: z.object({ previews: z.array(threadPreviewSchema) }),
+          }),
+        },
+      },
+    },
+    async (request) => {
+      const previews = await threadService.previews(
+        requireAuth(request).user.id,
+        request.params.channelId,
+      )
+      return { success: true as const, data: { previews } }
     },
   )
 }

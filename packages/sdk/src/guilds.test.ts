@@ -128,6 +128,7 @@ const DATA: Record<string, unknown> = {
   },
   roles: { roles: [] },
   reactionUsers: { users: [] },
+  threadPreviews: { previews: [] },
   relationships: { relationships: [] },
   privateChannels: { channels: [] },
   bans: { bans: [] },
@@ -327,6 +328,13 @@ const cases: Case[] = [
     'poll',
   ],
   ['polls.end', (api) => api.polls.end('1', '2'), 'POST', '/channels/1/polls/2/expire', 'poll'],
+  [
+    'channels.threadPreviews',
+    (api) => api.channels.threadPreviews('1'),
+    'GET',
+    '/channels/1/threads/previews',
+    'threadPreviews',
+  ],
   [
     'polls.voters',
     (api) => api.polls.voters('1', '2', 3, { limit: 10, after: '5' }),

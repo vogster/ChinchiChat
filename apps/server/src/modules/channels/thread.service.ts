@@ -5,6 +5,7 @@ import { guildTopic } from '../../events/event-bus'
 import { badRequest, conflict, HttpError } from '../../http/http-error'
 import { createOverwriteRepository } from '../roles/overwrite.repository'
 import { createChannelRepository, lockChannel } from './channel.repository'
+import { loadThreadPreviews } from './thread-previews'
 
 import type { Database } from '../../db/client'
 import type { EventBus } from '../../events/event-bus'
@@ -12,7 +13,7 @@ import type { GuildViews } from '../guilds/guild-views'
 import type { MessageRepository } from '../messages/message.repository'
 import type { ChannelRepository, ChannelRow } from './channel.repository'
 import type { ChannelService } from './channel.service'
-import type { Channel, CreateThreadRequest, Snowflake } from '@chinchi/shared'
+import type { Channel, CreateThreadRequest, Snowflake, ThreadPreview } from '@chinchi/shared'
 
 /** Threads per channel: enough for any real conversation, not enough to flood the server. */
 export const MAX_THREADS_PER_CHANNEL = 500
@@ -99,6 +100,16 @@ export const createThreadService = ({
       }
       await publish('CHANNEL_CREATE', created)
       return views.channel(created)
+    },
+
+    /** The newest message of each thread of a channel, for the thread list. */
+    async previews(userId: Snowflake, parentId: Snowflake): Promise<ThreadPreview[]> {
+      const { channel: parent } = await channels.resolveGuild(
+        parentId,
+        userId,
+        Permission.ReadMessageHistory,
+      )
+      return parent.type === 'text' ? loadThreadPreviews(db, parent) : []
     },
 
     /**
