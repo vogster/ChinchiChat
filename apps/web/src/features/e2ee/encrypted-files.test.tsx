@@ -223,10 +223,10 @@ describe('files in encrypted conversations', () => {
     await user.click(await screen.findByRole('button', { name: /^отчёт\.pdf/ }))
 
     expect(
-      await screen.findByRole('progressbar', { name: 'Скачивание отчёт.pdf' }),
+      await screen.findByRole('progressbar', { name: 'Расшифровка отчёт.pdf' }),
     ).toHaveAttribute('aria-valuenow', '25')
-    expect(screen.getByText(/25 %/)).toBeVisible()
-    const cancel = screen.getByRole('button', { name: 'Отменить скачивание отчёт.pdf' })
+    expect(screen.getByText(/^Расшифровка 25 %/)).toBeVisible()
+    const cancel = screen.getByRole('button', { name: 'Отменить расшифровку отчёт.pdf' })
     expect(cancel).toHaveFocus()
     await user.keyboard('{Enter}')
 
@@ -240,7 +240,7 @@ describe('files in encrypted conversations', () => {
     api.media.download.mockImplementation(() => new Promise<Blob>(() => {}))
     await user.click(file)
     expect(
-      await screen.findByRole('progressbar', { name: 'Скачивание отчёт.pdf' }),
+      await screen.findByRole('progressbar', { name: 'Расшифровка отчёт.pdf' }),
     ).toHaveAttribute('aria-valuenow', '0')
     expect(api.media.download).toHaveBeenCalledTimes(2)
   })
@@ -263,8 +263,8 @@ describe('files in encrypted conversations', () => {
     )
     const { user } = renderApp(URL_PATH, { api })
 
-    expect(await screen.findByRole('progressbar', { name: 'Скачивание кот.png' })).toBeVisible()
-    await user.click(screen.getByRole('button', { name: 'Отменить скачивание кот.png' }))
+    expect(await screen.findByRole('progressbar', { name: 'Расшифровка кот.png' })).toBeVisible()
+    await user.click(screen.getByRole('button', { name: 'Отменить расшифровку кот.png' }))
 
     expect(signal?.aborted).toBe(true)
     expect(await screen.findByRole('button', { name: /^кот\.png/ })).toHaveFocus()
