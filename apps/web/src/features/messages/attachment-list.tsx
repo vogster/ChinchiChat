@@ -5,9 +5,11 @@ import { useTranslation } from 'react-i18next'
 
 import { useApi } from '../../lib/api-context'
 import { useMediaBase, useMediaUrl } from '../media/media-base'
+import { useCancellableDownload } from '../media/use-cancellable-download'
 import { useProtectedMedia } from '../media/use-protected-media'
 import { useSaveFile } from '../shell/use-save-file'
 import { VoicePlayer } from '../voice-messages/voice-player'
+import { DownloadingFile } from './downloading-file'
 import { formatFileSize } from './format-size'
 import { ImageViewer } from './image-viewer'
 
@@ -61,7 +63,8 @@ const AttachmentImage = ({
 
 /**
  * Any other file, as a download. The desktop page cannot hand the session to a plain link,
- * so there the bytes come through the API and are saved under the file's name.
+ * so there the bytes come through the API, with their progress in place of the link, and are
+ * saved under the file's name.
  */
 const FileLink = ({ attachment }: { attachment: Attachment }) => {
   const { i18n } = useTranslation()
@@ -69,25 +72,34 @@ const FileLink = ({ attachment }: { attachment: Attachment }) => {
   const media = useMediaUrl()
   const viaApi = useMediaBase() !== null
   const save = useSaveFile()
-  const [failed, setFailed] = useState(false)
-  const download = async () => {
-    try {
-      await save(attachment.filename, await api.media.download(attachment.url))
-    } catch {
-      setFailed(true)
-    }
+  const { state, progress, start, cancel, trigger, progressBox } =
+    useCancellableDownload<HTMLAnchorElement>({
+      expectedBytes: attachment.size,
+      load: (options) => api.media.download(attachment.url, options),
+      save: (blob) => save(attachment.filename, blob),
+    })
+  if (state === 'loading') {
+    return (
+      <DownloadingFile
+        ref={progressBox}
+        name={attachment.filename}
+        progress={progress}
+        onCancel={cancel}
+      />
+    )
   }
   return (
     <a
+      ref={trigger}
       href={media(attachment.url)}
       download={attachment.filename}
       aria-label={`${attachment.filename} (${formatFileSize(attachment.size, i18n.language)})`}
-      aria-invalid={failed || undefined}
+      aria-invalid={state === 'failed' || undefined}
       onClick={
         viaApi
           ? (event) => {
               event.preventDefault()
-              void download()
+              void start()
             }
           : undefined
       }

@@ -71,10 +71,67 @@ describe('attachments in messages', () => {
     api.media.download.mockResolvedValueOnce(new Blob(['pdf'], { type: 'application/pdf' }))
     const click = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => {})
     await user.click(link)
-    await waitFor(() => expect(api.media.download).toHaveBeenCalledWith(FILE.url))
+    await waitFor(() =>
+      expect(api.media.download).toHaveBeenCalledWith(FILE.url, expect.any(Object)),
+    )
     await waitFor(() => expect(shell.saved().map((file) => file.name)).toEqual(['report.pdf']))
     expect(click).not.toHaveBeenCalled()
     expect(fetchMock).not.toHaveBeenCalled()
+  })
+
+  it('in the desktop, shows how far a file got and can stop it', async () => {
+    const api = createFakeApi({ user: testUser })
+    api.messages.list.mockResolvedValue({
+      messages: [testMessage('1001', { content: 'файлы', attachments: [FILE] })],
+    })
+    let signal: AbortSignal | undefined
+    api.media.download.mockImplementation((_path, options) => {
+      signal = options?.signal
+      options?.onProgress?.(10, 40)
+      return new Promise<Blob>(() => {})
+    })
+    const shell = createFakeShell()
+    const { user } = renderApp(`/channels/${testGuild.id}/503`, {
+      api,
+      shell: shell.shell,
+      mediaBase: 'https://chat.example.com',
+    })
+    const item = (await screen.findByText('файлы')).closest('li') as HTMLElement
+
+    await user.click(within(item).getByRole('link', { name: /report\.pdf/ }))
+
+    expect(
+      await within(item).findByRole('progressbar', { name: 'Загрузка report.pdf' }),
+    ).toHaveAttribute('aria-valuenow', '25')
+    expect(within(item).getByText(/^Загрузка 25 %/)).toBeVisible()
+    expect(within(item).getByRole('button', { name: 'Отменить загрузку report.pdf' })).toHaveFocus()
+    await user.keyboard('{Enter}')
+
+    expect(signal?.aborted).toBe(true)
+    expect(within(item).getByRole('link', { name: /report\.pdf/ })).toHaveFocus()
+    expect(within(item).queryByRole('progressbar')).not.toBeInTheDocument()
+    expect(shell.saved()).toEqual([])
+  })
+
+  it('in the desktop, says it is saving once the whole file is here', async () => {
+    const api = createFakeApi({ user: testUser })
+    api.messages.list.mockResolvedValue({
+      messages: [testMessage('1001', { content: 'файлы', attachments: [FILE] })],
+    })
+    api.media.download.mockImplementation((_path, options) => {
+      options?.onProgress?.(40, 40)
+      return new Promise<Blob>(() => {})
+    })
+    const { user } = renderApp(`/channels/${testGuild.id}/503`, {
+      api,
+      shell: createFakeShell().shell,
+      mediaBase: 'https://chat.example.com',
+    })
+    const item = (await screen.findByText('файлы')).closest('li') as HTMLElement
+
+    await user.click(within(item).getByRole('link', { name: /report\.pdf/ }))
+
+    expect(await within(item).findByText('Сохранение…')).toBeVisible()
   })
 
   it('shows images by their preview, sized to avoid layout jumps', async () => {

@@ -4,12 +4,13 @@ import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { useApi } from '../../lib/api-context'
+import { useCancellableDownload } from '../media/use-cancellable-download'
+import { useDownloadProgress } from '../media/use-download-progress'
 import { formatFileSize } from '../messages/format-size'
 import { useSaveFile } from '../shell/use-save-file'
 import { VoicePlayer } from '../voice-messages/voice-player'
-import { decryptFile } from './file-crypto'
+import { decryptFile, sealedSize } from './file-crypto'
 import { SealedProgress } from './sealed-progress'
-import { useDownloadProgress } from './use-download-progress'
 
 import type { SealedFile } from './codec'
 import type { Download, DownloadOptions } from '@chinchi/sdk'
@@ -55,7 +56,7 @@ const SealedImage = ({ file }: { file: SealedFile }) => {
   const [state, setState] = useState<{ url: string } | 'loading' | 'file' | 'stopped' | 'failed'>(
     'loading',
   )
-  const { progress, onProgress } = useDownloadProgress(file.size)
+  const { progress, onProgress } = useDownloadProgress(sealedSize(file.size))
   const abort = useRef<AbortController | null>(null)
 
   // Primitive deps: the file object is rebuilt on every render of the message list.
@@ -112,48 +113,16 @@ const SealedDownload = ({ file, autoFocus = false }: { file: SealedFile; autoFoc
   const { i18n } = useTranslation()
   const api = useApi()
   const save = useSaveFile()
-  const [state, setState] = useState<'idle' | 'loading' | 'failed'>('idle')
-  const { progress, onProgress, reset } = useDownloadProgress(file.size)
-  const abort = useRef<AbortController | null>(null)
-  const fileButton = useRef<HTMLButtonElement>(null)
-  const progressBox = useRef<HTMLDivElement>(null)
-  const refocus = useRef(autoFocus)
-
-  // Leaving the conversation stops the download.
-  useEffect(() => () => abort.current?.abort(), [])
-
-  // The file button comes back where the progress was: so does the focus.
-  useEffect(() => {
-    if (state === 'loading' || !refocus.current) return
-    refocus.current = false
-    fileButton.current?.focus()
-  }, [state])
-
-  const settle = (next: 'idle' | 'failed') => {
-    refocus.current = progressBox.current?.contains(document.activeElement) ?? false
-    setState(next)
-  }
-
-  // A run that was cancelled may still settle later (decrypting cannot stop midway): ignored.
-  const download = async () => {
-    const controller = new AbortController()
-    abort.current = controller
-    reset()
-    setState('loading')
-    try {
-      const bytes = await open(api.media.download, file, { signal: controller.signal, onProgress })
-      await save(file.name, new Blob([new Uint8Array(bytes)], { type: 'application/octet-stream' }))
-      if (abort.current === controller) settle('idle')
-    } catch {
-      if (abort.current === controller) settle('failed')
-    }
-  }
-
-  const cancel = () => {
-    abort.current?.abort()
-    abort.current = null
-    settle('idle')
-  }
+  const { state, progress, start, cancel, trigger, progressBox } =
+    useCancellableDownload<HTMLButtonElement>({
+      expectedBytes: sealedSize(file.size),
+      load: async (options) =>
+        new Blob([new Uint8Array(await open(api.media.download, file, options))], {
+          type: 'application/octet-stream',
+        }),
+      save: (blob) => save(file.name, blob),
+      autoFocus,
+    })
 
   if (state === 'loading') {
     return (
@@ -169,10 +138,10 @@ const SealedDownload = ({ file, autoFocus = false }: { file: SealedFile; autoFoc
   return (
     <>
       <button
-        ref={fileButton}
+        ref={trigger}
         type="button"
         aria-label={`${file.name} (${formatFileSize(file.size, i18n.language)})`}
-        onClick={() => void download()}
+        onClick={() => void start()}
         className="flex max-w-sm items-center gap-3 rounded-md border border-line bg-field px-3 py-2 text-left hover:bg-chip"
       >
         <FileText aria-hidden className="size-8 shrink-0 text-muted" />

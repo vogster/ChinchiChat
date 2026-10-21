@@ -3,10 +3,10 @@ import { useEffect, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { ProgressRing } from '../../components/ui/progress-ring'
+import { percentOf } from '../media/use-download-progress'
 import { formatFileSize } from '../messages/format-size'
-import { percentOf } from './use-download-progress'
 
-import type { Progress } from './use-download-progress'
+import type { Progress } from '../media/use-download-progress'
 import type { Ref } from 'react'
 
 /**
