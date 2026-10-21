@@ -9,6 +9,7 @@ export interface FakeShellOptions {
   readonly autostart?: boolean
   /** Shortcuts another program holds: binding them fails. */
   readonly taken?: readonly string[]
+  readonly platform?: Shell['platform']
 }
 
 /** A desktop shell in memory: tests press the push-to-talk key and read what was saved. */
@@ -16,13 +17,20 @@ export const createFakeShell = ({
   preferences: initial = {},
   autostart = false,
   taken = [],
+  platform = 'windows',
 }: FakeShellOptions = {}) => {
   let preferences: ShellPreferences = { ...DEFAULT_SHELL_PREFERENCES, ...initial }
   let autostartEnabled = autostart
   const bound = new Map<string, (pressed: boolean) => void>()
+  let maximized = false
+  const maximizedListeners = new Set<(maximized: boolean) => void>()
+  const setMaximized = (next: boolean) => {
+    maximized = next
+    maximizedListeners.forEach((listener) => listener(next))
+  }
 
   const shell: Shell = {
-    platform: 'windows',
+    platform,
     version: '0.15.0-test',
     preferences: {
       load: vi.fn(async () => preferences),
@@ -44,6 +52,18 @@ export const createFakeShell = ({
       }
     }),
     changeInstance: vi.fn(async () => undefined),
+    window: {
+      minimize: vi.fn(async () => undefined),
+      toggleMaximize: vi.fn(async () => setMaximized(!maximized)),
+      close: vi.fn(async () => undefined),
+      isMaximized: vi.fn(async () => maximized),
+      onMaximizedChange: vi.fn(async (listener: (maximized: boolean) => void) => {
+        maximizedListeners.add(listener)
+        return () => {
+          maximizedListeners.delete(listener)
+        }
+      }),
+    },
   }
 
   return {
@@ -53,5 +73,8 @@ export const createFakeShell = ({
     bound: () => [...bound.keys()],
     press: (shortcut: string) => bound.get(shortcut)?.(true),
     release: (shortcut: string) => bound.get(shortcut)?.(false),
+    maximized: () => maximized,
+    /** The OS maximizes or restores the window (a double-click on the title bar, Win+Up). */
+    setMaximized,
   }
 }

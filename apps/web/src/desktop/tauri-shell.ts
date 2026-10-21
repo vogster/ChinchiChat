@@ -1,9 +1,10 @@
+import { getCurrentWindow } from '@tauri-apps/api/window'
 import * as autostart from '@tauri-apps/plugin-autostart'
 import { register, unregister } from '@tauri-apps/plugin-global-shortcut'
 
 import { DEFAULT_SHELL_PREFERENCES } from '../features/shell/shell'
 
-import type { Shell, ShellPreferences } from '../features/shell/shell'
+import type { Shell, ShellPreferences, ShellWindow } from '../features/shell/shell'
 import type { SettingsStore } from './settings'
 
 const PREFERENCES_KEY = 'preferences'
@@ -25,6 +26,21 @@ export const loadShellPreferences = async (store: SettingsStore): Promise<ShellP
   ...DEFAULT_SHELL_PREFERENCES,
   ...((await store.get<Partial<ShellPreferences>>(PREFERENCES_KEY)) ?? {}),
 })
+
+/** The main window, as the title bar needs it. */
+const createTauriWindow = (): ShellWindow => {
+  const current = getCurrentWindow()
+  return {
+    minimize: () => current.minimize(),
+    toggleMaximize: () => current.toggleMaximize(),
+    close: () => current.close(),
+    isMaximized: () => current.isMaximized(),
+    onMaximizedChange: (listener) =>
+      current.onResized(() => {
+        void current.isMaximized().then(listener)
+      }),
+  }
+}
 
 /** The Shell the web app sees in the Tauri desktop app. */
 export const createTauriShell = ({
@@ -51,4 +67,5 @@ export const createTauriShell = ({
     return () => unregister(shortcut)
   },
   changeInstance: onChangeInstance,
+  window: createTauriWindow(),
 })
