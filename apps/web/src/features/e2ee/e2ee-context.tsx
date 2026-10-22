@@ -69,6 +69,10 @@ export const E2eeProvider = ({ children }: { children: ReactNode }) => {
           setRevision((value) => value + 1)
         } else if (type === 'E2EE_APPROVAL_UPDATE') {
           void client?.approvals.handle(data as DeviceApproval).catch(() => undefined)
+        } else if (type === 'PRIVATE_CHANNEL_DELETE') {
+          // Deleted for everyone (not just hidden or left): its keys and text go from here too.
+          const { id, deleted } = data as { id: string; deleted?: boolean }
+          if (deleted) void client?.forgetConversation(id).catch(() => undefined)
         }
       }),
     [gateway, client],

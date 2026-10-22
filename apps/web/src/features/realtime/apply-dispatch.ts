@@ -1,6 +1,7 @@
 import { replySnippetText } from '@chinchi/shared'
 
 import { authKeys } from '../auth/queries'
+import { markDeleted } from '../dms/deleted-dms'
 import { bumpPrivateChannel, removePrivateChannel, upsertPrivateChannel } from '../dms/dm-cache'
 import { dmKeys } from '../dms/queries'
 import { removeRelationship, upsertRelationship } from '../friends/queries'
@@ -374,7 +375,8 @@ export const applyDispatch = (
 
     case 'PRIVATE_CHANNEL_DELETE': {
       // Left or removed: nothing of the conversation stays behind.
-      const { id } = data as DispatchPayload<'PRIVATE_CHANNEL_DELETE'>
+      const { id, deleted } = data as DispatchPayload<'PRIVATE_CHANNEL_DELETE'>
+      if (deleted) markDeleted(queryClient, id)
       removePrivateChannel(queryClient, id)
       setMentionCount(queryClient, id, () => 0)
       queryClient.removeQueries({ queryKey: messageKeys.channel(id) })

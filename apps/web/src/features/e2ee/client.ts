@@ -16,6 +16,7 @@ import {
 import { ApiError } from '@chinchi/sdk'
 
 import { decodePayload, encodePayload, fromBase64, toBase64 } from './codec'
+import { createConversationEraser } from './conversation-eraser'
 import { createCrossSigning } from './cross-signing'
 import { createDeviceAdditions } from './device-additions'
 import { createDeviceApproval } from './device-approval'
@@ -751,6 +752,13 @@ export const createE2eeClient = ({ api, store, userId, deviceName }: E2eeClientO
     },
 
     dismissNotice: (channelId: string, noticeId: string) => membership.dismiss(channelId, noticeId),
+
+    /** Deleted for everyone: nothing of the conversation stays on this device. */
+    forgetConversation: (channelId: string) =>
+      serial(channelId, async () => {
+        conversations.delete(channelId)
+        await createConversationEraser(store).forget(channelId)
+      }),
 
     /** Registers this device on first use and keeps its key packages topped up. */
     ready: async () => (await ready()).identity.deviceId,

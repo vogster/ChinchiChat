@@ -32,6 +32,7 @@ import { channelsRoutes } from './modules/channels/channels.routes'
 import { threadsRoutes } from './modules/channels/threads.routes'
 import { commandsRoutes } from './modules/commands/commands.routes'
 import { dmsRoutes } from './modules/dms/dms.routes'
+import { createEncryptedDeletion } from './modules/dms/encrypted-deletion'
 import { approvalRoutes } from './modules/e2ee/approval.routes'
 import { backupRoutes } from './modules/e2ee/backup.routes'
 import { e2eeRoutes } from './modules/e2ee/e2ee.routes'
@@ -343,7 +344,10 @@ export const buildApp = (
         },
       })
       api.register(guildsRoutes, { guildService: services.guild })
-      api.register(channelsRoutes, { channelService: services.channel })
+      api.register(channelsRoutes, {
+        channelService: services.channel,
+        deletePrivate: createEncryptedDeletion({ dms: services.repositories.dms, events }).delete,
+      })
       api.register(invitesRoutes, { inviteService: services.invite, guildService: services.guild })
       api.register(messagesRoutes, {
         messageService: services.message,

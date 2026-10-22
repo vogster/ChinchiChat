@@ -205,6 +205,38 @@ export const createDmRepository = (db: DbExecutor) => ({
     })
   },
 
+  /**
+   * Deletes an encrypted conversation on behalf of `actorId` (a member; in a group, its owner),
+   * under the channel row lock; its rows go with it (cascade). Returns who was in it.
+   */
+  async deleteEncrypted(
+    channelId: Snowflake,
+    actorId: Snowflake,
+  ): Promise<
+    | { readonly result: 'deleted'; readonly memberIds: Snowflake[] }
+    | { readonly result: 'not_member' | 'not_encrypted' | 'forbidden' }
+  > {
+    return db.transaction(async (tx) => {
+      const [channel] = await tx
+        .select()
+        .from(channels)
+        .where(and(eq(channels.id, channelId), isNull(channels.guildId)))
+        .for('update')
+      const members = await tx
+        .select({ userId: channelRecipients.userId })
+        .from(channelRecipients)
+        .where(eq(channelRecipients.channelId, channelId))
+      const memberIds = members.map((member) => member.userId)
+      if (!channel || !memberIds.includes(actorId)) return { result: 'not_member' as const }
+      if (!channel.encrypted) return { result: 'not_encrypted' as const }
+      if (channel.type === 'group_dm' && channel.ownerId !== null && channel.ownerId !== actorId) {
+        return { result: 'forbidden' as const }
+      }
+      await tx.delete(channels).where(eq(channels.id, channelId))
+      return { result: 'deleted' as const, memberIds }
+    })
+  },
+
   async rename(channelId: Snowflake, name: string): Promise<AnyChannelRow | null> {
     const [row] = await db
       .update(channels)

@@ -16,6 +16,7 @@ export type E2eeClientLike = Pick<
   | 'invited'
   | 'membership'
   | 'dismissNotice'
+  | 'forgetConversation'
   | 'forget'
   | 'open'
   | 'send'

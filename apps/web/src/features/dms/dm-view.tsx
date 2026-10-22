@@ -7,6 +7,7 @@ import {
   Phone,
   Search,
   ShieldCheck,
+  Trash2,
   UserPlus,
   Users,
 } from 'lucide-react'
@@ -54,6 +55,7 @@ import { statesInChannel, useVoiceStates } from '../voice/queries'
 import { useVoiceEnabled } from '../voice/use-voice-people'
 import { useVoice } from '../voice/voice-context'
 import { AddToGroupDialog } from './dialogs/add-to-group-dialog'
+import { DeleteEncryptedDialog } from './dialogs/delete-encrypted-dialog'
 import { LeaveGroupDialog } from './dialogs/leave-group-dialog'
 import { RenameGroupDialog } from './dialogs/rename-group-dialog'
 import { privateChannelName, userName } from './dm-names'
@@ -64,7 +66,7 @@ import type { PrivateChannel } from '@chinchi/shared'
 
 const newNonce = () => crypto.randomUUID()
 
-type OpenDialog = 'rename' | 'add' | 'leave' | null
+type OpenDialog = 'rename' | 'add' | 'leave' | 'delete' | null
 
 const headerButton = headerButtonClass
 
@@ -117,6 +119,8 @@ export const DmView = ({ channel }: { channel: PrivateChannel }) => {
   const canAttach = pending.enabled
 
   const isGroup = channel.type === 'group_dm'
+  // An encrypted conversation is deleted for everyone: by either person, in a group by its owner.
+  const canDelete = channel.encrypted && (!isGroup || channel.ownerId === me?.id)
   const name = privateChannelName(t, channel)
   const [other] = channel.recipients
   const otherStatus = usePresence(other?.id)
@@ -242,6 +246,17 @@ export const DmView = ({ channel }: { channel: PrivateChannel }) => {
             >
               <Bell aria-hidden className="size-5" />
             </button>
+            {canDelete ? (
+              <button
+                type="button"
+                aria-label={t('dm.delete')}
+                title={t('dm.delete')}
+                onClick={() => setDialog('delete')}
+                className={`${headerButton} hover:bg-danger-soft hover:text-danger`}
+              >
+                <Trash2 aria-hidden className="size-5" />
+              </button>
+            ) : null}
             {voiceEnabled && canTalk && !inCall ? (
               <button
                 type="button"
@@ -474,6 +489,12 @@ export const DmView = ({ channel }: { channel: PrivateChannel }) => {
       ) : null}
       {dialog === 'add' ? (
         <AddToGroupDialog channel={channel} onOpenChange={(open) => !open && setDialog(null)} />
+      ) : null}
+      {dialog === 'delete' ? (
+        <DeleteEncryptedDialog
+          channel={channel}
+          onOpenChange={(open) => !open && setDialog(null)}
+        />
       ) : null}
       {dialog === 'leave' ? (
         <LeaveGroupDialog channel={channel} onOpenChange={(open) => !open && setDialog(null)} />

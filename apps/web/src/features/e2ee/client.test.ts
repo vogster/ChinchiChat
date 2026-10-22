@@ -402,6 +402,22 @@ describe('e2ee client', () => {
     })
   })
 
+  it('forgets a conversation deleted for everyone: its text and keys leave this device', async () => {
+    const { client } = setup()
+    const alice = client(ALICE).client
+    const bobSide = client(BOB)
+    await bobSide.client.ready()
+    await alice.open(DM)
+    const sent = await alice.send(DM, 'Удалим потом')
+    expect(await bobSide.client.read(DM, sent)).toMatchObject({ payload: { text: 'Удалим потом' } })
+
+    await bobSide.client.forgetConversation(DM.id)
+
+    expect(await bobSide.client.search(DM, 'Удалим')).toEqual([])
+    expect(await bobSide.store.get(`plain:${sent.id}`)).toBeUndefined()
+    expect(await bobSide.store.get(`conv:${DM.id}`)).toBeUndefined()
+  })
+
   it('never encrypts for someone removed from a group, even before anyone reopens it', async () => {
     const { client } = setup()
     const CAROL = '3'

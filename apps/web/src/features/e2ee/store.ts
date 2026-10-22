@@ -7,6 +7,8 @@ export interface E2eeStore {
   get<T>(key: string): Promise<T | undefined>
   set(key: string, value: unknown): Promise<void>
   delete(key: string): Promise<void>
+  /** Every key that starts with `prefix` (a message's plaintext and each of its edits). */
+  deletePrefix(prefix: string): Promise<void>
   /** Everything goes: keys, conversations, plaintext (signing out). */
   clear(): Promise<void>
 }
@@ -23,6 +25,9 @@ export const createMemoryStore = (): E2eeStore => {
     },
     delete: async (key) => {
       values.delete(key)
+    },
+    deletePrefix: async (prefix) => {
+      for (const key of [...values.keys()]) if (key.startsWith(prefix)) values.delete(key)
     },
     clear: async () => {
       values.clear()
@@ -60,6 +65,9 @@ export const createIndexedDbStore = (userId: string): E2eeStore => {
     },
     delete: async (key) => {
       await run('readwrite', (s) => s.delete(key))
+    },
+    deletePrefix: async (prefix) => {
+      await run('readwrite', (s) => s.delete(IDBKeyRange.bound(prefix, `${prefix}￿`)))
     },
     clear: async () => {
       await run('readwrite', (s) => s.clear())

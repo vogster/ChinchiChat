@@ -174,7 +174,8 @@ export const dispatchSchemas = {
   /** A DM or group DM appeared, changed or was left. */
   PRIVATE_CHANNEL_CREATE: privateChannelSchema,
   PRIVATE_CHANNEL_UPDATE: privateChannelSchema,
-  PRIVATE_CHANNEL_DELETE: z.object({ id: snowflakeSchema }),
+  /** Gone from my list: hidden, left, or (`deleted`) an encrypted one deleted for everyone. */
+  PRIVATE_CHANNEL_DELETE: z.object({ id: snowflakeSchema, deleted: z.boolean().optional() }),
   RELATIONSHIP_ADD: relationshipSchema,
   RELATIONSHIP_REMOVE: relationshipRemoveSchema,
   /** Someone's public profile changed (name or avatar). */

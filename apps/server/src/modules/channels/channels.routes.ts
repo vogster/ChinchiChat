@@ -11,11 +11,15 @@ import { z } from 'zod'
 import { ok } from '../../http/responses'
 import { requireAuth } from '../auth/auth.plugin'
 
+import type { UserRow } from '../users/user.repository'
 import type { ChannelService } from './channel.service'
+import type { Snowflake } from '@chinchi/shared'
 import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod'
 
 export interface ChannelsRoutesOptions {
   readonly channelService: ChannelService
+  /** A private conversation's own deletion; false when the channel is not a private one. */
+  readonly deletePrivate?: (user: UserRow, channelId: Snowflake) => Promise<boolean>
 }
 
 const channelResponse = ok(z.object({ channel: channelSchema }))
@@ -24,7 +28,7 @@ const guildParams = z.object({ guildId: snowflakeSchema })
 
 export const channelsRoutes: FastifyPluginAsyncZod<ChannelsRoutesOptions> = async (
   app,
-  { channelService },
+  { channelService, deletePrivate },
 ) => {
   app.post(
     '/guilds/:guildId/channels',
@@ -99,7 +103,10 @@ export const channelsRoutes: FastifyPluginAsyncZod<ChannelsRoutesOptions> = asyn
     '/channels/:channelId',
     { schema: { params: channelParams } },
     async (request, reply) => {
-      await channelService.delete(request.params.channelId, requireAuth(request).user.id)
+      const { user } = requireAuth(request)
+      if (!(await deletePrivate?.(user, request.params.channelId))) {
+        await channelService.delete(request.params.channelId, user.id)
+      }
       return reply.status(204).send()
     },
   )
