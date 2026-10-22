@@ -9,23 +9,28 @@ export interface DownloadOptions {
   /** Cancels the download; it then rejects with the signal's reason (an `AbortError`). */
   readonly signal?: AbortSignal
   readonly onProgress?: DownloadProgress
+  /** Stops (`DOWNLOAD_TOO_LARGE`) once more than this comes: memory is the limit otherwise. */
+  readonly maxBytes?: number
 }
+
+const tooLarge = () => new ApiError(0, 'DOWNLOAD_TOO_LARGE', 'The file is bigger than expected')
 
 /** Fetches a server file (`/api/v1/attachments/…`) that needs the session, as bytes. */
 export type Download = (path: string, options?: DownloadOptions) => Promise<Blob>
 
 /**
- * Reads the body piece by piece to tell how far it got. The pieces are kept as they came (no
- * copies): a file can be large. Cancelling also stops a read the server stalls.
+ * Reads the body piece by piece to tell how far it got and to stop at `maxBytes`. The pieces are
+ * kept as they came (no copies): a file can be large. Cancelling also stops a read the server
+ * stalls.
  */
-const readWithProgress = async (
+const readBody = async (
   response: Response,
-  onProgress: DownloadProgress,
-  signal: AbortSignal | undefined,
+  { onProgress, maxBytes = Number.POSITIVE_INFINITY, signal }: DownloadOptions,
 ): Promise<Blob> => {
   const type = response.headers.get('content-type') ?? ''
   const length = Number(response.headers.get('content-length'))
   const total = Number.isFinite(length) && length > 0 ? length : null
+  if (total !== null && total > maxBytes) throw tooLarge()
   const reader = response.body?.getReader()
   if (!reader) return response.blob()
 
@@ -40,7 +45,8 @@ const readWithProgress = async (
       if (done) break
       chunks.push(value)
       received += value.byteLength
-      onProgress(received, total)
+      if (received > maxBytes) throw tooLarge()
+      onProgress?.(received, total)
     }
     signal?.throwIfAborted()
     return new Blob(chunks, { type })
@@ -61,12 +67,19 @@ export const createDownload = ({
 }: HttpOptions): Download => {
   const origin = /^https?:\/\//.test(baseUrl) ? new URL(baseUrl).origin : ''
 
-  return async (path, { signal, onProgress } = {}) => {
+  /** The instance's own address: the session goes there and nowhere else. */
+  const isOwn = (url: string) =>
+    origin === ''
+      ? url.startsWith('/') && !url.startsWith('//')
+      : url === origin || url.startsWith(`${origin}/`)
+
+  return async (path, options = {}) => {
+    const { signal, onProgress, maxBytes } = options
     const headers = new Headers()
-    const token = getToken?.()
+    const url = path.startsWith('/') && !path.startsWith('//') ? `${origin}${path}` : path
+    const token = getToken && isOwn(url) ? getToken() : undefined
     if (getToken) headers.set('x-auth-mode', 'bearer')
     if (token) headers.set('authorization', `Bearer ${token}`)
-    const url = path.startsWith('/') && !path.startsWith('//') ? `${origin}${path}` : path
 
     let response: Response
     try {
@@ -88,9 +101,12 @@ export const createDownload = ({
       )
     }
     try {
-      return await (onProgress ? readWithProgress(response, onProgress, signal) : response.blob())
+      return await (onProgress || maxBytes !== undefined
+        ? readBody(response, options)
+        : response.blob())
     } catch (error) {
       if (signal?.aborted) throw signal.reason ?? error
+      if (error instanceof ApiError) throw error
       throw new ApiError(0, 'NETWORK_ERROR', 'Network request failed')
     }
   }

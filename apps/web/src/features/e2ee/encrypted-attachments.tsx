@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { useApi } from '../../lib/api-context'
-import { useCancellableDownload } from '../media/use-cancellable-download'
+import { downloadCeiling, useCancellableDownload } from '../media/use-cancellable-download'
 import { useDownloadProgress } from '../media/use-download-progress'
 import { formatFileSize } from '../messages/format-size'
 import { useSaveFile } from '../shell/use-save-file'
@@ -23,22 +23,22 @@ const open = async (
   download: Download,
   file: Pick<SealedFile, 'url' | 'key' | 'iv'>,
   options?: DownloadOptions,
-): Promise<Uint8Array> => {
+): Promise<Uint8Array<ArrayBuffer>> => {
   const blob = await download(file.url, options)
   const bytes = await decryptFile(new Uint8Array(await blob.arrayBuffer()), file)
   options?.signal?.throwIfAborted()
   return bytes
 }
 
-const asBlobUrl = (bytes: Uint8Array, type: string) =>
-  URL.createObjectURL(new Blob([new Uint8Array(bytes)], { type }))
+const asBlobUrl = (bytes: Uint8Array<ArrayBuffer>, type: string) =>
+  URL.createObjectURL(new Blob([bytes], { type }))
 
 /** A voice message decrypted here; played only if the bytes really are audio. */
 const openVoice = async (download: Download, file: SealedFile): Promise<Blob> => {
   const bytes = await open(download, file)
   const type = detectAudioType(bytes)
   if (!type) throw new Error('Not audio')
-  return new Blob([new Uint8Array(bytes)], { type })
+  return new Blob([bytes], { type })
 }
 
 const Failed = ({ name }: { name: string }) => {
@@ -56,7 +56,8 @@ const SealedImage = ({ file }: { file: SealedFile }) => {
   const [state, setState] = useState<{ url: string } | 'loading' | 'file' | 'stopped' | 'failed'>(
     'loading',
   )
-  const { progress, onProgress } = useDownloadProgress(sealedSize(file.size))
+  const expected = sealedSize(file.size)
+  const { progress, onProgress } = useDownloadProgress(expected)
   const abort = useRef<AbortController | null>(null)
 
   // Primitive deps: the file object is rebuilt on every render of the message list.
@@ -65,7 +66,8 @@ const SealedImage = ({ file }: { file: SealedFile }) => {
     const controller = new AbortController()
     abort.current = controller
     let url: string | null = null
-    open(download, { url: source, key, iv }, { signal: controller.signal, onProgress }).then(
+    const options = { signal: controller.signal, onProgress, maxBytes: downloadCeiling(expected) }
+    open(download, { url: source, key, iv }, options).then(
       (bytes) => {
         const type = detectImageType(bytes)
         if (controller.signal.aborted) return
@@ -79,7 +81,7 @@ const SealedImage = ({ file }: { file: SealedFile }) => {
       controller.abort()
       if (url) URL.revokeObjectURL(url)
     }
-  }, [download, source, key, iv, onProgress])
+  }, [download, source, key, iv, onProgress, expected])
 
   // Stopped, it waits for a click like any other file.
   const cancel = () => {
@@ -117,7 +119,7 @@ const SealedDownload = ({ file, autoFocus = false }: { file: SealedFile; autoFoc
     useCancellableDownload<HTMLButtonElement>({
       expectedBytes: sealedSize(file.size),
       load: async (options) =>
-        new Blob([new Uint8Array(await open(api.media.download, file, options))], {
+        new Blob([await open(api.media.download, file, options)], {
           type: 'application/octet-stream',
         }),
       save: (blob) => save(file.name, blob),

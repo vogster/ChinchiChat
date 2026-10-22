@@ -72,7 +72,11 @@ describe('attachments in messages', () => {
     const click = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => {})
     await user.click(link)
     await waitFor(() =>
-      expect(api.media.download).toHaveBeenCalledWith(FILE.url, expect.any(Object)),
+      expect(api.media.download).toHaveBeenCalledWith(
+        FILE.url,
+        // A little over the size the server gave: a file that keeps coming is cut off.
+        expect.objectContaining({ maxBytes: expect.any(Number) }),
+      ),
     )
     await waitFor(() => expect(shell.saved().map((file) => file.name)).toEqual(['report.pdf']))
     expect(click).not.toHaveBeenCalled()

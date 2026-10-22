@@ -6,6 +6,13 @@ import type { DownloadOptions } from '@chinchi/sdk'
 
 export type DownloadState = 'idle' | 'loading' | 'failed'
 
+/**
+ * The most a download of `expectedBytes` may bring: a little over, never without end (a server
+ * or sender that lies about the size would otherwise fill the memory).
+ */
+export const downloadCeiling = (expectedBytes: number): number =>
+  Math.ceil(expectedBytes * 1.1) + 64 * 1024
+
 export interface CancellableDownloadOptions {
   /** What comes down, when the server does not say. */
   readonly expectedBytes: number
@@ -57,7 +64,11 @@ export const useCancellableDownload = <T extends HTMLElement>({
     setWidth(trigger.current?.offsetWidth || undefined)
     setState('loading')
     try {
-      const blob = await load({ signal: controller.signal, onProgress })
+      const blob = await load({
+        signal: controller.signal,
+        onProgress,
+        maxBytes: downloadCeiling(expectedBytes),
+      })
       if (abort.current !== controller) return
       await save(blob)
       if (abort.current === controller) settle('idle')

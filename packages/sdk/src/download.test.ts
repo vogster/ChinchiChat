@@ -43,6 +43,46 @@ describe('createDownload', () => {
     expect(second).toBe('https://files.example.com/x.png')
   })
 
+  it("never carries the token to another site's address", async () => {
+    const fetch = okFetch()
+    const download = createDownload({
+      baseUrl: 'https://chat.example.com/api/v1',
+      fetch,
+      getToken: () => 'secret',
+    })
+
+    await download('https://files.example.org/x.png')
+    await download('https://chat.example.com.evil.test/x.png')
+    await download('https://chat.example.com/api/v1/attachments/1/x.png')
+
+    const calls = fetch.mock.calls as [string, RequestInit][]
+    const auth = calls.map(([, init]) => new Headers(init.headers).get('authorization'))
+    expect(auth).toEqual([null, null, 'Bearer secret'])
+    expect(calls.every(([, init]) => init.credentials === 'omit')).toBe(true)
+  })
+
+  it('stops a download that is bigger than it may be', async () => {
+    const declared = createDownload({
+      baseUrl: '/api/v1',
+      fetch: async () =>
+        new Response(chunked([Uint8Array.of(1)]), { headers: { 'content-length': '50' } }),
+    })
+    await expect(declared('/api/v1/attachments/1/x', { maxBytes: 10 })).rejects.toMatchObject({
+      code: 'DOWNLOAD_TOO_LARGE',
+    })
+
+    // No length given, or a wrong one: counted as it comes.
+    const streamed = createDownload({
+      baseUrl: '/api/v1',
+      fetch: async () => new Response(chunked([new Uint8Array(8), new Uint8Array(8)])),
+    })
+    await expect(streamed('/api/v1/attachments/1/x', { maxBytes: 10 })).rejects.toMatchObject({
+      code: 'DOWNLOAD_TOO_LARGE',
+    })
+    const fits = await streamed('/api/v1/attachments/1/x', { maxBytes: 16 })
+    expect(fits.size).toBe(16)
+  })
+
   it('turns failures into ApiError', async () => {
     const missing = createDownload({
       baseUrl: '/api/v1',
