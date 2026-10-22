@@ -10,7 +10,9 @@
     "language": "Язык",
     "cancel": "Отмена",
     "close": "Закрыть",
-    "more": "Ещё"
+    "more": "Ещё",
+    "showPassword": "Показать пароль",
+    "hidePassword": "Скрыть пароль"
   },
   "nav": {
     "servers": "Серверы",

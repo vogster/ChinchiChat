@@ -10,7 +10,9 @@
     "language": "Language",
     "cancel": "Cancel",
     "close": "Close",
-    "more": "More"
+    "more": "More",
+    "showPassword": "Show password",
+    "hidePassword": "Hide password"
   },
   "nav": {
     "servers": "Servers",

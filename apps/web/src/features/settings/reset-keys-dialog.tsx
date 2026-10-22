@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next'
 import { Alert } from '../../components/ui/alert'
 import { Button } from '../../components/ui/button'
 import { Dialog } from '../../components/ui/dialog'
+import { PasswordField } from '../../components/ui/password-field'
 import { TextField } from '../../components/ui/text-field'
 import { errorMessage } from '../../lib/errors'
 import { useCurrentUser } from '../auth/use-auth-actions'
@@ -47,9 +48,8 @@ export const ResetKeysDialog = ({ reset, onClose }: ResetKeysDialogProps) => {
           if (ready) run.mutate()
         }}
       >
-        <TextField
+        <PasswordField
           label={t('e2ee.recovery.resetPassword')}
-          type="password"
           autoComplete="current-password"
           value={password}
           onChange={(event) => setPassword(event.target.value)}

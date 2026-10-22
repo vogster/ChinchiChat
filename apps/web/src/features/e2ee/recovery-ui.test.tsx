@@ -166,7 +166,15 @@ describe('the recovery key', () => {
     e2ee.recovery.reset.mockRejectedValueOnce(
       new ApiError(400, 'INVALID_CURRENT_PASSWORD', 'Current password is incorrect'),
     )
-    await user.type(within(dialog).getByLabelText('Пароль', { exact: true }), 'wrong')
+    const password = within(dialog).getByLabelText('Пароль', { exact: true })
+    await user.type(password, 'wrong')
+    // The eye shows what was typed, and hides it again.
+    expect(password).toHaveAttribute('type', 'password')
+    await user.click(within(dialog).getByRole('button', { name: 'Показать пароль' }))
+    expect(password).toHaveAttribute('type', 'text')
+    expect(password).toHaveValue('wrong')
+    await user.click(within(dialog).getByRole('button', { name: 'Скрыть пароль' }))
+    expect(password).toHaveAttribute('type', 'password')
     await user.click(confirm)
     expect(await within(dialog).findByText('Текущий пароль указан неверно.')).toBeVisible()
 
