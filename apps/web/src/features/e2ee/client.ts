@@ -232,6 +232,7 @@ const plainKey = ({ id, editedAt }: Pick<CipherMessage, 'id' | 'editedAt'>) =>
 export const createE2eeClient = ({ api, store, userId, deviceName }: E2eeClientOptions) => {
   let device: Promise<DeviceKeys> | null = null
   const devicesByUser = new Map<string, Promise<Device[]>>()
+  const userKeys = new Map<string, Promise<string | null>>()
   const conversations = new Map<string, Conversation>()
   const queues = new Map<string, Promise<unknown>>()
   const additions = createDeviceAdditions()
@@ -262,6 +263,23 @@ export const createE2eeClient = ({ api, store, userId, deviceName }: E2eeClientO
       found.catch(() => devicesByUser.delete(id))
     }
     return found
+  }
+
+  /** A user's public key as the server has it now; kept until their devices change. */
+  const userKeyOf = (id: string) => {
+    let found = userKeys.get(id)
+    if (!found) {
+      found = api.e2ee.userKey(id === userId ? '@me' : id).then((r) => r.userKey?.publicKey ?? null)
+      userKeys.set(id, found)
+      found.catch(() => userKeys.delete(id))
+    }
+    return found
+  }
+
+  /** What is known of someone's devices and key goes: the next look asks the server again. */
+  const forgetUser = (id: string) => {
+    devicesByUser.delete(id)
+    userKeys.delete(id)
   }
 
   /** A device may be in a conversation if the server lists it for its user with that key. */
@@ -371,8 +389,7 @@ export const createE2eeClient = ({ api, store, userId, deviceName }: E2eeClientO
     store,
     userId,
     devicesOf,
-    userKeyOf: async (id) =>
-      (await api.e2ee.userKey(id === userId ? '@me' : id)).userKey?.publicKey ?? null,
+    userKeyOf,
     thisDevice: async () => (await ready()).identity.deviceId,
     thisDeviceKey: async () => {
       await ready()
@@ -778,7 +795,7 @@ export const createE2eeClient = ({ api, store, userId, deviceName }: E2eeClientO
       await encryptedMemory.remember(channel.id)
       const keys = await ready()
       // Fresh device lists: opening is when a member's new or removed devices get noticed.
-      for (const memberId of channel.memberIds) devicesByUser.delete(memberId)
+      for (const memberId of channel.memberIds) forgetUser(memberId)
       for (let attempt = 0; attempt < 5; attempt += 1) {
         const { conversation, anyCommits } = await sync(channel.id, keys)
         if (!conversation) {
@@ -843,6 +860,7 @@ export const createE2eeClient = ({ api, store, userId, deviceName }: E2eeClientO
       device = null
       conversations.clear()
       devicesByUser.clear()
+      userKeys.clear()
       queues.clear()
       additions.clear()
     },
@@ -969,7 +987,7 @@ export const createE2eeClient = ({ api, store, userId, deviceName }: E2eeClientO
       markSaved: backup.markSaved,
       useKey: async (text: string) => {
         const result = await backup.useKey(text, await ready())
-        if (result === 'ok') devicesByUser.delete(userId)
+        if (result === 'ok') forgetUser(userId)
         return result
       },
       /**
@@ -979,7 +997,7 @@ export const createE2eeClient = ({ api, store, userId, deviceName }: E2eeClientO
       reset: async (identity: IdentityProof) => {
         const userKey = await crossSigning.reset(await ready(), identity)
         await backup.reset(userKey)
-        devicesByUser.delete(userId)
+        forgetUser(userId)
       },
     },
 
@@ -1013,7 +1031,7 @@ export const createE2eeClient = ({ api, store, userId, deviceName }: E2eeClientO
      * their devices again even where someone took them out before.
      */
     devicesChanged: async (changedUserId: string) => {
-      devicesByUser.delete(changedUserId)
+      forgetUser(changedUserId)
       additions.forgetOwner(changedUserId)
     },
   }

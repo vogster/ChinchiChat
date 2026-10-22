@@ -23,8 +23,11 @@ interface E2eeContextValue {
   readonly client: E2eeClientLike | null
   /** Grows with every handshake or device change: conversations open again to catch up. */
   readonly revision: number
-  /** Opens conversations again, e.g. after letting a device in, so they take it in. */
-  readonly refresh: () => void
+  /**
+   * Opens conversations again, e.g. after letting a device in, so they take it in; with whose
+   * devices or key were let in, that person's other conversations take them in too.
+   */
+  readonly refresh: (changedUserId?: string) => void
 }
 
 const E2eeContext = createContext<E2eeContextValue>({
@@ -84,10 +87,13 @@ export const E2eeProvider = ({ children }: { children: ReactNode }) => {
     [gateway, client, admit],
   )
 
-  const refresh = useCallback(() => {
-    setRevision((value) => value + 1)
-    admit(null)
-  }, [admit])
+  const refresh = useCallback(
+    (changedUserId?: string) => {
+      setRevision((value) => value + 1)
+      if (changedUserId) admit(changedUserId)
+    },
+    [admit],
+  )
   const value = useMemo(() => ({ client, revision, refresh }), [client, revision, refresh])
   return <E2eeContext.Provider value={value}>{children}</E2eeContext.Provider>
 }

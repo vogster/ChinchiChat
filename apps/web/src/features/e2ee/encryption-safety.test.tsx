@@ -1,5 +1,5 @@
 import { screen, waitFor, within } from '@testing-library/react'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 
 import { createFakeApi, testFriend, testUser } from '../../test/fake-api'
 import { renderApp } from '../../test/render-app'
@@ -62,6 +62,8 @@ describe('checking who is on the other end', () => {
   })
 
   it('asks to let in an unapproved device of the other person, by its code', async () => {
+    // No random wait before the background admission (it spreads the members' devices out).
+    const random = vi.spyOn(Math, 'random').mockReturnValue(0)
     const { user, e2ee } = renderApp(URL_PATH, { api: withEncryptedDm() })
     e2ee.safety.status.mockResolvedValue({
       people: [
@@ -85,6 +87,11 @@ describe('checking who is on the other end', () => {
       within(warning).getByRole('button', { name: 'Впустить устройство Телефон — Боб' }),
     )
     await waitFor(() => expect(e2ee.safety.acceptDevice).toHaveBeenCalledWith(testFriend.id, '7'))
+    // Bob's other encrypted conversations take the device in too, in the background.
+    await waitFor(() =>
+      expect(e2ee.admit).toHaveBeenCalledWith(expect.objectContaining({ id: encryptedDm.id })),
+    )
+    random.mockRestore()
   })
 
   it('warns about an unapproved device on my own account, without letting it in', async () => {

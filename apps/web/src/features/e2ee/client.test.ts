@@ -688,6 +688,32 @@ describe('e2ee client', () => {
     expect((await delivery.apiFor(BOB).e2ee.countKeyPackages(phoneId)).count).toBeGreaterThan(0)
   })
 
+  it('in a group, takes out no device another member just added, whatever list it cached', async () => {
+    const { client } = setup()
+    const CAROL = '3'
+    const group = { id: '605', memberIds: [ALICE, BOB, CAROL] }
+    const alice = client(ALICE).client
+    const bob = client(BOB).client
+    const carol = client(CAROL).client
+    await Promise.all([bob.ready(), carol.ready()])
+    await alice.open(group)
+    await bob.open(group)
+    await carol.open(group)
+
+    // Carol's phone, approved by her; Bob adds it. Alice heard nothing of it yet.
+    const phone = client(CAROL, 'Телефон').client
+    expect(await phone.recovery.useKey((await carol.recovery.key()) as string)).toBe('ok')
+    await bob.devicesChanged(CAROL)
+    await bob.admit(group)
+    // Alice's cached lists predate the phone (her look at Carol happened before it existed).
+    await alice.safety.status([CAROL])
+
+    await alice.admit(group)
+    const sent = await alice.send(group, 'И телефону Кэрол')
+
+    expect(await phone.read(group, sent)).toMatchObject({ payload: { text: 'И телефону Кэрол' } })
+  })
+
   it('marks a new last resort for packages kept before last resorts were marked', async () => {
     const { client } = setup()
     const side = client(BOB)
