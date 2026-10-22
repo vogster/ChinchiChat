@@ -41,4 +41,18 @@ describe('useSaveFile', () => {
     expect(await fake.saved()[0]?.blob.text()).toBe('pdf')
     expect(click).not.toHaveBeenCalled()
   })
+
+  it('offers only a plain file name, whatever name the file came with', async () => {
+    const fake = createFakeShell()
+    const { result } = renderHook(() => useSaveFile(), {
+      wrapper: ({ children }: { children: ReactNode }) => (
+        <ShellProvider shell={fake.shell}>{children}</ShellProvider>
+      ),
+    })
+
+    await result.current('..\\..\\Startup\\update.bat', new Blob(['x']))
+    await result.current('con', new Blob(['x']))
+
+    expect(fake.saved().map((file) => file.name)).toEqual(['update.bat', '_con'])
+  })
 })

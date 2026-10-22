@@ -7,6 +7,7 @@ import {
   FILENAME_MAX_LENGTH,
   isInlineAudio,
   isInlineImage,
+  safeFileName,
 } from './attachment.schemas'
 
 describe('attachmentFilenameSchema', () => {
@@ -17,6 +18,8 @@ describe('attachmentFilenameSchema', () => {
     ['../../etc/passwd', 'passwd'],
     ['bad\u0000na\u001fme\u007f.txt', 'badname.txt'],
     ['кот.jpg', 'кот.jpg'],
+    // A right-to-left override would show "invoice\u202Efdp.exe" as "invoiceexe.pdf".
+    ['invoice\u202Efdp.exe', 'invoicefdp.exe'],
   ])('normalizes %j to %j', (input, expected) => {
     expect(attachmentFilenameSchema.parse(input)).toBe(expected)
   })
@@ -27,6 +30,37 @@ describe('attachmentFilenameSchema', () => {
       expect(attachmentFilenameSchema.safeParse(input).success).toBe(false)
     },
   )
+})
+
+describe('safeFileName', () => {
+  it.each([
+    ['отчёт.pdf', 'отчёт.pdf'],
+    // A sender of an encrypted file picks its name: it must not lead out of the folder.
+    [
+      '..\\..\\AppData\\Roaming\\Microsoft\\Windows\\Start Menu\\Programs\\Startup\\update.bat',
+      'update.bat',
+    ],
+    ['../../.ssh/authorized_keys', 'authorized_keys'],
+    ['C:\\Windows\\evil.dll', 'evil.dll'],
+    ['invoice\u202Efdp.exe', 'invoicefdp.exe'],
+    ['a<b>c:d"e|f?g*h.txt', 'a_b_c_d_e_f_g_h.txt'],
+    ['notes.txt. . ', 'notes.txt'],
+    ['CON', '_CON'],
+    ['nul.txt', '_nul.txt'],
+    ['com1.log', '_com1.log'],
+  ])('makes %j into %j', (input, expected) => {
+    expect(safeFileName(input)).toBe(expected)
+  })
+
+  it.each(['', '   ', '..', '.', 'dir/', '\u202E'])('falls back for %j', (input) => {
+    expect(safeFileName(input)).toBe('file')
+  })
+
+  it('keeps a long name within the limit, extension and all', () => {
+    const name = safeFileName(`${'x'.repeat(400)}.pdf`)
+    expect(name).toHaveLength(FILENAME_MAX_LENGTH)
+    expect(name.endsWith('.pdf')).toBe(true)
+  })
 })
 
 describe('contentTypeSchema', () => {

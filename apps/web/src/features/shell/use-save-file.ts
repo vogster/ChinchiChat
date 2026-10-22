@@ -1,3 +1,4 @@
+import { safeFileName } from '@chinchi/shared'
 import { useCallback } from 'react'
 
 import { saveBlob } from '../../lib/save-file'
@@ -9,17 +10,19 @@ export type SaveFile = (name: string, blob: Blob) => Promise<void>
 /**
  * How this page saves a file: a browser tab lets the browser download it, the desktop app asks
  * where to put it ("Save as") through the shell, because its webview has no downloads of its
- * own on every platform. Cancelling the dialog is not an error.
+ * own on every platform. Cancelling the dialog is not an error. The name is offered only as a
+ * plain file name: one with a path would open the dialog wherever it pointed.
  */
 export const useSaveFile = (): SaveFile => {
   const shell = useShell()
   return useCallback<SaveFile>(
     async (name, blob) => {
+      const safe = safeFileName(name)
       if (shell) {
-        await shell.saveFile(name, blob)
+        await shell.saveFile(safe, blob)
         return
       }
-      saveBlob(name, blob)
+      saveBlob(safe, blob)
     },
     [shell],
   )

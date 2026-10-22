@@ -20,15 +20,49 @@ export type InlineAudioType = (typeof INLINE_AUDIO_TYPES)[number]
 export const isInlineAudio = (contentType: string): contentType is InlineAudioType =>
   (INLINE_AUDIO_TYPES as readonly string[]).includes(contentType)
 
-// eslint-disable-next-line no-control-regex
-const CONTROL_CHARS = /[\u0000-\u001f\u007f]/g
+/**
+ * Control and format characters. The latter include right-to-left overrides, which show
+ * "invoice\u202Efdp.exe" as "invoiceexe.pdf".
+ */
+const INVISIBLE = /[\p{Cc}\p{Cf}]/gu
 
-/** The last path segment without control characters: paths from the client are never trusted. */
+/** The last path segment, without invisible characters or the spaces around it. */
+const lastSegment = (value: string) =>
+  (value.replace(INVISIBLE, '').split(/[/\\]/).pop() ?? '').trim()
+
+/** The last path segment without invisible characters: paths from the client are never trusted. */
 export const attachmentFilenameSchema = z
   .string()
   .max(1024)
-  .transform((value) => (value.replace(CONTROL_CHARS, '').split(/[/\\]/).pop() ?? '').trim())
+  .transform(lastSegment)
   .pipe(z.string().min(1).max(FILENAME_MAX_LENGTH))
+
+/** What Windows refuses in a file name, and the device names it won't create a file under. */
+const RESERVED_CHARS = /[<>:"|?*]/g
+const DEVICE_NAMES = /^(con|prn|aux|nul|com\d|lpt\d)(\.|$)/i
+const EXTENSION_MAX_LENGTH = 16
+
+/** Cut to the length limit, keeping a short extension. */
+const shorten = (name: string) => {
+  if (name.length <= FILENAME_MAX_LENGTH) return name
+  const dot = name.lastIndexOf('.')
+  const extension = dot > 0 && name.length - dot <= EXTENSION_MAX_LENGTH ? name.slice(dot) : ''
+  return name.slice(0, FILENAME_MAX_LENGTH - extension.length) + extension
+}
+
+/**
+ * A name to save a file under on any system, for names nobody checked (an encrypted file's comes
+ * from its sender, the server never sees it): the last path segment, without invisible
+ * characters, with what Windows refuses replaced and no trailing dots or spaces; a device name
+ * gets a prefix. Nothing usable left: `fallback`.
+ */
+export const safeFileName = (name: string, fallback = 'file'): string => {
+  const cleaned = lastSegment(name)
+    .replace(RESERVED_CHARS, '_')
+    .replace(/[. ]+$/, '')
+  if (cleaned === '') return fallback
+  return shorten(DEVICE_NAMES.test(cleaned) ? `_${cleaned}` : cleaned)
+}
 
 const TOKEN = "[a-z0-9][a-z0-9!#$&^_.+'-]*"
 
