@@ -56,12 +56,73 @@ describe('approving a new device from an old one', () => {
     await laptop.approvals.confirm(onLaptop?.approvalId as string)
     await pump(laptop, phone)
 
+    // The laptop said yes; the phone takes nothing until its own person says so too.
+    expect(phone.approvals.views()[0]).toMatchObject({ state: 'compare', approvedThere: true })
+    expect(await phone.recovery.key()).toBeNull()
+    expect(delivery.devices.find((d) => d.id === phoneId)?.userSignature).toBeNull()
+
+    await phone.approvals.confirm(onPhone?.approvalId as string)
+
     expect(phone.approvals.views()[0]?.state).toBe('done')
     expect(delivery.devices.find((d) => d.id === phoneId)?.userSignature).toEqual(
       expect.any(String),
     )
     expect(await phone.recovery.key()).toBe(await laptop.recovery.key())
     expect(await phone.read(DM, old)).toMatchObject({ payload: { text: 'До нового телефона' } })
+  })
+
+  it('takes the keys at once when the new device said yes first', async () => {
+    const { client, pump } = setup()
+    const laptop = client(ALICE, 'Ноутбук')
+    await laptop.ready()
+    const phone = client(ALICE, 'Телефон')
+    await phone.ready()
+
+    await phone.approvals.request()
+    await pump(laptop, phone)
+    await phone.approvals.confirm(phone.approvals.views()[0]?.approvalId as string)
+    expect(phone.approvals.views()[0]).toMatchObject({ state: 'compare', confirmedHere: true })
+    await laptop.approvals.confirm(laptop.approvals.views()[0]?.approvalId as string)
+    await pump(laptop, phone)
+
+    expect(phone.approvals.views()[0]?.state).toBe('done')
+    expect(await phone.recovery.key()).toBe(await laptop.recovery.key())
+  })
+
+  it('takes nothing when the new device says the emoji differ, whatever came from the other', async () => {
+    const { delivery, client, pump } = setup()
+    const laptop = client(ALICE, 'Ноутбук')
+    await laptop.ready()
+    const phone = client(ALICE, 'Телефон')
+    const phoneId = await phone.ready()
+
+    await phone.approvals.request()
+    await pump(laptop, phone)
+    // Whoever answered (the server posing as an approved device, say) handed over keys.
+    await laptop.approvals.confirm(laptop.approvals.views()[0]?.approvalId as string)
+    await pump(laptop, phone)
+    await phone.approvals.decline(phone.approvals.views()[0]?.approvalId as string)
+    await pump(laptop, phone)
+
+    expect(phone.approvals.views()[0]?.state).toBe('declined')
+    expect(await phone.recovery.key()).toBeNull()
+    expect(delivery.devices.find((d) => d.id === phoneId)?.userSignature).toBeNull()
+  })
+
+  it('tells the old device when the new one says no before it answers', async () => {
+    const { client, pump } = setup()
+    const laptop = client(ALICE, 'Ноутбук')
+    await laptop.ready()
+    const phone = client(ALICE, 'Телефон')
+    await phone.ready()
+
+    await phone.approvals.request()
+    await pump(laptop, phone)
+    await phone.approvals.decline(phone.approvals.views()[0]?.approvalId as string)
+    await pump(laptop, phone)
+
+    expect(laptop.approvals.views()[0]?.state).toBe('declined')
+    expect(phone.approvals.views()[0]?.state).toBe('declined')
   })
 
   it('stops when the old device says no', async () => {

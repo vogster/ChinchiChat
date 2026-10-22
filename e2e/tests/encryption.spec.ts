@@ -441,6 +441,9 @@ test('a new browser is approved from an old one by comparing emoji', async ({ br
   expect(await onPhone.innerText()).toBe(await onLaptop.innerText())
   await dialog.getByRole('button', { name: 'Да, эмодзи совпадают' }).click()
   await expect(dialog).toBeHidden()
+  // The phone takes the keys only once Alice says yes on it too.
+  await expect(banner).toContainText('На другом устройстве нажали «Да»')
+  await banner.getByRole('button', { name: 'Да, эмодзи совпадают' }).click()
 
   // The phone now reads the message from before it existed, and is vouched for.
   await expect(banner).toBeHidden()
