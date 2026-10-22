@@ -38,7 +38,9 @@ describe('createDownload', () => {
     const [first, init] = calls[0] as [string, RequestInit]
     const [second] = calls[1] as [string, RequestInit]
     expect(first).toBe('/api/v1/attachments/1/cat.png')
-    expect(init.credentials).toBe('include')
+    // Not 'include': the server redirects to storage on another origin, which would then have
+    // to allow credentials, and doesn't — the browser would refuse the file.
+    expect(init.credentials).toBe('same-origin')
     expect(new Headers(init.headers).has('authorization')).toBe(false)
     expect(second).toBe('https://files.example.com/x.png')
   })
