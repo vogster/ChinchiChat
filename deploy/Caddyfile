@@ -36,8 +36,21 @@ import /etc/caddy/generated/global.caddy
 		Referrer-Policy no-referrer
 		-Server
 	}
-	# The Host header passes through unchanged: presigned URLs are signed for it.
-	reverse_proxy rustfs:9000
+	# Only the bucket, and only what browsers do with presigned URLs: the rest of RustFS (its
+	# admin API, other buckets) stays inside, and the app's session cookie never reaches storage.
+	@bucket {
+		path /chinchi/*
+		method GET HEAD PUT OPTIONS
+	}
+	handle @bucket {
+		request_header -Cookie
+		request_header -Authorization
+		# The Host header passes through unchanged: presigned URLs are signed for it.
+		reverse_proxy rustfs:9000
+	}
+	handle {
+		respond 404
+	}
 }
 
 (voice) {
