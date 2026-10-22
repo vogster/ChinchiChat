@@ -112,6 +112,25 @@ describe('user keys', () => {
     expect(other.statusCode).toBe(404)
   })
 
+  it('are replaced only with the password: a stolen session alone cannot', async () => {
+    await call(alice, 'PUT', '/users/@me/e2ee/user-key', { publicKey: keyPair().publicKey })
+    const kept = (await call(alice, 'GET', '/users/@me/e2ee/user-key')).json().data.userKey
+
+    const without = await call(alice, 'PUT', '/users/@me/e2ee/user-key', {
+      publicKey: keyPair().publicKey,
+      replace: true,
+    })
+    expect(without.statusCode).toBe(400)
+    const wrong = await call(alice, 'PUT', '/users/@me/e2ee/user-key', {
+      publicKey: keyPair().publicKey,
+      replace: true,
+      password: 'not-it',
+    })
+    expect(wrong.json().code).toBe('INVALID_CURRENT_PASSWORD')
+
+    expect((await call(alice, 'GET', '/users/@me/e2ee/user-key')).json().data.userKey).toEqual(kept)
+  })
+
   it('when replaced, drop every signature and tell the people who follow the user', async () => {
     const device = await register(alice)
     const userKey = keyPair()
@@ -124,6 +143,7 @@ describe('user keys', () => {
     const replaced = await call(alice, 'PUT', '/users/@me/e2ee/user-key', {
       publicKey: keyPair().publicKey,
       replace: true,
+      password: 'password123',
     })
 
     expect(replaced.statusCode).toBe(200)

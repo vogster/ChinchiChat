@@ -1,5 +1,7 @@
 import { z } from 'zod'
 
+import { PASSWORD_MAX_LENGTH } from '../auth/auth.schemas'
+import { mfaCodeSchema } from '../auth/mfa.schemas'
 import { snowflakeSchema } from '../snowflake/snowflake'
 
 /** Binary payloads travel as standard base64; the limit is on the encoded length. */
@@ -54,11 +56,19 @@ export const userKeySchema = z.object({
   createdAt: z.iso.datetime(),
 })
 
-export const setUserKeyRequestSchema = z.strictObject({
-  publicKey: ed25519PublicKeySchema,
-  /** Replaces an existing key (all devices lost): every device signature is dropped. */
-  replace: z.boolean().optional(),
-})
+export const setUserKeyRequestSchema = z
+  .strictObject({
+    publicKey: ed25519PublicKeySchema,
+    /** Replaces an existing key (all devices lost): every device signature is dropped. */
+    replace: z.boolean().optional(),
+    /** Replacing takes the password, and a code when two-factor sign-in is on. */
+    password: z.string().min(1).max(PASSWORD_MAX_LENGTH).optional(),
+    code: mfaCodeSchema.optional(),
+  })
+  .refine((body) => !body.replace || body.password !== undefined, {
+    message: 'Replacing the key takes the password',
+    path: ['password'],
+  })
 
 export const signDeviceRequestSchema = z.strictObject({
   /** 64-byte Ed25519 signature of `deviceStatement`, base64. */
@@ -139,5 +149,5 @@ export type Handshake = z.infer<typeof handshakeSchema>
 export type PostCommitRequest = z.infer<typeof postCommitRequestSchema>
 export type ListHandshakesQuery = z.infer<typeof listHandshakesQuerySchema>
 export type UserKey = z.infer<typeof userKeySchema>
-export type SetUserKeyRequest = z.infer<typeof setUserKeyRequestSchema>
+export type SetUserKeyRequest = z.input<typeof setUserKeyRequestSchema>
 export type SignDeviceRequest = z.infer<typeof signDeviceRequestSchema>

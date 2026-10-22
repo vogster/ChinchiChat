@@ -229,6 +229,7 @@
     "NOT_IN_VOICE": "You are not connected to voice",
     "MICROPHONE_UNAVAILABLE": "No microphone access: you are connected and can listen. Allow the microphone in your browser to talk.",
     "BANNED": "You are banned from this server.",
+    "BACKUP_KEY_UNCHANGED": "The history backup can only be replaced along with a reset of the encryption keys.",
     "UNKNOWN_BAN": "This user isn't banned.",
     "TIMEOUT_IMMUNE": "Administrators can't be timed out.",
     "SLOWMODE": "Slowmode is on — wait before sending again.",
@@ -1535,6 +1536,8 @@
       "resetTitle": "Reset encryption keys?",
       "resetText": "New keys and a new recovery key are created. Old encrypted messages stay unavailable on this device, and the people you talk to will see that you reset your keys and can compare codes again. If you still have another device or your recovery key, use those instead.",
       "resetConfirm": "Reset",
+      "resetPassword": "Password",
+      "resetCode": "Code from the app or a recovery code",
       "hide": "Hide key"
     },
     "approval": {

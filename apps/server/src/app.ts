@@ -24,6 +24,7 @@ import { accountRoutes } from './modules/auth/account.routes'
 import { authPlugin } from './modules/auth/auth.plugin'
 import { authRoutes } from './modules/auth/auth.routes'
 import { mfaRoutes } from './modules/auth/mfa.routes'
+import { confirmIdentity } from './modules/auth/reauth'
 import { sessionsRoutes } from './modules/auth/sessions.routes'
 import { automodRoutes } from './modules/automod/automod.routes'
 import { botsRoutes } from './modules/bots/bots.routes'
@@ -345,7 +346,16 @@ export const buildApp = (
       api.register(relationshipsRoutes, { relationshipService: services.relationship })
       api.register(notificationsRoutes, { notificationService: services.notification })
       if (presence) api.register(customStatusRoutes, { presence })
-      api.register(e2eeRoutes, { e2eeService: services.e2ee })
+      api.register(e2eeRoutes, {
+        e2eeService: services.e2ee,
+        confirmIdentity: (user, password, code) =>
+          confirmIdentity(
+            { throttle: services.loginThrottle, mfa: services.mfa },
+            user,
+            password,
+            code,
+          ),
+      })
       api.register(backupRoutes, { backupService: services.backup })
       api.register(approvalRoutes, { approvalService: services.approval })
       api.register(exportRoutes, {

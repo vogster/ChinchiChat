@@ -51,7 +51,11 @@ export const createE2eeServices = ({
       events,
       nextId,
     }),
-    backup: createBackupService({ backups: createBackupRepository(db), nextId }),
+    backup: createBackupService({
+      backups: createBackupRepository(db),
+      userKeySetAt: async (userId) => (await e2eeRows.findUserKey(userId))?.createdAt ?? null,
+      nextId,
+    }),
     approval: createApprovalService({
       approvals: redis ? createRedisApprovalStore(redis) : createMemoryApprovalStore(),
       e2ee: e2eeRows,

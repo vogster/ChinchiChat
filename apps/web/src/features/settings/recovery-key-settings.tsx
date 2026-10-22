@@ -3,11 +3,11 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { Button } from '../../components/ui/button'
-import { Dialog } from '../../components/ui/dialog'
 import { EnterRecoveryKeyDialog, RecoveryKeyText } from '../e2ee/recovery-dialogs'
 import { downloadRecoveryKey } from '../e2ee/recovery-file'
 import { useRecovery } from '../e2ee/use-recovery'
 import { useSaveFile } from '../shell/use-save-file'
+import { ResetKeysDialog } from './reset-keys-dialog'
 
 /** The recovery key: shown again on a device that holds it, typed in on one that doesn't. */
 export const RecoveryKeySettings = () => {
@@ -18,7 +18,6 @@ export const RecoveryKeySettings = () => {
   const [copied, setCopied] = useState(false)
   const [entering, setEntering] = useState(false)
   const [resetting, setResetting] = useState(false)
-  const [pending, setPending] = useState(false)
   if (!recovery.loaded) return null
 
   if (!recovery.key) {
@@ -36,31 +35,7 @@ export const RecoveryKeySettings = () => {
           <EnterRecoveryKeyDialog recovery={recovery} onOpenChange={setEntering} />
         ) : null}
         {resetting ? (
-          <Dialog
-            open
-            onOpenChange={setResetting}
-            title={t('e2ee.recovery.resetTitle')}
-            description={t('e2ee.recovery.resetText')}
-          >
-            <div className="flex gap-2">
-              <Button variant="secondary" onClick={() => setResetting(false)}>
-                {t('common.cancel')}
-              </Button>
-              <Button
-                variant="danger"
-                pending={pending}
-                onClick={() => {
-                  setPending(true)
-                  void recovery
-                    .reset()
-                    .then(() => setResetting(false))
-                    .finally(() => setPending(false))
-                }}
-              >
-                {t('e2ee.recovery.resetConfirm')}
-              </Button>
-            </div>
-          </Dialog>
+          <ResetKeysDialog reset={recovery.reset} onClose={() => setResetting(false)} />
         ) : null}
       </div>
     )

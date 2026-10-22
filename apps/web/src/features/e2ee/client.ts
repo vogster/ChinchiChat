@@ -25,6 +25,7 @@ import { createLocalSearch } from './local-search'
 import { createSafety } from './safety'
 
 import type { EncryptedFile, EncryptedPayload } from './codec'
+import type { IdentityProof } from './cross-signing'
 import type { E2eeStore } from './store'
 import type {
   Conversation,
@@ -820,9 +821,12 @@ export const createE2eeClient = ({ api, store, userId, deviceName }: E2eeClientO
         if (result === 'ok') devicesByUser.delete(userId)
         return result
       },
-      /** Lost everything, key included: new keys; people who checked this user see it. */
-      reset: async () => {
-        const userKey = await crossSigning.reset(await ready())
+      /**
+       * Lost everything, key included: new keys (with the password); people who checked this
+       * user see it.
+       */
+      reset: async (identity: IdentityProof) => {
+        const userKey = await crossSigning.reset(await ready(), identity)
         await backup.reset(userKey)
         devicesByUser.delete(userId)
       },

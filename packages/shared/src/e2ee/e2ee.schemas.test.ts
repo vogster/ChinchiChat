@@ -4,12 +4,26 @@ import { createMessageRequestSchema, updateMessageRequestSchema } from '../messa
 import {
   postCommitRequestSchema,
   registerDeviceRequestSchema,
+  setUserKeyRequestSchema,
   uploadKeyPackagesRequestSchema,
 } from './e2ee.schemas'
 
 const KEY = Buffer.alloc(32, 7).toString('base64')
 
 describe('e2ee schemas', () => {
+  it('replace the user key only with the password (and a code when there is 2FA)', () => {
+    expect(setUserKeyRequestSchema.safeParse({ publicKey: KEY }).success).toBe(true)
+    expect(setUserKeyRequestSchema.safeParse({ publicKey: KEY, replace: true }).success).toBe(false)
+    expect(
+      setUserKeyRequestSchema.parse({
+        publicKey: KEY,
+        replace: true,
+        password: 'secret',
+        code: '123 456',
+      }),
+    ).toEqual({ publicKey: KEY, replace: true, password: 'secret', code: '123456' })
+  })
+
   it('register a device with a 32-byte key', () => {
     expect(
       registerDeviceRequestSchema.safeParse({ name: ' Ноутбук ', signaturePublicKey: KEY }).success,
