@@ -86,7 +86,9 @@ export const createDownload = ({
       response = await fetch(url, {
         method: 'GET',
         headers,
-        credentials: getToken ? 'omit' : 'include',
+        // The cookie goes to the instance only: its redirect to storage on another origin then
+        // asks no credentials of it, which storage does not allow.
+        credentials: getToken ? 'omit' : 'same-origin',
         signal,
       })
     } catch (error) {
