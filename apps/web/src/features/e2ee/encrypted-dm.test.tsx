@@ -1,5 +1,5 @@
 import { act, screen, waitFor, within } from '@testing-library/react'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 
 import { createFakeApi, testFriend, testGuild, testMessage, testUser } from '../../test/fake-api'
 import { fakeCiphertext } from '../../test/fake-e2ee'
@@ -94,6 +94,8 @@ describe('encrypted conversations', () => {
   })
 
   it('let a member’s new devices into encrypted conversations that are not open', async () => {
+    // No random wait before admitting (it spreads the members' devices out).
+    const random = vi.spyOn(Math, 'random').mockReturnValue(0)
     const api = withEncryptedDm()
     const plainDm: PrivateChannel = { ...encryptedDm, id: '803', encrypted: false }
     const otherDm: PrivateChannel = {
@@ -120,6 +122,7 @@ describe('encrypted conversations', () => {
     act(() => gateway.emit('E2EE_DEVICES_UPDATE', { userId: testUser.id }))
     await waitFor(() => expect(e2ee.admit).toHaveBeenCalledTimes(3))
     expect(e2ee.admit).toHaveBeenLastCalledWith(expect.objectContaining({ id: otherDm.id }))
+    random.mockRestore()
   })
 
   it('show who really signed a message when the server names someone else', async () => {

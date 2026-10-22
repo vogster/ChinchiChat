@@ -657,6 +657,55 @@ describe('e2ee client', () => {
     expect(await relay(bob, secondTab, 'Ответ')).toMatchObject({ text: 'Ответ' })
   })
 
+  it('joins conversation after conversation on its last-resort package, and tops up', async () => {
+    const { client, delivery } = setup()
+    const CAROL = '3'
+    const group = { id: '604', memberIds: [ALICE, BOB, CAROL] }
+    const alice = client(ALICE).client
+    const bob = client(BOB).client
+    const carol = client(CAROL).client
+    await Promise.all([bob.ready(), carol.ready()])
+    await alice.open(DM)
+    await alice.open(group)
+    const phone = client(BOB, 'Телефон').client
+    expect(await phone.recovery.useKey((await bob.recovery.key()) as string)).toBe('ok')
+    const phoneId = await phone.ready()
+    // Everyone else took the phone's one-time packages: only its last resort is left.
+    while ((await delivery.apiFor(BOB).e2ee.countKeyPackages(phoneId)).count > 0) {
+      await delivery.apiFor(ALICE).e2ee.claimKeyPackages(BOB)
+    }
+
+    await alice.devicesChanged(BOB)
+    await alice.admit(DM)
+    await alice.admit(group)
+
+    expect(await phone.open(DM)).toBe('ready')
+    expect(await phone.open(group)).toBe('ready')
+    expect(await phone.read(group, await alice.send(group, 'Всем'))).toMatchObject({
+      payload: { text: 'Всем' },
+    })
+    // Having joined, it put up new one-time packages.
+    expect((await delivery.apiFor(BOB).e2ee.countKeyPackages(phoneId)).count).toBeGreaterThan(0)
+  })
+
+  it('marks a new last resort for packages kept before last resorts were marked', async () => {
+    const { client } = setup()
+    const side = client(BOB)
+    await side.client.ready()
+    const bundles = (await side.store.get<{ lastResort?: true }[]>('bundles')) ?? []
+    expect(bundles.filter((b) => b.lastResort)).toHaveLength(1)
+    // What an earlier version kept: no mark.
+    await side.store.set(
+      'bundles',
+      bundles.map(({ lastResort: _, ...rest }) => rest),
+    )
+
+    await client(BOB, 'Браузер', side.store).client.ready()
+
+    const now = (await side.store.get<{ lastResort?: true }[]>('bundles')) ?? []
+    expect(now.filter((b) => b.lastResort)).toHaveLength(1)
+  })
+
   it('admits devices only where this device is already in: it starts no conversation', async () => {
     const { client, delivery } = setup()
     const bob = client(BOB).client

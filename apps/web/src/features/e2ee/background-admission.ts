@@ -8,6 +8,9 @@ import type { EncryptedChannel } from './client'
 import type { E2eeClientLike } from './e2ee-factory'
 import type { PrivateChannel } from '@chinchi/shared'
 
+/** Background admission starts within this long of a change (a random moment per device). */
+const ADMISSION_SPREAD_MS = 2000
+
 /**
  * The encrypted conversations a device change concerns: those of the person whose devices
  * changed (all of mine when they are my own, or when `changed` is null).
@@ -44,12 +47,17 @@ export const useBackgroundAdmission = (client: E2eeClientLike | null, myId: stri
   return useCallback(
     (changed: string | null) => {
       if (!client || !myId) return
-      queue.current = queue.current.then(async () => {
-        const channels = await queryClient.ensureQueryData(dmsQueryOptions(api)).catch(() => [])
-        for (const channel of encryptedConversationsOf(channels, myId, changed)) {
-          await client.admit(channel).catch(() => undefined)
-        }
-      })
+      queue.current = queue.current
+        .then(async () => {
+          // Every member's devices hear of a change at once: spread out, the first adds the
+          // device and the others find it in, instead of all claiming its packages together.
+          await new Promise((resolve) => setTimeout(resolve, Math.random() * ADMISSION_SPREAD_MS))
+          const channels = await queryClient.ensureQueryData(dmsQueryOptions(api)).catch(() => [])
+          for (const channel of encryptedConversationsOf(channels, myId, changed)) {
+            await client.admit(channel).catch(() => undefined)
+          }
+        })
+        .catch(() => undefined)
     },
     [client, myId, api, queryClient],
   )

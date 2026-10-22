@@ -190,6 +190,8 @@ interface StoredConversation {
 interface StoredBundle {
   readonly publicPackage: string
   readonly privatePackage: string
+  /** Handed out once the one-time packages run out, possibly many times: kept after a join. */
+  readonly lastResort?: true
 }
 
 const KEY_PACKAGE_BATCH = 20
@@ -277,25 +279,33 @@ export const createE2eeClient = ({ api, store, userId, deviceName }: E2eeClientO
     },
   }
 
-  const saveBundles = async (bundles: readonly KeyPackageBundle[]) => {
+  /** Keeps new bundles; with `lastResort`, the first is the new last resort (replacing one). */
+  const saveBundles = async (bundles: readonly KeyPackageBundle[], lastResort: boolean) => {
     const kept = (await store.get<StoredBundle[]>('bundles')) ?? []
     await store.set('bundles', [
-      ...kept,
-      ...bundles.map((b) => ({
+      ...(lastResort ? kept.filter((b) => !b.lastResort) : kept),
+      ...bundles.map((b, index) => ({
         publicPackage: toBase64(b.publicPackage),
         privatePackage: toBase64(b.privatePackage),
+        ...(lastResort && index === 0 ? { lastResort: true as const } : {}),
       })),
     ])
   }
 
   const topUpKeyPackages = async (keys: DeviceKeys, lastResort: boolean) => {
     const bundles = await createKeyPackages(keys, KEY_PACKAGE_BATCH + (lastResort ? 1 : 0))
-    await saveBundles(bundles)
+    await saveBundles(bundles, lastResort)
     const encoded = bundles.map((b) => toBase64(b.publicPackage))
     await api.e2ee.uploadKeyPackages(keys.identity.deviceId, {
       packages: lastResort ? encoded.slice(1) : encoded,
       ...(lastResort ? { lastResort: encoded[0] as string } : {}),
     })
+  }
+
+  /** More one-time packages once few are left: joins and others' claims use them up. */
+  const refill = async (keys: DeviceKeys) => {
+    const { count } = await api.e2ee.countKeyPackages(keys.identity.deviceId)
+    if (count < KEY_PACKAGE_LOW) await topUpKeyPackages(keys, false)
   }
 
   const registerDevice = async (): Promise<DeviceKeys> => {
@@ -310,8 +320,10 @@ export const createE2eeClient = ({ api, store, userId, deviceName }: E2eeClientO
         signaturePublicKey: fromBase64(saved.signaturePublicKey),
         signaturePrivateKey: fromBase64(saved.signaturePrivateKey),
       }
-      const { count } = await api.e2ee.countKeyPackages(savedId)
-      if (count < KEY_PACKAGE_LOW) await topUpKeyPackages(keys, false)
+      // Kept before last resorts were marked: put up a new one, marked (the server replaces it).
+      const bundles = (await store.get<StoredBundle[]>('bundles')) ?? []
+      if (!bundles.some((b) => b.lastResort)) await topUpKeyPackages(keys, true)
+      else await refill(keys)
       return keys
     }
     // An unfinished registration is retried with its keys (the server hands back the same
@@ -536,17 +548,22 @@ export const createE2eeClient = ({ api, store, userId, deviceName }: E2eeClientO
   /** Joins from a Welcome with whichever of this device's key packages it was made for. */
   const join = async (welcome: Handshake): Promise<Conversation | null> => {
     const bundles = (await store.get<StoredBundle[]>('bundles')) ?? []
-    for (const [index, stored] of bundles.entries()) {
+    for (const stored of bundles) {
       const bundle = {
         publicPackage: fromBase64(stored.publicPackage),
         privatePackage: fromBase64(stored.privatePackage),
       }
       try {
         const joined = await joinConversation(fromBase64(welcome.payload), bundle, options)
-        await store.set(
-          'bundles',
-          bundles.filter((_, i) => i !== index),
-        )
+        // A one-time package is spent; the last resort may open more Welcomes. Read again: a
+        // join in another conversation (or tab) may have changed the list meanwhile.
+        if (!stored.lastResort) {
+          const now = (await store.get<StoredBundle[]>('bundles')) ?? []
+          await store.set(
+            'bundles',
+            now.filter((b) => b.publicPackage !== stored.publicPackage),
+          )
+        }
         return joined
       } catch {
         // Not the package this Welcome was made for: try the next one.
@@ -569,7 +586,10 @@ export const createE2eeClient = ({ api, store, userId, deviceName }: E2eeClientO
       last = handshake.id
       if (!conversation) {
         if (handshake.kind === 'welcome') conversation = await join(handshake)
-        if (conversation) await membership.begin(channelId, peopleIn(conversation))
+        if (conversation) {
+          await membership.begin(channelId, peopleIn(conversation))
+          await refill(keys).catch(() => undefined)
+        }
         continue
       }
       // Commits made from an earlier epoch are already in (our own, or before we joined).
