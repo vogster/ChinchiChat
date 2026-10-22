@@ -367,6 +367,26 @@ describe('e2ee client', () => {
     expect((await bob.membership(slipped)).notices).toEqual([])
   })
 
+  it('takes in no one the server slips into a DM, labelled as a DM or not', async () => {
+    const { client } = setup()
+    const MALLORY = '9'
+    const alice = client(ALICE).client
+    const bob = client(BOB).client
+    const mallory = client(MALLORY).client
+    await Promise.all([bob.ready(), mallory.ready()])
+    await alice.open(DM)
+    await bob.open(DM)
+
+    // The server lists a third person in the DM, still calling it one.
+    const slipped = { ...DM, memberIds: [ALICE, BOB, MALLORY], group: false }
+    await alice.admit(slipped)
+    await alice.open(slipped)
+    const sent = await alice.send(slipped, 'Только для Боба')
+
+    expect(await mallory.read(slipped, sent)).toBeNull()
+    expect(await bob.read(DM, sent)).toMatchObject({ payload: { text: 'Только для Боба' } })
+  })
+
   it('in a group, takes in whom this device added, and tells the others who added whom', async () => {
     const { client } = setup()
     const CAROL = '3'

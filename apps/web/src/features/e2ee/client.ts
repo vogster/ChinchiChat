@@ -87,11 +87,16 @@ export interface E2eeApi {
 export interface EncryptedChannel {
   readonly id: string
   readonly memberIds: readonly string[]
-  /** A group (people come and go); by default, more than two members. */
+  /** A group (people come and go); more than two members always are one. */
   readonly group?: boolean
 }
 
-const isGroup = (channel: EncryptedChannel) => channel.group ?? channel.memberIds.length > 2
+/**
+ * More than two people is a group whatever the server calls it: a "DM" it slips a third person
+ * into must not take them in without anyone here adding them (see group-membership.ts).
+ */
+const isGroup = (channel: EncryptedChannel) =>
+  channel.group === true || channel.memberIds.length > 2
 
 /** The people (user ids) with a device in the conversation. */
 const peopleIn = (conversation: Conversation) => [
