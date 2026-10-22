@@ -34,9 +34,12 @@ describe('a conversation the server stops calling encrypted', () => {
     const { e2ee } = renderApp(URL_PATH, { api: withDm(false) })
     e2ee.conversations.wasEncrypted.mockResolvedValue(true)
 
-    expect(
-      await screen.findByRole('alert', { name: 'Шифрование беседы выключено сервером' }),
-    ).toHaveTextContent('Отправка остановлена')
+    const alert = await screen.findByRole('alert', {
+      name: 'Шифрование беседы выключено сервером',
+    })
+    expect(alert).toHaveTextContent('Отправка остановлена')
+    // Nobody needs to worry about what was written before: it stays encrypted.
+    expect(alert).toHaveTextContent('Вся переписка до этого момента осталась зашифрованной')
     expect(screen.queryByRole('textbox', { name: /^Написать/ })).not.toBeInTheDocument()
     expect(screen.queryByRole('button', { name: /Позвонить/ })).not.toBeInTheDocument()
   })
