@@ -24,7 +24,8 @@ const withDms = () => {
 
 describe('search in encrypted conversations', () => {
   it('searches on this device and lists what it found', async () => {
-    const { user, e2ee } = renderApp(`/channels/@me/${encryptedDm.id}`, { api: withDms() })
+    const api = withDms()
+    const { user, e2ee } = renderApp(`/channels/@me/${encryptedDm.id}`, { api })
     e2ee.search.mockResolvedValue([
       { id: '104331612484796416', authorId: testFriend.id, text: 'Встреча переносится' },
     ])
@@ -39,6 +40,8 @@ describe('search in encrypted conversations', () => {
       expect.objectContaining({ id: encryptedDm.id }),
       'встреча',
     )
+    // The server can't read it: it is never asked.
+    expect(api.search.channel).not.toHaveBeenCalled()
 
     await user.click(within(results).getByRole('button', { name: 'Закрыть поиск' }))
     await waitFor(() =>
@@ -46,12 +49,5 @@ describe('search in encrypted conversations', () => {
         screen.queryByRole('complementary', { name: 'Результаты поиска' }),
       ).not.toBeInTheDocument(),
     )
-  })
-
-  it('is not offered in plain DMs (they have no search yet)', async () => {
-    renderApp(`/channels/@me/${testDm.id}`, { api: withDms() })
-    await screen.findByRole('textbox', { name: 'Написать @Боб' })
-
-    expect(screen.queryByRole('searchbox', { name: 'Поиск' })).not.toBeInTheDocument()
   })
 })

@@ -1274,6 +1274,7 @@
     "more": "Show more",
     "problems": {
       "member": "No member named “{{name}}” here",
+      "person": "No one named “{{name}}” in this conversation",
       "channel": "No channel named “{{name}}” here",
       "empty": "Type some words or a filter"
     },

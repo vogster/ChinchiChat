@@ -61,6 +61,7 @@ import { LeaveGroupDialog } from './dialogs/leave-group-dialog'
 import { RemoveDowngradedDialog } from './dialogs/remove-downgraded-dialog'
 import { RenameGroupDialog } from './dialogs/rename-group-dialog'
 import { privateChannelName, userName } from './dm-names'
+import { DmSearchPanel } from './dm-search-panel'
 import { GroupMembersBackdrop, GroupMembersButtons, GroupMembersPanel } from './group-members-panel'
 
 import type { MessageItem, MessagePages } from '../messages/queries'
@@ -231,21 +232,17 @@ export const DmView = ({ channel }: { channel: PrivateChannel }) => {
               onOpenNarrow={() => setNarrowMembers(true)}
             />
           ) : null}
-          {encryption ? (
-            <>
-              {/* Narrow screens: the field opens from this button, as in server channels. */}
-              <button
-                type="button"
-                aria-label={t('search.open')}
-                aria-pressed={searchOpen}
-                onClick={() => setSearchOpen((value) => !value)}
-                className={`${headerButton} lg:hidden`}
-              >
-                <Search aria-hidden className="size-5" />
-              </button>
-              <SearchBox onSearch={setSearch} open={searchOpen} />
-            </>
-          ) : null}
+          {/* Narrow screens: the field opens from this button, as in server channels. */}
+          <button
+            type="button"
+            aria-label={t('search.open')}
+            aria-pressed={searchOpen}
+            onClick={() => setSearchOpen((value) => !value)}
+            className={`${headerButton} lg:hidden`}
+          >
+            <Search aria-hidden className="size-5" />
+          </button>
+          <SearchBox onSearch={setSearch} open={searchOpen} />
           <span className="flex shrink-0 gap-0.5">
             {encryption ? (
               <MissingHistoryButton ready={keysReady} className={headerButton} />
@@ -484,12 +481,15 @@ export const DmView = ({ channel }: { channel: PrivateChannel }) => {
         ) : null}
       </MainCard>
       {encryption && search ? (
+        // The server can't read an encrypted conversation: this device searches what it decrypted.
         <LocalSearchPanel
           channel={encryption}
           query={search}
           nameOf={(userId) => callPerson(userId).name}
           onClose={() => setSearch(null)}
         />
+      ) : search && me ? (
+        <DmSearchPanel channel={channel} me={me} input={search} onClose={() => setSearch(null)} />
       ) : isGroup && (showMembers || narrowMembers) && me ? (
         <>
           {narrowMembers ? <GroupMembersBackdrop onClose={() => setNarrowMembers(false)} /> : null}
