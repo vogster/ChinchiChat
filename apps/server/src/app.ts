@@ -40,6 +40,10 @@ import { emojisRoutes } from './modules/emojis/emojis.routes'
 import { createDataExport } from './modules/export/data-export'
 import { createExportRepository } from './modules/export/export.repository'
 import { exportRoutes } from './modules/export/export.routes'
+import {
+  createMemoryExportTickets,
+  createRedisExportTickets,
+} from './modules/export/export-tickets'
 import { guildsRoutes } from './modules/guilds/guilds.routes'
 import { membersRoutes } from './modules/guilds/members.routes'
 import { healthRoutes } from './modules/health/health.routes'
@@ -74,6 +78,7 @@ import type { Mailer } from './mail/mailer'
 import type { Metrics } from './metrics/metrics'
 import type { PreviewWorker } from './modules/attachments/preview-worker'
 import type { LinkPreviews } from './modules/embeds/link-previews'
+import type { UserRow } from './modules/users/user.repository'
 import type { VoiceService } from './modules/voice/voice.service'
 import type { ServiceDeps, Services } from './services'
 import type { ObjectStorage } from './storage/object-storage'
@@ -304,6 +309,10 @@ export const buildApp = (
   app.register(healthRoutes, { db, redis })
   if (redis && presence) registerGateway(app, config, services, presence, redis, events, metrics)
 
+  /** The password, and a 2FA code when it is on: before what a stolen session must not do. */
+  const reauth = (user: UserRow, password: string, code: string | undefined) =>
+    confirmIdentity({ throttle: services.loginThrottle, mfa: services.mfa }, user, password, code)
+
   app.register(
     async (api) => {
       api.register(authRoutes, {
@@ -348,17 +357,13 @@ export const buildApp = (
       if (presence) api.register(customStatusRoutes, { presence })
       api.register(e2eeRoutes, {
         e2eeService: services.e2ee,
-        confirmIdentity: (user, password, code) =>
-          confirmIdentity(
-            { throttle: services.loginThrottle, mfa: services.mfa },
-            user,
-            password,
-            code,
-          ),
+        confirmIdentity: reauth,
       })
       api.register(backupRoutes, { backupService: services.backup })
       api.register(approvalRoutes, { approvalService: services.approval })
       api.register(exportRoutes, {
+        tickets: redis ? createRedisExportTickets(redis) : createMemoryExportTickets(),
+        confirmIdentity: reauth,
         dataExport: createDataExport({
           exports: createExportRepository(db),
           attachments: createAttachmentRepository(db),

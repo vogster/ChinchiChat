@@ -524,6 +524,7 @@ export const createFakeApi = ({ user = null, registrationMode = 'open' }: FakeAp
     },
     users: {
       deleteMe: vi.fn(async (_password: string, _code?: string) => undefined),
+      exportTicket: vi.fn(async (_password: string, _code?: string) => ({ ticket: 'ticket' })),
       me: vi.fn(async () => {
         if (!user) throw apiError(401, 'UNAUTHORIZED')
         return { user }

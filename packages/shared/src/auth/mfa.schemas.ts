@@ -76,3 +76,9 @@ export const deleteAccountRequestSchema = z.strictObject({
   /** Required when two-factor sign-in is on: an authenticator or recovery code. */
   code: mfaCodeSchema.optional(),
 })
+
+/** Downloading all your data takes the same: the password, and a code with 2FA on. */
+export const exportDataRequestSchema = deleteAccountRequestSchema
+
+/** A one-time ticket for the download that follows (`GET /users/@me/export/:ticket`). */
+export const exportTicketSchema = z.object({ ticket: z.string() })

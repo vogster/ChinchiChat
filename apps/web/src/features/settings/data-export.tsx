@@ -1,24 +1,31 @@
 import { Download } from 'lucide-react'
+import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
+import { Button } from '../../components/ui/button'
+import { useCurrentUser } from '../auth/use-auth-actions'
+import { ExportDataDialog } from './export-data-dialog'
 import { SettingsCard } from './settings-section'
 
-/** The archive is built by the server as it downloads; the browser just saves it. */
-const EXPORT_URL = '/api/v1/users/@me/export'
-
+/** All my data as a ZIP, after the password (see ExportDataDialog). */
 export const DataExport = () => {
   const { t } = useTranslation()
+  const me = useCurrentUser()
+  const [asking, setAsking] = useState(false)
   return (
     <SettingsCard title={t('settings.export.title')}>
       <p className="mb-3 text-sm text-muted">{t('settings.export.description')}</p>
-      <a
-        href={EXPORT_URL}
-        download
-        className="inline-flex h-9 items-center gap-2 rounded-full bg-field px-4 text-[13px] font-medium transition-colors hover:bg-chip"
-      >
+      <Button variant="secondary" fullWidth={false} onClick={() => setAsking(true)}>
         <Download aria-hidden className="size-4" />
         {t('settings.export.download')}
-      </a>
+      </Button>
+      {asking && me ? (
+        <ExportDataDialog
+          username={me.username}
+          mfaEnabled={me.mfaEnabled}
+          onClose={() => setAsking(false)}
+        />
+      ) : null}
     </SettingsCard>
   )
 }

@@ -1,6 +1,7 @@
 import {
   currentUserSchema,
   customStatusSchema,
+  exportTicketSchema,
   instanceInfoSchema,
   loginResultSchema,
   qrLoginClaimSchema,
@@ -138,6 +139,17 @@ export const createAuthApi = (request: Http) => ({
         method: 'DELETE',
         path: '/users/@me',
         body: { password, ...(code ? { code } : {}) },
+      }),
+    /**
+     * A one-time ticket to download all my data, for the password (and a code with 2FA on).
+     * The archive is then downloaded from `/users/@me/export/:ticket`, once.
+     */
+    exportTicket: (password: string, code?: string) =>
+      request({
+        method: 'POST',
+        path: '/users/@me/export',
+        body: { password, ...(code ? { code } : {}) },
+        data: exportTicketSchema,
       }),
     /** PNG, JPEG, GIF or WebP up to PROFILE_IMAGE_MAX_BYTES; stored as a square crop. */
     setAvatar: (image: Blob) =>

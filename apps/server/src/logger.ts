@@ -1,9 +1,11 @@
 import type { Config } from './config/env'
 import type { FastifyServerOptions } from 'fastify'
 
-/** Webhook and interaction URLs hold their token: keep it out of the logs. */
+/** Webhook, interaction and export download URLs hold a secret: keep it out of the logs. */
 export const redactUrl = (url: string): string =>
-  url.replace(/(\/(?:webhooks|interactions)\/\d+\/)[^/?#]+/, '$1[redacted]')
+  url
+    .replace(/(\/(?:webhooks|interactions)\/\d+\/)[^/?#]+/, '$1[redacted]')
+    .replace(/(\/users\/@me\/export\/)[^/?#]+/, '$1[redacted]')
 
 const serializers = {
   req: (request: { method: string; url: string; ip?: string }) => ({

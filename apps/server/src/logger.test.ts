@@ -32,6 +32,7 @@ describe('redactUrl', () => {
     expect(redactUrl('/api/v1/interactions/34/SECRET/callback')).toBe(
       '/api/v1/interactions/34/[redacted]/callback',
     )
+    expect(redactUrl('/api/v1/users/@me/export/SECRET')).toBe('/api/v1/users/@me/export/[redacted]')
     expect(redactUrl('/api/v1/channels/5/messages')).toBe('/api/v1/channels/5/messages')
   })
 })

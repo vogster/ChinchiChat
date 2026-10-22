@@ -263,6 +263,7 @@
     "TOO_MANY_WEBHOOKS": "This channel already has as many webhooks as allowed.",
     "TOO_MANY_CHANNELS": "This server already has as many channels as allowed.",
     "TOO_MANY_ROLES": "This server already has as many roles as allowed.",
+    "INVALID_EXPORT_TICKET": "This archive link was already used or has expired. Confirm with your password again.",
     "SERVER_BUSY": "The server is busy right now. Try again in a moment.",
     "TOO_MANY_INVITES": "This server already has as many active invites as allowed. Delete some first.",
     "TOO_MANY_FOLLOWERS": "This channel already has as many followers as allowed.",
@@ -436,7 +437,11 @@
     "export": {
       "title": "Your data",
       "description": "A ZIP archive with your account, every message you wrote and the files in them. A large archive is built while it downloads.",
-      "download": "Download my data"
+      "download": "Download my data",
+      "confirm": "The archive holds all your messages, so confirm it's you.",
+      "password": "Password",
+      "code": "Code from the app or a recovery code",
+      "start": "Download"
     },
     "encryptionDevices": {
       "title": "Encryption keys",
