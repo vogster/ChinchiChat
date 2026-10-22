@@ -9,6 +9,7 @@ import {
   joinConversation,
   loadConversation,
   members,
+  ownIdentity,
   processIncoming,
   removeMembers,
   saveConversation,
@@ -308,6 +309,11 @@ export const createE2eeClient = ({ api, store, userId, deviceName }: E2eeClientO
       signaturePublicKey: toBase64(fresh.signaturePublicKey),
       signaturePrivateKey: toBase64(fresh.signaturePrivateKey),
     } satisfies StoredDevice)
+    // The removed device's groups go; what it decrypted and its backup stay readable.
+    if (savedId) {
+      conversations.clear()
+      await store.deletePrefix('conv:')
+    }
     const { device: registered } = await api.e2ee.registerDevice({
       name: deviceName,
       signaturePublicKey: toBase64(fresh.signaturePublicKey),
@@ -487,6 +493,12 @@ export const createE2eeClient = ({ api, store, userId, deviceName }: E2eeClientO
     const { state } = await loadState(channelId)
     if (!state) return null
     const loaded = loadConversation(fromBase64(state), options)
+    // State of another device (one removed and registered anew here) is of no use: in it this
+    // device would commit as someone else. Dropped with its cursor, it waits to be let in.
+    if (ownIdentity(loaded)?.deviceId !== (await ready()).identity.deviceId) {
+      await store.delete(`conv:${channelId}`)
+      return null
+    }
     conversations.set(channelId, loaded)
     return loaded
   }
@@ -525,12 +537,13 @@ export const createE2eeClient = ({ api, store, userId, deviceName }: E2eeClientO
 
   /** Applies the handshakes this device has not seen yet, in the server's order. */
   const sync = async (channelId: string, keys: DeviceKeys) => {
+    // First: a state that isn't this device's goes, and its cursor with it.
+    let conversation = await conversationOf(channelId)
     const { cursor } = await loadState(channelId)
     const { handshakes } = await api.e2ee.handshakes(channelId, {
       deviceId: keys.identity.deviceId,
       ...(cursor ? { after: cursor } : {}),
     })
-    let conversation = await conversationOf(channelId)
     let last = cursor
     for (const handshake of handshakes) {
       last = handshake.id
@@ -601,7 +614,10 @@ export const createE2eeClient = ({ api, store, userId, deviceName }: E2eeClientO
       channel.memberIds.length > 2
         ? await listedDevices(channel.memberIds)
         : new Set([...expected.keys(), ...(await listedDevices([userId]))])
-    const gone = present.filter((m) => !keep.has(m.deviceId))
+    // Never this device itself: a commit can't remove its own committer.
+    const gone = present.filter(
+      (m) => !keep.has(m.deviceId) && m.deviceId !== keys.identity.deviceId,
+    )
     if (gone.length > 0) {
       const before = saveConversation(conversation)
       const made = await removeMembers(conversation, gone, options)

@@ -9,6 +9,7 @@ import {
   joinConversation,
   loadConversation,
   members,
+  ownIdentity,
   processIncoming,
   removeMembers,
   saveConversation,
@@ -103,6 +104,14 @@ describe('encrypted conversations', () => {
 
     const incoming = await receive(aliceLaptop, await send(alicePhone, 'После перезапуска'))
     expect(incoming.kind === 'message' && td.decode(incoming.plaintext)).toBe('После перезапуска')
+  })
+
+  it('know which device the state belongs to, also after saving and loading it', async () => {
+    const { alicePhone, bob } = await startGroup()
+
+    expect(ownIdentity(conversationOf(alicePhone))).toEqual({ userId: '1', deviceId: '11' })
+    const reloaded = loadConversation(saveConversation(conversationOf(bob)), trustAll)
+    expect(ownIdentity(reloaded)).toEqual({ userId: '2', deviceId: '21' })
   })
 
   it('give every member the same call key, which changes when someone is removed', async () => {

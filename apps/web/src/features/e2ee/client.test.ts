@@ -540,6 +540,49 @@ describe('e2ee client', () => {
     expect(await alice.open(DM)).toBe('ready')
   })
 
+  it('waits to be let in after its device was removed elsewhere and registered anew', async () => {
+    const { client, delivery } = setup()
+    const bob = client(BOB).client
+    await bob.ready()
+    const aliceSide = client(ALICE)
+    const oldId = await aliceSide.client.open(DM).then(() => aliceSide.client.ready())
+    const before = await bob.send(DM, 'До перерегистрации')
+    expect(await aliceSide.client.read(DM, before)).toMatchObject({
+      payload: { text: 'До перерегистрации' },
+    })
+
+    // Removed from another device; the page reloads with the same storage.
+    await delivery.apiFor(ALICE).e2ee.deleteDevice(oldId)
+    const again = client(ALICE, 'Браузер', aliceSide.store).client
+    expect(await again.ready()).not.toBe(oldId)
+
+    expect(await again.open(DM)).toBe('waiting')
+    // What the old device decrypted stays readable.
+    expect(await again.read(DM, before)).toMatchObject({ payload: { text: 'До перерегистрации' } })
+
+    await letIn(bob, ALICE)
+    await bob.open(DM)
+    expect(await again.open(DM)).toBe('ready')
+    expect(await relay(bob, again, 'Уже с новым')).toMatchObject({ text: 'Уже с новым' })
+    expect(await relay(again, bob, 'И обратно')).toMatchObject({ text: 'И обратно' })
+  })
+
+  it('ignores saved group state that belongs to another device of this browser', async () => {
+    const { client } = setup()
+    const bob = client(BOB).client
+    await bob.ready()
+    const aliceSide = client(ALICE)
+    await aliceSide.client.open(DM)
+    const stale = await aliceSide.store.get('conv:500')
+
+    // Another device's state ends up here (a restored profile, a swapped storage).
+    const elsewhere = client(ALICE, 'Другой')
+    await elsewhere.client.ready()
+    await elsewhere.store.set('conv:500', stale)
+
+    expect(await elsewhere.client.open(DM)).toBe('waiting')
+  })
+
   it('forgets everything on sign-out: the device is revoked and the next sign-in is a new one', async () => {
     const { client, delivery } = setup()
     const alice = client(ALICE).client
