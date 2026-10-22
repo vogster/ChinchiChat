@@ -54,8 +54,11 @@ export const CloseCode = {
   NotAuthenticated: 4003,
   AuthenticationFailed: 4004,
   AlreadyAuthenticated: 4005,
+  /** Too many frames, connections of one user, or sessions started too often. */
   RateLimited: 4008,
   SessionTimedOut: 4009,
+  /** The client stopped reading: the server won't buffer for it without end. */
+  SlowConsumer: 4010,
 } as const
 
 /** What others see. */

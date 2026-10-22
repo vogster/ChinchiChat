@@ -34,6 +34,8 @@ import type {
 export interface GatewaySocket {
   send(text: string): void
   close(code: number, reason: string): void
+  /** Bytes sent but not yet taken by the client. */
+  bufferedAmount(): number
 }
 
 export interface ConnectionDeps {
@@ -62,7 +64,15 @@ export interface ConnectionDeps {
   readonly onDispatch?: (type: string) => void
   /** How long READY took to prepare, in seconds (metrics). */
   readonly onReady?: (seconds: number) => void
+  /** A place for this user's session, or null at the limits (see connection-limits.ts). */
+  readonly admitUser?: (userId: string) => (() => void) | null
 }
+
+/**
+ * What may wait for a client that stopped reading. Checked before each frame, so one large
+ * READY still goes out; what piles up after it closes the connection (the client resumes).
+ */
+export const MAX_BUFFERED_BYTES = 4 * 1024 * 1024
 
 const FRAME_LIMIT = 120
 const FRAME_WINDOW_MS = 60_000
@@ -97,12 +107,22 @@ export const createConnection = (
   let heartbeatTimer: ReturnType<typeof setTimeout> | undefined
   let identifyTimer: ReturnType<typeof setTimeout> | undefined
   let cleanup: Promise<void> | null = null
-
-  const send = (message: ServerMessage) => socket.send(JSON.stringify(message))
+  let releasePlace: (() => void) | null = null
+  let closing = false
 
   const close = (code: number, reason: string) => {
-    if (state === 'closed') return
+    if (state === 'closed' || closing) return
+    closing = true
     socket.close(code, reason)
+  }
+
+  const send = (message: ServerMessage) => {
+    if (closing) return
+    if (socket.bufferedAmount() > MAX_BUFFERED_BYTES) {
+      close(CloseCode.SlowConsumer, 'Too slow to read')
+      return
+    }
+    socket.send(JSON.stringify(message))
   }
 
   const armHeartbeatDeadline = () => {
@@ -233,6 +253,14 @@ export const createConnection = (
     if (!resolved) {
       close(CloseCode.AuthenticationFailed, 'Authentication failed')
       return null
+    }
+    // One place per connection, kept across an invalid RESUME that falls back to IDENTIFY.
+    if (!releasePlace && deps.admitUser) {
+      releasePlace = deps.admitUser(resolved.user.id)
+      if (!releasePlace) {
+        close(CloseCode.RateLimited, 'Too many connections')
+        return null
+      }
     }
     return resolved
   }
@@ -410,6 +438,7 @@ export const createConnection = (
       clearTimeout(heartbeatTimer)
       clearTimeout(identifyTimer)
       unsubscribeAll()
+      releasePlace?.()
       cleanup =
         wasReady && auth && gatewaySessionId
           ? releaseSession(auth.user.id, gatewaySessionId)

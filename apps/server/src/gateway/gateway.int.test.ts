@@ -4,6 +4,7 @@ import { SESSION_COOKIE, WEB_ORIGIN } from '../../test/auth-helpers'
 import { connectGateway, identify } from '../../test/gateway-client'
 import { addMember, createGuild, signUp } from '../../test/guild-helpers'
 import { createTestApp, resetState } from '../../test/test-app'
+import { MAX_CONNECTIONS_PER_USER } from './connection-limits'
 
 import type { Frame, TestSocket } from '../../test/gateway-client'
 import type { TestActor } from '../../test/guild-helpers'
@@ -113,6 +114,16 @@ describe('handshake', () => {
     const { socket } = await identify(app, member.cookie)
     socket.send({ op: 2, d: {} })
     expect((await socket.closed).code).toBe(4005)
+  })
+
+  it('lets one user hold only so many connections (each one costs a full READY)', async () => {
+    for (let i = 0; i < MAX_CONNECTIONS_PER_USER; i++)
+      keep((await identify(app, member.cookie)).socket)
+    const extra = keep(await connectGateway(app, { cookie: member.cookie }))
+    extra.send({ op: 2, d: {} })
+    expect((await extra.closed).code).toBe(4008)
+    // Someone else is not affected.
+    keep((await identify(app, owner.cookie)).socket)
   })
 
   it('closes with 4003 when nobody identifies in time', async () => {
