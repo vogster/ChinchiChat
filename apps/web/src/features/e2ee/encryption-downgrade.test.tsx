@@ -1,4 +1,4 @@
-import { screen, waitFor } from '@testing-library/react'
+import { screen, waitFor, within } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 
 import { createFakeApi, testFriend, testUser } from '../../test/fake-api'
@@ -42,6 +42,28 @@ describe('a conversation the server stops calling encrypted', () => {
     expect(alert).toHaveTextContent('Вся переписка до этого момента осталась зашифрованной')
     expect(screen.queryByRole('textbox', { name: /^Написать/ })).not.toBeInTheDocument()
     expect(screen.queryByRole('button', { name: /Позвонить/ })).not.toBeInTheDocument()
+  })
+
+  it('can be taken off the list and wiped from this device, since nothing can be sent in it', async () => {
+    const api = withDm(false)
+    const { e2ee, user, router } = renderApp(URL_PATH, { api })
+    e2ee.conversations.wasEncrypted.mockResolvedValue(true)
+
+    const alert = await screen.findByRole('alert', {
+      name: 'Шифрование беседы выключено сервером',
+    })
+    await user.click(within(alert).getByRole('button', { name: 'Убрать беседу' }))
+    const dialog = await screen.findByRole('dialog', {
+      name: 'Убрать беседу с этого устройства?',
+    })
+    // The server calls it plain: it won't delete it for the other side, so it is only hidden.
+    expect(dialog).toHaveTextContent('У собеседника она останется')
+    await user.click(within(dialog).getByRole('button', { name: 'Убрать' }))
+
+    await waitFor(() => expect(api.dms.hide).toHaveBeenCalledWith('802'))
+    expect(e2ee.forgetConversation).toHaveBeenCalledWith('802')
+    expect(api.channels.delete).not.toHaveBeenCalled()
+    await waitFor(() => expect(router.state.location.pathname).toBe('/'))
   })
 
   it('stays an ordinary chat when it never was encrypted here', async () => {

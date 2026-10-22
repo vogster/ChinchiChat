@@ -57,6 +57,7 @@ import { useVoice } from '../voice/voice-context'
 import { AddToGroupDialog } from './dialogs/add-to-group-dialog'
 import { DeleteEncryptedDialog } from './dialogs/delete-encrypted-dialog'
 import { LeaveGroupDialog } from './dialogs/leave-group-dialog'
+import { RemoveDowngradedDialog } from './dialogs/remove-downgraded-dialog'
 import { RenameGroupDialog } from './dialogs/rename-group-dialog'
 import { privateChannelName, userName } from './dm-names'
 import { GroupMembersPanel } from './group-members-panel'
@@ -66,7 +67,7 @@ import type { PrivateChannel } from '@chinchi/shared'
 
 const newNonce = () => crypto.randomUUID()
 
-type OpenDialog = 'rename' | 'add' | 'leave' | 'delete' | null
+type OpenDialog = 'rename' | 'add' | 'leave' | 'delete' | 'remove' | null
 
 const headerButton = headerButtonClass
 
@@ -421,7 +422,7 @@ export const DmView = ({ channel }: { channel: PrivateChannel }) => {
           ) : null}
           <TypingIndicator guildId={null} channelId={channel.id} people={channel.recipients} />
           {downgraded ? (
-            <DowngradeNotice />
+            <DowngradeNotice onRemove={() => setDialog('remove')} />
           ) : encryption && encrypted.state !== 'ready' ? (
             <EncryptionStatus state={encrypted.state} />
           ) : canTalk ? (
@@ -489,6 +490,12 @@ export const DmView = ({ channel }: { channel: PrivateChannel }) => {
       ) : null}
       {dialog === 'add' ? (
         <AddToGroupDialog channel={channel} onOpenChange={(open) => !open && setDialog(null)} />
+      ) : null}
+      {dialog === 'remove' ? (
+        <RemoveDowngradedDialog
+          channelId={channel.id}
+          onOpenChange={(open) => !open && setDialog(null)}
+        />
       ) : null}
       {dialog === 'delete' ? (
         <DeleteEncryptedDialog

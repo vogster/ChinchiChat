@@ -91,6 +91,27 @@ export const useDeleteEncrypted = (channelId: Snowflake) => {
   })
 }
 
+/**
+ * A conversation the server stopped calling encrypted: the server won't delete a "plain" one
+ * for everyone, so it is hidden from the list (a new message brings it back, still blocked) and
+ * wiped from this device.
+ */
+export const useRemoveDowngraded = (channelId: Snowflake) => {
+  const api = useApi()
+  const queryClient = useQueryClient()
+  const navigate = useNavigate()
+  const { client } = useE2ee()
+  return useMutation({
+    mutationFn: () => api.dms.hide(channelId),
+    onSuccess: async () => {
+      await client?.forgetConversation(channelId)
+      removePrivateChannel(queryClient, channelId)
+      queryClient.removeQueries({ queryKey: messageKeys.channel(channelId) })
+      await navigate({ to: '/' })
+    },
+  })
+}
+
 export const useRemoveFromGroup = (channel: PrivateChannel) => {
   const api = useApi()
   return useMutation({

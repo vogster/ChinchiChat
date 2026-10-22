@@ -1,6 +1,7 @@
 import { Lock, ShieldAlert } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
+import { Button } from '../../components/ui/button'
 import { BetaBadge } from './beta-badge'
 import { DeviceCodeText } from './device-code'
 import { EncryptionGuideButton } from './encryption-guide'
@@ -63,7 +64,7 @@ const WaitingToBeLetIn = () => {
  * In place of the composer when the server calls a conversation unencrypted that this device
  * saw encrypted: sending would put the text on the server in the clear.
  */
-export const DowngradeNotice = () => {
+export const DowngradeNotice = ({ onRemove }: { onRemove: () => void }) => {
   const { t } = useTranslation()
   return (
     <div
@@ -75,6 +76,10 @@ export const DowngradeNotice = () => {
       <div>
         <p className="font-semibold text-danger">{t('e2ee.downgrade.title')}</p>
         <p className="mt-1 text-muted">{t('e2ee.downgrade.text')}</p>
+        {/* Nothing can be written here any more: the conversation need not stay. */}
+        <Button variant="danger" fullWidth={false} className="mt-3" onClick={onRemove}>
+          {t('e2ee.downgrade.remove')}
+        </Button>
       </div>
     </div>
   )

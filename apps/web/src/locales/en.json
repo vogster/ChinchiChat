@@ -1463,6 +1463,10 @@
       "pending": "Not in the encrypted conversation yet: {{names}}. Messages don't reach them until whoever invited them takes them into the encryption."
     },
     "downgrade": {
+      "remove": "Remove conversation",
+      "removeTitle": "Remove the conversation from this device?",
+      "removeText": "The conversation leaves your list, and its keys and decrypted messages are wiped from this device. The other side keeps it: the server calls it ordinary and won't delete it for everyone. If someone writes in it again, it comes back to the list, and you still won't be able to write in it.",
+      "removeConfirm": "Remove",
       "title": "The server turned off this conversation's encryption",
       "text": "This conversation was encrypted on this device, and now the server calls it an ordinary one. Everything written before this stays encrypted: the server has not read it and cannot. Sending is stopped so that new messages don't reach the server in plain text. That only happens if the server was broken into or set up against you — tell the administrator."
     },
