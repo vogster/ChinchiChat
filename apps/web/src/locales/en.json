@@ -262,6 +262,7 @@
     "UNKNOWN_WEBHOOK": "Webhook not found.",
     "TOO_MANY_WEBHOOKS": "This channel already has as many webhooks as allowed.",
     "TOO_MANY_CHANNELS": "This server already has as many channels as allowed.",
+    "TOO_MANY_ROLES": "This server already has as many roles as allowed.",
     "TOO_MANY_INVITES": "This server already has as many active invites as allowed. Delete some first.",
     "TOO_MANY_FOLLOWERS": "This channel already has as many followers as allowed.",
     "ALREADY_FOLLOWING": "That channel already follows this one.",

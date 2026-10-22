@@ -1,4 +1,4 @@
-import { and, asc, eq, max, sql } from 'drizzle-orm'
+import { and, asc, count, eq, gte, max, sql } from 'drizzle-orm'
 
 import { memberRoles, roles } from '../../db/schema'
 
@@ -33,6 +33,20 @@ export const createRoleRepository = (db: DbExecutor) => ({
       .where(and(eq(roles.guildId, guildId), eq(roles.id, roleId)))
       .limit(1)
     return row ?? null
+  },
+
+  async count(guildId: Snowflake): Promise<number> {
+    const [row] = await db.select({ total: count() }).from(roles).where(eq(roles.guildId, guildId))
+    return Number(row?.total ?? 0)
+  },
+
+  /** Makes room just above @everyone: every other role moves up by one, in one statement. */
+  async shiftUp(guildId: Snowflake): Promise<RoleRow[]> {
+    return db
+      .update(roles)
+      .set({ position: sql`${roles.position} + 1` })
+      .where(and(eq(roles.guildId, guildId), gte(roles.position, 1)))
+      .returning()
   },
 
   async maxPosition(guildId: Snowflake): Promise<number> {

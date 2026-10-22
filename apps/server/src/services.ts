@@ -323,6 +323,7 @@ export const createServices = (
   })
 
   const role = createRoleService({
+    db,
     audit,
     roles,
     overwrites,
