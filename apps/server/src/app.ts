@@ -145,7 +145,7 @@ const registerGateway = (
     webOrigins: config.webOrigins,
     dispatcher: createDispatcher(events),
     // RATE_LIMIT=off (load tests: thousands of connections from one address) lifts them too.
-    limits: config.rateLimitEnabled,
+    limits: config.rateLimitEnabled && { perAddress: config.gatewayMaxConnectionsPerAddress },
     metrics,
     deps: {
       onDispatch: (type) => metrics.gatewayDispatches.inc({ type }),

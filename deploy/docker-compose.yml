@@ -101,6 +101,7 @@ services:
       INSTANCE_NAME: ${INSTANCE_NAME:-Chinchi}
       REGISTRATION_MODE: ${REGISTRATION_MODE:-open}
       REQUIRE_VERIFIED_EMAIL: ${REQUIRE_VERIFIED_EMAIL:-on}
+      GATEWAY_MAX_CONNECTIONS_PER_ADDRESS: ${GATEWAY_MAX_CONNECTIONS_PER_ADDRESS:-100}
       # Required: otherwise whoever registers first on a fresh domain would run the instance.
       INITIAL_ADMIN_EMAIL: ${INITIAL_ADMIN_EMAIL:?set INITIAL_ADMIN_EMAIL in .env}
       SMTP_URL: ${SMTP_URL:-}

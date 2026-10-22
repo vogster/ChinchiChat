@@ -8,6 +8,7 @@ import { createConnectionLimits } from './connection-limits'
 
 import type { Metrics } from '../metrics/metrics'
 import type { ConnectionDeps, GatewayConnection } from './connection'
+import type { ConnectionLimitOptions } from './connection-limits'
 import type { Dispatcher } from './dispatcher'
 import type { FastifyReply, FastifyRequest } from 'fastify'
 
@@ -18,7 +19,7 @@ export interface GatewayOptions {
   readonly deps: Omit<ConnectionDeps, 'onError' | 'dispatcher'>
   readonly metrics?: Pick<Metrics, 'gatewayConnections'>
   /** Caps on connections per user and address (connection-limits.ts); on unless false. */
-  readonly limits?: boolean
+  readonly limits?: ConnectionLimitOptions | false
 }
 
 /**
@@ -40,10 +41,10 @@ const checkOrigin =
   }
 
 export const gatewayPlugin = fp<GatewayOptions>(
-  async (app, { path, webOrigins, dispatcher, deps, metrics, limits: limited = true }) => {
+  async (app, { path, webOrigins, dispatcher, deps, metrics, limits: limitOptions = {} }) => {
     await app.register(websocket, { options: { maxPayload: 8 * 1024 } })
     const connections = new Set<GatewayConnection>()
-    const limits = limited ? createConnectionLimits() : null
+    const limits = limitOptions ? createConnectionLimits(limitOptions) : null
 
     // Release sessions and presence while Valkey/Postgres are still open: whoever closes the
     // app shuts those down right after `app.close()` resolves.

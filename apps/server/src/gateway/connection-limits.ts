@@ -2,7 +2,10 @@ import { addressBucket } from '../http/address-bucket'
 
 /** Open connections of one user (tabs, devices) in this process. */
 export const MAX_CONNECTIONS_PER_USER = 10
-/** Open connections from one address (an IPv6 /64 counts as one): offices share an address. */
+/**
+ * Open connections from one address (an IPv6 /64 counts as one) by default; offices behind one
+ * NAT share an address, so GATEWAY_MAX_CONNECTIONS_PER_ADDRESS can raise it.
+ */
 export const MAX_CONNECTIONS_PER_ADDRESS = 100
 /** Sessions a user may start a minute: each IDENTIFY or RESUME builds state from the database. */
 export const MAX_IDENTIFIES_PER_MINUTE = 20
