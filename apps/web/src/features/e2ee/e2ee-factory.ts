@@ -12,6 +12,7 @@ import type { ApiClient } from '@chinchi/sdk'
 export type E2eeClientLike = Pick<
   E2eeClient,
   | 'ready'
+  | 'conversations'
   | 'forget'
   | 'open'
   | 'send'

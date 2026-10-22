@@ -19,6 +19,7 @@ import { decodePayload, encodePayload, fromBase64, toBase64 } from './codec'
 import { createCrossSigning } from './cross-signing'
 import { createDeviceAdditions } from './device-additions'
 import { createDeviceApproval } from './device-approval'
+import { createEncryptedMemory } from './encrypted-memory'
 import { createEncryptedReactions } from './encrypted-reactions'
 import { createHistoryBackup } from './history-backup'
 import { createLocalSearch } from './local-search'
@@ -672,8 +673,11 @@ export const createE2eeClient = ({ api, store, userId, deviceName }: E2eeClientO
     )
   }
 
+  const encryptedMemory = createEncryptedMemory(store)
+
   const open = (channel: EncryptedChannel): Promise<ConversationStatus> =>
     serial(channel.id, async () => {
+      await encryptedMemory.remember(channel.id)
       const keys = await ready()
       // Fresh device lists: opening is when a member's new or removed devices get noticed.
       for (const memberId of channel.memberIds) devicesByUser.delete(memberId)
@@ -690,6 +694,9 @@ export const createE2eeClient = ({ api, store, userId, deviceName }: E2eeClientO
     })
 
   return {
+    /** Conversations this device saw encrypted (a server can't quietly turn that off). */
+    conversations: encryptedMemory,
+
     /** Registers this device on first use and keeps its key packages topped up. */
     ready: async () => (await ready()).identity.deviceId,
 

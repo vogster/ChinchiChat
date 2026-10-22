@@ -1,4 +1,4 @@
-import { Lock } from 'lucide-react'
+import { Lock, ShieldAlert } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
 import { BetaBadge } from './beta-badge'
@@ -54,6 +54,27 @@ const WaitingToBeLetIn = () => {
             {t('e2ee.device.code')} <DeviceCodeText code={code} className="text-body" />
           </p>
         ) : null}
+      </div>
+    </div>
+  )
+}
+
+/**
+ * In place of the composer when the server calls a conversation unencrypted that this device
+ * saw encrypted: sending would put the text on the server in the clear.
+ */
+export const DowngradeNotice = () => {
+  const { t } = useTranslation()
+  return (
+    <div
+      role="alert"
+      aria-label={t('e2ee.downgrade.title')}
+      className="mx-4 mb-4 flex items-start gap-3 rounded-card bg-danger-soft px-4 py-3 text-sm"
+    >
+      <ShieldAlert aria-hidden className="mt-0.5 size-5 shrink-0 text-danger" />
+      <div>
+        <p className="font-semibold text-danger">{t('e2ee.downgrade.title')}</p>
+        <p className="mt-1 text-muted">{t('e2ee.downgrade.text')}</p>
       </div>
     </div>
   )

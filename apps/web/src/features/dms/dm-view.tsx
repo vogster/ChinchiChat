@@ -19,12 +19,13 @@ import { Alert } from '../../components/ui/alert'
 import { useApi } from '../../lib/api-context'
 import { useCurrentUser } from '../auth/use-auth-actions'
 import { BetaBadge } from '../e2ee/beta-badge'
-import { EncryptionNotice, EncryptionStatus } from '../e2ee/encryption-notice'
+import { DowngradeNotice, EncryptionNotice, EncryptionStatus } from '../e2ee/encryption-notice'
 import { LocalSearchPanel } from '../e2ee/local-search-panel'
 import { MissingHistoryButton, RecoveryPrompt } from '../e2ee/recovery-prompt'
 import { SafetyDialog } from '../e2ee/safety-dialog'
 import { SafetyWarning } from '../e2ee/safety-warning'
 import { useEncryptedChannel, useEncryptedConversation } from '../e2ee/use-encrypted-conversation'
+import { useEncryptionDowngrade } from '../e2ee/use-encryption-downgrade'
 import { useSafety } from '../e2ee/use-safety'
 import { relationshipsQueryOptions } from '../friends/queries'
 import { dmMentions } from '../mentions/mention-candidates'
@@ -123,7 +124,8 @@ export const DmView = ({ channel }: { channel: PrivateChannel }) => {
     !isGroup &&
     other !== undefined &&
     relationships.some((r) => r.user.id === other.id && r.type === 'blocked')
-  const canTalk = !blocked
+  const downgraded = useEncryptionDowngrade(channel)
+  const canTalk = !blocked && !downgraded
   const voice = useVoice()
   const voiceEnabled = useVoiceEnabled()
   const inCall = voice.channelId === channel.id && voice.status !== 'idle'
@@ -395,7 +397,9 @@ export const DmView = ({ channel }: { channel: PrivateChannel }) => {
             />
           ) : null}
           <TypingIndicator guildId={null} channelId={channel.id} people={channel.recipients} />
-          {encryption && encrypted.state !== 'ready' ? (
+          {downgraded ? (
+            <DowngradeNotice />
+          ) : encryption && encrypted.state !== 'ready' ? (
             <EncryptionStatus state={encrypted.state} />
           ) : canTalk ? (
             <Composer

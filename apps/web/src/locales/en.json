@@ -1445,6 +1445,10 @@
     "save": "Save rules"
   },
   "e2ee": {
+    "downgrade": {
+      "title": "The server turned off this conversation's encryption",
+      "text": "This conversation was encrypted on this device, and now the server calls it an ordinary one. Sending is stopped: messages would reach the server in plain text. That only happens if the server was broken into or set up against you — tell the administrator and write nothing important here."
+    },
     "device": {
       "code": "Device code:",
       "codeHint": "This device's code. It is compared by voice or in person before the device is let into a conversation."
