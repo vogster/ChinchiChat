@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { Dialog } from '../../../components/ui/dialog'
+import { ChannelFollowersTab } from '../../announcements/channel-followers-tab'
 import { can } from '../../permissions/permissions'
 import { useGuildPermissions } from '../../permissions/use-guild-permissions'
 import { ChannelWebhooksTab } from '../../webhooks/channel-webhooks-tab'
@@ -17,7 +18,7 @@ export interface EditChannelDialogProps {
   readonly onOpenChange: (open: boolean) => void
 }
 
-type Tab = 'overview' | 'permissions' | 'webhooks'
+type Tab = 'overview' | 'permissions' | 'webhooks' | 'followers'
 
 /** Channel settings: overview (MANAGE_CHANNELS) and permission overwrites (MANAGE_ROLES). */
 export const EditChannelDialog = ({
@@ -36,6 +37,10 @@ export const EditChannelDialog = ({
     // Webhooks post into text channels; managing them means managing the channel.
     ...(channel.type === 'text' && can(inChannel, Permission.ManageChannels)
       ? (['webhooks'] as const)
+      : []),
+    // Who follows an announcement channel: for those who manage it.
+    ...(channel.type === 'text' && channel.announcement && can(inChannel, Permission.ManageChannels)
+      ? (['followers'] as const)
       : []),
   ]
   const [chosen, setChosen] = useState<Tab | null>(null)
@@ -74,6 +79,7 @@ export const EditChannelDialog = ({
       ) : null}
       {tab === 'permissions' ? <ChannelPermissionsTab guild={guild} channel={channel} /> : null}
       {tab === 'webhooks' ? <ChannelWebhooksTab channel={channel} /> : null}
+      {tab === 'followers' ? <ChannelFollowersTab channel={channel} /> : null}
     </Dialog>
   )
 }

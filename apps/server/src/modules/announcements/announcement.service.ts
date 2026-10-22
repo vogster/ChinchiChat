@@ -1,7 +1,12 @@
 import { has, Permission } from '@chinchi/shared'
 import { and, eq, isNull } from 'drizzle-orm'
 
-import { messages as messagesTable, webhooks } from '../../db/schema'
+import {
+  channels as channelsTable,
+  guilds,
+  messages as messagesTable,
+  webhooks,
+} from '../../db/schema'
 import { badRequest, conflict, forbidden, HttpError } from '../../http/http-error'
 
 import type { Database } from '../../db/client'
@@ -12,7 +17,7 @@ import type { MessageRepository } from '../messages/message.repository'
 import type { MessageService } from '../messages/message.service'
 import type { MessageViews } from '../messages/message-views'
 import type { WebhookService } from '../webhooks/webhook.service'
-import type { Message, Snowflake, Webhook } from '@chinchi/shared'
+import type { ChannelFollower, Message, Snowflake, Webhook } from '@chinchi/shared'
 import type { FastifyBaseLogger } from 'fastify'
 
 export interface AnnouncementServiceDeps {
@@ -20,7 +25,7 @@ export interface AnnouncementServiceDeps {
   readonly channels: Pick<ChannelService, 'resolveGuild'>
   readonly messageRows: Pick<MessageRepository, 'findInChannel'>
   readonly messages: Pick<MessageService, 'createFromWebhook'>
-  readonly webhooks: Pick<WebhookService, 'create'>
+  readonly webhooks: Pick<WebhookService, 'create' | 'removeFollower'>
   readonly views: MessageViews
   readonly channelEvents: ChannelEvents
   readonly log?: Pick<FastifyBaseLogger, 'warn'>
@@ -31,6 +36,7 @@ const WEBHOOK_NAME_MAX = 80
 const FAN_OUT_BATCH = 5
 
 const unknownMessage = () => new HttpError(404, 'UNKNOWN_MESSAGE', 'Unknown message')
+const unknownWebhook = () => new HttpError(404, 'UNKNOWN_WEBHOOK', 'Unknown webhook')
 
 const assertAnnouncement = (channel: ChannelRow) => {
   if (channel.type !== 'text' || !channel.announcement) {
@@ -58,7 +64,7 @@ export const createAnnouncementService = ({
   now = () => new Date(),
 }: AnnouncementServiceDeps) => {
   /** Access check that answers null instead of throwing a client error. */
-  const allowed = async (channelId: Snowflake, userId: Snowflake, flag: bigint) => {
+  const allowed = async (channelId: Snowflake, userId: Snowflake, flag?: bigint) => {
     try {
       return (await channels.resolveGuild(channelId, userId, flag)).channel
     } catch (error) {
@@ -92,7 +98,69 @@ export const createAnnouncementService = ({
     return failed
   }
 
+  /** The channels following an announcement channel, with where they are. */
+  const followerRows = (sourceId: Snowflake) =>
+    db
+      .select({
+        webhookId: webhooks.id,
+        channelId: webhooks.channelId,
+        channelName: channelsTable.name,
+        guildId: guilds.id,
+        guildName: guilds.name,
+        createdAt: webhooks.createdAt,
+      })
+      .from(webhooks)
+      .innerJoin(channelsTable, eq(channelsTable.id, webhooks.channelId))
+      .innerJoin(guilds, eq(guilds.id, webhooks.guildId))
+      .where(eq(webhooks.sourceChannelId, sourceId))
+      .orderBy(webhooks.id)
+
+  /** The announcement channel as the viewer sees it, and whether they manage it. */
+  const sourceFor = async (sourceId: Snowflake, userId: Snowflake) => {
+    const { channel, permissions } = await channels.resolveGuild(sourceId, userId)
+    assertAnnouncement(channel)
+    return { source: channel, managesSource: has(permissions, Permission.ManageChannels) }
+  }
+
   return {
+    /**
+     * Who follows the channel: every follow for those who manage it (a server they can't see
+     * left unnamed), only their own follows for anyone else who sees it.
+     */
+    async followers(sourceId: Snowflake, userId: Snowflake): Promise<ChannelFollower[]> {
+      const { source, managesSource } = await sourceFor(sourceId, userId)
+      const result: ChannelFollower[] = []
+      for (const row of await followerRows(source.id)) {
+        const mine = (await allowed(row.channelId, userId, Permission.ManageChannels)) !== null
+        if (!mine && !managesSource) continue
+        const seen = mine || (await allowed(row.channelId, userId)) !== null
+        result.push({
+          webhookId: row.webhookId,
+          guildId: seen ? row.guildId : null,
+          guildName: seen ? row.guildName : null,
+          channelId: seen ? row.channelId : null,
+          channelName: seen ? row.channelName : null,
+          mine,
+          createdAt: row.createdAt.toISOString(),
+        })
+      }
+      return result
+    },
+
+    /** Ends a follow: for those who manage the following channel or the source; 404 to others. */
+    async unfollow(sourceId: Snowflake, webhookId: Snowflake, userId: Snowflake): Promise<void> {
+      const { source, managesSource } = await sourceFor(sourceId, userId)
+      const [hook] = await db
+        .select({ channelId: webhooks.channelId })
+        .from(webhooks)
+        .where(and(eq(webhooks.id, webhookId), eq(webhooks.sourceChannelId, source.id)))
+      if (!hook) throw unknownWebhook()
+      const managesTarget =
+        (await allowed(hook.channelId, userId, Permission.ManageChannels)) !== null
+      if (!managesSource && !managesTarget) throw unknownWebhook()
+      await webhookService.removeFollower(webhookId, userId)
+    },
+
     /** Needs to see the announcement channel and to manage the channel that follows it. */
     async follow(
       sourceId: Snowflake,

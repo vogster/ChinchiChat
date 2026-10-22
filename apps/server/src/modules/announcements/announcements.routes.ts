@@ -1,4 +1,5 @@
 import {
+  channelFollowerSchema,
   followChannelRequestSchema,
   messageSchema,
   snowflakeSchema,
@@ -54,6 +55,43 @@ export const announcementsRoutes: FastifyPluginAsyncZod<AnnouncementsRoutesOptio
         request.body.channelId,
       )
       return reply.status(201).send({ success: true as const, data: { webhook } })
+    },
+  )
+
+  app.get(
+    '/channels/:channelId/followers',
+    {
+      schema: {
+        params: z.object({ channelId: snowflakeSchema }),
+        response: { 200: ok(z.object({ followers: z.array(channelFollowerSchema) })) },
+      },
+    },
+    async (request) => ({
+      success: true as const,
+      data: {
+        followers: await announcementService.followers(
+          request.params.channelId,
+          requireHuman(request).user.id,
+        ),
+      },
+    }),
+  )
+
+  app.delete(
+    '/channels/:channelId/followers/:webhookId',
+    {
+      schema: {
+        params: z.object({ channelId: snowflakeSchema, webhookId: snowflakeSchema }),
+      },
+      config: { rateLimit: FOLLOW_RATE_LIMIT },
+    },
+    async (request, reply) => {
+      await announcementService.unfollow(
+        request.params.channelId,
+        request.params.webhookId,
+        requireHuman(request).user.id,
+      )
+      return reply.status(204).send()
     },
   )
 

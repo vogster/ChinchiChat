@@ -168,3 +168,105 @@ describe('announcement channels', () => {
     expect(followed.json().code).toBe('NSFW_MISMATCH')
   })
 })
+
+describe('followers of an announcement channel', () => {
+  const follow = async () =>
+    (
+      await api(follower, 'POST', `/channels/${newsId}/followers`, { channelId: targetTextId })
+    ).json().data.webhook as { id: string }
+
+  beforeEach(async () => {
+    await api(owner, 'PATCH', `/channels/${newsId}`, { announcement: true })
+  })
+
+  it('are listed in full to the source managers, a server they can not see left unnamed', async () => {
+    const hook = await follow()
+
+    const listed = await api(owner, 'GET', `/channels/${newsId}/followers`)
+    expect(listed.statusCode).toBe(200)
+    expect(listed.json().data.followers).toEqual([
+      {
+        webhookId: hook.id,
+        guildId: null,
+        guildName: null,
+        channelId: null,
+        channelName: null,
+        mine: false,
+        createdAt: expect.any(String),
+      },
+    ])
+  })
+
+  it('are listed to others only where they manage the following channel', async () => {
+    const hook = await follow()
+
+    const mine = (await api(follower, 'GET', `/channels/${newsId}/followers`)).json().data
+    expect(mine.followers).toEqual([
+      expect.objectContaining({
+        webhookId: hook.id,
+        guildId: target.id,
+        guildName: 'Читатели',
+        channelId: targetTextId,
+        channelName: 'general',
+        mine: true,
+      }),
+    ])
+    // A member who manages neither side sees none; someone outside the source, nothing at all.
+    expect(
+      (await api(reader, 'GET', `/channels/${newsId}/followers`)).json().data.followers,
+    ).toEqual([])
+    const outsider = await signUp(app, { username: 'outsider', email: 'out@example.com' })
+    expect((await api(outsider, 'GET', `/channels/${newsId}/followers`)).statusCode).toBe(404)
+  })
+
+  it('are removed from the following side, then can be followed again', async () => {
+    const hook = await follow()
+
+    const removed = await api(follower, 'DELETE', `/channels/${newsId}/followers/${hook.id}`)
+    expect(removed.statusCode).toBe(204)
+    expect(
+      (await api(follower, 'GET', `/channels/${newsId}/followers`)).json().data.followers,
+    ).toEqual([])
+    const hooks = (await api(follower, 'GET', `/channels/${targetTextId}/webhooks`)).json().data
+    expect(hooks.webhooks).toEqual([])
+    expect(
+      (await api(follower, 'POST', `/channels/${newsId}/followers`, { channelId: targetTextId }))
+        .statusCode,
+    ).toBe(201)
+  })
+
+  it('are removed from the source side, and by nobody else', async () => {
+    const hook = await follow()
+    const outsider = await signUp(app, { username: 'outsider', email: 'out@example.com' })
+
+    expect(
+      (await api(reader, 'DELETE', `/channels/${newsId}/followers/${hook.id}`)).statusCode,
+    ).toBe(404)
+    expect(
+      (await api(outsider, 'DELETE', `/channels/${newsId}/followers/${hook.id}`)).statusCode,
+    ).toBe(404)
+    // A webhook that is not a follower of this channel is not one to remove here.
+    const plain = (
+      await api(follower, 'POST', `/channels/${targetTextId}/webhooks`, { name: 'CI' })
+    ).json().data.webhook as { id: string }
+    expect(
+      (await api(owner, 'DELETE', `/channels/${newsId}/followers/${plain.id}`)).statusCode,
+    ).toBe(404)
+
+    expect(
+      (await api(owner, 'DELETE', `/channels/${newsId}/followers/${hook.id}`)).statusCode,
+    ).toBe(204)
+    expect(
+      (await api(owner, 'GET', `/channels/${newsId}/followers`)).json().data.followers,
+    ).toEqual([])
+  })
+
+  it('show in the following channel’s webhooks with where they come from', async () => {
+    await follow()
+
+    const hooks = (await api(follower, 'GET', `/channels/${targetTextId}/webhooks`)).json().data
+    expect(hooks.webhooks).toEqual([
+      expect.objectContaining({ sourceChannelId: newsId, sourceGuildId: source.id }),
+    ])
+  })
+})

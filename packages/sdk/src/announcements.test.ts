@@ -22,6 +22,37 @@ describe('announcements', () => {
       body: { channelId: '2' },
     })
 
+    const listed = setup(
+      Response.json({
+        success: true,
+        data: {
+          followers: [
+            {
+              webhookId: '5',
+              guildId: null,
+              guildName: null,
+              channelId: null,
+              channelName: null,
+              mine: false,
+              createdAt: '2026-10-23T10:00:00.000Z',
+            },
+          ],
+        },
+      }),
+    )
+    expect((await listed.api.announcements.followers('1')).followers).toHaveLength(1)
+    expect(listed.call()).toMatchObject({
+      url: 'https://chat.example.com/api/v1/channels/1/followers',
+      method: 'GET',
+    })
+
+    const unfollow = setup(new Response(null, { status: 204 }))
+    await unfollow.api.announcements.unfollow('1', '5')
+    expect(unfollow.call()).toMatchObject({
+      url: 'https://chat.example.com/api/v1/channels/1/followers/5',
+      method: 'DELETE',
+    })
+
     const publish = setup(new Response(null, { status: 500 }))
     await expect(publish.api.announcements.publish('1', '9')).rejects.toThrow()
     expect(publish.call()).toMatchObject({

@@ -257,6 +257,7 @@ describe('createApiClient', () => {
       createdBy: null,
       createdAt: '2026-10-15T10:00:00.000Z',
       sourceChannelId: null,
+      sourceGuildId: null,
     }
     const create = setup(
       jsonResponse(201, { success: true, data: { webhook, url: '/api/v1/webhooks/9/secret' } }),

@@ -1,8 +1,9 @@
 import { timingSafeEqual } from 'node:crypto'
 import { MAX_WEBHOOKS_PER_CHANNEL, Permission } from '@chinchi/shared'
 import { and, count, desc, eq, sql } from 'drizzle-orm'
+import { alias } from 'drizzle-orm/pg-core'
 
-import { guildMembers, users, webhooks } from '../../db/schema'
+import { channels as channelsTable, guildMembers, users, webhooks } from '../../db/schema'
 import { badRequest, conflict, HttpError } from '../../http/http-error'
 import { generateSessionToken, hashSessionToken } from '../auth/session-token'
 import { toPublicUser } from '../users/user.mapper'
@@ -26,9 +27,16 @@ export interface WebhookServiceDeps {
   readonly nextId: () => Snowflake
 }
 
+/** The announcement channel a follower webhook carries. */
+const source = alias(channelsTable, 'source')
+
 const unknownWebhook = () => new HttpError(404, 'UNKNOWN_WEBHOOK', 'Unknown webhook')
 
-const toWebhook = (row: WebhookRow, creator: UserRow | null): Webhook => ({
+const toWebhook = (
+  row: WebhookRow,
+  creator: UserRow | null,
+  sourceGuildId: Snowflake | null,
+): Webhook => ({
   id: row.id,
   guildId: row.guildId,
   channelId: row.channelId,
@@ -36,6 +44,7 @@ const toWebhook = (row: WebhookRow, creator: UserRow | null): Webhook => ({
   createdBy: creator ? toPublicUser(creator) : null,
   createdAt: row.createdAt.toISOString(),
   sourceChannelId: row.sourceChannelId,
+  sourceGuildId,
 })
 
 /** Channels that may follow one announcement channel. */
@@ -64,11 +73,13 @@ export const createWebhookService = ({
   const manageable = (channelId: Snowflake, userId: Snowflake) =>
     channels.resolveGuild(channelId, userId, Permission.ManageChannels)
 
+  /** Webhooks with who made them and, for followers, the server of the channel they carry. */
   const withCreators = () =>
     db
-      .select({ webhook: webhooks, creator: users })
+      .select({ webhook: webhooks, creator: users, sourceGuildId: source.guildId })
       .from(webhooks)
       .leftJoin(users, eq(users.id, webhooks.createdBy))
+      .leftJoin(source, eq(source.id, webhooks.sourceChannelId))
 
   return {
     async list(channelId: Snowflake, userId: Snowflake): Promise<Webhook[]> {
@@ -76,7 +87,9 @@ export const createWebhookService = ({
       const rows = await withCreators()
         .where(eq(webhooks.channelId, channel.id))
         .orderBy(desc(webhooks.id))
-      return rows.map(({ webhook, creator }) => toWebhook(webhook, creator))
+      return rows.map(({ webhook, creator, sourceGuildId }) =>
+        toWebhook(webhook, creator, sourceGuildId),
+      )
     },
 
     async create(
@@ -151,7 +164,7 @@ export const createWebhookService = ({
         data: { name: row.name, channelId: row.channelId, sourceChannelId },
       })
       return {
-        webhook: toWebhook(row, created?.creator ?? null),
+        webhook: toWebhook(row, created?.creator ?? null, created?.sourceGuildId ?? null),
         url: `${publicUrl.replace(/\/$/, '')}${webhookUrl(row.id, token)}`,
       }
     },
@@ -165,6 +178,22 @@ export const createWebhookService = ({
         throw error
       })
       await db.delete(webhooks).where(and(eq(webhooks.id, webhookId)))
+      await audit.record({
+        guildId: row.guildId,
+        action: 'webhook_delete',
+        actorId: userId,
+        targetId: row.id,
+        data: { name: row.name, channelId: row.channelId, sourceChannelId: row.sourceChannelId },
+      })
+    },
+
+    /**
+     * Ends a follow: the follower webhook goes, with a line in the journal. Who may do it (the
+     * following channel's or the source's managers) is the caller's check.
+     */
+    async removeFollower(webhookId: Snowflake, userId: Snowflake): Promise<void> {
+      const [row] = await db.delete(webhooks).where(eq(webhooks.id, webhookId)).returning()
+      if (!row) return
       await audit.record({
         guildId: row.guildId,
         action: 'webhook_delete',

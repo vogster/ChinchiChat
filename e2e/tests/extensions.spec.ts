@@ -136,11 +136,22 @@ test('an announcement reaches the channel that follows it', async ({ browser }) 
   await page.getByRole('link', { name: serverName }).click()
   await page.getByRole('button', { name: 'Подписаться на канал' }).click()
   const follow = page.getByRole('dialog', { name: 'Подписка на #общий' })
-  await follow.getByLabel('Сервер', { exact: true }).selectOption({ label: readers })
-  await follow.getByLabel('Канал', { exact: true }).selectOption({ label: '#общий' })
+  await follow.getByRole('searchbox', { name: 'Найти канал' }).fill(readers)
+  await follow.getByRole('option', { name: `${readers} · #общий` }).click()
   await follow.getByRole('button', { name: 'Подписаться' }).click()
   await expect(follow).toContainText('Готово')
+  // Where it comes now is listed, and can't be picked again.
+  const current = follow.getByRole('list', { name: 'Уже приходит' })
+  await expect(current).toContainText(`${readers} · #общий`)
+  await expect(follow.getByRole('option', { name: /уже подписан/ })).toHaveAttribute(
+    'aria-disabled',
+    'true',
+  )
   await page.keyboard.press('Escape')
+  await expect(page.getByRole('button', { name: 'Подписки на канал' })).toHaveAttribute(
+    'aria-pressed',
+    'true',
+  )
 
   await say(page, 'Вышла версия 1.0')
   const message = history(page).getByRole('listitem').filter({ hasText: 'Вышла версия 1.0' })
@@ -150,5 +161,19 @@ test('an announcement reaches the channel that follows it', async ({ browser }) 
   await page.getByRole('link', { name: readers }).click()
   const copy = history(page).getByRole('listitem').filter({ hasText: 'Вышла версия 1.0' })
   await expect(copy).toContainText(`${serverName} #общий`)
+
+  // Unfollowed from the source's settings: the next announcement stays at home.
+  await page.getByRole('link', { name: serverName }).click()
+  const source = await openChannelSettings(page)
+  await source.getByRole('tab', { name: 'Подписчики' }).click()
+  await expect(source).toContainText('Подписан 1 канал')
+  await source.getByRole('button', { name: `Убрать подписку: ${readers} · #общий` }).click()
+  await expect(source.getByRole('list', { name: 'Подписчики канала' })).toBeEmpty()
+  await page.keyboard.press('Escape')
+  await say(page, 'Только у нас')
+  await (await messageAction(page, 'Только у нас', 'Опубликовать')).click()
+  await page.getByRole('link', { name: readers }).click()
+  await expect(history(page)).toContainText('Вышла версия 1.0')
+  await expect(history(page)).not.toContainText('Только у нас')
   await context.close()
 })

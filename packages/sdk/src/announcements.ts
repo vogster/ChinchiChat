@@ -1,4 +1,4 @@
-import { messageSchema, webhookSchema } from '@chinchi/shared'
+import { channelFollowerSchema, messageSchema, webhookSchema } from '@chinchi/shared'
 import { z } from 'zod'
 
 import { id } from './url'
@@ -16,6 +16,19 @@ export const createAnnouncementsApi = (request: Http) => ({
         path: `/channels/${id(sourceChannelId)}/followers`,
         body: { channelId },
         data: z.object({ webhook: webhookSchema }),
+      }),
+    /** Who follows the channel: all of them for its managers, your own follows for others. */
+    followers: (sourceChannelId: Snowflake) =>
+      request({
+        method: 'GET',
+        path: `/channels/${id(sourceChannelId)}/followers`,
+        data: z.object({ followers: z.array(channelFollowerSchema) }),
+      }),
+    /** Ends a follow, from either side (its webhook goes). */
+    unfollow: (sourceChannelId: Snowflake, webhookId: Snowflake) =>
+      request({
+        method: 'DELETE',
+        path: `/channels/${id(sourceChannelId)}/followers/${id(webhookId)}`,
       }),
     /** Sends a message out once to every following channel. */
     publish: (channelId: Snowflake, messageId: Snowflake) =>

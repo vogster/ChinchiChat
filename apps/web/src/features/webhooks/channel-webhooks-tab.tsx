@@ -1,4 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { Link } from '@tanstack/react-router'
+import { Rss } from 'lucide-react'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
@@ -8,9 +10,52 @@ import { TextField } from '../../components/ui/text-field'
 import { useApi } from '../../lib/api-context'
 import { errorMessage } from '../../lib/errors'
 
-import type { Channel } from '@chinchi/shared'
+import type { Channel, Webhook } from '@chinchi/shared'
 
-/** A channel's incoming webhooks: create one (its URL is shown once), delete. */
+/** A follow of an announcement channel: where its posts come from, and a way to stop them. */
+const FollowedRow = ({
+  webhook,
+  pending,
+  onUnfollow,
+}: {
+  webhook: Webhook
+  pending: boolean
+  onUnfollow: () => void
+}) => {
+  const { t } = useTranslation()
+  return (
+    <li className="flex items-center gap-3 py-2">
+      <Rss aria-hidden className="size-4 shrink-0 text-muted" />
+      <div className="min-w-0 flex-1">
+        <p className="truncate font-medium">{t('webhooks.followed', { name: webhook.name })}</p>
+        {webhook.sourceGuildId && webhook.sourceChannelId ? (
+          <Link
+            to="/channels/$guildId/$channelId"
+            params={{ guildId: webhook.sourceGuildId, channelId: webhook.sourceChannelId }}
+            aria-label={t('webhooks.openSource', { name: webhook.name })}
+            className="text-xs text-accent-text hover:underline"
+          >
+            {t('webhooks.openSourceShort')}
+          </Link>
+        ) : null}
+      </div>
+      <Button
+        variant="secondary"
+        fullWidth={false}
+        pending={pending}
+        aria-label={t('announcements.unfollowLabel', { name: webhook.name })}
+        onClick={onUnfollow}
+      >
+        {t('announcements.unfollow')}
+      </Button>
+    </li>
+  )
+}
+
+/**
+ * A channel's incoming webhooks: create one (its URL is shown once), delete. Follows of
+ * announcement channels show as such, ended by unfollowing.
+ */
 export const ChannelWebhooksTab = ({ channel }: { channel: Channel }) => {
   const { t } = useTranslation()
   const api = useApi()
@@ -36,7 +81,12 @@ export const ChannelWebhooksTab = ({ channel }: { channel: Channel }) => {
     mutationFn: (webhookId: string) => api.webhooks.delete(webhookId),
     onSuccess: refresh,
   })
-  const error = create.error ?? remove.error
+  const unfollow = useMutation({
+    mutationFn: (webhook: Webhook) =>
+      api.announcements.unfollow(webhook.sourceChannelId ?? '', webhook.id),
+    onSuccess: refresh,
+  })
+  const error = create.error ?? remove.error ?? unfollow.error
 
   return (
     <div className="flex flex-col gap-4">
@@ -78,24 +128,33 @@ export const ChannelWebhooksTab = ({ channel }: { channel: Channel }) => {
       ) : null}
       {error ? <Alert tone="error">{errorMessage(t, error)}</Alert> : null}
       <ul aria-label={t('webhooks.list')} className="flex flex-col divide-y divide-line">
-        {webhooks.map((webhook) => (
-          <li key={webhook.id} className="flex items-center gap-3 py-2">
-            <div className="min-w-0 flex-1">
-              <p className="truncate font-medium">{webhook.name}</p>
-              <p className="truncate text-xs text-muted">
-                {t('webhooks.createdBy', { name: webhook.createdBy?.username ?? '—' })}
-              </p>
-            </div>
-            <Button
-              variant="danger"
-              fullWidth={false}
-              aria-label={t('webhooks.delete', { name: webhook.name })}
-              onClick={() => remove.mutate(webhook.id)}
-            >
-              {t('webhooks.deleteShort')}
-            </Button>
-          </li>
-        ))}
+        {webhooks.map((webhook) =>
+          webhook.sourceChannelId ? (
+            <FollowedRow
+              key={webhook.id}
+              webhook={webhook}
+              pending={unfollow.isPending}
+              onUnfollow={() => unfollow.mutate(webhook)}
+            />
+          ) : (
+            <li key={webhook.id} className="flex items-center gap-3 py-2">
+              <div className="min-w-0 flex-1">
+                <p className="truncate font-medium">{webhook.name}</p>
+                <p className="truncate text-xs text-muted">
+                  {t('webhooks.createdBy', { name: webhook.createdBy?.username ?? '—' })}
+                </p>
+              </div>
+              <Button
+                variant="danger"
+                fullWidth={false}
+                aria-label={t('webhooks.delete', { name: webhook.name })}
+                onClick={() => remove.mutate(webhook.id)}
+              >
+                {t('webhooks.deleteShort')}
+              </Button>
+            </li>
+          ),
+        )}
       </ul>
     </div>
   )

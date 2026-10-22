@@ -920,7 +920,8 @@
     "tabs": {
       "overview": "Overview",
       "permissions": "Permissions",
-      "webhooks": "Webhooks"
+      "webhooks": "Webhooks",
+      "followers": "Followers"
     },
     "subtitle": "Choose who can see this channel and what they can do in it.",
     "targets": "Roles and members",
@@ -1335,7 +1336,10 @@
     "list": "Channel webhooks",
     "createdBy": "created by {{name}}",
     "delete": "Delete webhook {{name}}",
-    "deleteShort": "Delete"
+    "deleteShort": "Delete",
+    "followed": "Announcements from {{name}}",
+    "openSource": "Open channel {{name}}",
+    "openSourceShort": "Open the source"
   },
   "bots": {
     "title": "Bots",
@@ -1363,16 +1367,27 @@
   },
   "announcements": {
     "followButton": "Follow channel",
+    "followingButton": "Channel follows",
     "followShort": "Follow",
     "followTitle": "Follow #{{name}}",
     "followHint": "Messages published here will arrive in the chosen channel. You need to manage that channel.",
-    "guild": "Server",
-    "pickGuild": "Choose a server",
-    "channel": "Channel",
-    "pickChannel": "Choose a channel",
     "noTargets": "You don't manage any channels on this server.",
     "follow": "Follow",
     "followed": "Done: new announcements will arrive in the chosen channel.",
+    "current": "Already arrives in",
+    "add": "Add a follow",
+    "search": "Find a channel",
+    "targets": "Where to follow it",
+    "alreadyFollowing": "already following",
+    "unfollow": "Unfollow",
+    "unfollowLabel": "Unfollow: {{name}}",
+    "hiddenServer": "Hidden server",
+    "followersHint": "Channels where messages published here arrive. A server you can not see shows as hidden.",
+    "followersCount_one": "{{count}} channel follows",
+    "followersCount_other": "{{count}} channels follow",
+    "followersList": "Channel followers",
+    "removeFollower": "Remove",
+    "removeFollowerLabel": "Remove follow: {{name}}",
     "publish": "Publish",
     "published": "published",
     "publishAction": "Send a copy to the channels that follow this one",
