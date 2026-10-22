@@ -25,10 +25,30 @@ export const webhookSchema = z.object({
   createdAt: z.iso.datetime(),
   /** Set when the webhook carries an announcement channel's published messages. */
   sourceChannelId: snowflakeSchema.nullable(),
+  /** The server of that announcement channel (for a link to it). */
+  sourceGuildId: snowflakeSchema.nullable(),
 })
 
 /** Follows an announcement channel into one of the follower's text channels. */
 export const followChannelRequestSchema = z.strictObject({ channelId: snowflakeSchema })
+
+/**
+ * A channel following an announcement channel, as the viewer may see it: where it is, unless
+ * the viewer can't see that server or channel (then null), and whether they manage it.
+ */
+export const channelFollowerSchema = z.object({
+  /** The follower webhook: removing it ends the follow. */
+  webhookId: snowflakeSchema,
+  guildId: snowflakeSchema.nullable(),
+  guildName: z.string().nullable(),
+  channelId: snowflakeSchema.nullable(),
+  channelName: z.string().nullable(),
+  /** The viewer manages the following channel. */
+  mine: z.boolean(),
+  createdAt: z.iso.datetime(),
+})
+
+export type ChannelFollower = z.infer<typeof channelFollowerSchema>
 
 export const createWebhookRequestSchema = z.strictObject({ name: webhookNameSchema })
 

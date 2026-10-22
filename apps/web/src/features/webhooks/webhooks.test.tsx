@@ -45,4 +45,36 @@ describe('webhooks', () => {
     await user.click(within(list).getByRole('button', { name: 'Удалить вебхук Сборки' }))
     await waitFor(() => expect(api.webhooks.delete).toHaveBeenCalledWith('700'))
   })
+
+  it('show a follow of an announcement channel as a follow, with where it comes from', async () => {
+    const api = createFakeApi({ user: testUser })
+    api.webhooks.list.mockResolvedValue({
+      webhooks: [
+        {
+          id: '701',
+          guildId: '500',
+          channelId: '504',
+          name: 'Новости #релизы',
+          createdBy: testUser,
+          createdAt: '2026-10-15T10:00:00.000Z',
+          sourceChannelId: '900',
+          sourceGuildId: '901',
+        },
+      ],
+    })
+    const { user } = renderApp(MEMES_URL, { api })
+
+    await user.click(await screen.findByRole('button', { name: 'Настроить канал мемы' }))
+    const dialog = await screen.findByRole('dialog', { name: 'Настройки канала' })
+    await user.click(within(dialog).getByRole('tab', { name: 'Вебхуки' }))
+    const list = within(dialog).getByRole('list', { name: 'Вебхуки канала' })
+
+    expect(await within(list).findByText('Объявления из Новости #релизы')).toBeVisible()
+    expect(
+      within(list).getByRole('link', { name: 'Открыть канал Новости #релизы' }),
+    ).toHaveAttribute('href', '/channels/901/900')
+    expect(within(list).queryByRole('button', { name: /Удалить вебхук/ })).toBeNull()
+    await user.click(within(list).getByRole('button', { name: 'Отписаться: Новости #релизы' }))
+    await waitFor(() => expect(api.announcements.unfollow).toHaveBeenCalledWith('900', '701'))
+  })
 })

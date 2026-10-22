@@ -1,5 +1,5 @@
 import { act, screen, waitFor, within } from '@testing-library/react'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 
 import { createFakeApi, testFriend, testGuild, testMessage, testUser } from '../../test/fake-api'
 import { fakeCiphertext } from '../../test/fake-e2ee'
@@ -91,6 +91,38 @@ describe('encrypted conversations', () => {
 
     expect(await screen.findByText('Старый секрет')).toBeVisible()
     expect(screen.queryByText(unreadable)).not.toBeInTheDocument()
+  })
+
+  it('let a member’s new devices into encrypted conversations that are not open', async () => {
+    // No random wait before admitting (it spreads the members' devices out).
+    const random = vi.spyOn(Math, 'random').mockReturnValue(0)
+    const api = withEncryptedDm()
+    const plainDm: PrivateChannel = { ...encryptedDm, id: '803', encrypted: false }
+    const otherDm: PrivateChannel = {
+      ...encryptedDm,
+      id: '804',
+      recipients: [{ ...testFriend, id: '300', username: 'carol' }],
+    }
+    api.dms.list.mockResolvedValue({ channels: [encryptedDm, plainDm, otherDm] })
+    const { gateway, e2ee } = renderApp('/channels/@me', { api })
+    await waitFor(() => expect(e2ee.ready).toHaveBeenCalled())
+
+    act(() => gateway.emit('E2EE_DEVICES_UPDATE', { userId: testFriend.id }))
+
+    await waitFor(() =>
+      expect(e2ee.admit).toHaveBeenCalledWith({
+        id: encryptedDm.id,
+        memberIds: [testUser.id, testFriend.id],
+        group: false,
+      }),
+    )
+    expect(e2ee.admit).toHaveBeenCalledTimes(1)
+
+    // My own devices changed: every encrypted conversation of mine.
+    act(() => gateway.emit('E2EE_DEVICES_UPDATE', { userId: testUser.id }))
+    await waitFor(() => expect(e2ee.admit).toHaveBeenCalledTimes(3))
+    expect(e2ee.admit).toHaveBeenLastCalledWith(expect.objectContaining({ id: otherDm.id }))
+    random.mockRestore()
   })
 
   it('show who really signed a message when the server names someone else', async () => {
@@ -230,12 +262,56 @@ describe('encrypted conversations', () => {
   it('wait until another device lets this one in', async () => {
     const { e2ee } = renderApp(URL, { api: withEncryptedDm(), e2eeStatus: 'waiting' })
 
-    const waiting = await screen.findByRole('status', { name: 'Это устройство пока не в беседе' })
-    expect(waiting).toHaveTextContent(/Подтвердите его со своего старого устройства/)
+    const waiting = await screen.findByRole('status', {
+      name: 'Это устройство пока не подключено к беседе',
+    })
+    expect(waiting).toHaveTextContent(/подтвердите вход на другом своём устройстве/)
+    expect(waiting).toHaveTextContent(/назовите код ниже собеседнику/)
     // Its code, for the other person to compare before letting it in.
     expect(await within(waiting).findByText('70315 28446 03918 77512')).toBeVisible()
     expect(screen.queryByRole('textbox', { name: 'Написать @Боб' })).toBeNull()
     expect(e2ee.open).toHaveBeenCalled()
+  })
+
+  it('take the recovery key right in the waiting notice', async () => {
+    const { user, e2ee } = renderApp(URL, { api: withEncryptedDm(), e2eeStatus: 'waiting' })
+    e2ee.recovery.key.mockResolvedValue(null)
+
+    const waiting = await screen.findByRole('status', {
+      name: 'Это устройство пока не подключено к беседе',
+    })
+    // The notice about old messages above already offers it: once on the screen is enough.
+    const missing = await screen.findByRole('status', { name: 'Старые сообщения недоступны' })
+    expect(
+      within(missing).getByRole('button', { name: 'Ввести ключ восстановления' }),
+    ).toBeVisible()
+    expect(within(waiting).queryByRole('button', { name: 'Ввести ключ восстановления' })).toBeNull()
+
+    // That notice hidden, the waiting one offers the key.
+    await user.click(within(missing).getByRole('button', { name: 'Скрыть подсказку' }))
+    await user.click(
+      await within(waiting).findByRole('button', { name: 'Ввести ключ восстановления' }),
+    )
+
+    expect(await screen.findByRole('dialog', { name: 'Ключ восстановления' })).toBeVisible()
+  })
+
+  it('in a group, say that any member can let this device in', async () => {
+    const api = withEncryptedDm()
+    const group: PrivateChannel = {
+      ...encryptedDm,
+      type: 'group_dm',
+      name: 'Секретики',
+      ownerId: testUser.id,
+      recipients: [testFriend, { ...testFriend, id: '300', username: 'carol' }],
+    }
+    api.dms.list.mockResolvedValue({ channels: [group] })
+    renderApp(URL, { api, e2eeStatus: 'waiting' })
+
+    const waiting = await screen.findByRole('status', {
+      name: 'Это устройство пока не подключено к беседе',
+    })
+    expect(waiting).toHaveTextContent(/любому участнику группы/)
   })
 
   it('are marked in the DM list', async () => {

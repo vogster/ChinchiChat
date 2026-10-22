@@ -23,6 +23,35 @@ describe('message history', () => {
     expect(within(list).getAllByRole('separator')).toHaveLength(2)
   })
 
+  it('reloads the open channel after a new gateway session, but not after a resume', async () => {
+    const api = createFakeApi({ user: testUser })
+    const { gateway } = renderApp(CHANNEL_URL, { api })
+    expect(within(await history()).getByText('Привет всем!')).toBeVisible()
+    const ready = {
+      sessionId: 's',
+      user: testUser,
+      guilds: [testGuild],
+      privateChannels: [],
+      voiceStates: [],
+      presences: [],
+      readStates: [],
+      notificationSettings: [],
+      mentionCounts: {},
+    }
+    act(() => gateway.emit('READY', ready))
+    act(() => gateway.emit('RESUMED', {}))
+    expect(api.messages.list).toHaveBeenCalledTimes(1)
+
+    // Reconnected without a resume: something may have been missed meanwhile.
+    api.messages.list.mockResolvedValueOnce({
+      messages: [testMessage('1400', { content: 'Пока вас не было' })],
+    })
+    act(() => gateway.emit('READY', { ...ready, sessionId: 's2' }))
+
+    expect(await within(await history()).findByText('Пока вас не было')).toBeVisible()
+    expect(api.messages.list).toHaveBeenCalledTimes(2)
+  })
+
   it('starts the channel with a welcome when there is no more history', async () => {
     renderApp(CHANNEL_URL, { user: testUser })
     expect(await screen.findByRole('heading', { name: 'Добро пожаловать в #общий!' })).toBeVisible()

@@ -45,7 +45,7 @@ export const useSafety = (channel: EncryptedChannel | undefined, ready: boolean)
     async (userId: string, deviceId: string) => {
       await client?.safety.acceptDevice(userId, deviceId)
       refresh()
-      reopen()
+      reopen(userId)
     },
     [client, refresh, reopen],
   )
@@ -53,7 +53,7 @@ export const useSafety = (channel: EncryptedChannel | undefined, ready: boolean)
     async (userId: string) => {
       await client?.safety.acceptKey(userId)
       refresh()
-      reopen()
+      reopen(userId)
     },
     [client, refresh, reopen],
   )

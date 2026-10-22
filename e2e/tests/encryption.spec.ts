@@ -260,7 +260,9 @@ test('three people talk in an encrypted group, and one who leaves is left out', 
   const epochWithCarol = await epochOf(alice.page)
 
   // Carol leaves; the next message is encrypted for Alice's and Bob's devices only.
-  await carol.page.getByRole('button', { name: 'Покинуть группу' }).click()
+  // Group actions wait behind "more" until the screen is wide enough for them.
+  await carol.page.locator('header').getByRole('button', { name: 'Ещё' }).click()
+  await carol.page.getByRole('menuitem', { name: 'Покинуть группу' }).click()
   await carol.page
     .getByRole('dialog', { name: 'Покинуть группу' })
     .getByRole('button', { name: 'Покинуть группу' })
@@ -441,6 +443,9 @@ test('a new browser is approved from an old one by comparing emoji', async ({ br
   expect(await onPhone.innerText()).toBe(await onLaptop.innerText())
   await dialog.getByRole('button', { name: 'Да, эмодзи совпадают' }).click()
   await expect(dialog).toBeHidden()
+  // The phone takes the keys only once Alice says yes on it too.
+  await expect(banner).toContainText('На другом устройстве нажали «Да»')
+  await banner.getByRole('button', { name: 'Да, эмодзи совпадают' }).click()
 
   // The phone now reads the message from before it existed, and is vouched for.
   await expect(banner).toBeHidden()
@@ -496,7 +501,9 @@ test('an unapproved device joins only when the other person lets it in by its co
     .getByRole('complementary', { name: 'Личные сообщения' })
     .getByRole('link', { name: /зашифрованная беседа/ })
     .click()
-  const waiting = phone.page.getByRole('status', { name: 'Это устройство пока не в беседе' })
+  const waiting = phone.page.getByRole('status', {
+    name: 'Это устройство пока не подключено к беседе',
+  })
   await expect(waiting).toBeVisible()
   const phoneCode = (await waiting.locator('.font-mono').innerText()).trim()
   expect(phoneCode).toMatch(/^\d{5} \d{5} \d{5} \d{5}$/)

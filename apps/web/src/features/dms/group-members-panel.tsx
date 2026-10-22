@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 
 import { Avatar } from '../../components/ui/avatar'
 import { PresenceDot } from '../../components/ui/presence-dot'
+import { PeopleStackButton } from '../guilds/members-stack-button'
 import { usePresences } from '../messages/use-presence'
 import { userName } from './dm-names'
 import { useRemoveFromGroup } from './use-dm-actions'
@@ -10,7 +11,16 @@ import { useRemoveFromGroup } from './use-dm-actions'
 import type { PrivateChannel, PublicUser } from '@chinchi/shared'
 
 /** Everyone in a group DM; its owner may remove people from here. */
-export const GroupMembersPanel = ({ channel, me }: { channel: PrivateChannel; me: PublicUser }) => {
+export const GroupMembersPanel = ({
+  channel,
+  me,
+  narrowOpen = false,
+}: {
+  channel: PrivateChannel
+  me: PublicUser
+  /** Narrow screens: slides over the chat from the right while open. */
+  narrowOpen?: boolean
+}) => {
   const { t } = useTranslation()
   const presences = usePresences()
   const remove = useRemoveFromGroup(channel)
@@ -21,7 +31,7 @@ export const GroupMembersPanel = ({ channel, me }: { channel: PrivateChannel; me
   return (
     <aside
       aria-label={heading}
-      className="hidden w-[260px] shrink-0 flex-col overflow-y-auto rounded-panel bg-side p-3 xl:flex"
+      className={`${narrowOpen ? 'fixed inset-y-2.5 right-2.5 z-40 flex shadow-modal' : 'hidden'} w-[260px] shrink-0 flex-col overflow-y-auto rounded-panel bg-side p-3 xl:static xl:z-auto xl:flex xl:shadow-none`}
     >
       <h2 className="px-2 pb-1 text-xs font-bold tracking-wide text-muted uppercase">
         {heading} — {people.length}
@@ -65,5 +75,60 @@ export const GroupMembersPanel = ({ channel, me }: { channel: PrivateChannel; me
         })}
       </ul>
     </aside>
+  )
+}
+
+/**
+ * The group header's members toggles, as on servers: on wide screens it shows and hides the
+ * list beside the chat, on narrow ones it opens the list over the chat.
+ */
+export const GroupMembersButtons = ({
+  channel,
+  me,
+  shown,
+  onToggle,
+  onOpenNarrow,
+}: {
+  channel: PrivateChannel
+  me: PublicUser
+  shown: boolean
+  onToggle: () => void
+  onOpenNarrow: () => void
+}) => {
+  const { t } = useTranslation()
+  const people = [me, ...channel.recipients].map((user) => ({
+    id: user.id,
+    name: userName(user),
+    avatarUrl: user.avatarUrl,
+  }))
+  return (
+    <>
+      <PeopleStackButton
+        people={people}
+        aria-pressed={shown}
+        aria-label={shown ? t('dm.hideMembers') : t('dm.showMembers')}
+        onClick={onToggle}
+        className="hidden xl:flex"
+      />
+      <PeopleStackButton
+        people={people}
+        aria-label={t('dm.showMembers')}
+        onClick={onOpenNarrow}
+        className="flex xl:hidden"
+      />
+    </>
+  )
+}
+
+/** Behind the members opened over the chat: dims it, and closes them on a click. */
+export const GroupMembersBackdrop = ({ onClose }: { onClose: () => void }) => {
+  const { t } = useTranslation()
+  return (
+    <button
+      type="button"
+      aria-label={t('dm.hideMembers')}
+      onClick={onClose}
+      className="fixed inset-0 z-30 bg-[rgb(8_8_16/0.5)] backdrop-blur-[3px] xl:hidden"
+    />
   )
 }

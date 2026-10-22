@@ -367,6 +367,26 @@ describe('e2ee client', () => {
     expect((await bob.membership(slipped)).notices).toEqual([])
   })
 
+  it('takes in no one the server slips into a DM, labelled as a DM or not', async () => {
+    const { client } = setup()
+    const MALLORY = '9'
+    const alice = client(ALICE).client
+    const bob = client(BOB).client
+    const mallory = client(MALLORY).client
+    await Promise.all([bob.ready(), mallory.ready()])
+    await alice.open(DM)
+    await bob.open(DM)
+
+    // The server lists a third person in the DM, still calling it one.
+    const slipped = { ...DM, memberIds: [ALICE, BOB, MALLORY], group: false }
+    await alice.admit(slipped)
+    await alice.open(slipped)
+    const sent = await alice.send(slipped, 'Только для Боба')
+
+    expect(await mallory.read(slipped, sent)).toBeNull()
+    expect(await bob.read(DM, sent)).toMatchObject({ payload: { text: 'Только для Боба' } })
+  })
+
   it('in a group, takes in whom this device added, and tells the others who added whom', async () => {
     const { client } = setup()
     const CAROL = '3'
@@ -538,6 +558,206 @@ describe('e2ee client', () => {
     expect(await alice.open(DM)).toBe('waiting')
     await bob.open(DM)
     expect(await alice.open(DM)).toBe('ready')
+  })
+
+  it('waits to be let in after its device was removed elsewhere and registered anew', async () => {
+    const { client, delivery } = setup()
+    const bob = client(BOB).client
+    await bob.ready()
+    const aliceSide = client(ALICE)
+    const oldId = await aliceSide.client.open(DM).then(() => aliceSide.client.ready())
+    const before = await bob.send(DM, 'До перерегистрации')
+    expect(await aliceSide.client.read(DM, before)).toMatchObject({
+      payload: { text: 'До перерегистрации' },
+    })
+
+    // Removed from another device; the page reloads with the same storage.
+    await delivery.apiFor(ALICE).e2ee.deleteDevice(oldId)
+    const again = client(ALICE, 'Браузер', aliceSide.store).client
+    expect(await again.ready()).not.toBe(oldId)
+
+    expect(await again.open(DM)).toBe('waiting')
+    // What the old device decrypted stays readable.
+    expect(await again.read(DM, before)).toMatchObject({ payload: { text: 'До перерегистрации' } })
+
+    await letIn(bob, ALICE)
+    await bob.open(DM)
+    expect(await again.open(DM)).toBe('ready')
+    expect(await relay(bob, again, 'Уже с новым')).toMatchObject({ text: 'Уже с новым' })
+    expect(await relay(again, bob, 'И обратно')).toMatchObject({ text: 'И обратно' })
+  })
+
+  it('brings an approved device of mine into a conversation nobody has opened since', async () => {
+    const { client } = setup()
+    const bob = client(BOB).client
+    await bob.ready()
+    const laptop = client(ALICE, 'Ноутбук').client
+    await laptop.open(DM)
+    // My keys reset here; the phone is approved with the new recovery key.
+    await laptop.recovery.reset({ password: 'password123' })
+    const phone = client(ALICE, 'Телефон').client
+    expect(await phone.recovery.useKey((await laptop.recovery.key()) as string)).toBe('ok')
+    expect(await phone.open(DM)).toBe('waiting')
+
+    // In the background, without the conversation open on the laptop.
+    await laptop.devicesChanged(ALICE)
+    await laptop.admit(DM)
+
+    expect(await phone.open(DM)).toBe('ready')
+    expect(await relay(laptop, phone, 'Теперь и на телефоне')).toMatchObject({
+      text: 'Теперь и на телефоне',
+    })
+  })
+
+  it('waits for a new Welcome after the other side took this device out, then reads again', async () => {
+    const { client } = setup()
+    const bob = client(BOB).client
+    await bob.ready()
+    const laptop = client(ALICE, 'Ноутбук').client
+    await laptop.open(DM)
+    await bob.open(DM)
+
+    // Alice resets her keys: Bob doesn't know the new one, so his client takes her laptop out.
+    await laptop.recovery.reset({ password: 'password123' })
+    await bob.devicesChanged(ALICE)
+    await bob.admit(DM)
+    expect(await laptop.open(DM)).toBe('waiting')
+    expect(await laptop.callKey(DM)).toBeNull()
+
+    // Bob accepts the new key: the laptop is let in again.
+    await bob.safety.acceptKey(ALICE)
+    await bob.admit(DM)
+    expect(await laptop.open(DM)).toBe('ready')
+    expect(await relay(bob, laptop, 'Снова вместе')).toMatchObject({ text: 'Снова вместе' })
+    expect(await relay(laptop, bob, 'Ага')).toMatchObject({ text: 'Ага' })
+  })
+
+  it('keeps one line of state when two tabs of a browser change a conversation at once', async () => {
+    const { client } = setup()
+    const bob = client(BOB).client
+    const bobId = await bob.ready()
+    const store = createMemoryStore()
+    const firstTab = client(ALICE, 'Браузер', store).client
+    const secondTab = client(ALICE, 'Браузер', store).client
+    await firstTab.open(DM)
+    await secondTab.open(DM)
+    const phone = client(BOB, 'Телефон').client
+    expect(await phone.recovery.useKey((await bob.recovery.key()) as string)).toBe('ok')
+
+    // Both tabs hear of the phone and add it at the same moment.
+    await Promise.all([firstTab.devicesChanged(BOB), secondTab.devicesChanged(BOB)])
+    await Promise.all([firstTab.admit(DM), secondTab.admit(DM)])
+
+    // Each tab, and the page loaded again, still writes; everyone reads.
+    for (const tab of [firstTab, secondTab, client(ALICE, 'Браузер', store).client]) {
+      const sent = await tab.send(DM, `Из вкладки ${bobId}`)
+      expect(await phone.read(DM, sent)).toMatchObject({ payload: { text: `Из вкладки ${bobId}` } })
+      expect(await bob.read(DM, sent)).not.toBeNull()
+    }
+    expect(await relay(bob, secondTab, 'Ответ')).toMatchObject({ text: 'Ответ' })
+  })
+
+  it('joins conversation after conversation on its last-resort package, and tops up', async () => {
+    const { client, delivery } = setup()
+    const CAROL = '3'
+    const group = { id: '604', memberIds: [ALICE, BOB, CAROL] }
+    const alice = client(ALICE).client
+    const bob = client(BOB).client
+    const carol = client(CAROL).client
+    await Promise.all([bob.ready(), carol.ready()])
+    await alice.open(DM)
+    await alice.open(group)
+    const phone = client(BOB, 'Телефон').client
+    expect(await phone.recovery.useKey((await bob.recovery.key()) as string)).toBe('ok')
+    const phoneId = await phone.ready()
+    // Everyone else took the phone's one-time packages: only its last resort is left.
+    while ((await delivery.apiFor(BOB).e2ee.countKeyPackages(phoneId)).count > 0) {
+      await delivery.apiFor(ALICE).e2ee.claimKeyPackages(BOB)
+    }
+
+    await alice.devicesChanged(BOB)
+    await alice.admit(DM)
+    await alice.admit(group)
+
+    expect(await phone.open(DM)).toBe('ready')
+    expect(await phone.open(group)).toBe('ready')
+    expect(await phone.read(group, await alice.send(group, 'Всем'))).toMatchObject({
+      payload: { text: 'Всем' },
+    })
+    // Having joined, it put up new one-time packages.
+    expect((await delivery.apiFor(BOB).e2ee.countKeyPackages(phoneId)).count).toBeGreaterThan(0)
+  })
+
+  it('in a group, takes out no device another member just added, whatever list it cached', async () => {
+    const { client } = setup()
+    const CAROL = '3'
+    const group = { id: '605', memberIds: [ALICE, BOB, CAROL] }
+    const alice = client(ALICE).client
+    const bob = client(BOB).client
+    const carol = client(CAROL).client
+    await Promise.all([bob.ready(), carol.ready()])
+    await alice.open(group)
+    await bob.open(group)
+    await carol.open(group)
+
+    // Carol's phone, approved by her; Bob adds it. Alice heard nothing of it yet.
+    const phone = client(CAROL, 'Телефон').client
+    expect(await phone.recovery.useKey((await carol.recovery.key()) as string)).toBe('ok')
+    await bob.devicesChanged(CAROL)
+    await bob.admit(group)
+    // Alice's cached lists predate the phone (her look at Carol happened before it existed).
+    await alice.safety.status([CAROL])
+
+    await alice.admit(group)
+    const sent = await alice.send(group, 'И телефону Кэрол')
+
+    expect(await phone.read(group, sent)).toMatchObject({ payload: { text: 'И телефону Кэрол' } })
+  })
+
+  it('marks a new last resort for packages kept before last resorts were marked', async () => {
+    const { client } = setup()
+    const side = client(BOB)
+    await side.client.ready()
+    const bundles = (await side.store.get<{ lastResort?: true }[]>('bundles')) ?? []
+    expect(bundles.filter((b) => b.lastResort)).toHaveLength(1)
+    // What an earlier version kept: no mark.
+    await side.store.set(
+      'bundles',
+      bundles.map(({ lastResort: _, ...rest }) => rest),
+    )
+
+    await client(BOB, 'Браузер', side.store).client.ready()
+
+    const now = (await side.store.get<{ lastResort?: true }[]>('bundles')) ?? []
+    expect(now.filter((b) => b.lastResort)).toHaveLength(1)
+  })
+
+  it('admits devices only where this device is already in: it starts no conversation', async () => {
+    const { client, delivery } = setup()
+    const bob = client(BOB).client
+    await bob.ready()
+    const alice = client(ALICE).client
+    await alice.ready()
+
+    await alice.admit(DM)
+
+    expect(commitCount(delivery)).toBe(0)
+  })
+
+  it('ignores saved group state that belongs to another device of this browser', async () => {
+    const { client } = setup()
+    const bob = client(BOB).client
+    await bob.ready()
+    const aliceSide = client(ALICE)
+    await aliceSide.client.open(DM)
+    const stale = await aliceSide.store.get('conv:500')
+
+    // Another device's state ends up here (a restored profile, a swapped storage).
+    const elsewhere = client(ALICE, 'Другой')
+    await elsewhere.client.ready()
+    await elsewhere.store.set('conv:500', stale)
+
+    expect(await elsewhere.client.open(DM)).toBe('waiting')
   })
 
   it('forgets everything on sign-out: the device is revoked and the next sign-in is a new one', async () => {

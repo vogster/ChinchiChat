@@ -1,0 +1,172 @@
+import { useInfiniteQuery, useQueryClient } from '@tanstack/react-query'
+import { X } from 'lucide-react'
+import { useEffect, useRef, useState } from 'react'
+import { useTranslation } from 'react-i18next'
+
+import { Button } from '../../components/ui/button'
+import { useApi } from '../../lib/api-context'
+import { errorMessage } from '../../lib/errors'
+import { MentionResolverProvider } from '../markdown/mention-resolver-provider'
+import { MessageContent } from '../markdown/message-content'
+import { formatMessageTime } from '../messages/format-time'
+import { revealMessage } from '../messages/reveal-message'
+
+import type { ResolvedSearch } from './search-query'
+import type { Message, PublicUser, SearchMessagesQuery, Snowflake } from '@chinchi/shared'
+
+const PAGE_SIZE = 25
+/** The server counts matches up to this many. */
+const SEARCH_TOTAL_CAP = 1000
+
+export interface SearchResultsPanelProps {
+  /** Where the search looks (a server, a conversation): part of the cache key. */
+  readonly scopeId: Snowflake
+  /** The typed search with its filters resolved; null while what it needs loads. */
+  readonly resolved: ResolvedSearch | null
+  readonly search: (
+    query: SearchMessagesQuery,
+  ) => Promise<{ readonly messages: readonly Message[]; readonly total: number | null }>
+  /** Opens the channel of a result (the message is brought into view after). */
+  readonly go: (channelId: Snowflake) => Promise<void>
+  readonly nameOf: (user: PublicUser) => string
+  /** Where a result is, shown above it (a server's channel); none in a conversation. */
+  readonly placeOf?: (message: Message) => string
+  /** A result kept behind a consent (age-restricted channels). */
+  readonly hidden?: (message: Message) => boolean
+  readonly mentions: { readonly guildId: Snowflake | null; readonly people?: readonly PublicUser[] }
+  readonly onClose: () => void
+  /** A result was brought into view (narrow screens then close the panel to show it). */
+  readonly onJumped?: (() => void) | undefined
+}
+
+/** Search results beside the chat (over it on narrow screens), with a jump to each. */
+export const SearchResultsPanel = ({
+  scopeId,
+  resolved,
+  search,
+  go,
+  nameOf,
+  placeOf,
+  hidden,
+  mentions,
+  onClose,
+  onJumped,
+}: SearchResultsPanelProps) => {
+  const { t, i18n } = useTranslation()
+  const api = useApi()
+  const queryClient = useQueryClient()
+  const query = resolved?.ok ? resolved.query : null
+  const results = useInfiniteQuery({
+    queryKey: ['search', scopeId, query],
+    queryFn: ({ pageParam }) =>
+      search({ ...query, ...(pageParam ? { before: pageParam } : {}), limit: PAGE_SIZE }),
+    initialPageParam: undefined as string | undefined,
+    getNextPageParam: (page) =>
+      page.messages.length === PAGE_SIZE ? page.messages.at(-1)?.id : undefined,
+    enabled: query !== null,
+  })
+  const jump = useRef<AbortController | null>(null)
+  useEffect(() => () => jump.current?.abort(), [])
+  const [missing, setMissing] = useState<string | null>(null)
+  const found = results.data?.pages.flatMap((page) => page.messages) ?? []
+  const total = results.data?.pages[0]?.total ?? 0
+
+  const open = async (channelId: string, messageId: string) => {
+    // A new jump cancels the previous one (and so does closing the panel).
+    jump.current?.abort()
+    const controller = new AbortController()
+    jump.current = controller
+    setMissing(null)
+    await go(channelId)
+    const reached = await revealMessage(queryClient, api, channelId, messageId, controller.signal)
+    if (!reached && !controller.signal.aborted) setMissing(messageId)
+    if (reached) onJumped?.()
+  }
+
+  return (
+    <aside
+      aria-label={t('search.results')}
+      // Narrow screens: results cover the chat; wide ones show them beside it.
+      className="fixed inset-0 z-40 flex w-full shrink-0 flex-col overflow-hidden bg-side xl:static xl:z-auto xl:w-80 xl:rounded-panel"
+    >
+      <header className="flex h-12 shrink-0 items-center justify-between px-4">
+        <h2 className="text-sm font-semibold">
+          {results.isSuccess
+            ? total >= SEARCH_TOTAL_CAP
+              ? t('search.foundMany', { count: SEARCH_TOTAL_CAP })
+              : t('search.found', { count: total })
+            : t('search.results')}
+        </h2>
+        <button
+          type="button"
+          aria-label={t('search.close')}
+          onClick={onClose}
+          className="rounded p-1 text-muted hover:text-text"
+        >
+          <X aria-hidden className="size-4" />
+        </button>
+      </header>
+      <div className="flex-1 overflow-y-auto px-3 pb-3">
+        {resolved && !resolved.ok ? (
+          <p className="text-sm text-muted">
+            {t(`search.problems.${resolved.problem}`, { name: resolved.name })}
+          </p>
+        ) : null}
+        {results.isError ? (
+          <p className="text-sm text-danger">{errorMessage(t, results.error)}</p>
+        ) : null}
+        {results.isSuccess && found.length === 0 ? (
+          <p className="text-sm text-muted">{t('search.nothing')}</p>
+        ) : null}
+        <MentionResolverProvider guildId={mentions.guildId} people={mentions.people}>
+          <ul className="flex flex-col gap-2">
+            {found.map((message) => (
+              <li key={message.id} className="rounded-md bg-main p-2.5 text-sm">
+                <div className="flex items-baseline gap-2 text-xs text-muted">
+                  {placeOf ? (
+                    <span className="font-semibold text-text">{placeOf(message)}</span>
+                  ) : null}
+                  <span className="truncate">
+                    {message.author ? nameOf(message.author) : t('messages.deletedUser')}
+                  </span>
+                  <time dateTime={message.createdAt} className="ml-auto shrink-0">
+                    {formatMessageTime(message.createdAt, i18n.language)}
+                  </time>
+                </div>
+                <div className="mt-1 line-clamp-4 break-words">
+                  {hidden?.(message) ? (
+                    <p className="text-muted italic">{t('search.nsfwHidden')}</p>
+                  ) : (
+                    <MessageContent content={message.content} />
+                  )}
+                </div>
+                {missing === message.id ? (
+                  <p role="status" className="mt-1 text-xs text-muted">
+                    {t('search.missing')}
+                  </p>
+                ) : null}
+                <Button
+                  variant="link"
+                  className="mt-1"
+                  onClick={() => void open(message.channelId, message.id)}
+                >
+                  {t('search.jump')}
+                </Button>
+              </li>
+            ))}
+          </ul>
+        </MentionResolverProvider>
+        {results.hasNextPage ? (
+          <Button
+            variant="secondary"
+            className="mt-3"
+            pending={results.isFetchingNextPage}
+            onClick={() => void results.fetchNextPage()}
+          >
+            {t('search.more')}
+          </Button>
+        ) : null}
+      </div>
+    </aside>
+  )
+}

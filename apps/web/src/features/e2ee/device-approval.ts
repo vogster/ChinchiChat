@@ -18,6 +18,10 @@ export interface ApprovalView {
   /** waiting: for another device to answer; compare: emoji are up; done / declined: over. */
   readonly state: 'waiting' | 'compare' | 'done' | 'declined'
   readonly emoji: readonly string[] | null
+  /** On the new device: the person said here that the emoji match. */
+  readonly confirmedHere?: boolean
+  /** On the new device: the device that answered said yes (its keys wait for this one's yes). */
+  readonly approvedThere?: boolean
 }
 
 export interface DeviceApprovalDeps {
@@ -32,13 +36,19 @@ interface Session {
   /** Steps taken, so a change seen twice (response and gateway) is acted on once. */
   revealed?: boolean
   secretKey?: CryptoKey
+  /** New device: the person said here that the emoji match. */
+  confirmed?: boolean
+  /** New device: the sealed keys that came, kept until the person here says yes. */
+  sealed?: string
 }
 
 /**
  * Approving a new device from an approved one. The new device commits to its key; an approved
- * device answers with its own; the new one reveals; both show emoji from the shared secret; the
- * user says yes on the approver, which hands over the recovery key — the new device takes the
- * user key and history with it, like typing the key in.
+ * device answers with its own; the new one reveals; both show emoji from the shared secret. The
+ * user says yes on the approver, which hands over the recovery key, and yes on the new device,
+ * which only then takes the user key and history with it, like typing the key in. Both yeses
+ * count: whoever answered the new device may be the server posing as an approved one (it relays
+ * every message), and only the person comparing the two screens can tell.
  */
 export const createDeviceApproval = ({ api, ready, crossSigning, backup }: DeviceApprovalDeps) => {
   const sessions = new Map<string, Session>()
@@ -66,6 +76,18 @@ export const createDeviceApproval = ({ api, ready, crossSigning, backup }: Devic
     approverKey: approval.approverKey ?? '',
   })
 
+  /** New device, both yeses in: opens the keys that came and takes them. */
+  const take = async (approvalId: string, session: Session) => {
+    if (sessions.get(approvalId) !== session) return
+    sessions.delete(approvalId)
+    const secrets =
+      session.secretKey && session.sealed
+        ? await openSecrets(session.secretKey, session.sealed)
+        : null
+    const result = secrets ? await backup.useKey(secrets.recoveryKey, await ready()) : 'wrong'
+    show(approvalId, { state: result === 'ok' ? 'done' : 'declined' })
+  }
+
   /** As the new device. */
   const asNew = async (approval: DeviceApproval, session: Session) => {
     if (approval.state === 'accepted' && !session.revealed && approval.approverKey) {
@@ -85,12 +107,9 @@ export const createDeviceApproval = ({ api, ready, crossSigning, backup }: Devic
       show(approval.id, { state: 'compare', emoji: agreed.emoji })
     } else if (approval.state === 'completed' && approval.secrets) {
       if (!session.secretKey) await asNew({ ...approval, state: 'revealed' }, session)
-      const secrets = session.secretKey
-        ? await openSecrets(session.secretKey, approval.secrets)
-        : null
-      const result = secrets ? await backup.useKey(secrets.recoveryKey, await ready()) : 'wrong'
-      sessions.delete(approval.id)
-      show(approval.id, { state: result === 'ok' ? 'done' : 'declined' })
+      session.sealed = approval.secrets
+      if (session.confirmed) await take(approval.id, session)
+      else show(approval.id, { approvedThere: true })
     } else if (approval.state === 'declined') {
       sessions.delete(approval.id)
       show(approval.id, { state: 'declined' })
@@ -129,6 +148,13 @@ export const createDeviceApproval = ({ api, ready, crossSigning, backup }: Devic
     }
     const session = sessions.get(approval.id)
     if (!session) return
+    // Another of my devices answered: its emoji are the ones to compare, not this one's.
+    if (approval.approverDeviceId && approval.approverDeviceId !== here) {
+      sessions.delete(approval.id)
+      views.delete(approval.id)
+      notify()
+      return
+    }
     if (approval.state === 'revealed' && approval.newKey && !session.secretKey) {
       // The relay must not swap the new device's key after seeing mine.
       if ((await commitmentOf(approval.newKey)) !== approval.commitment) {
@@ -180,19 +206,39 @@ export const createDeviceApproval = ({ api, ready, crossSigning, backup }: Devic
       await asApprover(approval, here)
     },
 
-    /** The emoji matched (the user said so): hand over the recovery key. */
+    /**
+     * The emoji matched (the user said so). On the approver: hand over the recovery key. On the
+     * new device: take the keys, now or as soon as the approver's yes brings them.
+     */
     confirm: async (approvalId: string): Promise<void> => {
       const session = sessions.get(approvalId)
+      if (!session?.secretKey) return
+      if (views.get(approvalId)?.role === 'new') {
+        session.confirmed = true
+        if (session.sealed) await take(approvalId, session)
+        else show(approvalId, { confirmedHere: true })
+        return
+      }
       const recoveryKey = await backup.key()
-      if (!session?.secretKey || !recoveryKey) return
+      if (!recoveryKey) return
       await api.e2ee.approvals.complete(
         approvalId,
         await sealSecrets(session.secretKey, { recoveryKey }),
       )
     },
 
+    /** No (the emoji differ, or it wasn't me): stops it; a new device takes nothing it got. */
     decline: async (approvalId: string): Promise<void> => {
-      await api.e2ee.approvals.decline(approvalId)
+      if (views.get(approvalId)?.role === 'new') {
+        sessions.delete(approvalId)
+        show(approvalId, { state: 'declined' })
+      }
+      try {
+        await api.e2ee.approvals.decline(approvalId)
+      } catch (error) {
+        // Already completed by the other side: what it sent is simply never opened here.
+        if (!(error instanceof ApiError && error.status === 409)) throw error
+      }
     },
 
     /** Forgets an approval that is over (the dialog was closed). */

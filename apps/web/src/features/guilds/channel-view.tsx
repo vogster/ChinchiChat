@@ -16,6 +16,7 @@ import { useTranslation } from 'react-i18next'
 import { MainCard } from '../../components/layout/main-card'
 import { headerButtonClass, PageHeader, PageTitle } from '../../components/layout/page-header'
 import { Menu, MenuContent, MenuItem, MenuTrigger } from '../../components/ui/menu'
+import { FollowButton } from '../announcements/follow-button'
 import { FollowDialog } from '../announcements/follow-dialog'
 import { PinsPopover } from '../messages/pins-popover'
 import { NotificationSettingsPopover } from '../notifications/notification-settings-dialog'
@@ -137,16 +138,11 @@ export const ChannelView = ({
               </button>
             ) : null}
             {channel.announcement ? (
-              <button
-                type="button"
-                aria-label={t('announcements.followButton')}
-                title={t('announcements.followButton')}
+              <FollowButton
+                channelId={channel.id}
                 onClick={() => setFollowing(true)}
-                className="flex h-[38px] shrink-0 items-center max-md:hidden gap-1.5 rounded-full px-2.5 text-[13px] font-medium text-muted transition-colors hover:bg-field hover:text-text"
-              >
-                <Rss aria-hidden className="size-5" />
-                <span className="hidden sm:inline">{t('announcements.followShort')}</span>
-              </button>
+                className={`${headerButtonClass} max-md:hidden`}
+              />
             ) : null}
             <button
               type="button"

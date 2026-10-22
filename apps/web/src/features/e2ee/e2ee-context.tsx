@@ -4,6 +4,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState } 
 import { useApi } from '../../lib/api-context'
 import { meQueryOptions } from '../auth/queries'
 import { useGateway } from '../realtime/gateway-context'
+import { useBackgroundAdmission } from './background-admission'
 import { useE2eeFactory } from './e2ee-factory'
 import { takeHandedRecoveryKey } from './handed-recovery'
 import { recoveryKeys } from './recovery-query'
@@ -22,8 +23,11 @@ interface E2eeContextValue {
   readonly client: E2eeClientLike | null
   /** Grows with every handshake or device change: conversations open again to catch up. */
   readonly revision: number
-  /** Opens conversations again, e.g. after letting a device in, so they take it in. */
-  readonly refresh: () => void
+  /**
+   * Opens conversations again, e.g. after letting a device in, so they take it in; with whose
+   * devices or key were let in, that person's other conversations take them in too.
+   */
+  readonly refresh: (changedUserId?: string) => void
 }
 
 const E2eeContext = createContext<E2eeContextValue>({
@@ -42,6 +46,7 @@ export const E2eeProvider = ({ children }: { children: ReactNode }) => {
   const userId = me?.id
   const client = useMemo(() => (userId ? factory(userId, api) : null), [userId, api, factory])
   const [revision, setRevision] = useState(0)
+  const admit = useBackgroundAdmission(client, userId)
 
   // Every signed-in browser is a device from the start, so conversations started by others
   // include it (a device added later can't read what came before). A recovery key handed over
@@ -63,7 +68,11 @@ export const E2eeProvider = ({ children }: { children: ReactNode }) => {
     () =>
       gateway.subscribe((type, data) => {
         if (type === 'E2EE_DEVICES_UPDATE') {
-          void client?.devicesChanged((data as { userId: string }).userId)
+          const changed = (data as { userId: string }).userId
+          void client
+            ?.devicesChanged(changed)
+            .then(() => admit(changed))
+            .catch(() => undefined)
           setRevision((value) => value + 1)
         } else if (type === 'E2EE_HANDSHAKE') {
           setRevision((value) => value + 1)
@@ -75,10 +84,16 @@ export const E2eeProvider = ({ children }: { children: ReactNode }) => {
           if (deleted) void client?.forgetConversation(id).catch(() => undefined)
         }
       }),
-    [gateway, client],
+    [gateway, client, admit],
   )
 
-  const refresh = useCallback(() => setRevision((value) => value + 1), [])
+  const refresh = useCallback(
+    (changedUserId?: string) => {
+      setRevision((value) => value + 1)
+      if (changedUserId) admit(changedUserId)
+    },
+    [admit],
+  )
   const value = useMemo(() => ({ client, revision, refresh }), [client, revision, refresh])
   return <E2eeContext.Provider value={value}>{children}</E2eeContext.Provider>
 }

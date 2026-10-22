@@ -92,6 +92,41 @@ describe('approving a new device', () => {
     expect((await call(alice, 'GET', path)).json().data.approval.state).toBe('completed')
   })
 
+  it('lets only one of two approved devices answering at once take the approval', async () => {
+    const laptop = await device(alice)
+    const tablet = await device(alice)
+    await vouch(laptop.id)
+    await vouch(tablet.id)
+    const phone = await device(alice)
+
+    // Several rounds: the two requests have to land together for the race to show.
+    for (let round = 0; round < 5; round += 1) {
+      const { id } = (
+        await call(alice, 'POST', '/users/@me/e2ee/approvals', {
+          deviceId: phone.id,
+          commitment: commit(b64()),
+        })
+      ).json().data.approval
+      const answers = await Promise.all(
+        [laptop, tablet].map((approver) =>
+          call(alice, 'POST', `/users/@me/e2ee/approvals/${id}/accept`, {
+            deviceId: approver.id,
+            publicKey: b64(),
+          }),
+        ),
+      )
+
+      expect(answers.map((a) => a.statusCode).sort()).toEqual([200, 409])
+      const winner = answers.find((a) => a.statusCode === 200)?.json().data.approval
+      const stored = (await call(alice, 'GET', `/users/@me/e2ee/approvals/${id}`)).json().data
+        .approval
+      expect(stored).toMatchObject({
+        approverDeviceId: winner.approverDeviceId,
+        approverKey: winner.approverKey,
+      })
+    }
+  })
+
   it('only for an unsigned device of mine, approved by a signed one, in order', async () => {
     const laptop = await device(alice)
     const phone = await device(alice)

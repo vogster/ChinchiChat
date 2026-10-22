@@ -225,19 +225,27 @@ describe('sessions section', () => {
     const api = createFakeApi({ user: testUser })
     const { user } = renderApp('/settings/sessions', { api })
 
-    await user.click(
-      await screen.findByRole('button', { name: 'Выйти на устройстве Firefox · Linux' }),
-    )
+    const button = await screen.findByRole('button', {
+      name: 'Выйти на устройстве Firefox · Linux',
+    })
+    // How often the list loads on the way in depends on timing (the old address redirects):
+    // only a fresh load after signing out counts.
+    const loads = api.sessions.list.mock.calls.length
+    await user.click(button)
 
     await waitFor(() => expect(api.sessions.revoke).toHaveBeenCalledWith('2'))
-    expect(api.sessions.list).toHaveBeenCalledTimes(2)
+    await waitFor(() => expect(api.sessions.list.mock.calls.length).toBeGreaterThan(loads))
   })
 
   it('signs out all other devices', async () => {
     const api = createFakeApi({ user: testUser })
-    api.sessions.list
-      .mockResolvedValueOnce({ sessions: [...testSessions] })
-      .mockResolvedValue({ sessions: testSessions.filter((s) => s.current) })
+    // The list as the server has it at the time, however often it loads.
+    api.sessions.list.mockImplementation(async () => ({
+      sessions:
+        api.sessions.revokeOthers.mock.calls.length > 0
+          ? testSessions.filter((s) => s.current)
+          : [...testSessions],
+    }))
     const { user } = renderApp('/settings/sessions', { api })
 
     await user.click(

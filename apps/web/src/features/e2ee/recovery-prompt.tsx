@@ -11,16 +11,53 @@ import { useEncryptionGuideSeen } from './use-encryption-guide'
 import { useMissingHistoryHint } from './use-missing-history-hint'
 import { recoveryReminderSnoozed, snoozeRecoveryReminder, useRecovery } from './use-recovery'
 
-import type { ApprovalView } from './device-approval'
+import type { ApprovalView, DeviceApprovals } from './device-approval'
 
-/** What the banner says while another device is asked to approve this one. */
-const ApprovalProgress = ({ view }: { view: ApprovalView }) => {
+/**
+ * What the banner says while another device is asked to approve this one. The person says here
+ * too whether the emoji match: only then does this device take the keys it was sent.
+ */
+const ApprovalProgress = ({
+  view,
+  approvals,
+}: {
+  view: ApprovalView
+  approvals: DeviceApprovals | null
+}) => {
   const { t } = useTranslation()
   if (view.state === 'declined') return <p>{t('e2ee.approval.declined')}</p>
+  if (view.state !== 'compare' || !view.emoji) return <p>{t('e2ee.approval.waiting')}</p>
   return (
-    <div className="flex flex-col gap-1">
-      <p>{t('e2ee.approval.waiting')}</p>
-      {view.emoji ? <ApprovalEmoji emoji={view.emoji} /> : null}
+    <div className="flex flex-col gap-2">
+      {view.confirmedHere ? (
+        <p>{t('e2ee.approval.waitingThere')}</p>
+      ) : (
+        <>
+          <p>{t('e2ee.approval.compareHere')}</p>
+          {view.approvedThere ? (
+            <p className="text-muted">{t('e2ee.approval.approvedThere')}</p>
+          ) : null}
+        </>
+      )}
+      <ApprovalEmoji emoji={view.emoji} align="start" />
+      {view.confirmedHere || !approvals ? null : (
+        <div className="flex flex-wrap gap-2">
+          <Button
+            variant="secure"
+            fullWidth={false}
+            onClick={() => void approvals.confirm(view.approvalId)}
+          >
+            {t('e2ee.approval.yes')}
+          </Button>
+          <Button
+            variant="secondary"
+            fullWidth={false}
+            onClick={() => void approvals.decline(view.approvalId)}
+          >
+            {t('e2ee.approval.differ')}
+          </Button>
+        </div>
+      )}
     </div>
   )
 }
@@ -83,7 +120,11 @@ export const RecoveryPrompt = ({ ready }: { ready: boolean }) => {
         <KeyRound className="size-5" />
       </span>
       <div className="flex min-w-0 flex-1 flex-col gap-3 pt-0.5 text-body">
-        {approval ? <ApprovalProgress view={approval} /> : <p>{t('e2ee.recovery.missing')}</p>}
+        {approval ? (
+          <ApprovalProgress view={approval} approvals={approvals} />
+        ) : (
+          <p>{t('e2ee.recovery.missing')}</p>
+        )}
         {entering ? (
           <RecoveryKeyForm
             recovery={recovery}

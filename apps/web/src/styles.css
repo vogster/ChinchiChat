@@ -281,3 +281,11 @@ body {
   line-height: 1.45;
   -webkit-font-smoothing: antialiased;
 }
+
+/*
+ * Edge draws an eye of its own in password fields: PasswordField has one already. A rule of
+ * its own: a browser that doesn't know the pseudo-element drops the whole selector list.
+ */
+input::-ms-reveal {
+  display: none;
+}

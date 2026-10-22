@@ -304,7 +304,7 @@ export const Composer = ({
           }}
           onSelect={mention.track}
           onKeyDown={onKeyDown}
-          className="max-h-60 min-h-[38px] flex-1 resize-none self-center bg-transparent px-1.5 py-[9px] leading-5 outline-none placeholder:text-faint"
+          className="max-h-60 min-h-[38px] flex-1 resize-none self-center bg-transparent px-1.5 py-[9px] leading-5 outline-none placeholder:truncate placeholder:text-faint"
         />
         {recorder.recording ? null : (
           <EmojiPicker

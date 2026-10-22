@@ -1,6 +1,7 @@
 import { expect, test } from '@playwright/test'
 
 import { registerAndOpenHome } from '../support/auth'
+import { befriend } from '../support/friends'
 import { newUser } from '../support/users'
 
 import type { Browser, Page } from '@playwright/test'
@@ -70,6 +71,40 @@ test('two strangers become friends and talk in a DM', async ({ browser }) => {
   await aliceComposer.fill('Ты тут?')
   await aliceComposer.press('Enter')
   await expect(alice.page.getByText('Не удалось отправить')).toBeVisible()
+
+  await alice.context.close()
+  await bob.context.close()
+})
+
+test('search in a DM finds a message and jumps to it', async ({ browser }) => {
+  const alice = await openAs(browser)
+  const bob = await openAs(browser)
+  const aliceUser = newUser()
+  const bobUser = newUser()
+  await registerAndOpenHome(alice.page, aliceUser)
+  await registerAndOpenHome(bob.page, bobUser)
+  await befriend(alice.page, bob.page, aliceUser.username, bobUser.username)
+
+  await tab(alice.page, 'Все').click()
+  await alice.page.getByRole('button', { name: `Написать — ${bobUser.username}` }).click()
+  const composer = alice.page.getByRole('textbox', { name: `Написать @${bobUser.username}` })
+  const history = alice.page.getByRole('list', { name: `Переписка с ${bobUser.username}` })
+  for (const text of ['Пароль от вайфая на холодильнике', 'Что-то совсем другое']) {
+    await composer.fill(text)
+    await composer.press('Enter')
+    await expect(history).toContainText(text)
+  }
+
+  const box = alice.page.getByRole('searchbox', { name: 'Поиск' })
+  await box.fill('холодильник')
+  await box.press('Enter')
+  const results = alice.page.getByRole('complementary', { name: 'Результаты поиска' })
+  await expect(results).toContainText('Найдено: 1')
+  await expect(results).toContainText('Пароль от вайфая на холодильнике')
+  await expect(results).not.toContainText('Что-то совсем другое')
+
+  await results.getByRole('button', { name: 'Перейти' }).click()
+  await expect(history.getByText('Пароль от вайфая на холодильнике')).toBeInViewport()
 
   await alice.context.close()
   await bob.context.close()

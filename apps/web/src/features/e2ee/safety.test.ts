@@ -130,6 +130,37 @@ describe('checking who is on the other end', () => {
     expect(await pendingNames(alice)).toEqual(['Браузер'])
   })
 
+  it('trust my own new key after I reset it here: the devices it approves are let in', async () => {
+    const { client, approved } = setup()
+    const laptop = client(ALICE, 'Ноутбук')
+    await laptop.ready()
+    await laptop.safety.status([ALICE])
+
+    await laptop.recovery.reset({ password: 'password123' })
+    const phone = await approved(laptop, ALICE, 'Телефон')
+    await laptop.devicesChanged(ALICE)
+
+    expect(await laptop.safety.allowedDevices(ALICE)).toContain(await phone.ready())
+    expect((await laptop.safety.status([ALICE])).mine).toEqual([])
+  })
+
+  it('trust the key I took with the recovery key, even after seeing an older one', async () => {
+    const { client, approved } = setup()
+    const laptop = client(ALICE, 'Ноутбук')
+    await laptop.ready()
+    const tablet = client(ALICE, 'Планшет')
+    await tablet.ready()
+    // The tablet saw the old key; then the laptop reset it.
+    await tablet.safety.status([ALICE])
+    await laptop.recovery.reset({ password: 'password123' })
+    const phone = await approved(laptop, ALICE, 'Телефон')
+
+    expect(await tablet.recovery.useKey((await laptop.recovery.key()) as string)).toBe('ok')
+    await tablet.devicesChanged(ALICE)
+
+    expect(await tablet.safety.allowedDevices(ALICE)).toContain(await phone.ready())
+  })
+
   it('keep the devices accepted with "got it" before consent was required', async () => {
     const { client } = setup()
     const bob = client(BOB)

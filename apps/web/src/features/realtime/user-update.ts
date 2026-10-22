@@ -2,6 +2,7 @@ import { authKeys } from '../auth/queries'
 import { dmKeys } from '../dms/queries'
 import { relationshipKeys } from '../friends/queries'
 import { guildKeys } from '../guilds/queries'
+import { messageKeys } from '../messages/queries'
 import { profileKeys } from '../profile/queries'
 
 import type { MessageItem, MessagePages } from '../messages/queries'
@@ -39,7 +40,7 @@ export const applyUserUpdate = (queryClient: QueryClient, user: PublicUser) => {
     list?.map((r) => (r.user.id === user.id ? { ...r, user } : r)),
   )
   void queryClient.invalidateQueries({ queryKey: profileKeys.user(user.id) })
-  queryClient.setQueriesData<MessagePages>({ queryKey: ['messages'] }, (data) =>
+  queryClient.setQueriesData<MessagePages>({ queryKey: messageKeys.channels }, (data) =>
     data
       ? { ...data, pages: data.pages.map((page) => page.map((m) => withAuthor(m, user))) }
       : data,

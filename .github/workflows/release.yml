@@ -213,6 +213,5 @@ jobs:
           # The release id, not the tag: given a tag, tauri-action finds the existing release
           # and overwrites its notes with its own (empty) releaseBody.
           releaseId: ${{ needs.release.outputs.release_id }}
-          includeUpdaterJson: ${{ steps.signing.outputs.signed == 'true' }}
-          updaterJsonKeepUniversal: true
+          uploadUpdaterJson: ${{ steps.signing.outputs.signed == 'true' }}
           args: --config src-tauri/tauri.release.conf.json ${{ matrix.args }}

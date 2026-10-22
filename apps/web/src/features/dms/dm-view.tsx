@@ -1,17 +1,5 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import {
-  Bell,
-  Lock,
-  LogOut,
-  Pencil,
-  Phone,
-  Search,
-  ShieldAlert,
-  ShieldCheck,
-  Trash2,
-  UserPlus,
-  Users,
-} from 'lucide-react'
+import { Lock, Search, ShieldAlert, Users } from 'lucide-react'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
@@ -60,8 +48,10 @@ import { DeleteEncryptedDialog } from './dialogs/delete-encrypted-dialog'
 import { LeaveGroupDialog } from './dialogs/leave-group-dialog'
 import { RemoveDowngradedDialog } from './dialogs/remove-downgraded-dialog'
 import { RenameGroupDialog } from './dialogs/rename-group-dialog'
+import { DmHeaderActions } from './dm-header-actions'
 import { privateChannelName, userName } from './dm-names'
-import { GroupMembersPanel } from './group-members-panel'
+import { DmSearchPanel } from './dm-search-panel'
+import { GroupMembersBackdrop, GroupMembersButtons, GroupMembersPanel } from './group-members-panel'
 
 import type { MessageItem, MessagePages } from '../messages/queries'
 import type { PrivateChannel } from '@chinchi/shared'
@@ -80,6 +70,8 @@ export const DmView = ({ channel }: { channel: PrivateChannel }) => {
   const { data: relationships = [] } = useQuery(relationshipsQueryOptions(useApi()))
   const [dialog, setDialog] = useState<OpenDialog>(null)
   const [showMembers, setShowMembers] = useState(true)
+  // Narrow screens: the members open over the chat.
+  const [narrowMembers, setNarrowMembers] = useState(false)
   const [notifications, setNotifications] = useState(false)
   const [checking, setChecking] = useState(false)
   const [search, setSearch] = useState<string | null>(null)
@@ -220,110 +212,44 @@ export const DmView = ({ channel }: { channel: PrivateChannel }) => {
               )
             }
           />
-          {encryption ? (
-            <>
-              {/* Narrow screens: the field opens from this button, as in server channels. */}
-              <button
-                type="button"
-                aria-label={t('search.open')}
-                aria-pressed={searchOpen}
-                onClick={() => setSearchOpen((value) => !value)}
-                className={`${headerButton} lg:hidden`}
-              >
-                <Search aria-hidden className="size-5" />
-              </button>
-              <SearchBox onSearch={setSearch} open={searchOpen} />
-            </>
+          {isGroup && me ? (
+            <GroupMembersButtons
+              channel={channel}
+              me={me}
+              shown={showMembers}
+              onToggle={() => setShowMembers((value) => !value)}
+              onOpenNarrow={() => setNarrowMembers(true)}
+            />
           ) : null}
-          <span className="flex shrink-0 gap-0.5">
-            {encryption ? (
-              <MissingHistoryButton ready={keysReady} className={headerButton} />
-            ) : null}
-            {encryption ? (
-              <button
-                type="button"
-                aria-label={t('e2ee.safety.title')}
-                title={t('e2ee.safety.title')}
-                onClick={() => setChecking(true)}
-                data-verified={allVerified}
-                className={`${headerButton} data-[verified=true]:text-secure-text`}
-              >
-                <ShieldCheck aria-hidden className="size-5" />
-              </button>
-            ) : null}
-            <button
-              type="button"
-              aria-label={t('notifications.dmButton')}
-              title={t('notifications.dmButton')}
-              aria-pressed={notifications}
-              onClick={() => setNotifications((value) => !value)}
-              className={headerButton}
-            >
-              <Bell aria-hidden className="size-5" />
-            </button>
-            {canDelete ? (
-              <button
-                type="button"
-                aria-label={t('dm.delete')}
-                title={t('dm.delete')}
-                onClick={() => setDialog('delete')}
-                className={`${headerButton} hover:bg-danger-soft hover:text-danger`}
-              >
-                <Trash2 aria-hidden className="size-5" />
-              </button>
-            ) : null}
-            {voiceEnabled && canTalk && !inCall ? (
-              <button
-                type="button"
-                aria-label={t('voice.call')}
-                title={t('voice.call')}
-                onClick={() => void voice.join(null, channel.id)}
-                className={headerButton}
-              >
-                <Phone aria-hidden className="size-5" />
-              </button>
-            ) : null}
-          </span>
-          {isGroup ? (
-            <span className="flex shrink-0 gap-0.5">
-              <button
-                type="button"
-                aria-label={t('dm.rename')}
-                title={t('dm.rename')}
-                onClick={() => setDialog('rename')}
-                className={headerButton}
-              >
-                <Pencil aria-hidden className="size-5" />
-              </button>
-              <button
-                type="button"
-                aria-label={t('dm.add')}
-                title={t('dm.add')}
-                onClick={() => setDialog('add')}
-                className={headerButton}
-              >
-                <UserPlus aria-hidden className="size-5" />
-              </button>
-              <button
-                type="button"
-                aria-pressed={showMembers}
-                aria-label={showMembers ? t('dm.hideMembers') : t('dm.showMembers')}
-                onClick={() => setShowMembers((value) => !value)}
-                className={`${headerButton} hidden xl:grid`}
-              >
-                <Users aria-hidden className="size-5" />
-              </button>
-              <button
-                type="button"
-                aria-label={t('dm.leave')}
-                title={t('dm.leave')}
-                onClick={() => setDialog('leave')}
-                className={`${headerButton} hover:bg-danger-soft hover:text-danger`}
-              >
-                <LogOut aria-hidden className="size-5" />
-              </button>
-            </span>
-          ) : null}
+          {/* Narrow screens: the field opens from this button, as in server channels. */}
+          <button
+            type="button"
+            aria-label={t('search.open')}
+            aria-pressed={searchOpen}
+            onClick={() => setSearchOpen((value) => !value)}
+            className={`${headerButton} lg:hidden`}
+          >
+            <Search aria-hidden className="size-5" />
+          </button>
+          <SearchBox onSearch={setSearch} open={searchOpen} />
+          <DmHeaderActions
+            encrypted={Boolean(encryption)}
+            verified={allVerified}
+            group={isGroup}
+            canDelete={canDelete}
+            notifications={notifications}
+            onNotifications={() => setNotifications((value) => !value)}
+            onCheck={() => setChecking(true)}
+            onCall={
+              voiceEnabled && canTalk && !inCall ? () => void voice.join(null, channel.id) : null
+            }
+            onDialog={setDialog}
+            leading={
+              encryption ? (
+                <MissingHistoryButton ready={keysReady} className={headerButton} />
+              ) : null
+            }
+          />
         </PageHeader>
 
         {inCall || callStates.length > 0 ? (
@@ -438,7 +364,7 @@ export const DmView = ({ channel }: { channel: PrivateChannel }) => {
           {downgraded ? (
             <DowngradeNotice onRemove={() => setDialog('remove')} />
           ) : encryption && encrypted.state !== 'ready' ? (
-            <EncryptionStatus state={encrypted.state} />
+            <EncryptionStatus state={encrypted.state} group={channel.type === 'group_dm'} />
           ) : canTalk ? (
             <Composer
               channelName={name}
@@ -482,14 +408,20 @@ export const DmView = ({ channel }: { channel: PrivateChannel }) => {
         ) : null}
       </MainCard>
       {encryption && search ? (
+        // The server can't read an encrypted conversation: this device searches what it decrypted.
         <LocalSearchPanel
           channel={encryption}
           query={search}
           nameOf={(userId) => callPerson(userId).name}
           onClose={() => setSearch(null)}
         />
-      ) : isGroup && showMembers && me ? (
-        <GroupMembersPanel channel={channel} me={me} />
+      ) : search && me ? (
+        <DmSearchPanel channel={channel} me={me} input={search} onClose={() => setSearch(null)} />
+      ) : isGroup && (showMembers || narrowMembers) && me ? (
+        <>
+          {narrowMembers ? <GroupMembersBackdrop onClose={() => setNarrowMembers(false)} /> : null}
+          <GroupMembersPanel channel={channel} me={me} narrowOpen={narrowMembers} />
+        </>
       ) : null}
 
       {checking ? (

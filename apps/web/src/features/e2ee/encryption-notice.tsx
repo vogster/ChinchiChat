@@ -1,11 +1,15 @@
 import { Lock, ShieldAlert } from 'lucide-react'
+import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { Button } from '../../components/ui/button'
 import { BetaBadge } from './beta-badge'
 import { DeviceCodeText } from './device-code'
 import { EncryptionGuideButton } from './encryption-guide'
+import { EnterRecoveryKeyDialog } from './recovery-dialogs'
 import { useThisDeviceCode } from './use-device-code'
+import { useMissingHistoryHint } from './use-missing-history-hint'
+import { useRecovery } from './use-recovery'
 
 import type { EncryptedState } from './use-encrypted-conversation'
 
@@ -37,9 +41,12 @@ export const EncryptionNotice = () => {
  * In place of the composer while no one has let this device in: how it gets in, and its code
  * for the other person to compare before letting it in.
  */
-const WaitingToBeLetIn = () => {
+const WaitingToBeLetIn = ({ group }: { group: boolean }) => {
   const { t } = useTranslation()
   const code = useThisDeviceCode()
+  const recovery = useRecovery()
+  const missingHint = useMissingHistoryHint()
+  const [entering, setEntering] = useState(false)
   return (
     <div
       role="status"
@@ -50,10 +57,29 @@ const WaitingToBeLetIn = () => {
       <div className="flex min-w-0 flex-col gap-1">
         <p className="font-medium text-body">{t('e2ee.waitingTitle')}</p>
         <p>{t('e2ee.waiting')}</p>
+        <ul className="list-disc pl-5">
+          <li>{t('e2ee.waitingWays.device')}</li>
+          <li>{t('e2ee.waitingWays.recovery')}</li>
+          <li>{t(group ? 'e2ee.waitingWays.codeGroup' : 'e2ee.waitingWays.code')}</li>
+        </ul>
         {code ? (
           <p>
             {t('e2ee.device.code')} <DeviceCodeText code={code} className="text-body" />
           </p>
+        ) : null}
+        {/* While the notice about old messages is up, its button is the one to use. */}
+        {recovery.loaded && !recovery.key && missingHint.hidden ? (
+          <Button
+            variant="secure"
+            fullWidth={false}
+            className="mt-1 self-start"
+            onClick={() => setEntering(true)}
+          >
+            {t('e2ee.recovery.enter')}
+          </Button>
+        ) : null}
+        {entering ? (
+          <EnterRecoveryKeyDialog recovery={recovery} onOpenChange={setEntering} />
         ) : null}
       </div>
     </div>
@@ -86,9 +112,16 @@ export const DowngradeNotice = ({ onRemove }: { onRemove: () => void }) => {
 }
 
 /** In place of the composer while this device can't write yet. */
-export const EncryptionStatus = ({ state }: { state: Exclude<EncryptedState, 'ready'> }) => {
+export const EncryptionStatus = ({
+  state,
+  group = false,
+}: {
+  state: Exclude<EncryptedState, 'ready'>
+  /** A group: any member, not just the other person, can let this device in. */
+  group?: boolean
+}) => {
   const { t } = useTranslation()
-  if (state === 'waiting') return <WaitingToBeLetIn />
+  if (state === 'waiting') return <WaitingToBeLetIn group={group} />
   return (
     <p
       role="status"

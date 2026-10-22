@@ -78,6 +78,15 @@ describe('approving a new device', () => {
     expect(within(banner).getByRole('group', { name: 'Эмодзи для сравнения' })).toHaveTextContent(
       EMOJI.join(''),
     )
+    // Here too the person compares and says yes: keys from whoever answered wait for it.
+    expect(banner).toHaveTextContent(/окна «Новый вход» там нет/)
+    await user.click(within(banner).getByRole('button', { name: 'Да, эмодзи совпадают' }))
+    expect(e2ee.approvals.confirm).toHaveBeenCalledWith('950')
+    act(() =>
+      e2ee.approvals.emit([{ ...view, state: 'compare', emoji: EMOJI, confirmedHere: true }]),
+    )
+    expect(await within(banner).findByText(/нажмите там «Да»/)).toBeVisible()
+    expect(within(banner).queryByRole('button', { name: 'Да, эмодзи совпадают' })).toBeNull()
 
     e2ee.recovery.key.mockResolvedValue(TEST_RECOVERY_KEY)
     act(() => e2ee.approvals.emit([{ ...view, state: 'done', emoji: EMOJI }]))
@@ -86,6 +95,22 @@ describe('approving a new device', () => {
         screen.queryByRole('status', { name: 'Старые сообщения недоступны' }),
       ).not.toBeInTheDocument(),
     )
+  })
+
+  it('on the new device: says no when the emoji differ, after the other device said yes', async () => {
+    const { user, e2ee } = renderApp(DM_PATH, { api: withEncryptedDm() })
+    e2ee.recovery.key.mockResolvedValue(null)
+    const banner = await screen.findByRole('status', { name: 'Старые сообщения недоступны' })
+    const view = { approvalId: '950', role: 'new' as const, deviceName: null }
+
+    act(() =>
+      e2ee.approvals.emit([{ ...view, state: 'compare', emoji: EMOJI, approvedThere: true }]),
+    )
+    expect(await within(banner).findByText(/На другом устройстве нажали «Да»/)).toBeVisible()
+    await user.click(within(banner).getByRole('button', { name: 'Нет, не совпадают' }))
+
+    expect(e2ee.approvals.decline).toHaveBeenCalledWith('950')
+    expect(e2ee.approvals.confirm).not.toHaveBeenCalled()
   })
 
   it('in another tab of the new device: the banner goes once the device is approved', async () => {

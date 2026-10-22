@@ -89,6 +89,14 @@ export const members = ({ state }: Conversation): Member[] =>
     return identity ? [{ identity, signaturePublicKey: node.leaf.signaturePublicKey }] : []
   })
 
+/** The device this state belongs to (its own leaf); null if the leaf can't be read. */
+export const ownIdentity = ({ state }: Conversation): DeviceIdentity | null => {
+  const leaf = leafAt(state, state.privatePath.leafIndex)
+  return leaf?.credential.credentialType === 'basic'
+    ? decodeIdentity(leaf.credential.identity)
+    : null
+}
+
 export const epoch = ({ state }: Conversation): bigint => state.groupContext.epoch
 
 /** Starts a conversation with only this device in it; others are added with addMembers. */

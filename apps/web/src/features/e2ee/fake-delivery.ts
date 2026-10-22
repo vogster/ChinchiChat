@@ -146,6 +146,9 @@ export const createFakeDelivery = () => {
           keyPackages.push({ id: id(), deviceId, package: pkg, lastResort: false })
         }
         if (body.lastResort) {
+          // As on the server: a new last resort replaces the one before.
+          const previous = keyPackages.findIndex((k) => k.deviceId === deviceId && k.lastResort)
+          if (previous >= 0) keyPackages.splice(previous, 1)
           keyPackages.push({ id: id(), deviceId, package: body.lastResort, lastResort: true })
         }
       },
