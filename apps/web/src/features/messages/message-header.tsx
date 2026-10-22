@@ -54,6 +54,15 @@ export const MessageHeader = ({
           {t('e2ee.sender.mismatch')}
         </span>
       ) : null}
+      {message.senderCheck?.kind === 'plain' ? (
+        <span
+          role="status"
+          title={t('e2ee.sender.plainHint')}
+          className="shrink-0 rounded-lg bg-danger-soft px-2 py-px text-[11px] font-semibold text-danger"
+        >
+          {t('e2ee.sender.plain')}
+        </span>
+      ) : null}
       {message.senderCheck?.kind === 'unverified' ? (
         <span title={t('e2ee.sender.unverifiedHint')} className="shrink-0 text-xs text-faint">
           {t('e2ee.sender.unverified')}

@@ -79,6 +79,22 @@ describe('profile card', () => {
     expect(within(profile).queryByRole('button', { name: 'Написать' })).toBeNull()
   })
 
+  it('says so in the card when the server answers a secret chat with a plain one', async () => {
+    const api = createFakeApi({ user: testUser })
+    api.dms.list.mockResolvedValue({ channels: [testDm] })
+    const { user } = renderApp(`/channels/@me/${testDm.id}`, { api })
+    api.dms.open.mockResolvedValue({ channel: { ...testDm, id: '809', encrypted: false } })
+
+    const history = await screen.findByRole('list', { name: 'Переписка с Боб' })
+    await user.click(
+      (await within(history).findAllByRole('button', { name: 'Боб' }))[0] as HTMLElement,
+    )
+    const profile = await card('Боб')
+    await user.click(await within(profile).findByRole('button', { name: /Зашифрованная беседа/ }))
+
+    expect(await within(profile).findByRole('alert')).toHaveTextContent('не зашифрованную')
+  })
+
   it('in an encrypted DM, offers the plain one but not another encrypted one', async () => {
     const api = createFakeApi({ user: testUser })
     api.dms.list.mockResolvedValue({ channels: [{ ...testDm, encrypted: true }] })

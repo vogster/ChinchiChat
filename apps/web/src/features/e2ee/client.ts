@@ -121,6 +121,8 @@ export type SenderCheck =
   | { readonly kind: 'verified' }
   | { readonly kind: 'unverified' }
   | { readonly kind: 'mismatch'; readonly userId: string }
+  /** Came without encryption into an encrypted conversation: the server may have written it. */
+  | { readonly kind: 'plain' }
 
 /** A message as this device reads it: what was inside, and whether the author checks out. */
 export interface ReadMessage {
@@ -753,11 +755,14 @@ export const createE2eeClient = ({ api, store, userId, deviceName }: E2eeClientO
 
     dismissNotice: (channelId: string, noticeId: string) => membership.dismiss(channelId, noticeId),
 
-    /** Deleted for everyone: nothing of the conversation stays on this device. */
-    forgetConversation: (channelId: string) =>
+    /**
+     * Deleted for everyone: nothing of the conversation stays on this device. `keepKeys` for a
+     * conversation only hidden here: its text goes, its group keys stay (see the eraser).
+     */
+    forgetConversation: (channelId: string, options?: { keepKeys?: boolean }) =>
       serial(channelId, async () => {
-        conversations.delete(channelId)
-        await createConversationEraser(store).forget(channelId)
+        if (!options?.keepKeys) conversations.delete(channelId)
+        await createConversationEraser(store).forget(channelId, options)
       }),
 
     /** Registers this device on first use and keeps its key packages topped up. */

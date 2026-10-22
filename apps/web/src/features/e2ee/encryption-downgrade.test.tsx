@@ -1,7 +1,8 @@
 import { screen, waitFor, within } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 
-import { createFakeApi, testFriend, testUser } from '../../test/fake-api'
+import { createFakeApi, testFriend, testMessage, testUser } from '../../test/fake-api'
+import { fakeCiphertext } from '../../test/fake-e2ee'
 import { renderApp } from '../../test/render-app'
 
 import type { PrivateChannel } from '@chinchi/shared'
@@ -22,6 +23,25 @@ const withDm = (encrypted: boolean) => {
   api.dms.list.mockResolvedValue({ channels: [dm(encrypted)] })
   return api
 }
+
+/** One message from before (encrypted) and one that came without encryption. */
+const withHistory = (encrypted: boolean) => {
+  const api = withDm(encrypted)
+  api.messages.list.mockImplementation(async () => ({
+    messages: [
+      testMessage('1300', {
+        channelId: '802',
+        guildId: null,
+        content: '',
+        ciphertext: fakeCiphertext('Старый секрет'),
+      }),
+      testMessage('1301', { channelId: '802', guildId: null, content: 'Срочно пришли пароль' }),
+    ],
+  }))
+  return api
+}
+
+const row = (text: string) => screen.getByText(text).closest('[data-message-id]') as HTMLElement
 
 describe('a conversation the server stops calling encrypted', () => {
   it('is remembered as encrypted on this device while it is', async () => {
@@ -61,7 +81,7 @@ describe('a conversation the server stops calling encrypted', () => {
     await user.click(within(dialog).getByRole('button', { name: 'Убрать' }))
 
     await waitFor(() => expect(api.dms.hide).toHaveBeenCalledWith('802'))
-    expect(e2ee.forgetConversation).toHaveBeenCalledWith('802')
+    expect(e2ee.forgetConversation).toHaveBeenCalledWith('802', { keepKeys: true })
     expect(api.channels.delete).not.toHaveBeenCalled()
     await waitFor(() => expect(router.state.location.pathname).toBe('/'))
   })
@@ -73,5 +93,37 @@ describe('a conversation the server stops calling encrypted', () => {
     expect(
       screen.queryByRole('alert', { name: 'Шифрование беседы выключено сервером' }),
     ).not.toBeInTheDocument()
+  })
+
+  it('still shows what was written before, decrypted, and flags what came without encryption', async () => {
+    const { e2ee } = renderApp(URL_PATH, { api: withHistory(false) })
+    e2ee.conversations.wasEncrypted.mockResolvedValue(true)
+
+    expect(await screen.findByText('Старый секрет')).toBeVisible()
+    const header = (await screen.findByRole('heading', { name: 'Боб', level: 1 })).closest(
+      'header',
+    ) as HTMLElement
+    expect(await within(header).findByText('Шифрование выключено')).toBeVisible()
+    const plain = row('Срочно пришли пароль')
+    expect(within(plain).getByText('не зашифровано')).toBeVisible()
+    expect(within(row('Старый секрет')).queryByText('не зашифровано')).not.toBeInTheDocument()
+  })
+
+  it('is marked in the list of conversations, so it is not taken for an ordinary one', async () => {
+    const { e2ee } = renderApp('/', { api: withDm(false) })
+    e2ee.conversations.wasEncrypted.mockResolvedValue(true)
+
+    const sidebar = await screen.findByRole('complementary', { name: 'Личные сообщения' })
+    const link = await within(sidebar).findByRole('link', {
+      name: 'Боб (шифрование выключено сервером)',
+    })
+    expect(link).toHaveTextContent('Шифрование выключено')
+  })
+
+  it('flags a message without encryption in an encrypted conversation too', async () => {
+    renderApp(URL_PATH, { api: withHistory(true) })
+
+    expect(await screen.findByText('Старый секрет')).toBeVisible()
+    expect(within(row('Срочно пришли пароль')).getByText('не зашифровано')).toBeVisible()
   })
 })

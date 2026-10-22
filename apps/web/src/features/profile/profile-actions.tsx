@@ -4,7 +4,9 @@ import { Link } from '@tanstack/react-router'
 import { Lock, Phone } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
+import { Alert } from '../../components/ui/alert'
 import { Button } from '../../components/ui/button'
+import { errorMessage } from '../../lib/errors'
 import { useCurrentUser } from '../auth/use-auth-actions'
 import { useOpenDm } from '../dms/use-dm-actions'
 import { useOpenDmWith } from '../dms/use-open-dm-with'
@@ -146,6 +148,8 @@ export const ProfileActions = ({
           {t('profile.requestSent')}
         </Button>
       ) : null}
+      {/* Opening a conversation can fail: say why (e.g. a plain one where encrypted was asked). */}
+      {openDm.isError ? <Alert tone="error">{errorMessage(t, openDm.error)}</Alert> : null}
       <div className="flex flex-col overflow-hidden rounded-tile bg-field">
         {!blocked && !shared?.encrypted ? (
           <ListItem

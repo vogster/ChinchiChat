@@ -16,12 +16,14 @@ export const groupMessages = (messages: readonly MessageItem[]): MessageRow[] =>
     const day = localDay(message.createdAt)
     const newDay = !previous || localDay(previous.createdAt) !== day
     // A reply (or a command's answer) always gets a header: it shows what it answers. So does
-    // an encrypted message whose signer the server misnamed: the header carries the warning.
+    // an encrypted message whose signer the server misnamed, or one that came without
+    // encryption: the header carries the warning.
     const compact =
       !newDay &&
       message.reply === null &&
       message.interaction === null &&
       message.senderCheck?.kind !== 'mismatch' &&
+      message.senderCheck?.kind !== 'plain' &&
       message.system === null &&
       previous?.system === null &&
       previous !== undefined &&

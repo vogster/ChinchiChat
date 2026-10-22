@@ -1,7 +1,7 @@
 import { screen, within } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 
-import { createFakeApi, testFriend, testUser } from '../../test/fake-api'
+import { createFakeApi, testDm, testFriend, testUser } from '../../test/fake-api'
 import { renderApp } from '../../test/render-app'
 
 import type { Relationship } from '@chinchi/shared'
@@ -51,6 +51,18 @@ describe('friends page', () => {
     await user.click(await screen.findByRole('button', { name: 'Секретный чат — Боб' }))
 
     expect(api.dms.open).toHaveBeenCalledWith([testFriend.id], { encrypted: true })
+  })
+
+  it('says so when the server answers a secret chat with a plain one', async () => {
+    const api = withFriends()
+    api.dms.open.mockResolvedValue({ channel: { ...testDm, encrypted: false } })
+    const { user, router } = renderApp('/', { api })
+    await user.click(await screen.findByRole('tab', { name: 'Все' }))
+
+    await user.click(await screen.findByRole('button', { name: 'Секретный чат — Боб' }))
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('не зашифрованную')
+    expect(router.state.location.pathname).toBe('/')
   })
 
   it('keeps removing and blocking behind the "more" menu', async () => {

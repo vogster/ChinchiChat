@@ -5,6 +5,21 @@ import { createLocalSearch } from './local-search'
 import { createMemoryStore } from './store'
 
 describe('erasing a deleted conversation from this device', () => {
+  it('can keep the group keys, for a conversation that may come back (only the text goes)', async () => {
+    const store = createMemoryStore()
+    await createLocalSearch(store).record('500', { id: '1', authorId: 'a', text: 'секрет' })
+    await store.set('conv:500', { state: 'keys' })
+    await store.set('group:known:500', ['a'])
+    await store.set('plain:1', { text: 'секрет' })
+
+    await createConversationEraser(store).forget('500', { keepKeys: true })
+
+    expect(await store.get('plain:1')).toBeUndefined()
+    expect(await store.get('index:500')).toBeUndefined()
+    expect(await store.get('conv:500')).toEqual({ state: 'keys' })
+    expect(await store.get('group:known:500')).toEqual(['a'])
+  })
+
   it('drops its keys, plaintext, backups and index, and nothing of other conversations', async () => {
     const store = createMemoryStore()
     const index = createLocalSearch(store)

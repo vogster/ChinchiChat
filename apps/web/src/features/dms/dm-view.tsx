@@ -6,6 +6,7 @@ import {
   Pencil,
   Phone,
   Search,
+  ShieldAlert,
   ShieldCheck,
   Trash2,
   UserPlus,
@@ -94,7 +95,13 @@ export const DmView = ({ channel }: { channel: PrivateChannel }) => {
   const typing = useTypingNotifier(channel.id)
   const react = useToggleReaction(channel.id)
   const pending = usePendingFiles()
-  const encryption = useEncryptedChannel(channel, me?.id)
+  // A conversation the server stopped calling encrypted is still read as one (its history
+  // decrypts here); only sending stops (see DowngradeNotice).
+  const downgraded = useEncryptionDowngrade(channel)
+  const encryption = useEncryptedChannel(
+    downgraded ? { ...channel, encrypted: true } : channel,
+    me?.id,
+  )
   const encrypted = useEncryptedConversation(encryption)
   // Encrypted: the same optimistic message and upload progress, sent through encryption.
   const send = useSendMessage(
@@ -130,7 +137,6 @@ export const DmView = ({ channel }: { channel: PrivateChannel }) => {
     !isGroup &&
     other !== undefined &&
     relationships.some((r) => r.user.id === other.id && r.type === 'blocked')
-  const downgraded = useEncryptionDowngrade(channel)
   const canTalk = !blocked && !downgraded
   const voice = useVoice()
   const voiceEnabled = useVoiceEnabled()
@@ -190,7 +196,15 @@ export const DmView = ({ channel }: { channel: PrivateChannel }) => {
             tone={encryption ? 'secure' : 'accent'}
             title={name}
             subtitle={
-              encryption ? (
+              downgraded ? (
+                // Red: this device saw it encrypted, the server now calls it plain.
+                <span className="mt-0.5 flex items-center gap-1.5">
+                  <span className="flex h-5 items-center gap-1 rounded-full bg-danger-soft px-2 text-[11.5px] font-medium text-danger">
+                    <ShieldAlert aria-hidden className="size-3" />
+                    {t('e2ee.downgrade.badge')}
+                  </span>
+                </span>
+              ) : encryption ? (
                 // Green: at a glance, this conversation is end-to-end encrypted.
                 <span className="mt-0.5 flex items-center gap-1.5">
                   <span className="flex h-5 items-center gap-1 rounded-full bg-secure-soft px-2 text-[11.5px] font-medium text-secure-text">

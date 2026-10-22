@@ -9,15 +9,20 @@ import type { E2eeStore } from './store'
  * able to bring the same id back as a plain one.
  */
 export const createConversationEraser = (store: E2eeStore) => ({
-  async forget(channelId: string): Promise<void> {
+  /**
+   * `keepKeys`: only the text goes; the MLS state and what the group membership knows stay,
+   * since this device is still in the group for the others (a conversation only hidden here).
+   */
+  async forget(channelId: string, { keepKeys = false }: { keepKeys?: boolean } = {}) {
     const indexed = (await store.get<IndexedMessage[]>(`index:${channelId}`)) ?? []
     for (const { id } of indexed) {
       await store.deletePrefix(`plain:${id}`)
       await store.delete(`backup:${id}`)
       await store.delete(`react:own:${id}`)
     }
+    await store.delete(`index:${channelId}`)
+    if (keepKeys) return
     for (const key of [
-      `index:${channelId}`,
       `conv:${channelId}`,
       `group:known:${channelId}`,
       `group:invited:${channelId}`,

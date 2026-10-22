@@ -104,7 +104,9 @@ export const useRemoveDowngraded = (channelId: Snowflake) => {
   return useMutation({
     mutationFn: () => api.dms.hide(channelId),
     onSuccess: async () => {
-      await client?.forgetConversation(channelId)
+      // Its keys stay: the others still count this device in, and the conversation works again
+      // here if the server stops calling it plain.
+      await client?.forgetConversation(channelId, { keepKeys: true })
       removePrivateChannel(queryClient, channelId)
       queryClient.removeQueries({ queryKey: messageKeys.channel(channelId) })
       await navigate({ to: '/' })
