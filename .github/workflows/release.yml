@@ -12,16 +12,19 @@ on:
   push:
     tags: ['v*.*.*']
 
-permissions:
-  contents: write
-  packages: write
-  # Build provenance attestations (Sigstore, keyless).
-  id-token: write
-  attestations: write
+# Each job gets only what it needs: the desktop job, which holds the updater's signing key,
+# can't push images or sign provenance.
+permissions: {}
 
 jobs:
   release:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      packages: write
+      # Build provenance attestations (Sigstore, keyless).
+      id-token: write
+      attestations: write
     outputs:
       release_id: ${{ steps.publish.outputs.release_id }}
     env:
@@ -147,6 +150,9 @@ jobs:
     name: Desktop (${{ matrix.name }})
     needs: release
     runs-on: ${{ matrix.runner }}
+    # Uploads to the release only.
+    permissions:
+      contents: write
     strategy:
       fail-fast: false
       matrix:
