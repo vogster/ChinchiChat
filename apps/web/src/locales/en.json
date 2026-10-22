@@ -67,6 +67,7 @@
     "deleteConfirm": "Delete",
     "deleted": "This encrypted conversation was deleted.",
     "notFound": "Conversation not found",
+    "backToFriends": "Back to friends",
     "listLabel": "Conversation with {{name}}",
     "heading": "Messages",
     "search": "Find a conversation",
@@ -1532,7 +1533,7 @@
     "fileProgress": "Downloading {{percent}}% · {{received}} of {{total}}",
     "fileFailed": "Couldn't decrypt {{name}}",
     "encryptedQuote": "Encrypted message",
-    "groupHint": "Messages, files and calls are encrypted on members' devices; the server can't see them. No search, link previews or bots here. Encryption is in beta.",
+    "groupHint": "Messages, files and calls are encrypted on members' devices; the server can't see them. Search runs on your devices only; no link previews or bots here. Encryption is in beta.",
     "safety": {
       "title": "Encryption check",
       "hint": "Compare the code with the other person in person or over another channel (a call, another messenger). If it matches, messages are encrypted for their devices and not for impostors.",

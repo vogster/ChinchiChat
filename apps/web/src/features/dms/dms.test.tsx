@@ -162,10 +162,13 @@ describe('DM view', () => {
     expect(screen.queryByRole('textbox', { name: 'Написать @Боб' })).not.toBeInTheDocument()
   })
 
-  it('explains a DM that is not there', async () => {
-    renderApp('/channels/@me/999', { api: withFriends() })
+  it('explains a DM that is not there, with a way back', async () => {
+    const { user, router } = renderApp('/channels/@me/999', { api: withFriends() })
 
-    expect(await screen.findByText('Переписка не найдена')).toBeVisible()
+    expect(await screen.findByRole('heading', { name: 'Переписка не найдена' })).toBeVisible()
+    await user.click(screen.getByRole('link', { name: 'К друзьям' }))
+
+    await waitFor(() => expect(router.state.location.pathname).toBe('/'))
   })
 })
 
