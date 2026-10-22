@@ -1,11 +1,14 @@
+import { CloseCode } from '@chinchi/shared'
 import websocket from '@fastify/websocket'
 import fp from 'fastify-plugin'
 
 import { SESSION_COOKIE } from '../modules/auth/auth.plugin'
 import { createConnection } from './connection'
+import { createConnectionLimits } from './connection-limits'
 
 import type { Metrics } from '../metrics/metrics'
 import type { ConnectionDeps, GatewayConnection } from './connection'
+import type { ConnectionLimitOptions } from './connection-limits'
 import type { Dispatcher } from './dispatcher'
 import type { FastifyReply, FastifyRequest } from 'fastify'
 
@@ -15,6 +18,8 @@ export interface GatewayOptions {
   readonly dispatcher: Dispatcher
   readonly deps: Omit<ConnectionDeps, 'onError' | 'dispatcher'>
   readonly metrics?: Pick<Metrics, 'gatewayConnections'>
+  /** Caps on connections per user and address (connection-limits.ts); on unless false. */
+  readonly limits?: ConnectionLimitOptions | false
 }
 
 /**
@@ -36,9 +41,10 @@ const checkOrigin =
   }
 
 export const gatewayPlugin = fp<GatewayOptions>(
-  async (app, { path, webOrigins, dispatcher, deps, metrics }) => {
+  async (app, { path, webOrigins, dispatcher, deps, metrics, limits: limitOptions = {} }) => {
     await app.register(websocket, { options: { maxPayload: 8 * 1024 } })
     const connections = new Set<GatewayConnection>()
+    const limits = limitOptions ? createConnectionLimits(limitOptions) : null
 
     // Release sessions and presence while Valkey/Postgres are still open: whoever closes the
     // app shuts those down right after `app.close()` resolves.
@@ -53,16 +59,26 @@ export const gatewayPlugin = fp<GatewayOptions>(
       path,
       { websocket: true, preValidation: checkOrigin(webOrigins) },
       (socket, request) => {
+        if (limits) {
+          const releaseAddress = limits.admitAddress(request.ip)
+          if (!releaseAddress) {
+            socket.close(CloseCode.RateLimited, 'Too many connections')
+            return
+          }
+          socket.on('close', releaseAddress)
+        }
         const cookieAuth = request.authMethod === 'cookie' ? request.auth : null
         const connection = createConnection(
           {
             send: (text) => socket.send(text),
             close: (code, reason) => socket.close(code, reason),
+            bufferedAmount: () => socket.bufferedAmount,
           },
           cookieAuth,
           {
             ...deps,
             dispatcher,
+            ...(limits ? { admitUser: limits.admitUser } : {}),
             onError: (error) => request.log.error({ err: error }, 'Gateway error'),
           },
         )

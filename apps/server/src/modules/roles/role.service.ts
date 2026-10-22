@@ -3,16 +3,21 @@ import {
   canManageRole,
   has,
   highestPosition,
+  MAX_ROLES_PER_GUILD,
   parsePermissions,
   Permission,
 } from '@chinchi/shared'
+import { sql } from 'drizzle-orm'
 
 import { guildTopic } from '../../events/event-bus'
 import { badRequest, forbidden, HttpError } from '../../http/http-error'
 import { isGuildChannel } from '../channels/channel.repository'
 import { toRole } from '../guilds/guild.mapper'
 import { activeTimeout } from '../guilds/guild.mapper'
+import { outranks } from '../guilds/outranks'
+import { createRoleRepository } from './role.repository'
 
+import type { Database } from '../../db/client'
 import type { EventBus } from '../../events/event-bus'
 import type { ChannelRepository } from '../channels/channel.repository'
 import type { GuildRepository } from '../guilds/guild.repository'
@@ -35,6 +40,7 @@ type CreateRoleInput = z.output<typeof createRoleRequestSchema>
 const NO_AUDIT: Pick<AuditLogService, 'record'> = { record: async () => undefined }
 
 export interface RoleServiceDeps {
+  readonly db: Database
   readonly roles: RoleRepository
   readonly overwrites: OverwriteRepository
   readonly channels: ChannelRepository
@@ -48,6 +54,8 @@ export interface RoleServiceDeps {
 }
 
 const unknownRole = () => new HttpError(404, 'UNKNOWN_ROLE', 'Unknown role')
+const unknownMember = () =>
+  new HttpError(404, 'UNKNOWN_MEMBER', 'That user is not a member of this server')
 const hierarchy = () =>
   forbidden('ROLE_HIERARCHY', 'You can only manage roles below your highest role')
 const invalidEveryone = (what: string) =>
@@ -60,6 +68,7 @@ const grantable = (actor: GuildAccess): bigint =>
     : actor.permissions
 
 export const createRoleService = ({
+  db,
   roles,
   overwrites,
   channels,
@@ -101,6 +110,41 @@ export const createRoleService = ({
     }
   }
 
+  /**
+   * Whose roles the caller may change: their own, or a member below their highest role (the
+   * owner: anyone). Without it, a manager could strip a senior of a role or pin one on them.
+   */
+  const assertChangeable = async (
+    guildId: Snowflake,
+    actor: GuildAccess,
+    actorId: Snowflake,
+    targetId: Snowflake,
+  ) => {
+    if (targetId === actorId) return
+    const target = await access.requireMember(guildId, targetId).catch((error: unknown) => {
+      if (error instanceof HttpError) throw unknownMember()
+      throw error
+    })
+    if (!outranks(actor, target)) {
+      throw forbidden('ROLE_HIERARCHY', 'You can only change the roles of members below you')
+    }
+  }
+
+  /**
+   * Position changes of a server's roles, one at a time: parallel ones would hand out the same
+   * position twice, and the hierarchy checks rely on positions.
+   */
+  const inRoleLock = <T>(
+    guildId: Snowflake,
+    work: (repository: RoleRepository) => Promise<T>,
+  ): Promise<T> =>
+    db.transaction(async (tx) => {
+      await tx.execute(
+        sql`SELECT pg_advisory_xact_lock(hashtextextended(${`roles:${guildId}`}, 0))`,
+      )
+      return work(createRoleRepository(tx))
+    })
+
   /** A role of this server that the caller may manage (by permission and hierarchy). */
   const manageable = async (guildId: Snowflake, roleId: Snowflake, userId: Snowflake) => {
     const actor = await access.requirePermission(guildId, userId, Permission.ManageRoles)
@@ -122,24 +166,25 @@ export const createRoleService = ({
       const permissions = parsePermissions(input.permissions)
       assertGrantable(actor, permissions)
 
-      const shifted = actor.roles
-        .filter((role) => role.position >= 1)
-        .map((role) => ({ id: role.id, position: role.position + 1 }))
-      await roles.setPositions(guildId, shifted)
-      const created = await roles.insert({
-        id: nextId(),
-        guildId,
-        name: input.name,
-        color: input.color,
-        position: 1,
-        permissions,
-        hoist: input.hoist,
-        mentionable: input.mentionable,
+      const { created, shifted } = await inRoleLock(guildId, async (repository) => {
+        if ((await repository.count(guildId)) >= MAX_ROLES_PER_GUILD) {
+          throw badRequest('TOO_MANY_ROLES', 'This server has as many roles as allowed')
+        }
+        const moved = await repository.shiftUp(guildId)
+        const role = await repository.insert({
+          id: nextId(),
+          guildId,
+          name: input.name,
+          color: input.color,
+          position: 1,
+          permissions,
+          hoist: input.hoist,
+          mentionable: input.mentionable,
+        })
+        return { created: role, shifted: moved }
       })
       await publish('GUILD_ROLE_CREATE', created)
-      for (const role of await roles.listByGuild(guildId)) {
-        if (shifted.some((s) => s.id === role.id)) await publish('GUILD_ROLE_UPDATE', role)
-      }
+      for (const role of shifted) await publish('GUILD_ROLE_UPDATE', role)
       await audit.record({
         guildId,
         action: 'role_create',
@@ -232,7 +277,7 @@ export const createRoleService = ({
         if (role.id === guildId) throw invalidEveryone('moved')
         if (!canManageRole(actor.context, role) || item.position >= ceiling) throw hierarchy()
       }
-      await roles.setPositions(guildId, items)
+      await inRoleLock(guildId, (repository) => repository.setPositions(guildId, items))
       const after = await roles.listByGuild(guildId)
       for (const role of after)
         if (items.some((item) => item.id === role.id)) await publish('GUILD_ROLE_UPDATE', role)
@@ -246,10 +291,12 @@ export const createRoleService = ({
       userId: Snowflake,
     ): Promise<void> {
       if (roleId === guildId) throw invalidEveryone('assigned')
-      await manageable(guildId, roleId, userId)
-      if (!(await guilds.findMember(guildId, targetId))) {
-        throw new HttpError(404, 'UNKNOWN_MEMBER', 'That user is not a member of this server')
-      }
+      const { actor, role } = await manageable(guildId, roleId, userId)
+      // Giving a role gives its permissions: only those the caller could grant themselves.
+      // New roles land at the bottom, so position alone would let a manager take Administrator.
+      assertGrantable(actor, role.permissions)
+      await assertChangeable(guildId, actor, userId, targetId)
+      if (!(await guilds.findMember(guildId, targetId))) throw unknownMember()
       await roles.addMemberRole(guildId, targetId, roleId)
       await publishMemberRoles(guildId, targetId)
       await audit.record({
@@ -268,7 +315,8 @@ export const createRoleService = ({
       userId: Snowflake,
     ): Promise<void> {
       if (roleId === guildId) throw invalidEveryone('removed')
-      await manageable(guildId, roleId, userId)
+      const { actor } = await manageable(guildId, roleId, userId)
+      await assertChangeable(guildId, actor, userId, targetId)
       await roles.removeMemberRole(guildId, targetId, roleId)
       await publishMemberRoles(guildId, targetId)
       await audit.record({

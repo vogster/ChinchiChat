@@ -18,6 +18,8 @@ describe('signing in with a QR code, on the new device', () => {
 
     expect(await screen.findByRole('img', { name: 'QR-код для входа' })).toBeVisible()
     expect(screen.getByText('KQ7M-2PXD')).toBeVisible()
+    // No number yet: it comes once a signed-in device opens the sign-in.
+    expect(screen.queryByRole('status', { name: 'Число для подтверждения' })).toBeNull()
     expect(screen.getByLabelText('Пароль')).toBeVisible()
     expect(screen.queryByRole('button', { name: 'Войти по QR-коду' })).toBeNull()
     // The new device sends its key, so encryption can follow it.
@@ -63,6 +65,19 @@ describe('signing in with a QR code, on the new device', () => {
     await vi.waitFor(() => expect(e2ee.recovery.useKey).toHaveBeenCalledWith(TEST_RECOVERY_KEY))
   })
 
+  it('shows the number to pick once the other device opened the sign-in', async () => {
+    const api = createFakeApi()
+    api.auth.qr.claim.mockResolvedValue({ state: 'scanned', match: 47 })
+    renderApp('/login', { api })
+
+    const number = await screen.findByRole('status', { name: 'Число для подтверждения' })
+    expect(number).toHaveTextContent('47')
+    expect(screen.getByText('Выберите это число на устройстве, где вы уже вошли')).toBeVisible()
+    // The QR has done its job: the number takes its place, and the scan hint goes with it.
+    expect(screen.queryByRole('img', { name: 'QR-код для входа' })).toBeNull()
+    expect(screen.queryByText(/Наведите камеру/)).toBeNull()
+  })
+
   it('starts over with a new QR when the old one is gone', async () => {
     const api = createFakeApi()
     api.auth.qr.claim.mockRejectedValueOnce(apiError(404, 'UNKNOWN_QR_LOGIN'))
@@ -92,12 +107,21 @@ describe('approving a QR sign-in, on a signed-in device', () => {
       name: 'Перенести зашифрованные беседы',
     })
     expect(handOver).toBeChecked()
+    // No single "yes": the number shown on the new device, among others.
+    expect(within(dialog).queryByRole('button', { name: 'Впустить' })).toBeNull()
+    expect(within(dialog).getByText('Какое число показано на новом устройстве?')).toBeVisible()
+    expect(
+      within(within(dialog).getByRole('group', { name: 'Число с нового устройства' }))
+        .getAllByRole('button')
+        .map((button) => button.textContent),
+    ).toEqual(['23', '47', '81'])
 
-    await user.click(within(dialog).getByRole('button', { name: 'Впустить' }))
+    await user.click(within(dialog).getByRole('button', { name: '47' }))
 
     expect(await within(dialog).findByText('Готово: устройство входит в аккаунт.')).toBeVisible()
     const [id, body] = api.auth.qr.approve.mock.calls[0] as [string, ApproveQrLoginRequest]
     expect(id).toBe(testQrLogin.id)
+    expect(body.match).toBe(47)
     expect(await openFromApprover(id, newDevice, body.approverKey ?? '', body.sealed ?? '')).toBe(
       TEST_RECOVERY_KEY,
     )
@@ -113,9 +137,25 @@ describe('approving a QR sign-in, on a signed-in device', () => {
     const dialog = await screen.findByRole('dialog', { name: 'Вход на новом устройстве' })
     await within(dialog).findByText('Chrome · Windows')
     expect(within(dialog).queryByRole('switch')).not.toBeInTheDocument()
-    await user.click(within(dialog).getByRole('button', { name: 'Впустить' }))
+    await user.click(within(dialog).getByRole('button', { name: '47' }))
 
-    await vi.waitFor(() => expect(api.auth.qr.approve).toHaveBeenCalledWith(testQrLogin.id, {}))
+    await vi.waitFor(() =>
+      expect(api.auth.qr.approve).toHaveBeenCalledWith(testQrLogin.id, { match: 47 }),
+    )
+  })
+
+  it('ends the sign-in when the wrong number is picked', async () => {
+    const api = createFakeApi({ user: testUser })
+    api.auth.qr.approve.mockRejectedValue(apiError(403, 'QR_LOGIN_MISMATCH'))
+    const { user } = renderApp(`/?qr=${testQrLogin.id}`, { api })
+
+    const dialog = await screen.findByRole('dialog', { name: 'Вход на новом устройстве' })
+    await user.click(await within(dialog).findByRole('button', { name: '23' }))
+
+    expect(await within(dialog).findByText(/Число не совпало/)).toBeVisible()
+    // Nothing more to pick: that sign-in is over.
+    expect(within(dialog).queryByRole('button', { name: '47' })).toBeNull()
+    expect(within(dialog).getByRole('button', { name: 'Понятно' })).toBeVisible()
   })
 
   it('does not hand encryption to a key other than the scanned one', async () => {

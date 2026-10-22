@@ -2,6 +2,7 @@ import { createFileRoute, Outlet } from '@tanstack/react-router'
 
 import { AdminDialog } from '../features/admin/admin-dialog'
 import { adminSearchSchema } from '../features/admin/admin-search'
+import { NewSignInNotice } from '../features/auth/new-sign-in-notice'
 import { QrApproveDialog } from '../features/auth/qr-approve-dialog'
 import { qrLoginSearchSchema } from '../features/auth/qr-login-search'
 import { requireUser } from '../features/auth/require-user'
@@ -33,6 +34,7 @@ export const Route = createFileRoute('/_app')({
       <E2eeProvider>
         <ApprovalDialog />
         <QrApproveDialog />
+        <NewSignInNotice />
         <UnreadBadge />
         <VoiceProvider>
           <PushToTalk />

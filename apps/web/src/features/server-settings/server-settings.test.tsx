@@ -266,15 +266,43 @@ describe('server settings: members', () => {
     ).toBeVisible()
   })
 
-  it('does not offer roles above the manager', async () => {
-    renderApp(MEMBERS_URL, { api: asManager() })
+  it('offers only roles below the manager, with nothing the manager lacks', async () => {
+    const api = asManager()
+    api.guilds.get.mockResolvedValue({
+      guild: {
+        ...managerGuild,
+        roles: [
+          ...managerGuild.roles,
+          {
+            ...moderators,
+            id: '515',
+            name: 'Помощники',
+            position: 1,
+            hoist: false,
+            permissions: String(Permission.KickMembers),
+          },
+        ],
+      },
+    })
+    renderApp(MEMBERS_URL, { api })
 
+    // «Админы» are above Carol; «Модераторы» can manage messages, which she can't.
     const select = await screen.findByRole('combobox', { name: 'Добавить роль участнику alice' })
     expect(
       within(select)
         .getAllByRole('option')
         .map((o) => o.textContent),
-    ).toEqual(['Добавить роль', 'Модераторы'])
+    ).toEqual(['Добавить роль', 'Помощники'])
+  })
+
+  it("leaves alone the roles of members at or above the manager's rank", async () => {
+    renderApp(MEMBERS_URL, { api: asManager() })
+
+    // Bob owns this server: his roles are not Carol's to change.
+    const bobRoles = await screen.findByRole('list', { name: 'Роли участника Боб' })
+    expect(within(bobRoles).getByText('Модераторы')).toBeVisible()
+    expect(within(bobRoles).queryByRole('button')).toBeNull()
+    expect(screen.queryByRole('combobox', { name: 'Добавить роль участнику Боб' })).toBeNull()
   })
 })
 

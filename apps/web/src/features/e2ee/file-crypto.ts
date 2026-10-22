@@ -18,9 +18,22 @@ export interface FileSecret {
 
 const ALGORITHM = 'AES-GCM'
 const IV_BYTES = 12
+/** AES-GCM appends a 16-byte authentication tag. */
+const TAG_BYTES = 16
 
-/** Copies into a buffer of its own, as WebCrypto wants (not a view into something shared). */
-const own = (bytes: Uint8Array): Uint8Array<ArrayBuffer> => new Uint8Array(bytes)
+/** How big the ciphertext of a plain file of `size` bytes is. */
+export const sealedSize = (size: number) => size + TAG_BYTES
+
+/**
+ * Bytes in a buffer of their own, as WebCrypto wants (not a view into something shared); copied
+ * only when they aren't already: a file can be large.
+ */
+const own = (bytes: Uint8Array): Uint8Array<ArrayBuffer> =>
+  bytes.buffer instanceof ArrayBuffer &&
+  bytes.byteOffset === 0 &&
+  bytes.byteLength === bytes.buffer.byteLength
+    ? (bytes as Uint8Array<ArrayBuffer>)
+    : new Uint8Array(bytes)
 
 /** Encrypts a file for upload; the secret goes into the message. */
 export const encryptFile = async (file: File): Promise<{ blob: Blob; file: FileSecret }> => {
@@ -45,7 +58,7 @@ export const encryptFile = async (file: File): Promise<{ blob: Blob; file: FileS
 export const decryptFile = async (
   ciphertext: Uint8Array,
   { key, iv }: Pick<FileSecret, 'key' | 'iv'>,
-): Promise<Uint8Array> => {
+): Promise<Uint8Array<ArrayBuffer>> => {
   const imported = await crypto.subtle.importKey('raw', own(fromBase64(key)), ALGORITHM, false, [
     'decrypt',
   ])

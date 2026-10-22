@@ -16,7 +16,7 @@ const { app, db, redis, close } = createTestApp({
 
 const call = (
   cookie: string | null,
-  method: 'GET' | 'POST' | 'PATCH',
+  method: 'GET' | 'POST' | 'PUT' | 'PATCH',
   url: string,
   payload?: object,
 ) =>
@@ -58,6 +58,14 @@ describe('requiring a confirmed email', () => {
     const bobId = (await call(bob, 'GET', '/users/@me')).json().data.user.id as string
     const dm = await call(alice, 'POST', '/users/@me/channels', { recipientIds: [bobId] })
     expect(dm.json().code).toBe('EMAIL_NOT_VERIFIED')
+    // By id rather than by name, the same: no friend request.
+    const byId = await call(alice, 'PUT', `/users/@me/relationships/${bobId}`, { type: 'friend' })
+    expect(byId.json().code).toBe('EMAIL_NOT_VERIFIED')
+    // Blocking reaches nobody: it stays open to everyone.
+    expect(
+      (await call(alice, 'PUT', `/users/@me/relationships/${bobId}`, { type: 'blocked' }))
+        .statusCode,
+    ).toBe(200)
     // Reading and the account itself still work.
     expect((await call(alice, 'GET', '/users/@me')).statusCode).toBe(200)
 
@@ -70,6 +78,8 @@ describe('requiring a confirmed email', () => {
   it('is an instance setting admins can turn off, shown in the public instance info', async () => {
     const admin = (await registerUser(app, { username: 'admin', email: 'admin@example.com' }))
       .cookie as string
+    // The designated admin runs the instance once the email is confirmed.
+    await verify(admin, 'admin@example.com')
     const carol = (await registerUser(app, { username: 'carol', email: 'carol@example.com' }))
       .cookie as string
     expect((await call(null, 'GET', '/instance')).json().data.instance.requireVerifiedEmail).toBe(

@@ -61,6 +61,7 @@ export const MentionResolverProvider = ({
         unknownRole: t('markdown.unknownRole'),
         unknownChannel: t('markdown.unknownChannel'),
         showSpoiler: t('markdown.showSpoiler'),
+        qrSignInLink: t('markdown.qrSignInLink'),
       },
     }
   }, [guildId, inGuild, guild, members, people, t])

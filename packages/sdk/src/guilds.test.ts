@@ -221,6 +221,7 @@ const DATA: Record<string, unknown> = {
       code: 'KQ7M-2PXD',
       url: 'https://chat.example.com/?qr=abcdefghijklmnop',
       expiresAt: '2026-10-21T10:02:00.000Z',
+      match: 47,
     },
   },
   qrInfo: {
@@ -230,6 +231,7 @@ const DATA: Record<string, unknown> = {
       ipAddress: '203.0.113.5',
       createdAt: '2026-10-21T10:00:00.000Z',
       publicKey: null,
+      choices: [23, 47, 81],
     },
   },
   qrClaim: { state: 'pending' },
@@ -265,7 +267,7 @@ const cases: Case[] = [
   ],
   [
     'auth.qr.approve',
-    (api) => api.auth.qr.approve('abcdefghijklmnop', {}),
+    (api) => api.auth.qr.approve('abcdefghijklmnop', { match: 47 }),
     'POST',
     '/auth/qr/abcdefghijklmnop/approve',
     null,

@@ -32,6 +32,10 @@ const letIn = async (who: E2eeClient, ownerId: string) => {
   for (const device of person?.newDevices ?? []) await who.safety.acceptDevice(ownerId, device.id)
 }
 
+/** Commits posted so far, in every conversation. */
+const commitCount = (delivery: ReturnType<typeof createFakeDelivery>) =>
+  delivery.handshakes.filter((h) => h.kind === 'commit').length
+
 describe('e2ee client', () => {
   it('sets up a conversation the other side joins, and both read each other', async () => {
     const { client } = setup()
@@ -278,6 +282,140 @@ describe('e2ee client', () => {
     expect(await carolPhone.read(group, await bob.send(group, 'От Боба'))).toMatchObject({
       payload: { text: 'От Боба' },
     })
+  })
+
+  it('in a DM, a device the other person let in stays: its owner does not take it out again', async () => {
+    const { client, delivery } = setup()
+    const alice = client(ALICE).client
+    const bob = client(BOB).client
+    await bob.ready()
+    await alice.open(DM)
+
+    // Bob's unapproved phone: Alice compares its code and lets it in.
+    const bobPhone = client(BOB, 'Телефон').client
+    await bobPhone.ready()
+    await letIn(alice, BOB)
+    await alice.open(DM)
+    // Bob's laptop does not let it in itself, but leaves it be: Alice did.
+    await bob.devicesChanged(BOB)
+    await bob.open(DM)
+    const settled = commitCount(delivery)
+    await alice.open(DM)
+    await bob.open(DM)
+
+    expect(commitCount(delivery)).toBe(settled)
+    expect(await bobPhone.read(DM, await bob.send(DM, 'С ноутбука'))).toMatchObject({
+      payload: { text: 'С ноутбука' },
+    })
+  })
+
+  it('stops adding back a device another member keeps taking out', async () => {
+    const { client, delivery } = setup()
+    const alice = client(ALICE).client
+    const bob = client(BOB).client
+    await bob.ready()
+    await alice.open(DM)
+    // Alice's tablet, let in by Bob.
+    const aliceTablet = client(ALICE, 'Планшет').client
+    await aliceTablet.ready()
+    await letIn(bob, ALICE)
+    await bob.open(DM)
+    await aliceTablet.open(DM)
+    // Bob's phone: Alice's laptop lets it in, her tablet does not (each keeps its own consent).
+    const bobPhone = client(BOB, 'Телефон').client
+    await bobPhone.ready()
+    await letIn(alice, BOB)
+    await aliceTablet.devicesChanged(BOB)
+
+    // Every commit wakes the other up (a handshake): the laptop adds the phone, the tablet
+    // takes it out. It has to settle rather than go on for ever.
+    for (let round = 0; round < 4; round += 1) {
+      await alice.open(DM)
+      await aliceTablet.open(DM)
+    }
+    const settled = commitCount(delivery)
+    for (let round = 0; round < 3; round += 1) {
+      await alice.open(DM)
+      await aliceTablet.open(DM)
+    }
+
+    expect(commitCount(delivery)).toBe(settled)
+  })
+
+  it('in a group, takes in no one the server slips into the members: nobody here added them', async () => {
+    const { client } = setup()
+    const CAROL = '3'
+    const MALLORY = '9'
+    const group = { id: '602', memberIds: [ALICE, BOB, CAROL] }
+    const alice = client(ALICE).client
+    const bob = client(BOB).client
+    const carol = client(CAROL).client
+    const mallory = client(MALLORY).client
+    await Promise.all([bob.ready(), carol.ready(), mallory.ready()])
+    await alice.open(group)
+    await bob.open(group)
+
+    // The server lists Mallory as a member; no one in the group added her.
+    const slipped = { ...group, memberIds: [ALICE, BOB, CAROL, MALLORY] }
+    await alice.open(slipped)
+    await bob.open(slipped)
+    const sent = await alice.send(slipped, 'Только для своих')
+
+    expect(await mallory.read(slipped, sent)).toBeNull()
+    expect(await carol.read(slipped, sent)).toMatchObject({ payload: { text: 'Только для своих' } })
+    expect((await bob.membership(slipped)).pending).toEqual([MALLORY])
+    expect((await bob.membership(slipped)).notices).toEqual([])
+  })
+
+  it('in a group, takes in whom this device added, and tells the others who added whom', async () => {
+    const { client } = setup()
+    const CAROL = '3'
+    const DAN = '4'
+    const group = { id: '603', memberIds: [ALICE, BOB, CAROL] }
+    const alice = client(ALICE).client
+    const bob = client(BOB).client
+    const carol = client(CAROL).client
+    const dan = client(DAN).client
+    await Promise.all([bob.ready(), carol.ready(), dan.ready()])
+    await alice.open(group)
+    await bob.open(group)
+
+    const withDan = { ...group, memberIds: [ALICE, BOB, CAROL, DAN] }
+    await alice.invited(group.id, [DAN])
+    await alice.open(withDan)
+    const sent = await alice.send(withDan, 'Привет, Дэн')
+
+    expect(await dan.read(withDan, sent)).toMatchObject({ payload: { text: 'Привет, Дэн' } })
+    await bob.open(withDan)
+    const { notices, pending } = await bob.membership(withDan)
+    expect(pending).toEqual([])
+    expect(notices).toEqual([{ id: expect.any(String), byUserId: ALICE, userIds: [DAN] }])
+    await bob.dismissNotice(withDan.id, notices[0]?.id ?? '')
+    expect((await bob.membership(withDan)).notices).toEqual([])
+    // A member's new device still goes in as before: Dan is one of them now.
+    const danPhone = client(DAN, 'Телефон').client
+    await danPhone.ready()
+    await letIn(bob, DAN)
+    await bob.open(withDan)
+    expect(await danPhone.read(withDan, await bob.send(withDan, 'Всем'))).toMatchObject({
+      payload: { text: 'Всем' },
+    })
+  })
+
+  it('forgets a conversation deleted for everyone: its text and keys leave this device', async () => {
+    const { client } = setup()
+    const alice = client(ALICE).client
+    const bobSide = client(BOB)
+    await bobSide.client.ready()
+    await alice.open(DM)
+    const sent = await alice.send(DM, 'Удалим потом')
+    expect(await bobSide.client.read(DM, sent)).toMatchObject({ payload: { text: 'Удалим потом' } })
+
+    await bobSide.client.forgetConversation(DM.id)
+
+    expect(await bobSide.client.search(DM, 'Удалим')).toEqual([])
+    expect(await bobSide.store.get(`plain:${sent.id}`)).toBeUndefined()
+    expect(await bobSide.store.get(`conv:${DM.id}`)).toBeUndefined()
   })
 
   it('never encrypts for someone removed from a group, even before anyone reopens it', async () => {

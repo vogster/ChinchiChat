@@ -26,8 +26,19 @@ const say = (actor: TestActor, content: string) =>
     payload: { content },
   })
 
-const exportOf = (actor: TestActor) =>
-  app.inject({ method: 'GET', url: '/api/v1/users/@me/export', headers: actor.headers })
+const ticketFor = (actor: TestActor, password = 'password123') =>
+  app.inject({
+    method: 'POST',
+    url: '/api/v1/users/@me/export',
+    headers: actor.headers,
+    payload: { password },
+  })
+
+const download = (actor: TestActor, ticket: string) =>
+  app.inject({ method: 'GET', url: `/api/v1/users/@me/export/${ticket}`, headers: actor.headers })
+
+const exportOf = async (actor: TestActor) =>
+  download(actor, (await ticketFor(actor)).json().data.ticket)
 
 beforeEach(async () => {
   await resetState(db, redis)
@@ -74,8 +85,34 @@ describe('data export', () => {
     expect(files.has('README.txt')).toBe(true)
   })
 
+  it('takes the password first; the ticket works once and only for its owner', async () => {
+    const plain = await app.inject({
+      method: 'GET',
+      url: '/api/v1/users/@me/export',
+      headers: member.headers,
+    })
+    expect(plain.statusCode).toBe(404)
+    const wrong = await ticketFor(member, 'not-the-password')
+    expect(wrong.json().code).toBe('INVALID_CURRENT_PASSWORD')
+
+    const { ticket } = (await ticketFor(member)).json().data
+    expect((await download(member, ticket)).statusCode).toBe(200)
+    const again = await download(member, ticket)
+    expect(again.statusCode).toBe(403)
+    expect(again.json().code).toBe('INVALID_EXPORT_TICKET')
+
+    const theirs = (await ticketFor(member)).json().data.ticket
+    expect((await download(owner, theirs)).json().code).toBe('INVALID_EXPORT_TICKET')
+  })
+
   it('requires signing in', async () => {
-    const response = await app.inject({ method: 'GET', url: '/api/v1/users/@me/export' })
-    expect(response.statusCode).toBe(401)
+    const asked = await app.inject({
+      method: 'POST',
+      url: '/api/v1/users/@me/export',
+      payload: { password: 'password123' },
+    })
+    expect(asked.statusCode).toBe(401)
+    const fetched = await app.inject({ method: 'GET', url: '/api/v1/users/@me/export/abc' })
+    expect(fetched.statusCode).toBe(401)
   })
 })

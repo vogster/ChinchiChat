@@ -518,3 +518,66 @@ test('an unapproved device joins only when the other person lets it in by its co
   await bob.context.close()
   await alice.context.close()
 })
+
+test('an encrypted conversation is deleted for both, and a new one starts afresh', async ({
+  browser,
+}) => {
+  const alice = await openAs(browser)
+  const bob = await openAs(browser)
+  const aliceUser = newUser()
+  const bobUser = newUser()
+  await registerAndOpenHome(alice.page, aliceUser)
+  await registerAndOpenHome(bob.page, bobUser)
+  await befriend(alice.page, bob.page, aliceUser.username, bobUser.username)
+
+  const startWithBob = async () => {
+    await alice.page.goto('/')
+    await alice.page
+      .getByRole('complementary', { name: 'Личные сообщения' })
+      .getByRole('button', { name: 'Создать группу' })
+      .click()
+    const dialog = alice.page.getByRole('dialog', { name: 'Новая группа' })
+    await dialog.getByLabel(bobUser.username, { exact: true }).check()
+    await dialog.getByRole('switch', { name: 'Зашифрованная беседа' }).click()
+    await dialog.getByRole('button', { name: 'Создать группу' }).click()
+    await expect(alice.page.getByText('Сквозное шифрование')).toBeVisible()
+    return alice.page.url().split('/').at(-1) as string
+  }
+  const say = async (page: typeof alice.page, to: string, text: string) => {
+    const composer = page.getByRole('textbox', { name: `Написать @${to}` })
+    await composer.fill(text)
+    await composer.press('Enter')
+  }
+
+  const first = await startWithBob()
+  await saveRecoveryKey(alice.page)
+  await say(alice.page, bobUser.username, 'Это скоро удалим')
+  await bob.page.goto(`/channels/@me/${first}`)
+  await saveRecoveryKey(bob.page)
+  await expect(bob.page.getByText('Это скоро удалим')).toBeVisible()
+
+  // Alice deletes it: it is gone for both, and from the server.
+  await alice.page.getByRole('button', { name: 'Удалить беседу' }).click()
+  const confirm = alice.page.getByRole('dialog', { name: 'Удалить зашифрованную беседу?' })
+  await confirm.getByRole('button', { name: 'Удалить' }).click()
+  await expect(alice.page).toHaveURL(/\/$/)
+  await expect(bob.page.getByText('Эту зашифрованную беседу удалили.')).toBeVisible()
+  await expect(
+    bob.page.getByRole('complementary', { name: 'Личные сообщения' }).getByRole('link', {
+      name: /зашифрованная беседа/,
+    }),
+  ).toHaveCount(0)
+  const gone = await alice.page.evaluate(
+    async (id) => (await fetch(`/api/v1/channels/${id}/messages`)).status,
+    first,
+  )
+  expect(gone).toBe(404)
+
+  // A new encrypted conversation with Bob is a new one, and it works.
+  const second = await startWithBob()
+  expect(second).not.toBe(first)
+  await say(alice.page, bobUser.username, 'Начнём заново')
+  await bob.page.goto(`/channels/@me/${second}`)
+  await expect(bob.page.getByText('Начнём заново')).toBeVisible()
+  await expect(bob.page.getByText('Это скоро удалим')).toHaveCount(0)
+})

@@ -26,7 +26,8 @@ export const createDesktopApi = ({ instanceUrl, fetch, token }: DesktopApiOption
   const keeping =
     <
       A extends unknown[],
-      R extends { token?: string | undefined } | { mfaTicket: string } | { state: 'pending' },
+      R extends
+        { token?: string | undefined } | { mfaTicket: string } | { state: 'pending' | 'scanned' },
     >(
       call: (...args: A) => Promise<R>,
     ) =>

@@ -1,3 +1,4 @@
+import { Readable } from 'node:stream'
 import {
   CopyObjectCommand,
   CreateBucketCommand,
@@ -176,6 +177,13 @@ export const createObjectStorage = (config: StorageConfig) => {
     async read(key: string): Promise<Uint8Array> {
       const object = await client.send(new GetObjectCommand({ Bucket, Key: key }))
       return object.Body ? object.Body.transformToByteArray() : new Uint8Array()
+    },
+
+    /** The object as a stream, for files too large to hold in memory (data exports). */
+    async readStream(key: string): Promise<Readable> {
+      const object = await client.send(new GetObjectCommand({ Bucket, Key: key }))
+      // In Node the SDK hands the body over as a readable stream.
+      return object.Body instanceof Readable ? object.Body : Readable.from([])
     },
 
     async put(key: string, body: Uint8Array, contentType: string): Promise<void> {

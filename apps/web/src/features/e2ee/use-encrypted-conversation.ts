@@ -22,9 +22,13 @@ export const useEncryptedChannel = (
   return useMemo(
     () =>
       channel.encrypted && myId
-        ? { id: channel.id, memberIds: [myId, ...ids.split(',').filter(Boolean)] }
+        ? {
+            id: channel.id,
+            memberIds: [myId, ...ids.split(',').filter(Boolean)],
+            group: channel.type === 'group_dm',
+          }
         : undefined,
-    [channel.encrypted, channel.id, myId, ids],
+    [channel.encrypted, channel.id, channel.type, myId, ids],
   )
 }
 

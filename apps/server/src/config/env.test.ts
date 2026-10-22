@@ -28,12 +28,23 @@ describe('loadConfig', () => {
       requireVerifiedEmail: false,
       trustProxy: false,
       gatewayHeartbeatMs: 41_250,
+      gatewayMaxConnectionsPerAddress: 100,
       linkPreviews: true,
       storage: undefined,
       voice: undefined,
       uploadMaxBytes: 25 * 1024 * 1024,
       metrics: undefined,
     })
+  })
+
+  it('takes the cap on gateway connections from one address (offices behind one NAT)', () => {
+    expect(
+      loadConfig({ ...REQUIRED, GATEWAY_MAX_CONNECTIONS_PER_ADDRESS: '500' })
+        .gatewayMaxConnectionsPerAddress,
+    ).toBe(500)
+    expect(() => loadConfig({ ...REQUIRED, GATEWAY_MAX_CONNECTIONS_PER_ADDRESS: '0' })).toThrow(
+      /GATEWAY_MAX_CONNECTIONS_PER_ADDRESS/,
+    )
   })
 
   it('serves metrics only when a port is given, on localhost by default', () => {

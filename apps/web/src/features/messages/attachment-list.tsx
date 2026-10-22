@@ -3,7 +3,13 @@ import { Download, FileText } from 'lucide-react'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
+import { useApi } from '../../lib/api-context'
+import { useMediaBase, useMediaUrl } from '../media/media-base'
+import { useCancellableDownload } from '../media/use-cancellable-download'
+import { useProtectedMedia } from '../media/use-protected-media'
+import { useSaveFile } from '../shell/use-save-file'
 import { VoicePlayer } from '../voice-messages/voice-player'
+import { DownloadingFile } from './downloading-file'
 import { formatFileSize } from './format-size'
 import { ImageViewer } from './image-viewer'
 
@@ -26,15 +32,107 @@ const fit = (width: number | null, height: number | null) => {
   return { width: Math.round(width * scale), height: Math.round(height * scale) }
 }
 
-const fetchBlob = async (url: string) => {
-  const response = await fetch(url)
-  if (!response.ok) throw new Error(`Download failed: ${response.status}`)
-  return response.blob()
+/** The picture in the feed: its preview, or the original while the preview is not ready. */
+const AttachmentImage = ({
+  attachment,
+  onOpen,
+}: {
+  attachment: Attachment
+  onOpen: () => void
+}) => {
+  const { t } = useTranslation()
+  const src = useProtectedMedia(attachment.previewUrl ?? attachment.url)
+  return (
+    <button
+      type="button"
+      aria-label={t('messages.openImage', { name: attachment.filename })}
+      onClick={onOpen}
+      className="block overflow-hidden rounded-[20px] bg-field"
+    >
+      <img
+        data-native-menu
+        src={src ?? undefined}
+        alt={attachment.filename}
+        loading="lazy"
+        {...fit(attachment.width, attachment.height)}
+        className="max-h-[300px] max-w-[min(400px,100%)] object-contain"
+      />
+    </button>
+  )
+}
+
+/**
+ * Any other file, as a download. The desktop page cannot hand the session to a plain link,
+ * so there the bytes come through the API, with their progress in place of the link, and are
+ * saved under the file's name.
+ */
+const FileLink = ({ attachment }: { attachment: Attachment }) => {
+  const { i18n } = useTranslation()
+  const api = useApi()
+  const media = useMediaUrl()
+  const viaApi = useMediaBase() !== null
+  const save = useSaveFile()
+  const { state, progress, width, start, cancel, trigger, progressBox } =
+    useCancellableDownload<HTMLAnchorElement>({
+      expectedBytes: attachment.size,
+      load: (options) => api.media.download(attachment.url, options),
+      save: (blob) => save(attachment.filename, blob),
+    })
+  if (state === 'loading') {
+    return (
+      <DownloadingFile
+        ref={progressBox}
+        name={attachment.filename}
+        progress={progress}
+        onCancel={cancel}
+        width={width}
+      />
+    )
+  }
+  return (
+    <a
+      ref={trigger}
+      href={media(attachment.url)}
+      download={attachment.filename}
+      aria-label={`${attachment.filename} (${formatFileSize(attachment.size, i18n.language)})`}
+      aria-invalid={state === 'failed' || undefined}
+      onClick={
+        viaApi
+          ? (event) => {
+              event.preventDefault()
+              void start()
+            }
+          : undefined
+      }
+      className="group/file flex w-[min(340px,100%)] items-center gap-3 rounded-[18px] bg-field p-2.5 transition hover:brightness-105"
+    >
+      <span
+        aria-hidden
+        className="grid size-[42px] shrink-0 place-items-center rounded-field bg-accent-soft text-accent-text"
+      >
+        <FileText className="size-5" />
+      </span>
+      <span className="min-w-0 flex-1">
+        <span className="block truncate font-medium">{attachment.filename}</span>
+        <span className="block text-xs text-faint">
+          {[formatFileSize(attachment.size, i18n.language), extensionOf(attachment.filename)]
+            .filter(Boolean)
+            .join(' · ')}
+        </span>
+      </span>
+      <span
+        aria-hidden
+        className="grid size-9 shrink-0 place-items-center rounded-full bg-stage text-muted group-hover/file:text-text"
+      >
+        <Download className="size-4" />
+      </span>
+    </a>
+  )
 }
 
 /** A message's files: images open in the viewer, voice plays here, everything else downloads. */
 export const AttachmentList = ({ attachments }: { attachments: readonly Attachment[] }) => {
-  const { t, i18n } = useTranslation()
+  const api = useApi()
   const [viewing, setViewing] = useState<Attachment | null>(null)
   if (attachments.length === 0) return null
 
@@ -43,54 +141,14 @@ export const AttachmentList = ({ attachments }: { attachments: readonly Attachme
       {attachments.map((attachment) => (
         <li key={attachment.id}>
           {isInlineAudio(attachment.contentType) ? (
-            <VoicePlayer name={attachment.filename} load={() => fetchBlob(attachment.url)} />
+            <VoicePlayer
+              name={attachment.filename}
+              load={() => api.media.download(attachment.url)}
+            />
           ) : isInlineImage(attachment.contentType) ? (
-            <button
-              type="button"
-              aria-label={t('messages.openImage', { name: attachment.filename })}
-              onClick={() => setViewing(attachment)}
-              className="block overflow-hidden rounded-[20px] bg-field"
-            >
-              <img
-                data-native-menu
-                src={attachment.previewUrl ?? attachment.url}
-                alt={attachment.filename}
-                loading="lazy"
-                {...fit(attachment.width, attachment.height)}
-                className="max-h-[300px] max-w-[min(400px,100%)] object-contain"
-              />
-            </button>
+            <AttachmentImage attachment={attachment} onOpen={() => setViewing(attachment)} />
           ) : (
-            <a
-              href={attachment.url}
-              download={attachment.filename}
-              aria-label={`${attachment.filename} (${formatFileSize(attachment.size, i18n.language)})`}
-              className="group/file flex w-[min(340px,100%)] items-center gap-3 rounded-[18px] bg-field p-2.5 transition hover:brightness-105"
-            >
-              <span
-                aria-hidden
-                className="grid size-[42px] shrink-0 place-items-center rounded-field bg-accent-soft text-accent-text"
-              >
-                <FileText className="size-5" />
-              </span>
-              <span className="min-w-0 flex-1">
-                <span className="block truncate font-medium">{attachment.filename}</span>
-                <span className="block text-xs text-faint">
-                  {[
-                    formatFileSize(attachment.size, i18n.language),
-                    extensionOf(attachment.filename),
-                  ]
-                    .filter(Boolean)
-                    .join(' · ')}
-                </span>
-              </span>
-              <span
-                aria-hidden
-                className="grid size-9 shrink-0 place-items-center rounded-full bg-stage text-muted group-hover/file:text-text"
-              >
-                <Download className="size-4" />
-              </span>
-            </a>
+            <FileLink attachment={attachment} />
           )}
         </li>
       ))}

@@ -48,7 +48,7 @@ export const InstancePicker = ({ fetch, initialUrl, onChosen }: InstancePickerPr
   }
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-main p-6 text-normal">
+    <main className="flex min-h-full items-center justify-center bg-main p-6 text-normal">
       <form
         className="flex w-full max-w-sm flex-col gap-4 rounded-lg bg-field p-6 shadow-lg"
         onSubmit={(event) => void submit(event)}

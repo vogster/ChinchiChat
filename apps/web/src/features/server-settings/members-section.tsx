@@ -16,16 +16,31 @@ import type { GuildDetail, Member, Role } from '@chinchi/shared'
 interface MemberRowProps {
   readonly member: Member
   readonly roles: readonly Role[]
+  /** May remove this role (if the member's roles are the user's to change at all). */
   readonly canManage: (role: Role) => boolean
+  /** May give this role. */
+  readonly canAssign: (role: Role) => boolean
+  /** The member is the user, or below them: their roles may change. */
+  readonly changeable: boolean
   readonly onAdd: (roleId: string) => void
   readonly onRemove: (roleId: string) => void
 }
 
-const MemberRow = ({ member, roles, canManage, onAdd, onRemove }: MemberRowProps) => {
+const MemberRow = ({
+  member,
+  roles,
+  canManage,
+  canAssign,
+  changeable,
+  onAdd,
+  onRemove,
+}: MemberRowProps) => {
   const { t } = useTranslation()
   const name = member.user.displayName ?? member.user.username
   const held = roles.filter((role) => member.roleIds.includes(role.id))
-  const addable = roles.filter((role) => !member.roleIds.includes(role.id) && canManage(role))
+  const addable = changeable
+    ? roles.filter((role) => !member.roleIds.includes(role.id) && canAssign(role))
+    : []
   const color = memberColor(roles, member.roleIds)
 
   return (
@@ -55,7 +70,7 @@ const MemberRow = ({ member, roles, canManage, onAdd, onRemove }: MemberRowProps
                 style={role.color ? { backgroundColor: toHexColor(role.color) } : undefined}
               />
               {role.name}
-              {canManage(role) ? (
+              {changeable && canManage(role) ? (
                 <button
                   type="button"
                   aria-label={t('serverSettings.members.removeRole', { role: role.name, name })}
@@ -88,7 +103,10 @@ const MemberRow = ({ member, roles, canManage, onAdd, onRemove }: MemberRowProps
   )
 }
 
-/** Every member with their roles; roles below the user's highest can be added or removed. */
+/**
+ * Every member with their roles. Roles below the user's highest, carrying nothing the user lacks,
+ * can be given; only to themselves and members below them.
+ */
 export const MembersSection = ({ guild }: { guild: GuildDetail }) => {
   const { t } = useTranslation()
   const api = useApi()
@@ -110,6 +128,11 @@ export const MembersSection = ({ guild }: { guild: GuildDetail }) => {
               member={member}
               roles={roles}
               canManage={permissions.canManageRole}
+              canAssign={permissions.canAssignRole}
+              changeable={permissions.canChangeRolesOf({
+                userId: member.user.id,
+                roleIds: member.roleIds,
+              })}
               onAdd={(roleId) => actions.assign.mutate({ userId: member.user.id, roleId })}
               onRemove={(roleId) => actions.unassign.mutate({ userId: member.user.id, roleId })}
             />

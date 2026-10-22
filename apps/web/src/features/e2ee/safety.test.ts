@@ -112,7 +112,7 @@ describe('checking who is on the other end', () => {
     // Bob lost everything, key included, and starts over on a new browser — or someone posing
     // as him did: the new key signs the new browser, but Alice never saw that key.
     const fresh = client(BOB, 'Новый браузер')
-    await fresh.recovery.reset()
+    await fresh.recovery.reset({ password: 'password123' })
     await alice.devicesChanged(BOB)
 
     expect(await fresh.recovery.key()).not.toBe(oldKey)

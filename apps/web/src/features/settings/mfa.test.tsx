@@ -49,7 +49,11 @@ describe('two-factor sign-in settings', () => {
     await user.click(await screen.findByRole('button', { name: 'Новые коды восстановления' }))
     const dialog = await screen.findByRole('dialog', { name: 'Новые коды восстановления' })
     await user.type(within(dialog).getByLabelText('Пароль', { exact: true }), 'password123')
-    await user.type(within(dialog).getByLabelText('Код подтверждения', { exact: true }), '654321')
+    await user.click(within(dialog).getByRole('button', { name: 'Далее' }))
+    await user.type(
+      await within(dialog).findByLabelText('Код подтверждения', { exact: true }),
+      '654321',
+    )
     await user.click(within(dialog).getByRole('button', { name: 'Продолжить' }))
     await user.click(await within(dialog).findByRole('button', { name: 'Скачать коды' }))
 
@@ -71,7 +75,11 @@ describe('two-factor sign-in settings', () => {
     await user.click(await screen.findByRole('button', { name: 'Новые коды восстановления' }))
     let dialog = await screen.findByRole('dialog', { name: 'Новые коды восстановления' })
     await user.type(within(dialog).getByLabelText('Пароль', { exact: true }), 'password123')
-    await user.type(within(dialog).getByLabelText('Код подтверждения', { exact: true }), '654321')
+    await user.click(within(dialog).getByRole('button', { name: 'Далее' }))
+    await user.type(
+      await within(dialog).findByLabelText('Код подтверждения', { exact: true }),
+      '654321',
+    )
     await user.click(within(dialog).getByRole('button', { name: 'Продолжить' }))
     expect(await within(dialog).findByText('eeeee-fffff')).toBeVisible()
     expect(api.mfa.renewRecoveryCodes).toHaveBeenCalledWith({
@@ -83,8 +91,9 @@ describe('two-factor sign-in settings', () => {
     await user.click(await screen.findByRole('button', { name: 'Отключить 2FA' }))
     dialog = await screen.findByRole('dialog', { name: 'Отключить 2FA' })
     await user.type(within(dialog).getByLabelText('Пароль', { exact: true }), 'password123')
+    await user.click(within(dialog).getByRole('button', { name: 'Далее' }))
     await user.type(
-      within(dialog).getByLabelText('Код подтверждения', { exact: true }),
+      await within(dialog).findByLabelText('Код подтверждения', { exact: true }),
       'abcde-fghij',
     )
     await user.click(within(dialog).getByRole('button', { name: 'Отключить' }))

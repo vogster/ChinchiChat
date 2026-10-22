@@ -38,6 +38,25 @@ describe('encrypted payload', () => {
     expect(decodePayload(encode({ v: 1, text: 'старое' }))).toEqual({ v: 1, text: 'старое' })
   })
 
+  it('takes a file name from the sender only as a plain name, never a path', () => {
+    const payload = {
+      v: 1,
+      text: '',
+      files: [
+        {
+          ...file,
+          name: '..\\..\\AppData\\Roaming\\Microsoft\\Windows\\Start Menu\\Programs\\Startup\\update.bat',
+        },
+      ],
+    }
+
+    expect(decodePayload(encode(payload))?.files?.[0]?.name).toBe('update.bat')
+    expect(
+      decodePayload(encode({ ...payload, files: [{ ...file, name: 'invoice\u202Efdp.exe' }] }))
+        ?.files?.[0]?.name,
+    ).toBe('invoicefdp.exe')
+  })
+
   it('reads nothing it does not understand', () => {
     expect(decodePayload(encode({ v: 2, text: 'из будущего' }))).toBeNull()
     expect(decodePayload(new TextEncoder().encode('не json'))).toBeNull()

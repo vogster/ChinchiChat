@@ -1,3 +1,4 @@
+import { ApiError } from '@chinchi/sdk'
 import { act, screen, waitFor, within } from '@testing-library/react'
 import { beforeEach, describe, expect, it } from 'vitest'
 
@@ -159,10 +160,30 @@ describe('the recovery key', () => {
     )
     const dialog = await screen.findByRole('dialog', { name: 'Сбросить ключи шифрования?' })
     expect(dialog).toHaveTextContent('собеседники увидят')
-    e2ee.recovery.key.mockResolvedValue(TEST_RECOVERY_KEY)
-    await user.click(within(dialog).getByRole('button', { name: 'Сбросить' }))
+    const confirm = within(dialog).getByRole('button', { name: 'Сбросить' })
+    // A stolen session alone must not throw the keys away: it takes the password.
+    expect(confirm).toBeDisabled()
+    e2ee.recovery.reset.mockRejectedValueOnce(
+      new ApiError(400, 'INVALID_CURRENT_PASSWORD', 'Current password is incorrect'),
+    )
+    const password = within(dialog).getByLabelText('Пароль', { exact: true })
+    await user.type(password, 'wrong')
+    // The eye shows what was typed, and hides it again.
+    expect(password).toHaveAttribute('type', 'password')
+    await user.click(within(dialog).getByRole('button', { name: 'Показать пароль' }))
+    expect(password).toHaveAttribute('type', 'text')
+    expect(password).toHaveValue('wrong')
+    await user.click(within(dialog).getByRole('button', { name: 'Скрыть пароль' }))
+    expect(password).toHaveAttribute('type', 'password')
+    await user.click(confirm)
+    expect(await within(dialog).findByText('Текущий пароль указан неверно.')).toBeVisible()
 
-    expect(e2ee.recovery.reset).toHaveBeenCalled()
+    e2ee.recovery.key.mockResolvedValue(TEST_RECOVERY_KEY)
+    await user.clear(within(dialog).getByLabelText('Пароль', { exact: true }))
+    await user.type(within(dialog).getByLabelText('Пароль', { exact: true }), 'password123')
+    await user.click(confirm)
+
+    expect(e2ee.recovery.reset).toHaveBeenLastCalledWith({ password: 'password123' })
     await waitFor(() =>
       expect(
         screen.queryByRole('dialog', { name: 'Сбросить ключи шифрования?' }),

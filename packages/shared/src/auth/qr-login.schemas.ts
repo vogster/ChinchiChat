@@ -20,6 +20,14 @@ const opaque = (min: number, max: number) =>
 export const qrLoginIdSchema = opaque(16, 64)
 
 /**
+ * Once the approver opens the sign-in, the new device shows a two-digit number; the approver
+ * picks it among this many. Approving then takes the new device's screen, not just a link: one
+ * sent in a chat gets no number.
+ */
+export const QR_MATCH_CHOICES = 3
+export const qrMatchSchema = z.number().int().min(10).max(99)
+
+/**
  * The short code under the QR, for a device without a camera: 8 characters of Crockford
  * base32 ("KQ7M-2PXD"). Read case-insensitively, with or without the dash.
  */
@@ -52,11 +60,17 @@ export const qrLoginInfoSchema = z.object({
   createdAt: z.iso.datetime(),
   /** The new device's key as the server has it (trust it only when it came in the QR). */
   publicKey: x25519Key.nullable(),
+  /** The number on the new device among others, in an order fixed for this sign-in. */
+  choices: z.array(qrMatchSchema).length(QR_MATCH_CHOICES),
 })
 
-/** Yes, with the recovery key sealed for the new device when encryption is handed over. */
+/**
+ * Yes, with the number the new device shows (a wrong one ends the sign-in), and the recovery
+ * key sealed for the new device when encryption is handed over.
+ */
 export const approveQrLoginRequestSchema = z
   .strictObject({
+    match: qrMatchSchema,
     sealed: base64Schema(4096).optional(),
     approverKey: x25519Key.optional(),
   })
@@ -67,9 +81,13 @@ export const approveQrLoginRequestSchema = z
 
 export const claimQrLoginRequestSchema = z.strictObject({ secret: opaque(32, 128) })
 
-/** Still waiting, or signed in (with the sealed secrets when encryption was handed over). */
+/**
+ * Still waiting; opened by the approver (the new device shows the number to pick); or signed in
+ * (with the sealed secrets when encryption was handed over).
+ */
 export const qrLoginClaimSchema = z.union([
   z.object({ state: z.literal('pending') }),
+  z.object({ state: z.literal('scanned'), match: qrMatchSchema }),
   z.object({
     state: z.literal('approved'),
     user: currentUserSchema,
@@ -80,6 +98,18 @@ export const qrLoginClaimSchema = z.union([
   }),
 ])
 
+/**
+ * Someone signed in to the account by a QR (to all of its open sessions): the one that
+ * approved it knows the id and stays quiet, the others ask "was it you?".
+ */
+export const qrSignInEventSchema = z.object({
+  qrLoginId: qrLoginIdSchema,
+  userAgent: z.string().nullable(),
+  ipAddress: z.string().nullable(),
+  createdAt: z.iso.datetime(),
+})
+
+export type QrSignInEvent = z.infer<typeof qrSignInEventSchema>
 export type CreateQrLoginRequest = z.infer<typeof createQrLoginRequestSchema>
 export type QrLoginTicket = z.infer<typeof qrLoginTicketSchema>
 export type QrLoginInfo = z.infer<typeof qrLoginInfoSchema>

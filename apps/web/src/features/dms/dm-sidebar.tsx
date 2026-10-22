@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import { Link } from '@tanstack/react-router'
-import { Lock, Plus, Users } from 'lucide-react'
+import { Lock, Plus, ShieldAlert, Users } from 'lucide-react'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
@@ -8,6 +8,7 @@ import { UserPanel } from '../../components/layout/user-panel'
 import { Avatar } from '../../components/ui/avatar'
 import { PresenceDot } from '../../components/ui/presence-dot'
 import { useApi } from '../../lib/api-context'
+import { useEncryptionDowngrade } from '../e2ee/use-encryption-downgrade'
 import { useIncomingRequests } from '../friends/use-incoming-requests'
 import { formatMentionCount, useMentionCounts } from '../messages/mentions'
 import { isUnread, useReadStates } from '../messages/use-messages'
@@ -27,11 +28,12 @@ const countBadge =
   'grid h-5 min-w-5 shrink-0 place-items-center rounded-full bg-danger px-1.5 text-[11px] font-semibold text-danger-contrast'
 
 /** Under the name: encryption, the person's own status, or how many are in the group. */
-const useSubtitle = (channel: PrivateChannel) => {
+const useSubtitle = (channel: PrivateChannel, downgraded: boolean) => {
   const { t } = useTranslation()
   const [first] = channel.recipients
   const presence = usePresence(first?.id)
   const custom = useCustomStatus(channel.type === 'dm' ? first?.id : undefined)
+  if (downgraded) return t('e2ee.downgrade.badge')
   if (channel.encrypted) return t('e2ee.listSubtitle')
   if (channel.type === 'group_dm') {
     return t('dm.groupSize', { count: channel.recipients.length + 1 })
@@ -47,9 +49,12 @@ const DmRow = ({ channel }: { channel: PrivateChannel }) => {
   const name = privateChannelName(t, channel)
   const [first] = channel.recipients
   const status = usePresence(first?.id)
-  const subtitle = useSubtitle(channel)
+  // Seen encrypted here, now called plain by the server: never to be taken for a plain DM.
+  const downgraded = useEncryptionDowngrade(channel)
+  const subtitle = useSubtitle(channel, downgraded)
   const states = [
     channel.encrypted ? t('e2ee.listState') : null,
+    downgraded ? t('e2ee.downgrade.listState') : null,
     unread ? t('messages.unread') : null,
     mentions > 0 ? t('messages.mentionCount', { count: mentions }) : null,
   ].filter(Boolean)
@@ -90,8 +95,16 @@ const DmRow = ({ channel }: { channel: PrivateChannel }) => {
             {channel.encrypted ? (
               <Lock aria-hidden className="size-3.5 shrink-0 text-secure-text" />
             ) : null}
+            {downgraded ? (
+              <ShieldAlert aria-hidden className="size-3.5 shrink-0 text-danger" />
+            ) : null}
           </span>
-          <span className="block truncate text-[12.5px] text-faint">{subtitle}</span>
+          <span
+            data-downgraded={downgraded}
+            className="block truncate text-[12.5px] text-faint data-[downgraded=true]:text-danger"
+          >
+            {subtitle}
+          </span>
         </span>
         {mentions > 0 ? (
           <span

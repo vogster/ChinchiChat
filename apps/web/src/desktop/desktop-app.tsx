@@ -6,6 +6,7 @@ import { App } from '../app'
 import { createAppRouter } from '../router'
 import { createDesktopApi, createDesktopGateway } from './api'
 import { InstancePicker } from './instance-picker'
+import { TitleBar } from './title-bar'
 
 import type { Shell } from '../features/shell/shell-context'
 import type { DesktopSettings, DesktopSettingsStore } from './settings'
@@ -69,21 +70,7 @@ export const DesktopApp = ({ settings, initial, fetch, shell: shellFor }: Deskto
     [shellFor, settings],
   )
 
-  if (!connection) {
-    return (
-      <InstancePicker
-        fetch={fetch}
-        initialUrl={initial.instanceUrl}
-        onChosen={(chosen, name) => {
-          void settings.setInstanceUrl(chosen).then(() => {
-            document.title = `Chinchi — ${name}`
-            setConnection(connect(chosen, settings, fetch, null))
-          })
-        }}
-      />
-    )
-  }
-  return (
+  const content = connection ? (
     <App
       key={connection.instanceUrl}
       router={connection.router}
@@ -91,6 +78,25 @@ export const DesktopApp = ({ settings, initial, fetch, shell: shellFor }: Deskto
       api={connection.api}
       gateway={connection.gateway}
       shell={shell}
+      mediaBase={connection.instanceUrl}
     />
+  ) : (
+    <InstancePicker
+      fetch={fetch}
+      initialUrl={initial.instanceUrl}
+      onChosen={(chosen, name) => {
+        void settings.setInstanceUrl(chosen).then(() => {
+          document.title = `Chinchi — ${name}`
+          setConnection(connect(chosen, settings, fetch, null))
+        })
+      }}
+    />
+  )
+  // The frameless window gets its title bar from the app, above the picker and the chat alike.
+  return (
+    <div className="flex h-full flex-col">
+      {shell ? <TitleBar shell={shell} /> : null}
+      <div className="min-h-0 flex-1 overflow-auto">{content}</div>
+    </div>
   )
 }

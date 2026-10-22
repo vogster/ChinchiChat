@@ -41,6 +41,21 @@ describe('link previews', () => {
     expect(image).toHaveAttribute('width', '400')
   })
 
+  it('shows no card for a sign-in approval link', async () => {
+    const item = await showWithEmbeds([
+      {
+        url: 'https://chat.example.com/?qr=Zk3v9QmXr2LpT8wYc1NbHa',
+        title: 'Chinchi',
+        description: null,
+        siteName: null,
+        image: null,
+      },
+    ])
+
+    expect(within(item).queryByRole('article')).toBeNull()
+    expect(within(item).queryByRole('link')).toBeNull()
+  })
+
   it('never links unsafe URLs and shows nothing without previews', async () => {
     const item = await showWithEmbeds([
       {

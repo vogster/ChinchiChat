@@ -24,11 +24,21 @@ describe('QR sign-in schemas', () => {
   })
 
   it('wants the sealed secrets and the approver key together, or neither', () => {
-    expect(approveQrLoginRequestSchema.safeParse({}).success).toBe(true)
+    expect(approveQrLoginRequestSchema.safeParse({ match: 47 }).success).toBe(true)
     expect(
-      approveQrLoginRequestSchema.safeParse({ sealed: 'AAAA', approverKey: KEY }).success,
+      approveQrLoginRequestSchema.safeParse({ match: 47, sealed: 'AAAA', approverKey: KEY })
+        .success,
     ).toBe(true)
-    expect(approveQrLoginRequestSchema.safeParse({ sealed: 'AAAA' }).success).toBe(false)
-    expect(approveQrLoginRequestSchema.safeParse({ approverKey: KEY }).success).toBe(false)
+    expect(approveQrLoginRequestSchema.safeParse({ match: 47, sealed: 'AAAA' }).success).toBe(false)
+    expect(approveQrLoginRequestSchema.safeParse({ match: 47, approverKey: KEY }).success).toBe(
+      false,
+    )
+  })
+
+  it('wants the two-digit number from the new device to approve', () => {
+    expect(approveQrLoginRequestSchema.safeParse({}).success).toBe(false)
+    expect(approveQrLoginRequestSchema.safeParse({ match: 9 }).success).toBe(false)
+    expect(approveQrLoginRequestSchema.safeParse({ match: 100 }).success).toBe(false)
+    expect(approveQrLoginRequestSchema.safeParse({ match: 4.5 }).success).toBe(false)
   })
 })

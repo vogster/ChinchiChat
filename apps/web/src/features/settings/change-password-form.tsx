@@ -8,7 +8,7 @@ import { z } from 'zod'
 
 import { Alert } from '../../components/ui/alert'
 import { Button } from '../../components/ui/button'
-import { TextField } from '../../components/ui/text-field'
+import { PasswordField } from '../../components/ui/password-field'
 import { useApi } from '../../lib/api-context'
 import { errorMessage } from '../../lib/errors'
 import { authKeys } from '../auth/queries'
@@ -75,23 +75,20 @@ export const ChangePasswordForm = () => {
       ) : null}
       {showFormError ? <Alert tone="error">{errorMessage(t, change.error)}</Alert> : null}
 
-      <TextField
+      <PasswordField
         label={t('settings.account.currentPassword')}
-        type="password"
         autoComplete="current-password"
         error={fieldMessage('currentPassword')}
         {...register('currentPassword')}
       />
-      <TextField
+      <PasswordField
         label={t('settings.account.newPassword')}
-        type="password"
         autoComplete="new-password"
         error={fieldMessage('newPassword')}
         {...register('newPassword')}
       />
-      <TextField
+      <PasswordField
         label={t('settings.account.confirmPassword')}
-        type="password"
         autoComplete="new-password"
         error={fieldMessage('confirmPassword')}
         {...register('confirmPassword')}

@@ -3,6 +3,8 @@ import { useEffect, useMemo, useState } from 'react'
 import { useCurrentUser } from '../auth/use-auth-actions'
 import {
   basePermissions,
+  canAssignGuildRole,
+  canChangeMemberRoles,
   canManageGuildRole,
   channelPermissions,
   grantablePermissions,
@@ -18,6 +20,10 @@ export interface GuildPermissions {
   /** What the user may grant to roles and channel overwrites. */
   readonly grantable: bigint
   readonly canManageRole: (role: Role) => boolean
+  /** May give this role to someone (manage it and hold all it carries). */
+  readonly canAssignRole: (role: Role) => boolean
+  /** May change this member's roles (themselves, or someone below them). */
+  readonly canChangeRolesOf: (member: { userId: string; roleIds: readonly string[] }) => boolean
   /** When the user's running timeout ends, or null without one. */
   readonly timeoutUntil: string | null
 }
@@ -28,6 +34,8 @@ const NONE: GuildPermissions = {
   inChannel: () => 0n,
   grantable: 0n,
   canManageRole: () => false,
+  canAssignRole: () => false,
+  canChangeRolesOf: () => false,
   timeoutUntil: null,
 }
 
@@ -59,6 +67,8 @@ export const useGuildPermissions = (guild: GuildDetail | undefined): GuildPermis
       inChannel: (channel) => channelPermissions(guild, channel, me.id),
       grantable: grantablePermissions(guild, me.id),
       canManageRole: (role) => canManageGuildRole(guild, me.id, role),
+      canAssignRole: (role) => canAssignGuildRole(guild, me.id, role),
+      canChangeRolesOf: (member) => canChangeMemberRoles(guild, me.id, member),
       timeoutUntil,
     }
   }, [guild, me, timeoutUntil])

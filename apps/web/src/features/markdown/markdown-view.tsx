@@ -1,7 +1,9 @@
 import { isSafeUrl } from '@chinchi/markdown'
 import { Link } from '@tanstack/react-router'
+import { ShieldAlert } from 'lucide-react'
 import { useState } from 'react'
 
+import { isQrSignInLink } from '../auth/qr-login-search'
 import { CustomEmoji } from '../emoji/custom-emoji'
 
 import type { MentionResolver } from './mention-context'
@@ -38,6 +40,29 @@ const Spoiler = ({ label, children }: { label: string; children: ReactNode }) =>
   )
 }
 
+/**
+ * A link that would approve someone's sign-in, folded into a warning. It is never followed from
+ * a message (a real one comes by camera); a press shows the address as text, to read or copy.
+ */
+const QrSignInLink = ({ url, label }: { url: string; label: string }) => {
+  const [shown, setShown] = useState(false)
+  return (
+    <span>
+      {/* Its own background: it has to read on any bubble, the sender's accent one too. */}
+      <button
+        type="button"
+        aria-expanded={shown}
+        onClick={() => setShown((value) => !value)}
+        className="inline-flex items-center gap-1 rounded-md bg-side px-1.5 py-0.5 text-left align-baseline text-xs font-medium text-danger hover:bg-stage"
+      >
+        <ShieldAlert aria-hidden className="size-3.5 shrink-0" />
+        {label}
+      </button>
+      {shown ? <span className="ml-1 break-all">{url}</span> : null}
+    </span>
+  )
+}
+
 const Inline = ({ node, resolve }: { node: InlineNode; resolve: MentionResolver }) => {
   const children = (nodes: readonly InlineNode[]) =>
     nodes.map((child, index) => <Inline key={index} node={child} resolve={resolve} />)
@@ -60,6 +85,9 @@ const Inline = ({ node, resolve }: { node: InlineNode; resolve: MentionResolver 
         <code className="rounded bg-field px-1 py-0.5 font-mono text-[0.85em]">{node.value}</code>
       )
     case 'link':
+      if (isQrSignInLink(node.url)) {
+        return <QrSignInLink url={node.url} label={resolve.labels.qrSignInLink} />
+      }
       // The parser only emits http(s) links; checked again because this is the last line.
       return isSafeUrl(node.url) ? (
         <a

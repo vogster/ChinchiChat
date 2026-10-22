@@ -14,6 +14,8 @@ export const MAX_SLOWMODE_SECONDS = 21_600
 export const MAX_INVITE_AGE_SECONDS = 7 * 24 * 60 * 60
 /** Channels of a server, categories included and threads not. */
 export const MAX_CHANNELS_PER_GUILD = 500
+/** Roles of a server, @everyone included. */
+export const MAX_ROLES_PER_GUILD = 250
 /** Invites of a server that still work (not expired, not used up). */
 export const MAX_INVITES_PER_GUILD = 1000
 export const MAX_INVITE_USES = 100

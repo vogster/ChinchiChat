@@ -2,6 +2,7 @@ import { useMutation, useQuery } from '@tanstack/react-query'
 
 import { useApi } from '../../lib/api-context'
 import { useAnyE2eeClient } from '../e2ee/e2ee-context'
+import { markApprovedHere } from './approved-here'
 import { sealForNewDevice } from './qr-login-crypto'
 
 /**
@@ -26,12 +27,15 @@ export const useQrApproval = (id: string, scannedKey: string | undefined) => {
   const newKey = login.data?.publicKey
   const canHandOver = Boolean(scannedKey && newKey === scannedKey && recoveryKey.data)
   const approve = useMutation({
-    mutationFn: async (handOver: boolean) => {
+    /** `match`: the number picked, which has to be the one on the new device. */
+    mutationFn: async ({ match, handOver }: { match: number; handOver: boolean }) => {
       const sealed =
         handOver && canHandOver && scannedKey && recoveryKey.data
           ? await sealForNewDevice(id, scannedKey, recoveryKey.data)
           : {}
-      await api.auth.qr.approve(id, sealed)
+      // Before the answer: the "new sign-in" event may come back first.
+      markApprovedHere(id)
+      await api.auth.qr.approve(id, { match, ...sealed })
     },
   })
   return { login, canHandOver, approve }

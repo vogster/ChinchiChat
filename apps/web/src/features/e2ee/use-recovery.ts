@@ -5,6 +5,7 @@ import { useCurrentUser } from '../auth/use-auth-actions'
 import { useAnyE2eeClient, useE2ee } from './e2ee-context'
 import { recoveryKeys } from './recovery-query'
 
+import type { IdentityProof } from './cross-signing'
 import type { UseKeyResult } from './history-backup'
 const SNOOZED = 'chinchi.recovery.later'
 
@@ -63,9 +64,9 @@ export const useRecovery = (enabled = true) => {
       await client?.recovery.markSaved()
       await refresh()
     },
-    /** New keys after losing everything (the caller warned the user). */
-    reset: async () => {
-      await client?.recovery.reset()
+    /** New keys after losing everything (the caller warned the user and asked the password). */
+    reset: async (identity: IdentityProof) => {
+      await client?.recovery.reset(identity)
       await refresh()
     },
     useKey: async (text: string): Promise<UseKeyResult> => {

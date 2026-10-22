@@ -14,7 +14,8 @@ const keyOf = (message: MessageItem) => `${message.id}:${message.editedAt ?? ''}
 /**
  * Messages with their text decrypted (and remembered by the client). Ones this device can't
  * read say so instead of showing nothing. A message whose MLS signer is not the author the
- * server named is shown as the signer's, with a warning. Plain conversations pass through.
+ * server named is shown as the signer's, with a warning; one that came without encryption is
+ * flagged (only the server could have put it there). Plain conversations pass through.
  */
 export const useDecryptedMessages = (
   channel: EncryptedChannel | undefined,
@@ -72,7 +73,9 @@ export const useDecryptedMessages = (
   const userById = (userId: string): PublicUser | null =>
     messages.find((m) => m.author?.id === userId)?.author ?? null
   const shown = messages.map((message): Shown => {
-    if (!message.ciphertext || message.pending) return message
+    if (message.pending || message.system) return message
+    // An honest server takes only encrypted messages here: this one it may have made up.
+    if (!message.ciphertext) return { ...message, senderCheck: { kind: 'plain' } }
     const key = keyOf(message)
     if (!read.has(key)) return 'decrypting'
     const result = read.get(key)

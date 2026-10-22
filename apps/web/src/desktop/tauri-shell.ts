@@ -1,9 +1,13 @@
+import { downloadDir, join } from '@tauri-apps/api/path'
+import { getCurrentWindow } from '@tauri-apps/api/window'
 import * as autostart from '@tauri-apps/plugin-autostart'
+import { save } from '@tauri-apps/plugin-dialog'
+import { writeFile } from '@tauri-apps/plugin-fs'
 import { register, unregister } from '@tauri-apps/plugin-global-shortcut'
 
 import { DEFAULT_SHELL_PREFERENCES } from '../features/shell/shell'
 
-import type { Shell, ShellPreferences } from '../features/shell/shell'
+import type { Shell, ShellPreferences, ShellWindow } from '../features/shell/shell'
 import type { SettingsStore } from './settings'
 
 const PREFERENCES_KEY = 'preferences'
@@ -25,6 +29,21 @@ export const loadShellPreferences = async (store: SettingsStore): Promise<ShellP
   ...DEFAULT_SHELL_PREFERENCES,
   ...((await store.get<Partial<ShellPreferences>>(PREFERENCES_KEY)) ?? {}),
 })
+
+/** The main window, as the title bar needs it. */
+const createTauriWindow = (): ShellWindow => {
+  const current = getCurrentWindow()
+  return {
+    minimize: () => current.minimize(),
+    toggleMaximize: () => current.toggleMaximize(),
+    close: () => current.close(),
+    isMaximized: () => current.isMaximized(),
+    onMaximizedChange: (listener) =>
+      current.onResized(() => {
+        void current.isMaximized().then(listener)
+      }),
+  }
+}
 
 /** The Shell the web app sees in the Tauri desktop app. */
 export const createTauriShell = ({
@@ -51,4 +70,13 @@ export const createTauriShell = ({
     return () => unregister(shortcut)
   },
   changeInstance: onChangeInstance,
+  window: createTauriWindow(),
+  saveFile: async (name, blob) => {
+    // Starts in Downloads, like a browser would; without one, wherever the dialog opens.
+    const downloads = await downloadDir().catch(() => null)
+    const path = await save({ defaultPath: downloads ? await join(downloads, name) : name })
+    if (!path) return false
+    await writeFile(path, new Uint8Array(await blob.arrayBuffer()))
+    return true
+  },
 })

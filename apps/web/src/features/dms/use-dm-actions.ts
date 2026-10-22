@@ -1,7 +1,10 @@
+import { ApiError } from '@chinchi/sdk'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useNavigate, useParams } from '@tanstack/react-router'
 
 import { useApi } from '../../lib/api-context'
+import { useE2ee } from '../e2ee/e2ee-context'
+import { messageKeys } from '../messages/queries'
 import { removePrivateChannel, upsertPrivateChannel } from './dm-cache'
 
 import type { PrivateChannel, Snowflake } from '@chinchi/shared'
@@ -11,16 +14,32 @@ export const useOpenDm = () => {
   const api = useApi()
   const queryClient = useQueryClient()
   const navigate = useNavigate()
+  const { client } = useE2ee()
 
   return useMutation({
-    mutationFn: (
+    mutationFn: async (
       recipientIds: readonly Snowflake[] | { ids: readonly Snowflake[]; encrypted: true },
-    ) =>
-      Array.isArray(recipientIds)
-        ? api.dms.open(recipientIds)
-        : api.dms.open((recipientIds as { ids: readonly Snowflake[] }).ids, { encrypted: true }),
+    ) => {
+      if (Array.isArray(recipientIds)) return api.dms.open(recipientIds)
+      const opened = await api.dms.open((recipientIds as { ids: readonly Snowflake[] }).ids, {
+        encrypted: true,
+      })
+      // Asked for an encrypted one: a plain answer is not opened, nothing would show it but a
+      // missing lock (only a server against its users answers so).
+      if (!opened.channel.encrypted) {
+        throw new ApiError(0, 'ENCRYPTION_REFUSED', 'The server did not start an encrypted one')
+      }
+      return opened
+    },
     onSuccess: async ({ channel }) => {
       upsertPrivateChannel(queryClient, channel)
+      // This device starts the encrypted group with the people picked here (not just listed).
+      if (channel.encrypted && channel.type === 'group_dm') {
+        await client?.invited(
+          channel.id,
+          channel.recipients.map((r) => r.id),
+        )
+      }
       await navigate({ to: '/channels/@me/$channelId', params: { channelId: channel.id } })
     },
   })
@@ -35,12 +54,62 @@ export const useRenameGroup = (channelId: Snowflake) => {
   })
 }
 
-/** The gateway announces the new member list; no cache change needed here. */
+/**
+ * The gateway announces the new member list; no cache change needed here. In an encrypted group
+ * this device takes the people in: the others don't take in whom the server alone lists.
+ */
 export const useAddToGroup = (channelId: Snowflake) => {
   const api = useApi()
+  const { client } = useE2ee()
   return useMutation({
     mutationFn: async (userIds: readonly Snowflake[]) => {
-      for (const userId of userIds) await api.dms.addRecipient(channelId, userId)
+      for (const userId of userIds) {
+        await api.dms.addRecipient(channelId, userId)
+        await client?.invited(channelId, [userId])
+      }
+    },
+  })
+}
+
+/**
+ * Deletes an encrypted conversation for everyone in it; this device forgets it at once (the
+ * others do on the gateway event) and goes home.
+ */
+export const useDeleteEncrypted = (channelId: Snowflake) => {
+  const api = useApi()
+  const queryClient = useQueryClient()
+  const navigate = useNavigate()
+  const { client } = useE2ee()
+  return useMutation({
+    mutationFn: () => api.channels.delete(channelId),
+    onSuccess: async () => {
+      await client?.forgetConversation(channelId)
+      removePrivateChannel(queryClient, channelId)
+      queryClient.removeQueries({ queryKey: messageKeys.channel(channelId) })
+      await navigate({ to: '/' })
+    },
+  })
+}
+
+/**
+ * A conversation the server stopped calling encrypted: the server won't delete a "plain" one
+ * for everyone, so it is hidden from the list (a new message brings it back, still blocked) and
+ * wiped from this device.
+ */
+export const useRemoveDowngraded = (channelId: Snowflake) => {
+  const api = useApi()
+  const queryClient = useQueryClient()
+  const navigate = useNavigate()
+  const { client } = useE2ee()
+  return useMutation({
+    mutationFn: () => api.dms.hide(channelId),
+    onSuccess: async () => {
+      // Its keys stay: the others still count this device in, and the conversation works again
+      // here if the server stops calling it plain.
+      await client?.forgetConversation(channelId, { keepKeys: true })
+      removePrivateChannel(queryClient, channelId)
+      queryClient.removeQueries({ queryKey: messageKeys.channel(channelId) })
+      await navigate({ to: '/' })
     },
   })
 }

@@ -74,10 +74,13 @@ describe('DesktopApp', () => {
       />,
     )
     expect(await screen.findByRole('heading', { name: 'С возвращением!' })).toBeInTheDocument()
+    // The frameless window keeps the app's title bar over the chat and the picker alike.
+    expect(screen.getByRole('button', { name: 'Закрыть окно' })).toBeInTheDocument()
 
     await act(() => (actions as DesktopActions | null)?.changeInstance() ?? Promise.resolve())
 
     expect(await screen.findByLabelText('Адрес сервера')).toHaveValue('https://chat.example.com')
+    expect(screen.getByRole('button', { name: 'Закрыть окно' })).toBeInTheDocument()
     expect(await settings.load()).toEqual({ instanceUrl: null, token: null })
   })
 

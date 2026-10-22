@@ -1,6 +1,6 @@
 [package]
 name = "chinchi-desktop"
-version = "0.18.0"
+version = "0.18.1"
 description = "Chinchi for the desktop"
 authors = ["Chinchi contributors"]
 license = "AGPL-3.0-only"
@@ -28,6 +28,8 @@ tauri-plugin-http = "2"
 tauri-plugin-notification = "2"
 tauri-plugin-opener = "2"
 tauri-plugin-process = "2"
+tauri-plugin-dialog = "2.8.3"
+tauri-plugin-fs = "2.7.1"
 
 [target.'cfg(not(any(target_os = "android", target_os = "ios")))'.dependencies]
 tauri-plugin-autostart = "2"

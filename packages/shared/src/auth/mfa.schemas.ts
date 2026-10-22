@@ -43,7 +43,8 @@ export const totpEnableRequestSchema = z.strictObject({ code: totpCodeSchema })
 /** Turning 2FA off or making new recovery codes asks for both factors. */
 export const mfaConfirmRequestSchema = z.strictObject({
   password: passwordField,
-  code: mfaCodeSchema,
+  /** Without it, a right password answers MFA_CODE_REQUIRED (a form asks in two steps). */
+  code: mfaCodeSchema.optional(),
 })
 export const mfaLoginRequestSchema = z.strictObject({
   ticket: mfaTicketSchema,
@@ -76,3 +77,9 @@ export const deleteAccountRequestSchema = z.strictObject({
   /** Required when two-factor sign-in is on: an authenticator or recovery code. */
   code: mfaCodeSchema.optional(),
 })
+
+/** Downloading all your data takes the same: the password, and a code with 2FA on. */
+export const exportDataRequestSchema = deleteAccountRequestSchema
+
+/** A one-time ticket for the download that follows (`GET /users/@me/export/:ticket`). */
+export const exportTicketSchema = z.object({ ticket: z.string() })

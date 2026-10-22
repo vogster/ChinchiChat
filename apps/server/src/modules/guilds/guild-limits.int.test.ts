@@ -1,9 +1,9 @@
-import { MAX_CHANNELS_PER_GUILD, MAX_INVITES_PER_GUILD } from '@chinchi/shared'
+import { MAX_CHANNELS_PER_GUILD, MAX_INVITES_PER_GUILD, MAX_ROLES_PER_GUILD } from '@chinchi/shared'
 import { afterAll, beforeEach, describe, expect, it } from 'vitest'
 
 import { createGuild, signUp } from '../../../test/guild-helpers'
 import { createTestApp, resetState } from '../../../test/test-app'
-import { channels, invites } from '../../db/schema'
+import { channels, invites, roles } from '../../db/schema'
 
 import type { TestActor } from '../../../test/guild-helpers'
 
@@ -19,6 +19,14 @@ const createChannel = (name: string) =>
     url: `/api/v1/guilds/${guild.id}/channels`,
     headers: owner.headers,
     payload: { name, type: 'text' },
+  })
+
+const createRole = (name: string) =>
+  app.inject({
+    method: 'POST',
+    url: `/api/v1/guilds/${guild.id}/roles`,
+    headers: owner.headers,
+    payload: { name },
   })
 
 const createInvite = () =>
@@ -74,5 +82,32 @@ describe('server limits', () => {
     const over = await createInvite()
     expect(over.statusCode).toBe(400)
     expect(over.json().code).toBe('TOO_MANY_INVITES')
+  })
+
+  it('caps the roles of a server (@everyone included)', async () => {
+    await db.insert(roles).values(
+      Array.from({ length: MAX_ROLES_PER_GUILD - 2 }, (_, i) => ({
+        id: String(910_000_000 + i),
+        guildId: guild.id,
+        name: `filler-${i}`,
+        position: i + 1,
+      })),
+    )
+
+    expect((await createRole('last-one')).statusCode).toBe(201)
+    const over = await createRole('one-too-many')
+    expect(over.statusCode).toBe(400)
+    expect(over.json().code).toBe('TOO_MANY_ROLES')
+  })
+
+  it('gives roles created at the same time positions of their own', async () => {
+    const created = await Promise.all(
+      Array.from({ length: 8 }, (_, i) => createRole(`parallel-${i}`)),
+    )
+    expect(created.map((r) => r.statusCode)).toEqual(Array(8).fill(201))
+
+    const positions = (await db.select().from(roles)).map((role) => role.position)
+    expect(new Set(positions).size).toBe(positions.length)
+    expect(Math.max(...positions)).toBe(positions.length - 1)
   })
 })

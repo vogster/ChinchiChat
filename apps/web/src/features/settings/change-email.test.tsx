@@ -30,14 +30,15 @@ describe('changing the email', () => {
 
   it('asks for a code when two-factor sign-in is on, and shows what went wrong', async () => {
     const api = createFakeApi({ user: { ...testUser, mfaEnabled: true } })
-    api.auth.changeEmail.mockRejectedValueOnce(apiError(400, 'INVALID_MFA_CODE'))
     const { user } = renderApp('/?settings=account', { api })
 
     const dialog = await openDialog(user)
-    const send = within(dialog).getByRole('button', { name: 'Отправить ссылку' })
     await user.type(within(dialog).getByLabelText('Новый email'), 'new@example.com')
     await user.type(within(dialog).getByLabelText('Пароль'), 'password123')
+    await user.click(within(dialog).getByRole('button', { name: 'Далее' }))
+    const send = await within(dialog).findByRole('button', { name: 'Отправить ссылку' })
     expect(send).toBeDisabled()
+    api.auth.changeEmail.mockRejectedValueOnce(apiError(400, 'INVALID_MFA_CODE'))
     await user.type(within(dialog).getByLabelText('Код из приложения'), '123456')
     await user.click(send)
 

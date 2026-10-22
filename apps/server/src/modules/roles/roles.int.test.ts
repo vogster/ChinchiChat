@@ -250,6 +250,71 @@ describe('member roles', () => {
     )
   })
 
+  it("can't hand out a role with permissions the manager lacks, not even to themselves", async () => {
+    const mods = await createRole({ permissions: perms(Permission.ManageRoles), name: 'mods' })
+    await grant(mods.id, member.id)
+    // Made later, it lands at the bottom: below the moderators' own role.
+    const admins = await createRole({
+      permissions: perms(Permission.Administrator),
+      name: 'admins',
+    })
+    const helpers = await createRole({ name: 'helpers' })
+    expect(admins.position).toBeLessThan(
+      (await listRoles()).find((role) => role.id === mods.id)?.position ?? 0,
+    )
+
+    const self = await grant(admins.id, member.id, member)
+    expect(self.statusCode).toBe(403)
+    expect(self.json().code).toBe('MISSING_PERMISSIONS')
+    expect((await grant(admins.id, other.id, member)).statusCode).toBe(403)
+    expect((await call(member, 'GET', `/guilds/${guild.id}`)).json().data.guild.myRoleIds).toEqual([
+      mods.id,
+    ])
+
+    // A role with nothing beyond what they have is theirs to hand out.
+    expect((await grant(helpers.id, other.id, member)).statusCode).toBe(204)
+  })
+
+  it("can't change the roles of someone at or above the manager's rank", async () => {
+    const plain = await createRole({ name: 'plain' })
+    const mods = await createRole({ permissions: perms(Permission.ManageRoles), name: 'mods' })
+    const seniors = await createRole({ name: 'seniors' })
+    await call(owner, 'PATCH', `/guilds/${guild.id}/roles`, [
+      { id: plain.id, position: 1 },
+      { id: mods.id, position: 2 },
+      { id: seniors.id, position: 3 },
+    ])
+    await grant(mods.id, member.id)
+    await grant(seniors.id, other.id)
+    const peer = await signUp(app, { username: 'peer', email: 'peer@example.com' })
+    const newbie = await signUp(app, { username: 'newbie', email: 'newbie@example.com' })
+    await addMember(db, guild.id, peer.id)
+    await addMember(db, guild.id, newbie.id)
+    await grant(mods.id, peer.id)
+    await grant(plain.id, peer.id)
+
+    // Above them, and level with them: neither gets a role added or taken.
+    const above = await grant(plain.id, other.id, member)
+    expect(above.statusCode).toBe(403)
+    expect(above.json().code).toBe('ROLE_HIERARCHY')
+    expect((await grant(plain.id, peer.id, member)).statusCode).toBe(403)
+    const taken = await call(
+      member,
+      'DELETE',
+      `/guilds/${guild.id}/members/${peer.id}/roles/${plain.id}`,
+    )
+    expect(taken.statusCode).toBe(403)
+    expect(taken.json().code).toBe('ROLE_HIERARCHY')
+
+    // Themselves and those below them, yes.
+    expect((await grant(plain.id, member.id, member)).statusCode).toBe(204)
+    expect((await grant(plain.id, newbie.id, member)).statusCode).toBe(204)
+    expect(
+      (await call(member, 'DELETE', `/guilds/${guild.id}/members/${newbie.id}/roles/${plain.id}`))
+        .statusCode,
+    ).toBe(204)
+  })
+
   it('rejects unknown roles and non-members', async () => {
     const role = await createRole()
     const outsider = await signUp(app, { username: 'outsider', email: 'outsider@example.com' })

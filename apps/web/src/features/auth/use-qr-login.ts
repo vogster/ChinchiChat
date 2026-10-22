@@ -1,5 +1,5 @@
 import { QR_LOGIN_SECONDS } from '@chinchi/shared'
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useEffect, useRef } from 'react'
 
 import { useApi } from '../../lib/api-context'
@@ -32,6 +32,7 @@ const newTicket = async (api: ApiClient) => {
 export const useQrLogin = (redirectTo: string | undefined) => {
   const api = useApi()
   const signedIn = useSignedIn(redirectTo)
+  const queryClient = useQueryClient()
   const pending = useQuery({
     queryKey: ['qrLoginTicket'],
     queryFn: () => newTicket(api),
@@ -39,7 +40,12 @@ export const useQrLogin = (redirectTo: string | undefined) => {
     gcTime: 0,
     retry: false,
     refetchOnWindowFocus: false,
-    refetchInterval: RENEW_MS,
+    // Once opened on the other device, this QR stays: a fresh one would lose the number shown.
+    refetchInterval: (query) =>
+      queryClient.getQueryData<QrLoginClaim>(['qrLoginClaim', query.state.data?.ticket.id])
+        ?.state === 'scanned'
+        ? false
+        : RENEW_MS,
   })
   const ticket = pending.data?.ticket
   const claim = useQuery({
@@ -53,12 +59,14 @@ export const useQrLogin = (redirectTo: string | undefined) => {
       query.state.data?.state === 'approved' || query.state.error ? false : QR_POLL_MS,
   })
 
-  // Expired or used up early: start over with a new QR.
+  // Expired, used up or a wrong number picked: start over with a new QR.
   const { refetch } = pending
   const claimFailed = claim.isError
   useEffect(() => {
     if (claimFailed) void refetch()
   }, [claimFailed, refetch])
+
+  const match = claim.data?.state === 'scanned' ? claim.data.match : null
 
   const finished = useRef(false)
   const result = claim.data
@@ -82,6 +90,8 @@ export const useQrLogin = (redirectTo: string | undefined) => {
 
   return {
     ticket,
+    /** The number to pick on the other device, once it opened this sign-in. */
+    match,
     error: pending.error,
     approved: result?.state === 'approved',
   }

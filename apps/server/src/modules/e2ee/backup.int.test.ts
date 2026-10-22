@@ -1,4 +1,4 @@
-import { randomBytes } from 'node:crypto'
+import { generateKeyPairSync, randomBytes } from 'node:crypto'
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 
 import { addMember, createGuild, signUp } from '../../../test/guild-helpers'
@@ -13,6 +13,12 @@ let bob: TestActor
 let outsider: TestActor
 
 const b64 = (bytes = 48) => randomBytes(bytes).toString('base64')
+const ed25519 = () => {
+  const { publicKey } = generateKeyPairSync('ed25519')
+  return Buffer.from(publicKey.export({ format: 'jwk' }).x as string, 'base64url').toString(
+    'base64',
+  )
+}
 const call = (
   actor: TestActor,
   method: 'GET' | 'POST' | 'PUT' | 'DELETE',
@@ -25,6 +31,16 @@ const call = (
     headers: actor.headers,
     ...(payload ? { payload } : {}),
   })
+
+/** A recovery reset: a new user key (with the password), then a new backup. */
+const startOver = async (actor: TestActor) => {
+  await call(actor, 'PUT', '/users/@me/e2ee/user-key', {
+    publicKey: ed25519(),
+    replace: true,
+    password: 'password123',
+  })
+  return call(actor, 'PUT', '/users/@me/e2ee/backup', { userKey: b64(92), replace: true })
+}
 
 const encryptedDm = async () =>
   (
@@ -102,6 +118,31 @@ describe('history backups', () => {
     expect(bobs.json().data.entries).toEqual([])
   })
 
+  it('is replaced only along with a new user key (which takes the password)', async () => {
+    const userKey = (key: string, replace = false) =>
+      call(alice, 'PUT', '/users/@me/e2ee/user-key', {
+        publicKey: key,
+        ...(replace ? { replace: true, password: 'password123' } : {}),
+      })
+    await userKey(ed25519())
+    await call(alice, 'PUT', '/users/@me/e2ee/backup', { userKey: b64(92) })
+
+    // A stolen session can't wipe the history backup by starting a new one.
+    const alone = await call(alice, 'PUT', '/users/@me/e2ee/backup', {
+      userKey: b64(92),
+      replace: true,
+    })
+    expect(alone.statusCode).toBe(403)
+    expect(alone.json().code).toBe('BACKUP_KEY_UNCHANGED')
+
+    await userKey(ed25519(), true)
+    const fresh = await call(alice, 'PUT', '/users/@me/e2ee/backup', {
+      userKey: b64(92),
+      replace: true,
+    })
+    expect(fresh.statusCode).toBe(200)
+  })
+
   it('refuse entries for an old backup or a conversation I am not in', async () => {
     const { version } = (
       await call(alice, 'PUT', '/users/@me/e2ee/backup', { userKey: b64(92) })
@@ -117,7 +158,7 @@ describe('history backups', () => {
     })
     expect(foreign.statusCode).toBe(404)
 
-    await call(alice, 'PUT', '/users/@me/e2ee/backup', { userKey: b64(92), replace: true })
+    await startOver(alice)
     const stale = await call(alice, 'POST', '/users/@me/e2ee/backup/entries', {
       version,
       entries: [{ messageId: message.id, payload: b64() }],
@@ -143,7 +184,7 @@ describe('history backups', () => {
     await call(alice, 'DELETE', `/channels/${channel.id}/messages/${deleted.id}`)
     expect((await list()).map((e) => e.messageId)).toEqual([kept.id])
 
-    await call(alice, 'PUT', '/users/@me/e2ee/backup', { userKey: b64(92), replace: true })
+    await startOver(alice)
     expect(await list()).toEqual([])
   })
 })

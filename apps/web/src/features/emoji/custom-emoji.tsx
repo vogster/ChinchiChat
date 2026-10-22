@@ -1,5 +1,7 @@
 import { CUSTOM_EMOJI_PATTERN, customEmojiUrl } from '@chinchi/shared'
 
+import { useMediaUrl } from '../media/media-base'
+
 /** A server emoji as a picture; `:name:` is its text for screen readers and copying. */
 export const CustomEmoji = ({
   id,
@@ -9,16 +11,19 @@ export const CustomEmoji = ({
   id: string
   name: string
   className?: string
-}) => (
-  <img
-    src={customEmojiUrl(id)}
-    alt={`:${name}:`}
-    title={`:${name}:`}
-    loading="lazy"
-    draggable={false}
-    className={`inline-block align-[-0.3em] object-contain ${className}`}
-  />
-)
+}) => {
+  const media = useMediaUrl()
+  return (
+    <img
+      src={media(customEmojiUrl(id))}
+      alt={`:${name}:`}
+      title={`:${name}:`}
+      loading="lazy"
+      draggable={false}
+      className={`inline-block align-[-0.3em] object-contain ${className}`}
+    />
+  )
+}
 
 /** A reaction or picker emoji: a server emoji `<:name:id>` as its picture, Unicode as text. */
 export const EmojiGlyph = ({ emoji }: { emoji: string }) => {

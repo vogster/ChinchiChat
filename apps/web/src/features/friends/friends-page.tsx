@@ -5,7 +5,9 @@ import { useTranslation } from 'react-i18next'
 
 import { MainCard } from '../../components/layout/main-card'
 import { PageHeader, PageTitle } from '../../components/layout/page-header'
+import { Alert } from '../../components/ui/alert'
 import { useApi } from '../../lib/api-context'
+import { errorMessage } from '../../lib/errors'
 import { useOpenDm } from '../dms/use-dm-actions'
 import { formatMentionCount } from '../messages/mentions'
 import { usePresences } from '../messages/use-presence'
@@ -150,6 +152,11 @@ export const FriendsPage = () => {
                 </button>
               </span>
             </div>
+            {openDm.isError ? (
+              <div className="mb-3">
+                <Alert tone="error">{errorMessage(t, openDm.error)}</Alert>
+              </div>
+            ) : null}
             <FriendList
               label={t(`friends.tabs.${tab}`)}
               empty={needle ? t('friends.searchEmpty') : t(`friends.empty.${tab}`)}

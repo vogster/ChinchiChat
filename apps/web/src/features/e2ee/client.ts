@@ -16,14 +16,19 @@ import {
 import { ApiError } from '@chinchi/sdk'
 
 import { decodePayload, encodePayload, fromBase64, toBase64 } from './codec'
+import { createConversationEraser } from './conversation-eraser'
 import { createCrossSigning } from './cross-signing'
+import { createDeviceAdditions } from './device-additions'
 import { createDeviceApproval } from './device-approval'
+import { createEncryptedMemory } from './encrypted-memory'
 import { createEncryptedReactions } from './encrypted-reactions'
+import { createGroupMembership } from './group-membership'
 import { createHistoryBackup } from './history-backup'
 import { createLocalSearch } from './local-search'
 import { createSafety } from './safety'
 
 import type { EncryptedFile, EncryptedPayload } from './codec'
+import type { IdentityProof } from './cross-signing'
 import type { E2eeStore } from './store'
 import type {
   Conversation,
@@ -81,7 +86,16 @@ export interface E2eeApi {
 export interface EncryptedChannel {
   readonly id: string
   readonly memberIds: readonly string[]
+  /** A group (people come and go); by default, more than two members. */
+  readonly group?: boolean
 }
+
+const isGroup = (channel: EncryptedChannel) => channel.group ?? channel.memberIds.length > 2
+
+/** The people (user ids) with a device in the conversation. */
+const peopleIn = (conversation: Conversation) => [
+  ...new Set(members(conversation).map((m) => m.identity.userId)),
+]
 
 /** A message from the server: its id and MLS ciphertext (and the sender's nonce, for its author). */
 export interface CipherMessage {
@@ -107,6 +121,8 @@ export type SenderCheck =
   | { readonly kind: 'verified' }
   | { readonly kind: 'unverified' }
   | { readonly kind: 'mismatch'; readonly userId: string }
+  /** Came without encryption into an encrypted conversation: the server may have written it. */
+  | { readonly kind: 'plain' }
 
 /** A message as this device reads it: what was inside, and whether the author checks out. */
 export interface ReadMessage {
@@ -204,6 +220,7 @@ export const createE2eeClient = ({ api, store, userId, deviceName }: E2eeClientO
   const devicesByUser = new Map<string, Promise<Device[]>>()
   const conversations = new Map<string, Conversation>()
   const queues = new Map<string, Promise<unknown>>()
+  const additions = createDeviceAdditions()
 
   /** One operation at a time per conversation: MLS state moves in a line. */
   const serial = <T>(channelId: string, task: () => Promise<T>): Promise<T> => {
@@ -458,6 +475,9 @@ export const createE2eeClient = ({ api, store, userId, deviceName }: E2eeClientO
     return device
   }
 
+  const encryptedMemory = createEncryptedMemory(store)
+  const membership = createGroupMembership(store)
+
   const loadState = async (channelId: string): Promise<StoredConversation> =>
     (await store.get<StoredConversation>(`conv:${channelId}`)) ?? {}
 
@@ -516,12 +536,20 @@ export const createE2eeClient = ({ api, store, userId, deviceName }: E2eeClientO
       last = handshake.id
       if (!conversation) {
         if (handshake.kind === 'welcome') conversation = await join(handshake)
+        if (conversation) await membership.begin(channelId, peopleIn(conversation))
         continue
       }
       // Commits made from an earlier epoch are already in (our own, or before we joined).
       if (handshake.kind !== 'commit' || handshake.epoch < Number(epoch(conversation))) continue
+      const before = conversation
       conversation = (await processIncoming(conversation, fromBase64(handshake.payload)))
         .conversation
+      const had = new Set(peopleIn(before))
+      const by = members(before).find((m) => m.identity.deviceId === handshake.senderDeviceId)
+      const fresh = peopleIn(conversation).filter((id) => !had.has(id))
+      if (fresh.length > 0) {
+        await membership.arrived(channelId, by?.identity.userId ?? null, fresh)
+      }
     }
     await persist(channelId, conversation, last)
     return {
@@ -567,8 +595,12 @@ export const createE2eeClient = ({ api, store, userId, deviceName }: E2eeClientO
     const present = members(conversation).map((m) => m.identity)
     // In a group, a device any member let in stays in for everyone (one consent is enough):
     // only devices gone from the members' lists leave. Two people alone: what this device
-    // does not trust goes, the other side being the only one who could have let it in.
-    const keep = channel.memberIds.length > 2 ? await listedDevices(channel.memberIds) : expected
+    // does not trust of the other person's goes, the other side being the only one who could
+    // have let it in. My own devices still listed stay: one I would not add, the other let in.
+    const keep =
+      channel.memberIds.length > 2
+        ? await listedDevices(channel.memberIds)
+        : new Set([...expected.keys(), ...(await listedDevices([userId]))])
     const gone = present.filter((m) => !keep.has(m.deviceId))
     if (gone.length > 0) {
       const before = saveConversation(conversation)
@@ -576,7 +608,20 @@ export const createE2eeClient = ({ api, store, userId, deviceName }: E2eeClientO
       if (!(await commit(channel.id, before, made, Number(epoch(conversation)), keys))) return false
       conversation = made.conversation
     }
-    const missing = [...expected].filter(([id]) => !present.some((m) => m.deviceId === id))
+    // A group takes in only people known here or added from here (see group-membership.ts).
+    const welcome = isGroup(channel)
+      ? await membership.settle(
+          channel.id,
+          channel.memberIds,
+          present.map((m) => m.userId),
+        )
+      : null
+    const missing = [...expected].filter(
+      ([id, owner]) =>
+        !present.some((m) => m.deviceId === id) &&
+        additions.allowed(channel.id, id) &&
+        (owner === userId || !welcome || welcome.has(owner)),
+    )
     if (missing.length === 0) return true
     const claimed = (
       await Promise.all(
@@ -594,7 +639,7 @@ export const createE2eeClient = ({ api, store, userId, deviceName }: E2eeClientO
       claimed.map((k) => fromBase64(k.package)),
       options,
     )
-    return commit(
+    const added = await commit(
       channel.id,
       before,
       made,
@@ -602,6 +647,13 @@ export const createE2eeClient = ({ api, store, userId, deviceName }: E2eeClientO
       keys,
       claimed.map((k) => ({ deviceId: k.deviceId, keyPackageId: k.keyPackageId })),
     )
+    if (added) {
+      additions.record(
+        channel.id,
+        claimed.map((k) => ({ deviceId: k.deviceId, ownerId: expected.get(k.deviceId) ?? '' })),
+      )
+    }
+    return added
   }
 
   /**
@@ -646,7 +698,7 @@ export const createE2eeClient = ({ api, store, userId, deviceName }: E2eeClientO
             options,
           )
         : await removeMembers(fresh, [], options)
-    return commit(
+    const started = await commit(
       channel.id,
       null,
       made,
@@ -654,10 +706,14 @@ export const createE2eeClient = ({ api, store, userId, deviceName }: E2eeClientO
       keys,
       claimed.map((k) => ({ deviceId: k.deviceId, keyPackageId: k.keyPackageId })),
     )
+    // Who starts takes the members as listed then (as with a first key).
+    if (started) await membership.begin(channel.id, channel.memberIds)
+    return started
   }
 
   const open = (channel: EncryptedChannel): Promise<ConversationStatus> =>
     serial(channel.id, async () => {
+      await encryptedMemory.remember(channel.id)
       const keys = await ready()
       // Fresh device lists: opening is when a member's new or removed devices get noticed.
       for (const memberId of channel.memberIds) devicesByUser.delete(memberId)
@@ -674,6 +730,41 @@ export const createE2eeClient = ({ api, store, userId, deviceName }: E2eeClientO
     })
 
   return {
+    /** Conversations this device saw encrypted (a server can't quietly turn that off). */
+    conversations: encryptedMemory,
+
+    /** People added to a group from this device: it takes them in (see group-membership.ts). */
+    invited: (channelId: string, userIds: readonly string[]) =>
+      membership.invite(channelId, userIds),
+
+    /**
+     * A group as this device sees it: who came in by a member's commit (to compare codes with),
+     * and who the server lists but is not in the encryption yet (messages don't reach them).
+     */
+    membership: async (channel: EncryptedChannel) => {
+      const conversation = await conversationOf(channel.id)
+      const inIt = new Set(conversation ? peopleIn(conversation) : [])
+      return {
+        notices: await membership.notices(channel.id),
+        pending:
+          conversation && isGroup(channel)
+            ? channel.memberIds.filter((id) => id !== userId && !inIt.has(id))
+            : [],
+      }
+    },
+
+    dismissNotice: (channelId: string, noticeId: string) => membership.dismiss(channelId, noticeId),
+
+    /**
+     * Deleted for everyone: nothing of the conversation stays on this device. `keepKeys` for a
+     * conversation only hidden here: its text goes, its group keys stay (see the eraser).
+     */
+    forgetConversation: (channelId: string, options?: { keepKeys?: boolean }) =>
+      serial(channelId, async () => {
+        if (!options?.keepKeys) conversations.delete(channelId)
+        await createConversationEraser(store).forget(channelId, options)
+      }),
+
     /** Registers this device on first use and keeps its key packages topped up. */
     ready: async () => (await ready()).identity.deviceId,
 
@@ -691,6 +782,7 @@ export const createE2eeClient = ({ api, store, userId, deviceName }: E2eeClientO
       conversations.clear()
       devicesByUser.clear()
       queues.clear()
+      additions.clear()
     },
 
     open,
@@ -804,9 +896,12 @@ export const createE2eeClient = ({ api, store, userId, deviceName }: E2eeClientO
         if (result === 'ok') devicesByUser.delete(userId)
         return result
       },
-      /** Lost everything, key included: new keys; people who checked this user see it. */
-      reset: async () => {
-        const userKey = await crossSigning.reset(await ready())
+      /**
+       * Lost everything, key included: new keys (with the password); people who checked this
+       * user see it.
+       */
+      reset: async (identity: IdentityProof) => {
+        const userKey = await crossSigning.reset(await ready(), identity)
         await backup.reset(userKey)
         devicesByUser.delete(userId)
       },
@@ -837,9 +932,13 @@ export const createE2eeClient = ({ api, store, userId, deviceName }: E2eeClientO
     /** Safety codes, new-device warnings, device codes and letting devices in. */
     safety,
 
-    /** A member's devices changed: forget the cached list (the next open reconciles). */
+    /**
+     * A member's devices changed: forget the cached list (the next open reconciles), and add
+     * their devices again even where someone took them out before.
+     */
     devicesChanged: async (changedUserId: string) => {
       devicesByUser.delete(changedUserId)
+      additions.forgetOwner(changedUserId)
     },
   }
 }

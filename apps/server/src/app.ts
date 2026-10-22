@@ -24,6 +24,7 @@ import { accountRoutes } from './modules/auth/account.routes'
 import { authPlugin } from './modules/auth/auth.plugin'
 import { authRoutes } from './modules/auth/auth.routes'
 import { mfaRoutes } from './modules/auth/mfa.routes'
+import { confirmIdentity } from './modules/auth/reauth'
 import { sessionsRoutes } from './modules/auth/sessions.routes'
 import { automodRoutes } from './modules/automod/automod.routes'
 import { botsRoutes } from './modules/bots/bots.routes'
@@ -31,6 +32,7 @@ import { channelsRoutes } from './modules/channels/channels.routes'
 import { threadsRoutes } from './modules/channels/threads.routes'
 import { commandsRoutes } from './modules/commands/commands.routes'
 import { dmsRoutes } from './modules/dms/dms.routes'
+import { createEncryptedDeletion } from './modules/dms/encrypted-deletion'
 import { approvalRoutes } from './modules/e2ee/approval.routes'
 import { backupRoutes } from './modules/e2ee/backup.routes'
 import { e2eeRoutes } from './modules/e2ee/e2ee.routes'
@@ -39,6 +41,10 @@ import { emojisRoutes } from './modules/emojis/emojis.routes'
 import { createDataExport } from './modules/export/data-export'
 import { createExportRepository } from './modules/export/export.repository'
 import { exportRoutes } from './modules/export/export.routes'
+import {
+  createMemoryExportTickets,
+  createRedisExportTickets,
+} from './modules/export/export-tickets'
 import { guildsRoutes } from './modules/guilds/guilds.routes'
 import { membersRoutes } from './modules/guilds/members.routes'
 import { healthRoutes } from './modules/health/health.routes'
@@ -73,6 +79,7 @@ import type { Mailer } from './mail/mailer'
 import type { Metrics } from './metrics/metrics'
 import type { PreviewWorker } from './modules/attachments/preview-worker'
 import type { LinkPreviews } from './modules/embeds/link-previews'
+import type { UserRow } from './modules/users/user.repository'
 import type { VoiceService } from './modules/voice/voice.service'
 import type { ServiceDeps, Services } from './services'
 import type { ObjectStorage } from './storage/object-storage'
@@ -95,6 +102,8 @@ export interface AppDependencies {
   readonly voiceRooms?: ServiceDeps['voiceRooms']
   /** Prometheus metrics; a fresh registry by default. */
   readonly metrics?: Metrics
+  /** Where the first admin's confirmation link goes without SMTP; the log by default. */
+  readonly reportFirstAdminLink?: ServiceDeps['reportFirstAdminLink']
 }
 
 declare module 'fastify' {
@@ -136,6 +145,8 @@ const registerGateway = (
     path: `${API_PREFIX}/gateway`,
     webOrigins: config.webOrigins,
     dispatcher: createDispatcher(events),
+    // RATE_LIMIT=off (load tests: thousands of connections from one address) lifts them too.
+    limits: config.rateLimitEnabled && { perAddress: config.gatewayMaxConnectionsPerAddress },
     metrics,
     deps: {
       onDispatch: (type) => metrics.gatewayDispatches.inc({ type }),
@@ -177,6 +188,7 @@ export const buildApp = (
     storage,
     linkFetchOverrides,
     voiceRooms,
+    reportFirstAdminLink,
     events: rawEvents = createMemoryEventBus(),
     metrics = createMetrics(),
   }: AppDependencies,
@@ -218,6 +230,7 @@ export const buildApp = (
     redis,
     ...(linkFetchOverrides ? { linkFetchOverrides } : {}),
     ...(voiceRooms ? { voiceRooms } : {}),
+    ...(reportFirstAdminLink ? { reportFirstAdminLink } : {}),
     log: app.log,
     presence: {
       visible: (userIds) => (presence ? presence.visible(userIds) : Promise.resolve([])),
@@ -299,6 +312,10 @@ export const buildApp = (
   app.register(healthRoutes, { db, redis })
   if (redis && presence) registerGateway(app, config, services, presence, redis, events, metrics)
 
+  /** The password, and a 2FA code when it is on: before what a stolen session must not do. */
+  const reauth = (user: UserRow, password: string, code: string | undefined) =>
+    confirmIdentity({ throttle: services.loginThrottle, mfa: services.mfa }, user, password, code)
+
   app.register(
     async (api) => {
       api.register(authRoutes, {
@@ -327,7 +344,10 @@ export const buildApp = (
         },
       })
       api.register(guildsRoutes, { guildService: services.guild })
-      api.register(channelsRoutes, { channelService: services.channel })
+      api.register(channelsRoutes, {
+        channelService: services.channel,
+        deletePrivate: createEncryptedDeletion({ dms: services.repositories.dms, events }).delete,
+      })
       api.register(invitesRoutes, { inviteService: services.invite, guildService: services.guild })
       api.register(messagesRoutes, {
         messageService: services.message,
@@ -341,10 +361,15 @@ export const buildApp = (
       api.register(relationshipsRoutes, { relationshipService: services.relationship })
       api.register(notificationsRoutes, { notificationService: services.notification })
       if (presence) api.register(customStatusRoutes, { presence })
-      api.register(e2eeRoutes, { e2eeService: services.e2ee })
+      api.register(e2eeRoutes, {
+        e2eeService: services.e2ee,
+        confirmIdentity: reauth,
+      })
       api.register(backupRoutes, { backupService: services.backup })
       api.register(approvalRoutes, { approvalService: services.approval })
       api.register(exportRoutes, {
+        tickets: redis ? createRedisExportTickets(redis) : createMemoryExportTickets(),
+        confirmIdentity: reauth,
         dataExport: createDataExport({
           exports: createExportRepository(db),
           attachments: createAttachmentRepository(db),

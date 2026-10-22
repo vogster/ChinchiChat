@@ -13,22 +13,29 @@ import {
 } from '@chinchi/shared'
 import { z } from 'zod'
 
-import { perUserRateLimit } from '../../http/rate-limit'
+import { FAIL_CLOSED, perUserRateLimit } from '../../http/rate-limit'
 import { ok } from '../../http/responses'
 import { requireHuman } from '../auth/auth.plugin'
 
+import type { UserRow } from '../users/user.repository'
 import type { E2eeService } from './e2ee.service'
 import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod'
 
 export interface E2eeRoutesOptions {
   readonly e2eeService: E2eeService
+  /** Replacing the user key takes the password and, with 2FA on, a code. */
+  readonly confirmIdentity: (
+    user: UserRow,
+    password: string,
+    code: string | undefined,
+  ) => Promise<void>
 }
 
 const devicesResponse = ok(z.object({ devices: z.array(deviceSchema) }))
 
 export const e2eeRoutes: FastifyPluginAsyncZod<E2eeRoutesOptions> = async (
   app,
-  { e2eeService },
+  { e2eeService, confirmIdentity },
 ) => {
   app.get(
     '/users/@me/devices',
@@ -112,14 +119,19 @@ export const e2eeRoutes: FastifyPluginAsyncZod<E2eeRoutesOptions> = async (
         body: setUserKeyRequestSchema,
         response: { 200: ok(z.object({ userKey: userKeySchema })) },
       },
-      config: { rateLimit: perUserRateLimit('e2ee', 10) },
+      // Checks a password when replacing: fail closed.
+      config: { rateLimit: { ...perUserRateLimit('e2ee', 10), ...FAIL_CLOSED } },
     },
-    async (request) => ({
-      success: true as const,
-      data: {
-        userKey: await e2eeService.setUserKey(requireHuman(request).user.id, request.body),
-      },
-    }),
+    async (request) => {
+      const { user } = requireHuman(request)
+      const { publicKey, replace, password, code } = request.body
+      // A new key makes every device untrusted and lets a new backup wipe the history.
+      if (replace) await confirmIdentity(user, password ?? '', code)
+      return {
+        success: true as const,
+        data: { userKey: await e2eeService.setUserKey(user.id, { publicKey, replace }) },
+      }
+    },
   )
 
   app.put(

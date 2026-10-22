@@ -67,8 +67,14 @@ export const relationshipsRoutes: FastifyPluginAsyncZod<RelationshipsRoutesOptio
       config: { rateLimit: REQUEST_RATE_LIMIT },
     },
     async (request) => {
+      // A friend request reaches someone, as by name: a confirmed email first (when the instance
+      // asks for one). Blocking reaches nobody and stays open to everyone.
+      const me =
+        request.body.type === 'friend'
+          ? (await requireVerifiedHuman(request)).user
+          : requireHuman(request).user
       const relationship = await relationshipService.put(
-        requireHuman(request).user,
+        me,
         request.params.userId,
         request.body.type,
       )

@@ -4,13 +4,17 @@
     "tagline": "A free alternative to Discord"
   },
   "common": {
+    "back": "Back",
+    "next": "Next",
     "loading": "Loading…",
     "or": "or",
     "backToLogin": "Back to sign in",
     "language": "Language",
     "cancel": "Cancel",
     "close": "Close",
-    "more": "More"
+    "more": "More",
+    "showPassword": "Show password",
+    "hidePassword": "Hide password"
   },
   "nav": {
     "servers": "Servers",
@@ -56,6 +60,11 @@
     "hide": "Hide",
     "remove": "Remove",
     "blocked": "You blocked this user. Unblock them to send a message.",
+    "delete": "Delete conversation",
+    "deleteTitle": "Delete the encrypted conversation?",
+    "deleteText": "The conversation disappears for everyone in it, with all its messages and files — from the server and from every device. This can't be undone.",
+    "deleteConfirm": "Delete",
+    "deleted": "This encrypted conversation was deleted.",
     "notFound": "Conversation not found",
     "listLabel": "Conversation with {{name}}",
     "heading": "Messages",
@@ -128,6 +137,8 @@
       "back": "Sign in again"
     },
     "qr": {
+      "matchLabel": "Number to confirm",
+      "pickThis": "Pick this number on the device where you're signed in",
       "title": "Sign in with a QR code",
       "show": "Sign in with a QR code",
       "codeLabel": "Sign-in QR code",
@@ -135,22 +146,30 @@
       "preparing": "Preparing the code…",
       "step1": "Open Chinchi where you are already signed in, e.g. on your phone.",
       "step2": "Point the camera at the code, or enter the code in Settings → Devices.",
-      "step3": "Confirm the sign-in — this page signs in by itself.",
+      "step3": "Pick the number from this page there — this page signs in by itself.",
       "signingIn": "Sign-in confirmed, signing in…",
       "back": "Sign in with a password",
       "hint": "Scan it with the phone where you are signed in, or enter the code in Settings → Devices."
     },
+    "newSignIn": {
+      "title": "New sign-in to your account",
+      "question": "Someone signed in to your account by a QR code. Was it you?",
+      "hint": "If not, end that session in the devices list and change your password.",
+      "me": "It was me",
+      "notMe": "It wasn't me"
+    },
     "qrApprove": {
+      "pickNumber": "Which number does the new device show?",
+      "numbers": "Number from the new device",
       "title": "Sign-in on a new device",
       "question": "Let this device into your account?",
       "loading": "Loading…",
       "device": "Device",
       "address": "Address",
       "when": "When",
-      "warning": "Confirm only a code from your own screen. If someone sent you the code, it is a scam: they would get into your account.",
+      "warning": "Pick only the number on your own new device. If someone told you the number or sent it, it is a scam: they would get into your account.",
       "handOver": "Hand over encrypted conversations",
       "handOverHint": "The new device gets the recovery key and can read the history.",
-      "yes": "Let in",
       "no": "Cancel",
       "done": "Done: the device is signing in.",
       "close": "OK"
@@ -219,6 +238,7 @@
     "NOT_IN_VOICE": "You are not connected to voice",
     "MICROPHONE_UNAVAILABLE": "No microphone access: you are connected and can listen. Allow the microphone in your browser to talk.",
     "BANNED": "You are banned from this server.",
+    "BACKUP_KEY_UNCHANGED": "The history backup can only be replaced along with a reset of the encryption keys.",
     "UNKNOWN_BAN": "This user isn't banned.",
     "TIMEOUT_IMMUNE": "Administrators can't be timed out.",
     "SLOWMODE": "Slowmode is on — wait before sending again.",
@@ -249,6 +269,11 @@
     "UNKNOWN_WEBHOOK": "Webhook not found.",
     "TOO_MANY_WEBHOOKS": "This channel already has as many webhooks as allowed.",
     "TOO_MANY_CHANNELS": "This server already has as many channels as allowed.",
+    "ENCRYPTION_REFUSED": "The server answered with a conversation that is not encrypted although you asked for an encrypted one, so it was not opened. That only happens if the server was broken into or set up against you.",
+    "NOT_ENCRYPTED": "Only an encrypted conversation can be deleted.",
+    "TOO_MANY_ROLES": "This server already has as many roles as allowed.",
+    "INVALID_EXPORT_TICKET": "This archive link was already used or has expired. Confirm with your password again.",
+    "SERVER_BUSY": "The server is busy right now. Try again in a moment.",
     "TOO_MANY_INVITES": "This server already has as many active invites as allowed. Delete some first.",
     "TOO_MANY_FOLLOWERS": "This channel already has as many followers as allowed.",
     "ALREADY_FOLLOWING": "That channel already follows this one.",
@@ -277,6 +302,7 @@
     "RATE_LIMIT_UNAVAILABLE": "The service is briefly unavailable, try again in a minute",
     "UNKNOWN_QR_LOGIN": "The sign-in code has expired or was used — refresh it on the new device.",
     "QR_LOGIN_USED": "This sign-in was already confirmed.",
+    "QR_LOGIN_MISMATCH": "The number didn't match the new device. This sign-in is cancelled: if it was you, start over.",
     "SAME_EMAIL": "This is already the email of your account."
   },
   "settings": {
@@ -420,7 +446,11 @@
     "export": {
       "title": "Your data",
       "description": "A ZIP archive with your account, every message you wrote and the files in them. A large archive is built while it downloads.",
-      "download": "Download my data"
+      "download": "Download my data",
+      "confirm": "The archive holds all your messages, so confirm it's you.",
+      "password": "Password",
+      "code": "Code from the app or a recovery code",
+      "start": "Download"
     },
     "encryptionDevices": {
       "title": "Encryption keys",
@@ -649,6 +679,10 @@
     "uploading": "{{percent}}% · {{sent}} of {{total}}",
     "uploadingMany": "{{name}} and {{count}} more",
     "uploadDone": "Uploaded, sending…",
+    "downloadLabel": "Downloading {{name}}",
+    "downloadCancel": "Cancel downloading {{name}}",
+    "downloadProgress": "Downloading {{percent}}% · {{received}} of {{total}}",
+    "downloadSaving": "Saving…",
     "download": "Download",
     "downloadFailed": "Could not download {{name}}",
     "attachFiles": "Attach files",
@@ -907,6 +941,7 @@
   },
   "markdown": {
     "showSpoiler": "Show spoiler",
+    "qrSignInLink": "A link to sign in someone else's device — don't open it",
     "unknownUser": "unknown-user",
     "unknownRole": "unknown-role",
     "unknownChannel": "unknown-channel"
@@ -1419,6 +1454,26 @@
     "save": "Save rules"
   },
   "e2ee": {
+    "members": {
+      "newTitle": "New people in the conversation",
+      "new": "New people in the conversation: {{names}}",
+      "by": "Added by {{name}}.",
+      "compare": "Compare safety codes with them before writing anything important.",
+      "check": "Compare codes",
+      "dismiss": "Got it",
+      "pendingTitle": "Not in the encrypted conversation yet",
+      "pending": "Not in the encrypted conversation yet: {{names}}. Messages don't reach them until whoever invited them takes them into the encryption."
+    },
+    "downgrade": {
+      "listState": "encryption turned off by the server",
+      "badge": "Encryption turned off",
+      "remove": "Remove conversation",
+      "removeTitle": "Remove the conversation from this device?",
+      "removeText": "The conversation leaves your list, and its decrypted messages are wiped from this device. The other side keeps it: the server calls it ordinary and won't delete it for everyone. If someone writes in it again, it comes back to the list. While the server calls it ordinary you can't write in it; if encryption comes back, it works again.",
+      "removeConfirm": "Remove",
+      "title": "The server turned off this conversation's encryption",
+      "text": "This conversation was encrypted on this device, and now the server calls it an ordinary one. Everything written before this stays encrypted: the server has not read it and cannot. Sending is stopped so that new messages don't reach the server in plain text. That only happens if the server was broken into or set up against you — tell the administrator."
+    },
     "device": {
       "code": "Device code:",
       "codeHint": "This device's code. It is compared by voice or in person before the device is let into a conversation."
@@ -1463,7 +1518,10 @@
     "waiting": "Approve it from your old device or with the recovery key, and it joins on its own. Or read the code below to the other person: once they compare it, they can let this device in.",
     "waitingTitle": "This device is not in the conversation yet",
     "failed": "Couldn't set up encryption. Reload the page or try again later.",
-    "fileDecrypting": "Decrypting {{name}}…",
+    "fileDecrypting": "Decrypting…",
+    "fileLoadingName": "Downloading {{name}}",
+    "fileCancel": "Cancel downloading {{name}}",
+    "fileProgress": "Downloading {{percent}}% · {{received}} of {{total}}",
     "fileFailed": "Couldn't decrypt {{name}}",
     "encryptedQuote": "Encrypted message",
     "groupHint": "Messages, files and calls are encrypted on members' devices; the server can't see them. No search, link previews or bots here. Encryption is in beta.",
@@ -1516,6 +1574,8 @@
       "resetTitle": "Reset encryption keys?",
       "resetText": "New keys and a new recovery key are created. Old encrypted messages stay unavailable on this device, and the people you talk to will see that you reset your keys and can compare codes again. If you still have another device or your recovery key, use those instead.",
       "resetConfirm": "Reset",
+      "resetPassword": "Password",
+      "resetCode": "Code from the app or a recovery code",
       "hide": "Hide key"
     },
     "approval": {
@@ -1539,6 +1599,8 @@
     "betaHint": "Encryption has not been independently reviewed yet",
     "betaNotice": "Encryption is in beta: it has not been independently reviewed yet. Rely on it with care for truly sensitive secrets.",
     "sender": {
+      "plain": "not encrypted",
+      "plainHint": "This message came without encryption although the conversation is encrypted. The server may have written or forged it — don't trust it.",
       "mismatch": "Signed by someone else",
       "mismatchHint": "The server named an author other than the one who signed this message. The real sender is shown.",
       "unverified": "sender not verified",
@@ -1620,6 +1682,14 @@
       "connect": "Connect",
       "invalid": "That does not look like a server address: a name like chat.example.com is expected",
       "unreachable": "Could not reach a Chinchi server at that address. Check the address and your network."
+    },
+    "window": {
+      "back": "Back",
+      "forward": "Forward",
+      "minimize": "Minimize",
+      "maximize": "Maximize",
+      "restore": "Restore",
+      "close": "Close window"
     },
     "tray": {
       "open": "Open Chinchi",

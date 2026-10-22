@@ -16,6 +16,12 @@ export interface StoredUserKey {
 
 const USER_KEY = 'userKey'
 
+/** What replacing the user key takes: the password, and a code when 2FA is on. */
+export interface IdentityProof {
+  readonly password: string
+  readonly code?: string
+}
+
 export interface CrossSigningDeps {
   readonly api: E2eeApi
   readonly store: E2eeStore
@@ -73,9 +79,9 @@ export const createCrossSigning = ({ api, store, userId }: CrossSigningDeps) => 
      * A new user key, replacing the old one (all devices and the recovery key were lost): every
      * device signature goes, and people who checked this user see the change.
      */
-    reset: async (keys: DeviceKeys): Promise<StoredUserKey> => {
+    reset: async (keys: DeviceKeys, identity: IdentityProof): Promise<StoredUserKey> => {
       const stored = await generate()
-      await api.e2ee.setUserKey({ publicKey: stored.publicKey, replace: true })
+      await api.e2ee.setUserKey({ publicKey: stored.publicKey, replace: true, ...identity })
       await store.set(USER_KEY, stored)
       await sign(stored.privateKey, keys)
       return stored

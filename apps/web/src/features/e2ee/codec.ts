@@ -1,3 +1,4 @@
+import { safeFileName } from '@chinchi/shared'
 import { z } from 'zod'
 
 export const toBase64 = (bytes: Uint8Array): string => {
@@ -12,7 +13,11 @@ export const fromBase64 = (text: string): Uint8Array =>
 const encryptedFileSchema = z.object({
   /** The attachment holding the ciphertext. */
   id: z.string().min(1),
-  name: z.string(),
+  /** From the sender, unseen by the server: only ever a plain name, never a path. */
+  name: z
+    .string()
+    .max(1024)
+    .transform((name) => safeFileName(name)),
   type: z.string(),
   size: z.number().int().nonnegative(),
   key: z.string().min(1),

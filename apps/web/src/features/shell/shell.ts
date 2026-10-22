@@ -33,4 +33,21 @@ export interface Shell {
   ) => Promise<() => Promise<void>>
   /** Forgets the chosen instance and shows the picker again. */
   readonly changeInstance: () => Promise<void>
+  /** The frameless window around the app: the app's own title bar drives it. */
+  readonly window: ShellWindow
+  /**
+   * Saves bytes as a file where the user chooses ("Save as"); false when they cancel. The
+   * webview has no downloads of its own on every platform, so the shell does this.
+   */
+  readonly saveFile: (name: string, blob: Blob) => Promise<boolean>
+}
+
+export interface ShellWindow {
+  minimize(): Promise<void>
+  toggleMaximize(): Promise<void>
+  /** Asks to close: with closeToTray on, the shell hides the window instead. */
+  close(): Promise<void>
+  isMaximized(): Promise<boolean>
+  /** Calls `listener` whenever the window is maximized or restored; resolves to the unsubscribe. */
+  onMaximizedChange(listener: (maximized: boolean) => void): Promise<() => void>
 }

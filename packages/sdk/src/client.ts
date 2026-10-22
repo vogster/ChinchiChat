@@ -3,6 +3,7 @@ import { createAnnouncementsApi } from './announcements'
 import { createAuthApi } from './auth'
 import { createBotsApi } from './bots'
 import { createCommandsApi } from './commands'
+import { createDownload } from './download'
 import { createE2eeApi } from './e2ee'
 import { createGuildsApi } from './guilds'
 import { createHttp } from './http'
@@ -12,6 +13,7 @@ import { createFetchPut, createXhrPut } from './upload'
 
 import type { HttpOptions } from './http'
 
+export type { Download, DownloadOptions, DownloadProgress } from './download'
 export type { ApiErrorDetail } from './errors'
 export { ApiError, isApiError } from './errors'
 export type { PutFile, UploadOptions, UploadProgress } from './upload'
@@ -40,6 +42,8 @@ export const createApiClient = (options: HttpOptions) => {
     ...createBotsApi(request),
     ...createCommandsApi(request),
     ...createAnnouncementsApi(request),
+    /** Server files that need the session (attachments, previews), as bytes. */
+    media: { download: createDownload(options) },
   }
 }
 

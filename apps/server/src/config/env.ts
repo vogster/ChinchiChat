@@ -102,6 +102,8 @@ const envSchema = z.object({
   TRUST_PROXY: trustProxySchema,
   /** Heartbeat interval announced in HELLO; tests use a short one. */
   GATEWAY_HEARTBEAT_MS: z.coerce.number().int().min(100).max(120_000).default(41_250),
+  /** Gateway connections from one address per process; offices behind one NAT need more. */
+  GATEWAY_MAX_CONNECTIONS_PER_ADDRESS: z.coerce.number().int().min(1).max(1_000_000).default(100),
   /** Server-side link previews (OpenGraph). `off` never fetches anything users link to. */
   LINK_PREVIEWS: z.enum(['on', 'off']).default('on'),
   /** Prometheus `/metrics` on a port of its own; off when unset. Never publish it. */
@@ -232,6 +234,7 @@ export interface Config {
   readonly initialAdminEmail: string | undefined
   readonly trustProxy: boolean | number | readonly string[]
   readonly gatewayHeartbeatMs: number
+  readonly gatewayMaxConnectionsPerAddress: number
   readonly linkPreviews: boolean
   readonly metrics: { readonly host: string; readonly port: number } | undefined
   readonly storage: StorageConfig | undefined
@@ -294,6 +297,7 @@ export const loadConfig = (env: Readonly<Record<string, string | undefined>>): C
       ? Object.freeze([...data.TRUST_PROXY])
       : data.TRUST_PROXY,
     gatewayHeartbeatMs: data.GATEWAY_HEARTBEAT_MS,
+    gatewayMaxConnectionsPerAddress: data.GATEWAY_MAX_CONNECTIONS_PER_ADDRESS,
     linkPreviews: data.LINK_PREVIEWS === 'on',
     metrics:
       data.METRICS_PORT !== undefined

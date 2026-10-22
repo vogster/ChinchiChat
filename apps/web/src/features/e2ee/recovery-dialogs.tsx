@@ -5,6 +5,7 @@ import { Alert } from '../../components/ui/alert'
 import { Button } from '../../components/ui/button'
 import { Dialog } from '../../components/ui/dialog'
 import { TextField } from '../../components/ui/text-field'
+import { useSaveFile } from '../shell/use-save-file'
 import { downloadRecoveryKey } from './recovery-file'
 
 import type { RecoveryControls } from './use-recovery'
@@ -26,6 +27,7 @@ export const SaveRecoveryKeyDialog = ({
   onLater: () => void
 }) => {
   const { t } = useTranslation()
+  const save = useSaveFile()
   const [copied, setCopied] = useState(false)
   return (
     <Dialog
@@ -39,7 +41,7 @@ export const SaveRecoveryKeyDialog = ({
         <div className="flex flex-wrap gap-2">
           <Button
             variant="secondary"
-            onClick={() => downloadRecoveryKey(recoveryKey, t('e2ee.recovery.fileNote'))}
+            onClick={() => void downloadRecoveryKey(save, recoveryKey, t('e2ee.recovery.fileNote'))}
           >
             {t('e2ee.recovery.download')}
           </Button>

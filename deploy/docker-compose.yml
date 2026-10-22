@@ -88,7 +88,7 @@ services:
 
   server:
     <<: *restart
-    image: ghcr.io/vogster/chinchi-server:${CHINCHI_VERSION:-0.18.0}
+    image: ghcr.io/vogster/chinchi-server:${CHINCHI_VERSION:-0.18.1}
     environment:
       DATABASE_URL: postgres://chinchi:${POSTGRES_PASSWORD}@postgres:5432/chinchi
       REDIS_URL: redis://valkey:6379
@@ -101,6 +101,7 @@ services:
       INSTANCE_NAME: ${INSTANCE_NAME:-Chinchi}
       REGISTRATION_MODE: ${REGISTRATION_MODE:-open}
       REQUIRE_VERIFIED_EMAIL: ${REQUIRE_VERIFIED_EMAIL:-on}
+      GATEWAY_MAX_CONNECTIONS_PER_ADDRESS: ${GATEWAY_MAX_CONNECTIONS_PER_ADDRESS:-100}
       # Required: otherwise whoever registers first on a fresh domain would run the instance.
       INITIAL_ADMIN_EMAIL: ${INITIAL_ADMIN_EMAIL:?set INITIAL_ADMIN_EMAIL in .env}
       SMTP_URL: ${SMTP_URL:-}
@@ -133,7 +134,7 @@ services:
   # The web app on Caddy, which also terminates TLS and proxies the API, files and voice.
   web:
     <<: *restart
-    image: ghcr.io/vogster/chinchi-web:${CHINCHI_VERSION:-0.18.0}
+    image: ghcr.io/vogster/chinchi-web:${CHINCHI_VERSION:-0.18.1}
     environment:
       CHINCHI_DOMAIN: ${CHINCHI_DOMAIN}
       FILES_DOMAIN: ${FILES_DOMAIN:-}

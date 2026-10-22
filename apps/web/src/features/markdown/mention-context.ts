@@ -15,6 +15,7 @@ export interface MentionResolver {
     readonly unknownRole: string
     readonly unknownChannel: string
     readonly showSpoiler: string
+    readonly qrSignInLink: string
   }
 }
 

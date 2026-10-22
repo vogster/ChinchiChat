@@ -153,6 +153,17 @@ describe('managing 2FA', () => {
     expect(locked.json().code).toBe('LOGIN_LOCKED')
   })
 
+  it('checks the password first, then asks for the code (a form can go in two steps)', async () => {
+    await enable()
+
+    const wrong = await post('/users/@me/mfa/disable', { password: 'not-it' })
+    expect(wrong.json().code).toBe('INVALID_CURRENT_PASSWORD')
+    const right = await post('/users/@me/mfa/disable', { password: 'password123' })
+    expect(right.json().code).toBe('MFA_CODE_REQUIRED')
+    const renew = await post('/users/@me/mfa/recovery-codes', { password: 'password123' })
+    expect(renew.json().code).toBe('MFA_CODE_REQUIRED')
+  })
+
   it('turns off with the password and a code', async () => {
     const { codes } = await enable()
 

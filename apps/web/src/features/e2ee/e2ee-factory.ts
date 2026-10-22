@@ -1,7 +1,7 @@
+import { describeUserAgent } from '@chinchi/shared'
 import { createContext, useCallback, useContext } from 'react'
 
 import { useApi } from '../../lib/api-context'
-import { describeUserAgent } from '../settings/user-agent'
 import { createE2eeClient } from './client'
 import { createIndexedDbStore } from './store'
 
@@ -12,6 +12,11 @@ import type { ApiClient } from '@chinchi/sdk'
 export type E2eeClientLike = Pick<
   E2eeClient,
   | 'ready'
+  | 'conversations'
+  | 'invited'
+  | 'membership'
+  | 'dismissNotice'
+  | 'forgetConversation'
   | 'forget'
   | 'open'
   | 'send'

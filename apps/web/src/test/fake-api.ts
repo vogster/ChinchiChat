@@ -2,7 +2,7 @@ import { ApiError } from '@chinchi/sdk'
 import { DEFAULT_EVERYONE_PERMISSIONS, Permission } from '@chinchi/shared'
 import { vi } from 'vitest'
 
-import type { ApiClient, UploadOptions } from '@chinchi/sdk'
+import type { ApiClient, DownloadOptions, UploadOptions } from '@chinchi/sdk'
 import type {
   AdminGuild,
   AdminUser,
@@ -368,10 +368,15 @@ export const testQrLogin = {
   ipAddress: '203.0.113.5',
   createdAt: '2026-10-21T10:00:00.000Z',
   publicKey: null as string | null,
+  choices: [23, 47, 81],
 }
 
 export const createFakeApi = ({ user = null, registrationMode = 'open' }: FakeApiOptions = {}) => {
   const signedInAs = { user: testUser }
+  /** Like the server: with 2FA on, the password alone answers MFA_CODE_REQUIRED. */
+  const codeFor = (code: string | undefined, required = user?.mfaEnabled ?? false) => {
+    if (required && !code) throw apiError(400, 'MFA_CODE_REQUIRED')
+  }
 
   return {
     announcements: {
@@ -489,8 +494,14 @@ export const createFakeApi = ({ user = null, registrationMode = 'open' }: FakeAp
         uri: 'otpauth://totp/Chinchi:alice?secret=JBSWY3DPEHPK3PXP&issuer=Chinchi',
       })),
       enable: vi.fn(async () => ({ recoveryCodes: ['aaaaa-bbbbb', 'ccccc-ddddd'] })),
-      disable: vi.fn(async () => null),
-      renewRecoveryCodes: vi.fn(async () => ({ recoveryCodes: ['eeeee-fffff'] })),
+      disable: vi.fn(async (body: { password: string; code?: string }) => {
+        codeFor(body.code, true)
+        return null
+      }),
+      renewRecoveryCodes: vi.fn(async (body: { password: string; code?: string }) => {
+        codeFor(body.code, true)
+        return { recoveryCodes: ['eeeee-fffff'] }
+      }),
     },
     auth: {
       register: vi.fn(async () => signedInAs),
@@ -499,7 +510,10 @@ export const createFakeApi = ({ user = null, registrationMode = 'open' }: FakeAp
       logout: vi.fn(async () => undefined),
       verifyEmail: vi.fn(async () => ({ user: { ...testUser, emailVerified: true } })),
       resendVerification: vi.fn(async () => null),
-      changeEmail: vi.fn(async (_body: ChangeEmailRequest) => null),
+      changeEmail: vi.fn(async (body: ChangeEmailRequest) => {
+        codeFor(body.code)
+        return null
+      }),
       confirmEmailChange: vi.fn(async (_token: string) => ({
         user: { ...testUser, email: 'new@example.com', emailVerified: true },
       })),
@@ -522,7 +536,11 @@ export const createFakeApi = ({ user = null, registrationMode = 'open' }: FakeAp
       revokeOthers: vi.fn(async () => undefined),
     },
     users: {
-      deleteMe: vi.fn(async (_password: string, _code?: string) => undefined),
+      deleteMe: vi.fn(async (_password: string, code?: string) => codeFor(code)),
+      exportTicket: vi.fn(async (_password: string, code?: string) => {
+        codeFor(code)
+        return { ticket: 'ticket' }
+      }),
       me: vi.fn(async () => {
         if (!user) throw apiError(401, 'UNAUTHORIZED')
         return { user }
@@ -802,6 +820,13 @@ export const createFakeApi = ({ user = null, registrationMode = 'open' }: FakeAp
       upload: vi.fn(
         async (_channelId: string, _file: Blob, _options?: UploadOptions) => testUpload.id,
       ),
+    },
+    media: {
+      download: vi.fn(async (path: string, _options?: DownloadOptions) => {
+        const response = await fetch(path)
+        if (!response.ok) throw new Error(`Download failed: ${response.status}`)
+        return response.blob()
+      }),
     },
     instance: {
       get: vi.fn(async () => ({
