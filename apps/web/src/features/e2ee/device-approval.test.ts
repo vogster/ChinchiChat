@@ -125,6 +125,31 @@ describe('approving a new device from an old one', () => {
     expect(phone.approvals.views()[0]?.state).toBe('declined')
   })
 
+  it('shows the question on one approved device only, even if told another answered too', async () => {
+    const { delivery, client, pump } = setup()
+    const laptop = client(ALICE, 'Ноутбук')
+    await laptop.ready()
+    const tablet = client(ALICE, 'Планшет')
+    expect(await tablet.recovery.useKey((await laptop.recovery.key()) as string)).toBe('ok')
+    const phone = client(ALICE, 'Телефон')
+    await phone.ready()
+
+    await phone.approvals.request()
+    await pump(laptop, tablet, phone)
+    const showing = [laptop, tablet].filter((c) => c.approvals.views().length > 0)
+    expect(showing).toHaveLength(1)
+
+    // A relay that says the other one answered: the one showing steps back.
+    const [view] = (showing[0] as E2eeClient).approvals.views()
+    const last = delivery.approvalEvents.at(-1) as (typeof delivery.approvalEvents)[number]
+    await (showing[0] as E2eeClient).approvals.handle({
+      ...last,
+      id: view?.approvalId as string,
+      approverDeviceId: '999',
+    })
+    expect((showing[0] as E2eeClient).approvals.views()).toEqual([])
+  })
+
   it('stops when the old device says no', async () => {
     const { delivery, client, pump } = setup()
     const laptop = client(ALICE, 'Ноутбук')

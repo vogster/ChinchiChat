@@ -148,6 +148,13 @@ export const createDeviceApproval = ({ api, ready, crossSigning, backup }: Devic
     }
     const session = sessions.get(approval.id)
     if (!session) return
+    // Another of my devices answered: its emoji are the ones to compare, not this one's.
+    if (approval.approverDeviceId && approval.approverDeviceId !== here) {
+      sessions.delete(approval.id)
+      views.delete(approval.id)
+      notify()
+      return
+    }
     if (approval.state === 'revealed' && approval.newKey && !session.secretKey) {
       // The relay must not swap the new device's key after seeing mine.
       if ((await commitmentOf(approval.newKey)) !== approval.commitment) {

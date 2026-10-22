@@ -55,7 +55,9 @@ export const createApprovalService = ({
       throw conflict('APPROVAL_STATE', `The approval is ${approval.state}`)
     }
     const next = { ...approval, ...change }
-    await approvals.update(next)
+    if (!(await approvals.replace(approval, next))) {
+      throw conflict('APPROVAL_STATE', 'The approval changed meanwhile')
+    }
     await announce(next)
     return toApproval(next)
   }
