@@ -1,7 +1,8 @@
-import { Readable } from 'node:stream'
+import { finished, Readable } from 'node:stream'
 import { decodeSnowflake } from '@chinchi/shared'
 import { ZipArchive } from 'archiver'
 
+import { HttpError } from '../../http/http-error'
 import { attachmentKey } from '../attachments/attachment.mapper'
 import { profileImageKey } from '../media/media-paths'
 import { toCurrentUser, toPublicUser } from '../users/user.mapper'
@@ -21,9 +22,12 @@ export interface DataExportDeps {
   readonly storage: ObjectStorage | undefined
   readonly log: FastifyBaseLogger
   readonly now?: () => Date
+  /** Exports running at once in this process; the next one gets 503 `SERVER_BUSY`. */
+  readonly maxConcurrent?: number
 }
 
 const PAGE = 500
+const MAX_CONCURRENT_EXPORTS = 2
 
 const README = `Chinchi data export / Экспорт данных Chinchi
 
@@ -43,8 +47,9 @@ interface PendingFile {
 
 /**
  * Builds a ZIP of everything a user put into Chinchi: the account, their own messages (not other
- * people's) and their files. It streams: messages are read page by page and files one at a time,
- * so a large account does not sit in memory.
+ * people's) and their files. It streams: messages are read page by page, and files go from
+ * storage into the archive as streams, at the pace the client downloads, so neither a large
+ * account nor a large file sits in memory. Only a few exports run at once.
  */
 export const createDataExport = ({
   exports,
@@ -53,16 +58,25 @@ export const createDataExport = ({
   storage,
   log,
   now = () => new Date(),
+  maxConcurrent = MAX_CONCURRENT_EXPORTS,
 }: DataExportDeps) => {
-  /** Appends one entry and waits until the archive has taken it in. */
+  let running = 0
+
+  /** Appends one entry and waits until the archive has taken it in (or is gone). */
   const add = (archive: Archiver, source: Buffer | string | Readable, name: string) =>
     new Promise<void>((resolve, reject) => {
-      const onError = (error: Error) => reject(error)
-      archive.once('error', onError)
-      archive.once('entry', () => {
+      const onError = (error: Error) => settle(() => reject(error))
+      const onClose = () => settle(() => reject(new Error('The export was dropped')))
+      const onEntry = () => settle(resolve)
+      const settle = (done: () => void) => {
         archive.off('error', onError)
-        resolve()
-      })
+        archive.off('close', onClose)
+        archive.off('entry', onEntry)
+        done()
+      }
+      archive.once('error', onError)
+      archive.once('close', onClose)
+      archive.once('entry', onEntry)
       archive.append(source, { name })
     })
 
@@ -129,19 +143,40 @@ export const createDataExport = ({
         : []),
     ]
     for (const file of [...files, ...profile]) {
+      if (archive.destroyed) return
       // A file already gone from storage is left out rather than failing the export.
-      const bytes = await storage.read(file.key).catch(() => null)
-      if (bytes) await add(archive, Buffer.from(bytes), file.path)
+      const stream = await storage.readStream(file.key).catch(() => null)
+      if (!stream) continue
+      // A dropped download must not leave the storage connection open.
+      const close = () => stream.destroy()
+      archive.once('close', close)
+      try {
+        await add(archive, stream, file.path)
+      } finally {
+        archive.off('close', close)
+      }
     }
   }
 
   return {
-    /** The archive as a stream; it ends when everything is in (or aborts on failure). */
+    /**
+     * The archive as a stream; it ends when everything is in (or aborts on failure). Throws 503
+     * `SERVER_BUSY` while as many exports as allowed are running.
+     */
     build(user: UserRow): Archiver {
+      if (running >= maxConcurrent) {
+        throw new HttpError(503, 'SERVER_BUSY', 'The server is busy, try again shortly')
+      }
+      running += 1
       const archive = new ZipArchive({ zlib: { level: 6 } })
+      // Done, failed or dropped by the client: the place is free again.
+      finished(archive, () => {
+        running -= 1
+      })
       fill(user, archive)
         .then(() => archive.finalize())
         .catch((error: unknown) => {
+          if (archive.destroyed) return
           log.error({ err: error, userId: user.id }, 'Data export failed')
           archive.abort()
         })
