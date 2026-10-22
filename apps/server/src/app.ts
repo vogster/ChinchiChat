@@ -95,6 +95,8 @@ export interface AppDependencies {
   readonly voiceRooms?: ServiceDeps['voiceRooms']
   /** Prometheus metrics; a fresh registry by default. */
   readonly metrics?: Metrics
+  /** Where the first admin's confirmation link goes without SMTP; the log by default. */
+  readonly reportFirstAdminLink?: ServiceDeps['reportFirstAdminLink']
 }
 
 declare module 'fastify' {
@@ -177,6 +179,7 @@ export const buildApp = (
     storage,
     linkFetchOverrides,
     voiceRooms,
+    reportFirstAdminLink,
     events: rawEvents = createMemoryEventBus(),
     metrics = createMetrics(),
   }: AppDependencies,
@@ -218,6 +221,7 @@ export const buildApp = (
     redis,
     ...(linkFetchOverrides ? { linkFetchOverrides } : {}),
     ...(voiceRooms ? { voiceRooms } : {}),
+    ...(reportFirstAdminLink ? { reportFirstAdminLink } : {}),
     log: app.log,
     presence: {
       visible: (userIds) => (presence ? presence.visible(userIds) : Promise.resolve([])),

@@ -39,6 +39,8 @@ export interface AccountServiceDeps {
   readonly instanceSettings: InstanceSettingsStore
   readonly instanceInvites: InstanceInviteRepository
   readonly adminRows: AdminRepository
+  /** Where the first admin's confirmation link goes without SMTP; the log by default. */
+  readonly reportFirstAdminLink?: ((link: string) => void) | undefined
 }
 
 /** Signing up and in, the second factor, and the emails an account gets. */
@@ -55,7 +57,14 @@ export const createAccountServices = ({
   instanceSettings,
   instanceInvites,
   adminRows,
+  reportFirstAdminLink = (link) =>
+    log.warn(
+      `FIRST ADMIN LINK: open it to confirm ${config.initialAdminEmail} and become the instance admin (SMTP_URL is not set, so it was not emailed): ${link}`,
+    ),
 }: AccountServiceDeps) => {
+  /** The address INITIAL_ADMIN_EMAIL names: its owner runs the instance, once proven. */
+  const designated = (email: string) =>
+    config.initialAdminEmail !== undefined && config.initialAdminEmail === email
   const loginThrottle = redis ? createRedisLoginThrottle(redis) : createMemoryLoginThrottle()
   const mfa = createMfaService({
     users,
@@ -76,13 +85,11 @@ export const createAccountServices = ({
       mode: async () => (await instanceSettings.get()).registrationMode,
       consumeInvite: (code) => instanceInvites.consume(code, new Date()),
       releaseInvite: (code) => instanceInvites.release(code),
-      isInitialAdmin: async (email) =>
-        config.initialAdminEmail === email && !(await adminRows.hasAdmin()),
-      async promote(user) {
-        if (!config.initialAdminEmail) return adminRows.promoteIfFirst(user.id)
-        if (user.email !== config.initialAdminEmail) return false
-        return adminRows.promoteIfNoAdmin(user.id)
-      },
+      isInitialAdmin: async (email) => designated(email) && !(await adminRows.hasAdmin()),
+      // With a designated address, knowing it is not enough: its owner becomes admin once the
+      // email is confirmed (below), so nobody takes the instance by registering first with it.
+      promote: async (user) =>
+        config.initialAdminEmail ? false : adminRows.promoteIfFirst(user.id),
     },
     loginThrottle,
     mfa,
@@ -107,6 +114,18 @@ export const createAccountServices = ({
       await loginThrottle.resetLogin(user.username)
       await loginThrottle.resetLogin(user.email)
     },
+    onEmailConfirmed: async (user) => designated(user.email) && adminRows.promoteIfNoAdmin(user.id),
+    // Without SMTP the first admin could never confirm: their link (theirs only, as long as the
+    // instance has no admin) goes to the log, which only the one running the server reads.
+    ...(mailer
+      ? {}
+      : {
+          revealVerificationLink: async (user, verifyLink) => {
+            if (designated(user.email) && !(await adminRows.hasAdmin())) {
+              reportFirstAdminLink(verifyLink)
+            }
+          },
+        }),
   })
   const qrLogin = createQrLoginService({
     store: redis ? createRedisQrLoginStore(redis) : createMemoryQrLoginStore(),

@@ -78,6 +78,8 @@ describe('requiring a confirmed email', () => {
   it('is an instance setting admins can turn off, shown in the public instance info', async () => {
     const admin = (await registerUser(app, { username: 'admin', email: 'admin@example.com' }))
       .cookie as string
+    // The designated admin runs the instance once the email is confirmed.
+    await verify(admin, 'admin@example.com')
     const carol = (await registerUser(app, { username: 'carol', email: 'carol@example.com' }))
       .cookie as string
     expect((await call(null, 'GET', '/instance')).json().data.instance.requireVerifiedEmail).toBe(

@@ -89,6 +89,8 @@ export interface ServiceDeps {
   readonly linkFetchOverrides?: Pick<SafeFetchOptions, 'isAllowedAddress' | 'isAllowedPort'>
   /** Tests only: replaces LiveKit's room API. */
   readonly voiceRooms?: VoiceRooms
+  /** Where the first admin's confirmation link goes without SMTP; the log by default. */
+  readonly reportFirstAdminLink?: (link: string) => void
   readonly log: FastifyBaseLogger
 }
 
@@ -105,6 +107,7 @@ export const createServices = (
     log,
     presence,
     voiceRooms,
+    reportFirstAdminLink,
   }: ServiceDeps,
 ) => {
   const nextId = createSnowflakeGenerator({ workerId: config.workerId })
@@ -166,6 +169,7 @@ export const createServices = (
     instanceSettings,
     instanceInvites,
     adminRows,
+    reportFirstAdminLink,
   })
   const guild = createGuildService({
     audit,

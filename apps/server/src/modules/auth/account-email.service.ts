@@ -44,6 +44,10 @@ export interface AccountEmailServiceDeps {
   readonly now?: () => Date
   /** A reset proves who owns the account: failed sign-ins no longer count against it. */
   readonly onPasswordReset?: (userId: Snowflake) => Promise<void>
+  /** The account proved it owns its address (true: that made it an admin). */
+  readonly onEmailConfirmed?: (user: UserRow) => Promise<boolean>
+  /** Also hands a confirmation link out another way, when emails can't carry it. */
+  readonly revealVerificationLink?: (user: UserRow, link: string) => Promise<void>
 }
 
 const invalidToken = () => badRequest('INVALID_TOKEN', 'The link is invalid or has expired')
@@ -60,6 +64,8 @@ export const createAccountEmailService = ({
   events,
   now = () => new Date(),
   onPasswordReset = async () => undefined,
+  onEmailConfirmed = async () => false,
+  revealVerificationLink = async () => undefined,
 }: AccountEmailServiceDeps) => {
   const issueToken = async (
     userId: Snowflake,
@@ -90,11 +96,14 @@ export const createAccountEmailService = ({
   const link = (path: string, token: string) => `${publicUrl}${path}#token=${token}`
 
   const sendVerification = async (user: UserRow): Promise<void> => {
-    const token = await issueToken(user.id, 'verify_email')
-    dispatch(
-      verificationEmail(user.email, user.username, link('/verify-email', token), localeOf(user)),
-    )
+    const verifyLink = link('/verify-email', await issueToken(user.id, 'verify_email'))
+    dispatch(verificationEmail(user.email, user.username, verifyLink, localeOf(user)))
+    await revealVerificationLink(user, verifyLink)
   }
+
+  /** The address is proven: the account may be the instance's designated admin now. */
+  const confirmed = async (user: UserRow): Promise<UserRow> =>
+    (await onEmailConfirmed(user)) ? { ...user, isAdmin: true } : user
 
   return {
     sendVerification,
@@ -111,7 +120,7 @@ export const createAccountEmailService = ({
       const userId = await emailTokens.consume(hashSessionToken(token), 'verify_email', current)
       const user = userId ? await users.markEmailVerified(userId, current) : null
       if (!user) throw invalidToken()
-      return user
+      return confirmed(user)
     },
 
     /**
@@ -203,7 +212,7 @@ export const createAccountEmailService = ({
           localeOf(before),
         ),
       )
-      return after
+      return confirmed(after)
     },
 
     /** Sets a new password and signs the user out everywhere. */

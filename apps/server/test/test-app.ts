@@ -29,6 +29,8 @@ export interface TestAppOptions {
   readonly linkPreviewsReachLocalhost?: boolean
   /** Stand-in for LiveKit's room API (with LIVEKIT_* in `env`). */
   readonly voiceRooms?: VoiceRooms
+  /** Catches the first admin's confirmation link, which goes to the log without SMTP. */
+  readonly reportFirstAdminLink?: (link: string) => void
 }
 
 export const createTestApp = ({
@@ -38,6 +40,7 @@ export const createTestApp = ({
   storage = true,
   linkPreviewsReachLocalhost = false,
   voiceRooms,
+  reportFirstAdminLink,
 }: TestAppOptions = {}) => {
   const database = createDatabase(inject('databaseUrl'))
   const cache = createRedis(inject('redisUrl'))
@@ -58,6 +61,7 @@ export const createTestApp = ({
     ...(mailer ? { mailer } : {}),
     ...(storage ? { storage: createObjectStorage(testStorageConfig()) } : {}),
     ...(voiceRooms ? { voiceRooms } : {}),
+    ...(reportFirstAdminLink ? { reportFirstAdminLink } : {}),
     ...(linkPreviewsReachLocalhost
       ? { linkFetchOverrides: { isAllowedAddress: () => true, isAllowedPort: () => true } }
       : {}),
