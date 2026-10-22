@@ -632,6 +632,31 @@ describe('e2ee client', () => {
     expect(await relay(laptop, bob, 'Ага')).toMatchObject({ text: 'Ага' })
   })
 
+  it('keeps one line of state when two tabs of a browser change a conversation at once', async () => {
+    const { client } = setup()
+    const bob = client(BOB).client
+    const bobId = await bob.ready()
+    const store = createMemoryStore()
+    const firstTab = client(ALICE, 'Браузер', store).client
+    const secondTab = client(ALICE, 'Браузер', store).client
+    await firstTab.open(DM)
+    await secondTab.open(DM)
+    const phone = client(BOB, 'Телефон').client
+    expect(await phone.recovery.useKey((await bob.recovery.key()) as string)).toBe('ok')
+
+    // Both tabs hear of the phone and add it at the same moment.
+    await Promise.all([firstTab.devicesChanged(BOB), secondTab.devicesChanged(BOB)])
+    await Promise.all([firstTab.admit(DM), secondTab.admit(DM)])
+
+    // Each tab, and the page loaded again, still writes; everyone reads.
+    for (const tab of [firstTab, secondTab, client(ALICE, 'Браузер', store).client]) {
+      const sent = await tab.send(DM, `Из вкладки ${bobId}`)
+      expect(await phone.read(DM, sent)).toMatchObject({ payload: { text: `Из вкладки ${bobId}` } })
+      expect(await bob.read(DM, sent)).not.toBeNull()
+    }
+    expect(await relay(bob, secondTab, 'Ответ')).toMatchObject({ text: 'Ответ' })
+  })
+
   it('admits devices only where this device is already in: it starts no conversation', async () => {
     const { client, delivery } = setup()
     const bob = client(BOB).client

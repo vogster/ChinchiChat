@@ -234,9 +234,17 @@ export const createE2eeClient = ({ api, store, userId, deviceName }: E2eeClientO
   const queues = new Map<string, Promise<unknown>>()
   const additions = createDeviceAdditions()
 
-  /** One operation at a time per conversation: MLS state moves in a line. */
+  /**
+   * One operation at a time per conversation, across this browser's tabs too: MLS state moves in
+   * a line. Each starts from the stored state, which another tab may have moved on meanwhile.
+   */
   const serial = <T>(channelId: string, task: () => Promise<T>): Promise<T> => {
-    const run = (queues.get(channelId) ?? Promise.resolve()).then(task, task)
+    const locked = () =>
+      exclusively(`chinchi-e2ee-conversation:${userId}:${channelId}`, () => {
+        conversations.delete(channelId)
+        return task()
+      })
+    const run = (queues.get(channelId) ?? Promise.resolve()).then(locked, locked)
     queues.set(
       channelId,
       run.catch(() => undefined),
