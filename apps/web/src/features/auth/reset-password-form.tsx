@@ -8,7 +8,7 @@ import { z } from 'zod'
 
 import { Alert } from '../../components/ui/alert'
 import { Button } from '../../components/ui/button'
-import { TextField } from '../../components/ui/text-field'
+import { PasswordField } from '../../components/ui/password-field'
 import { useApi } from '../../lib/api-context'
 import { errorMessage } from '../../lib/errors'
 
@@ -58,9 +58,8 @@ export const ResetPasswordForm = ({ token }: { token: string | undefined }) => {
       onSubmit={handleSubmit((v) => reset.mutate(v))}
     >
       {reset.isError ? <Alert tone="error">{errorMessage(t, reset.error)}</Alert> : null}
-      <TextField
+      <PasswordField
         label={t('auth.fields.newPassword')}
-        type="password"
         autoComplete="new-password"
         autoFocus
         error={errors.password ? t('validation.password') : undefined}

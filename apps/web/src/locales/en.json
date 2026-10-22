@@ -4,6 +4,8 @@
     "tagline": "A free alternative to Discord"
   },
   "common": {
+    "back": "Back",
+    "next": "Next",
     "loading": "Loading…",
     "or": "or",
     "backToLogin": "Back to sign in",

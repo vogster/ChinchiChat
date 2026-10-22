@@ -7,6 +7,7 @@ import { useTranslation } from 'react-i18next'
 
 import { Alert } from '../../components/ui/alert'
 import { Button } from '../../components/ui/button'
+import { PasswordField } from '../../components/ui/password-field'
 import { TextField } from '../../components/ui/text-field'
 import { errorMessage } from '../../lib/errors'
 import { useRegister } from './use-auth-actions'
@@ -86,9 +87,8 @@ export const RegisterForm = ({
         error={message('username')}
         {...register('username')}
       />
-      <TextField
+      <PasswordField
         label={t('auth.fields.password')}
-        type="password"
         autoComplete="new-password"
         error={message('password')}
         {...register('password')}

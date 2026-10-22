@@ -43,7 +43,8 @@ export const totpEnableRequestSchema = z.strictObject({ code: totpCodeSchema })
 /** Turning 2FA off or making new recovery codes asks for both factors. */
 export const mfaConfirmRequestSchema = z.strictObject({
   password: passwordField,
-  code: mfaCodeSchema,
+  /** Without it, a right password answers MFA_CODE_REQUIRED (a form asks in two steps). */
+  code: mfaCodeSchema.optional(),
 })
 export const mfaLoginRequestSchema = z.strictObject({
   ticket: mfaTicketSchema,

@@ -8,6 +8,7 @@ import { useTranslation } from 'react-i18next'
 
 import { Alert } from '../../components/ui/alert'
 import { Button } from '../../components/ui/button'
+import { PasswordField } from '../../components/ui/password-field'
 import { TextField } from '../../components/ui/text-field'
 import { errorMessage } from '../../lib/errors'
 import { MfaStep } from './mfa-step'
@@ -73,9 +74,8 @@ const PasswordStep = ({
         error={required(Boolean(errors.login))}
         {...register('login')}
       />
-      <TextField
+      <PasswordField
         label={t('auth.fields.password')}
-        type="password"
         autoComplete="current-password"
         error={required(Boolean(errors.password))}
         {...register('password')}

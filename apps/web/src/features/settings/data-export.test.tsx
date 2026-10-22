@@ -51,18 +51,19 @@ describe('data export', () => {
 
   it('asks for a code too when two-factor sign-in is on', async () => {
     const api = createFakeApi({ user: { ...testUser, mfaEnabled: true } })
-    api.users.exportTicket.mockResolvedValueOnce({ ticket: 'T1cket' })
     vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => undefined)
     const { user } = renderApp('/settings/account', { api })
 
     const dialog = await openExport(user)
     await user.type(within(dialog).getByLabelText('Пароль', { exact: true }), 'password123')
-    expect(within(dialog).getByRole('button', { name: 'Скачать' })).toBeDisabled()
+    await user.click(within(dialog).getByRole('button', { name: 'Далее' }))
+    const download = await within(dialog).findByRole('button', { name: 'Скачать' })
+    expect(download).toBeDisabled()
     await user.type(within(dialog).getByLabelText(/Код из приложения/), '123 456')
-    await user.click(within(dialog).getByRole('button', { name: 'Скачать' }))
+    await user.click(download)
 
     await waitFor(() =>
-      expect(api.users.exportTicket).toHaveBeenCalledWith('password123', '123 456'),
+      expect(api.users.exportTicket).toHaveBeenLastCalledWith('password123', '123 456'),
     )
   })
 

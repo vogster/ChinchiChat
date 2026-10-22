@@ -373,6 +373,10 @@ export const testQrLogin = {
 
 export const createFakeApi = ({ user = null, registrationMode = 'open' }: FakeApiOptions = {}) => {
   const signedInAs = { user: testUser }
+  /** Like the server: with 2FA on, the password alone answers MFA_CODE_REQUIRED. */
+  const codeFor = (code: string | undefined, required = user?.mfaEnabled ?? false) => {
+    if (required && !code) throw apiError(400, 'MFA_CODE_REQUIRED')
+  }
 
   return {
     announcements: {
@@ -490,8 +494,14 @@ export const createFakeApi = ({ user = null, registrationMode = 'open' }: FakeAp
         uri: 'otpauth://totp/Chinchi:alice?secret=JBSWY3DPEHPK3PXP&issuer=Chinchi',
       })),
       enable: vi.fn(async () => ({ recoveryCodes: ['aaaaa-bbbbb', 'ccccc-ddddd'] })),
-      disable: vi.fn(async () => null),
-      renewRecoveryCodes: vi.fn(async () => ({ recoveryCodes: ['eeeee-fffff'] })),
+      disable: vi.fn(async (body: { password: string; code?: string }) => {
+        codeFor(body.code, true)
+        return null
+      }),
+      renewRecoveryCodes: vi.fn(async (body: { password: string; code?: string }) => {
+        codeFor(body.code, true)
+        return { recoveryCodes: ['eeeee-fffff'] }
+      }),
     },
     auth: {
       register: vi.fn(async () => signedInAs),
@@ -500,7 +510,10 @@ export const createFakeApi = ({ user = null, registrationMode = 'open' }: FakeAp
       logout: vi.fn(async () => undefined),
       verifyEmail: vi.fn(async () => ({ user: { ...testUser, emailVerified: true } })),
       resendVerification: vi.fn(async () => null),
-      changeEmail: vi.fn(async (_body: ChangeEmailRequest) => null),
+      changeEmail: vi.fn(async (body: ChangeEmailRequest) => {
+        codeFor(body.code)
+        return null
+      }),
       confirmEmailChange: vi.fn(async (_token: string) => ({
         user: { ...testUser, email: 'new@example.com', emailVerified: true },
       })),
@@ -523,8 +536,11 @@ export const createFakeApi = ({ user = null, registrationMode = 'open' }: FakeAp
       revokeOthers: vi.fn(async () => undefined),
     },
     users: {
-      deleteMe: vi.fn(async (_password: string, _code?: string) => undefined),
-      exportTicket: vi.fn(async (_password: string, _code?: string) => ({ ticket: 'ticket' })),
+      deleteMe: vi.fn(async (_password: string, code?: string) => codeFor(code)),
+      exportTicket: vi.fn(async (_password: string, code?: string) => {
+        codeFor(code)
+        return { ticket: 'ticket' }
+      }),
       me: vi.fn(async () => {
         if (!user) throw apiError(401, 'UNAUTHORIZED')
         return { user }

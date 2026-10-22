@@ -82,10 +82,12 @@ export const createMfaService = ({
   }
 
   /** Password and a code, for turning 2FA off or renewing recovery codes. */
-  const confirmBoth = async (userId: Snowflake, password: string, code: string) => {
+  const confirmBoth = async (userId: Snowflake, password: string, code: string | undefined) => {
     const user = await fresh(userId)
     if (!user.totpSecret) throw badRequest('MFA_NOT_ENABLED', 'Two-factor sign-in is off')
     if (!(await confirmPassword(loginThrottle, user, password))) throw wrongPassword()
+    // The password alone: right, so the form goes on to the code (as confirmIdentity does).
+    if (!code) throw badRequest('MFA_CODE_REQUIRED', 'Enter a code from your authenticator')
     if (!(await spendCounted(user, code))) throw invalidCode()
     return user
   }
@@ -126,12 +128,12 @@ export const createMfaService = ({
       return codes
     },
 
-    async disable(userId: Snowflake, password: string, code: string): Promise<void> {
+    async disable(userId: Snowflake, password: string, code?: string): Promise<void> {
       const user = await confirmBoth(userId, password, code)
       await mfa.disable(user.id)
     },
 
-    async renewRecoveryCodes(userId: Snowflake, password: string, code: string) {
+    async renewRecoveryCodes(userId: Snowflake, password: string, code?: string) {
       const user = await confirmBoth(userId, password, code)
       const { codes, hashes } = newCodes()
       await mfa.replaceRecoveryCodes(user.id, hashes)
