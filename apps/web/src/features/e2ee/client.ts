@@ -197,6 +197,12 @@ const KEY_PACKAGE_LOW = 10
 /** Exporter label of call keys; every member derives the same key for an epoch. */
 const CALL_KEY_LABEL = 'chinchi call'
 
+/** Whether this device is still in the conversation, as this very device (its own leaf). */
+const isOwn = (conversation: Conversation, keys: DeviceKeys) => {
+  const own = ownIdentity(conversation)
+  return own?.deviceId === keys.identity.deviceId && own.userId === keys.identity.userId
+}
+
 const isStale = (error: unknown) => error instanceof ApiError && error.code === 'STALE_EPOCH'
 
 const localLocks = new Map<string, Promise<unknown>>()
@@ -501,7 +507,7 @@ export const createE2eeClient = ({ api, store, userId, deviceName }: E2eeClientO
     const loaded = loadConversation(fromBase64(state), options)
     // State of another device (one removed and registered anew here) is of no use: in it this
     // device would commit as someone else. Dropped with its cursor, it waits to be let in.
-    if (ownIdentity(loaded)?.deviceId !== (await ready()).identity.deviceId) {
+    if (!isOwn(loaded, await ready())) {
       await store.delete(`conv:${channelId}`)
       return null
     }
@@ -563,6 +569,12 @@ export const createE2eeClient = ({ api, store, userId, deviceName }: E2eeClientO
       const before = conversation
       conversation = (await processIncoming(conversation, fromBase64(handshake.payload)))
         .conversation
+      // Taken out by another member: nothing more to read or write with this state. A later
+      // Welcome (someone lets the device in again) starts it over.
+      if (!isOwn(conversation, keys)) {
+        conversation = null
+        continue
+      }
       const had = new Set(peopleIn(before))
       const by = members(before).find((m) => m.identity.deviceId === handshake.senderDeviceId)
       const fresh = peopleIn(conversation).filter((id) => !had.has(id))

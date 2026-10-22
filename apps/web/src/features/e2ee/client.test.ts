@@ -609,6 +609,29 @@ describe('e2ee client', () => {
     })
   })
 
+  it('waits for a new Welcome after the other side took this device out, then reads again', async () => {
+    const { client } = setup()
+    const bob = client(BOB).client
+    await bob.ready()
+    const laptop = client(ALICE, 'Ноутбук').client
+    await laptop.open(DM)
+    await bob.open(DM)
+
+    // Alice resets her keys: Bob doesn't know the new one, so his client takes her laptop out.
+    await laptop.recovery.reset({ password: 'password123' })
+    await bob.devicesChanged(ALICE)
+    await bob.admit(DM)
+    expect(await laptop.open(DM)).toBe('waiting')
+    expect(await laptop.callKey(DM)).toBeNull()
+
+    // Bob accepts the new key: the laptop is let in again.
+    await bob.safety.acceptKey(ALICE)
+    await bob.admit(DM)
+    expect(await laptop.open(DM)).toBe('ready')
+    expect(await relay(bob, laptop, 'Снова вместе')).toMatchObject({ text: 'Снова вместе' })
+    expect(await relay(laptop, bob, 'Ага')).toMatchObject({ text: 'Ага' })
+  })
+
   it('admits devices only where this device is already in: it starts no conversation', async () => {
     const { client, delivery } = setup()
     const bob = client(BOB).client
