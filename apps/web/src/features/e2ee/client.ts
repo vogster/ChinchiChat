@@ -347,6 +347,7 @@ export const createE2eeClient = ({ api, store, userId, deviceName }: E2eeClientO
       await ready()
       return ((await store.get<StoredDevice>('device')) as StoredDevice).signaturePublicKey
     },
+    heldUserKey: async () => (await crossSigning.held())?.publicKey ?? null,
   })
 
   /** Every active device the server lists for these members (device ids). */
@@ -802,6 +803,20 @@ export const createE2eeClient = ({ api, store, userId, deviceName }: E2eeClientO
     },
 
     open,
+
+    /**
+     * Lets the members' new devices into a conversation this device is in, without it being
+     * open here (in the background, after a device is approved). Starts nothing elsewhere.
+     */
+    admit: (channel: EncryptedChannel): Promise<void> =>
+      serial(channel.id, async () => {
+        if (!(await loadState(channel.id)).state) return
+        const keys = await ready()
+        for (let attempt = 0; attempt < 5; attempt += 1) {
+          const { conversation } = await sync(channel.id, keys)
+          if (!conversation || (await reconcile(channel, conversation, keys))) return
+        }
+      }),
 
     /**
      * Encrypts and sends; the plaintext is kept, since the sender can't decrypt its own. Files

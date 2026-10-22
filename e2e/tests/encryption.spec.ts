@@ -496,7 +496,9 @@ test('an unapproved device joins only when the other person lets it in by its co
     .getByRole('complementary', { name: 'Личные сообщения' })
     .getByRole('link', { name: /зашифрованная беседа/ })
     .click()
-  const waiting = phone.page.getByRole('status', { name: 'Это устройство пока не в беседе' })
+  const waiting = phone.page.getByRole('status', {
+    name: 'Это устройство пока не подключено к беседе',
+  })
   await expect(waiting).toBeVisible()
   const phoneCode = (await waiting.locator('.font-mono').innerText()).trim()
   expect(phoneCode).toMatch(/^\d{5} \d{5} \d{5} \d{5}$/)

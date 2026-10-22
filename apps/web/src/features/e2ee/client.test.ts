@@ -567,6 +567,40 @@ describe('e2ee client', () => {
     expect(await relay(again, bob, 'И обратно')).toMatchObject({ text: 'И обратно' })
   })
 
+  it('brings an approved device of mine into a conversation nobody has opened since', async () => {
+    const { client } = setup()
+    const bob = client(BOB).client
+    await bob.ready()
+    const laptop = client(ALICE, 'Ноутбук').client
+    await laptop.open(DM)
+    // My keys reset here; the phone is approved with the new recovery key.
+    await laptop.recovery.reset({ password: 'password123' })
+    const phone = client(ALICE, 'Телефон').client
+    expect(await phone.recovery.useKey((await laptop.recovery.key()) as string)).toBe('ok')
+    expect(await phone.open(DM)).toBe('waiting')
+
+    // In the background, without the conversation open on the laptop.
+    await laptop.devicesChanged(ALICE)
+    await laptop.admit(DM)
+
+    expect(await phone.open(DM)).toBe('ready')
+    expect(await relay(laptop, phone, 'Теперь и на телефоне')).toMatchObject({
+      text: 'Теперь и на телефоне',
+    })
+  })
+
+  it('admits devices only where this device is already in: it starts no conversation', async () => {
+    const { client, delivery } = setup()
+    const bob = client(BOB).client
+    await bob.ready()
+    const alice = client(ALICE).client
+    await alice.ready()
+
+    await alice.admit(DM)
+
+    expect(commitCount(delivery)).toBe(0)
+  })
+
   it('ignores saved group state that belongs to another device of this browser', async () => {
     const { client } = setup()
     const bob = client(BOB).client

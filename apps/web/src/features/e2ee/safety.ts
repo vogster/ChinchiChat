@@ -21,6 +21,8 @@ export interface SafetyDeps {
   readonly thisDevice: () => Promise<string>
   /** This device's public signature key (base64), for its device code. */
   readonly thisDeviceKey: () => Promise<string>
+  /** My user key's public half, if this device holds the key (null if it doesn't). */
+  readonly heldUserKey: () => Promise<string | null>
 }
 
 export interface PersonSafety {
@@ -100,12 +102,19 @@ export const createSafety = ({
   userKeyOf,
   thisDevice,
   thisDeviceKey,
+  heldUserKey,
 }: SafetyDeps) => {
   /**
    * The user key this device trusts for someone: the first one seen (and a first key after
-   * none), until the person here accepts another.
+   * none), until the person here accepts another. For me, the key this device holds, whatever
+   * it saw before: it made that key in a reset, or took it with the recovery key.
    */
   const knownKey = async (id: string, current: string | null) => {
+    const held = id === userId ? await heldUserKey() : null
+    if (held) {
+      await store.set(userKeyKey(id), held)
+      return held
+    }
     const known = await store.get<string | null>(userKeyKey(id))
     if (known === undefined || (known === null && current !== null)) {
       await store.set(userKeyKey(id), current)

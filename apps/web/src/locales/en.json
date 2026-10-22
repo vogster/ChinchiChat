@@ -1515,8 +1515,14 @@
     "notice": "The server can't see this conversation's messages: they are encrypted on the members' devices. So there are no link previews or bots here, and search runs on your device only. A new device gets the old messages once you approve it from another one or enter your recovery key.",
     "decrypting": "Decrypting…",
     "opening": "Setting up encryption on this device…",
-    "waiting": "Approve it from your old device or with the recovery key, and it joins on its own. Or read the code below to the other person: once they compare it, they can let this device in.",
-    "waitingTitle": "This device is not in the conversation yet",
+    "waiting": "To read and write here, connect it in one of these ways:",
+    "waitingWays": {
+      "device": "approve the sign-in on another of your devices where you are already signed in;",
+      "recovery": "enter your recovery key;",
+      "code": "read the code below to the other person: once they compare it, they let this device in.",
+      "codeGroup": "read the code below to any member of the group: once they compare it, they let this device in."
+    },
+    "waitingTitle": "This device is not connected to the conversation yet",
     "failed": "Couldn't set up encryption. Reload the page or try again later.",
     "fileDecrypting": "Decrypting…",
     "fileLoadingName": "Downloading {{name}}",

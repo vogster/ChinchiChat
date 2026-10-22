@@ -438,7 +438,7 @@ export const DmView = ({ channel }: { channel: PrivateChannel }) => {
           {downgraded ? (
             <DowngradeNotice onRemove={() => setDialog('remove')} />
           ) : encryption && encrypted.state !== 'ready' ? (
-            <EncryptionStatus state={encrypted.state} />
+            <EncryptionStatus state={encrypted.state} group={channel.type === 'group_dm'} />
           ) : canTalk ? (
             <Composer
               channelName={name}

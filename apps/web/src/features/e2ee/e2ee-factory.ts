@@ -19,6 +19,7 @@ export type E2eeClientLike = Pick<
   | 'forgetConversation'
   | 'forget'
   | 'open'
+  | 'admit'
   | 'send'
   | 'edit'
   | 'read'
