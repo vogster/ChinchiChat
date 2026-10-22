@@ -1,4 +1,4 @@
-import { screen, waitFor, within } from '@testing-library/react'
+import { act, screen, waitFor, within } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 
 import {
@@ -197,6 +197,42 @@ describe('group DMs', () => {
     await user.click(within(dialog).getByRole('button', { name: 'Добавить' }))
 
     await waitFor(() => expect(api.dms.addRecipient).toHaveBeenCalledWith(testGroupDm.id, dave.id))
+  })
+
+  it('shows the faces of members online on the members button, which toggles the list', async () => {
+    const { user, gateway } = renderApp(GROUP_URL, { api: withFriends() })
+    const hide = await screen.findByRole('button', { name: 'Скрыть участников' })
+    // Nobody online: the icon.
+    expect(hide.querySelector('.lucide-users')).not.toBeNull()
+
+    act(() => gateway.emit('PRESENCE_UPDATE', { userId: carol.id, status: 'online' }))
+    await waitFor(() => expect(hide.querySelector('.lucide-users')).toBeNull())
+    expect(hide.firstElementChild?.children).toHaveLength(1)
+
+    await user.click(hide)
+    expect(screen.queryByRole('complementary', { name: 'Участники' })).not.toBeInTheDocument()
+    const [show] = screen.getAllByRole('button', { name: 'Показать участников' })
+    await user.click(show as HTMLElement)
+    expect(await screen.findByRole('complementary', { name: 'Участники' })).toBeVisible()
+  })
+
+  it('opens the members over the chat on a narrow screen, and closes them', async () => {
+    const { user } = renderApp(GROUP_URL, { api: withFriends() })
+    const narrow = await screen.findByRole('button', { name: 'Показать участников' })
+
+    await user.click(narrow)
+    const panel = await screen.findByRole('complementary', { name: 'Участники' })
+    expect(panel).toHaveClass('fixed')
+    // The dimmed chat behind closes it, as on servers.
+    const [, backdrop] = screen.getAllByRole('button', { name: 'Скрыть участников' })
+    await user.click(backdrop as HTMLElement)
+    expect(screen.getByRole('complementary', { name: 'Участники' })).not.toHaveClass('fixed')
+  })
+
+  it('has no members button in a DM of two', async () => {
+    renderApp(`/channels/@me/${testDm.id}`, { api: withFriends() })
+    expect(await screen.findByRole('heading', { name: 'Боб', level: 1 })).toBeVisible()
+    expect(screen.queryByRole('button', { name: /участников/ })).not.toBeInTheDocument()
   })
 
   it('lets the owner remove people and anyone leave', async () => {

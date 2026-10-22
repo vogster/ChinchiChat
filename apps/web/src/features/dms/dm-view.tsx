@@ -61,7 +61,7 @@ import { LeaveGroupDialog } from './dialogs/leave-group-dialog'
 import { RemoveDowngradedDialog } from './dialogs/remove-downgraded-dialog'
 import { RenameGroupDialog } from './dialogs/rename-group-dialog'
 import { privateChannelName, userName } from './dm-names'
-import { GroupMembersPanel } from './group-members-panel'
+import { GroupMembersBackdrop, GroupMembersButtons, GroupMembersPanel } from './group-members-panel'
 
 import type { MessageItem, MessagePages } from '../messages/queries'
 import type { PrivateChannel } from '@chinchi/shared'
@@ -80,6 +80,8 @@ export const DmView = ({ channel }: { channel: PrivateChannel }) => {
   const { data: relationships = [] } = useQuery(relationshipsQueryOptions(useApi()))
   const [dialog, setDialog] = useState<OpenDialog>(null)
   const [showMembers, setShowMembers] = useState(true)
+  // Narrow screens: the members open over the chat.
+  const [narrowMembers, setNarrowMembers] = useState(false)
   const [notifications, setNotifications] = useState(false)
   const [checking, setChecking] = useState(false)
   const [search, setSearch] = useState<string | null>(null)
@@ -220,6 +222,15 @@ export const DmView = ({ channel }: { channel: PrivateChannel }) => {
               )
             }
           />
+          {isGroup && me ? (
+            <GroupMembersButtons
+              channel={channel}
+              me={me}
+              shown={showMembers}
+              onToggle={() => setShowMembers((value) => !value)}
+              onOpenNarrow={() => setNarrowMembers(true)}
+            />
+          ) : null}
           {encryption ? (
             <>
               {/* Narrow screens: the field opens from this button, as in server channels. */}
@@ -303,15 +314,6 @@ export const DmView = ({ channel }: { channel: PrivateChannel }) => {
                 className={headerButton}
               >
                 <UserPlus aria-hidden className="size-5" />
-              </button>
-              <button
-                type="button"
-                aria-pressed={showMembers}
-                aria-label={showMembers ? t('dm.hideMembers') : t('dm.showMembers')}
-                onClick={() => setShowMembers((value) => !value)}
-                className={`${headerButton} hidden xl:grid`}
-              >
-                <Users aria-hidden className="size-5" />
               </button>
               <button
                 type="button"
@@ -488,8 +490,11 @@ export const DmView = ({ channel }: { channel: PrivateChannel }) => {
           nameOf={(userId) => callPerson(userId).name}
           onClose={() => setSearch(null)}
         />
-      ) : isGroup && showMembers && me ? (
-        <GroupMembersPanel channel={channel} me={me} />
+      ) : isGroup && (showMembers || narrowMembers) && me ? (
+        <>
+          {narrowMembers ? <GroupMembersBackdrop onClose={() => setNarrowMembers(false)} /> : null}
+          <GroupMembersPanel channel={channel} me={me} narrowOpen={narrowMembers} />
+        </>
       ) : null}
 
       {checking ? (

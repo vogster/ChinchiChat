@@ -11,17 +11,25 @@ import type { ButtonHTMLAttributes } from 'react'
 
 const STACK_SIZE = 4
 
-/** The header's members toggle: the faces of up to four members online (an icon when none are). */
-export const MembersStackButton = ({
-  guildId,
+/** Someone whose face may show on the stack. */
+export interface StackPerson {
+  readonly id: Snowflake
+  readonly name: string
+  readonly avatarUrl: string | null
+}
+
+type StackButtonProps = ButtonHTMLAttributes<HTMLButtonElement>
+
+/** A members toggle: the faces of up to four of these people online (an icon when none are). */
+export const PeopleStackButton = ({
+  people,
   className = '',
   ...props
-}: { guildId: Snowflake } & ButtonHTMLAttributes<HTMLButtonElement>) => {
-  const { data: members = [] } = useQuery(membersQueryOptions(useApi(), guildId))
+}: { people: readonly StackPerson[] } & StackButtonProps) => {
   const presences = usePresences()
-  const online = members
-    .filter((member) => {
-      const status = presences[member.user.id]
+  const online = people
+    .filter((person) => {
+      const status = presences[person.id]
       return status !== undefined && status !== 'offline'
     })
     .slice(0, STACK_SIZE)
@@ -34,12 +42,12 @@ export const MembersStackButton = ({
     >
       {online.length > 0 ? (
         <span className="flex">
-          {online.map((member) => (
+          {online.map((person) => (
             <Avatar
-              key={member.user.id}
-              name={member.nickname ?? member.user.displayName ?? member.user.username}
-              src={member.user.avatarUrl}
-              id={member.user.id}
+              key={person.id}
+              name={person.name}
+              src={person.avatarUrl}
+              id={person.id}
               // Overlap from the second face on: a negative margin on the last one would squeeze
               // a lone avatar into an oval.
               className="size-[26px] border-2 border-main text-[10px] not-first:-ml-[7px]"
@@ -51,4 +59,18 @@ export const MembersStackButton = ({
       )}
     </button>
   )
+}
+
+/** The server header's members toggle. */
+export const MembersStackButton = ({
+  guildId,
+  ...props
+}: { guildId: Snowflake } & StackButtonProps) => {
+  const { data: members = [] } = useQuery(membersQueryOptions(useApi(), guildId))
+  const people = members.map((member) => ({
+    id: member.user.id,
+    name: member.nickname ?? member.user.displayName ?? member.user.username,
+    avatarUrl: member.user.avatarUrl,
+  }))
+  return <PeopleStackButton people={people} {...props} />
 }
