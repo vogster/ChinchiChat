@@ -37,6 +37,7 @@
     "createTitle": "New group",
     "pickHint": "Pick up to {{count}} friends.",
     "noFriends": "Add some friends first",
+    "allFriendsIn": "All your friends are in the group already",
     "placeholder": "Message @{{name}}",
     "groupPlaceholder": "Message {{name}}",
     "start": "This is the beginning of your conversation with {{name}}.",

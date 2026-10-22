@@ -39,6 +39,7 @@
     "createTitle": "Новая группа",
     "pickHint": "Выберите до {{count}} друзей.",
     "noFriends": "Сначала добавьте друзей",
+    "allFriendsIn": "Все ваши друзья уже в группе",
     "placeholder": "Написать @{{name}}",
     "groupPlaceholder": "Написать в {{name}}",
     "start": "Это начало вашей переписки с {{name}}.",

@@ -8,6 +8,7 @@ import { DeviceCodeText } from './device-code'
 import { EncryptionGuideButton } from './encryption-guide'
 import { EnterRecoveryKeyDialog } from './recovery-dialogs'
 import { useThisDeviceCode } from './use-device-code'
+import { useMissingHistoryHint } from './use-missing-history-hint'
 import { useRecovery } from './use-recovery'
 
 import type { EncryptedState } from './use-encrypted-conversation'
@@ -44,6 +45,7 @@ const WaitingToBeLetIn = ({ group }: { group: boolean }) => {
   const { t } = useTranslation()
   const code = useThisDeviceCode()
   const recovery = useRecovery()
+  const missingHint = useMissingHistoryHint()
   const [entering, setEntering] = useState(false)
   return (
     <div
@@ -65,9 +67,10 @@ const WaitingToBeLetIn = ({ group }: { group: boolean }) => {
             {t('e2ee.device.code')} <DeviceCodeText code={code} className="text-body" />
           </p>
         ) : null}
-        {recovery.loaded && !recovery.key ? (
+        {/* While the notice about old messages is up, its button is the one to use. */}
+        {recovery.loaded && !recovery.key && missingHint.hidden ? (
           <Button
-            variant="secondary"
+            variant="secure"
             fullWidth={false}
             className="mt-1 self-start"
             onClick={() => setEntering(true)}

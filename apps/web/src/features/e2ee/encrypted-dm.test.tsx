@@ -280,6 +280,15 @@ describe('encrypted conversations', () => {
     const waiting = await screen.findByRole('status', {
       name: 'Это устройство пока не подключено к беседе',
     })
+    // The notice about old messages above already offers it: once on the screen is enough.
+    const missing = await screen.findByRole('status', { name: 'Старые сообщения недоступны' })
+    expect(
+      within(missing).getByRole('button', { name: 'Ввести ключ восстановления' }),
+    ).toBeVisible()
+    expect(within(waiting).queryByRole('button', { name: 'Ввести ключ восстановления' })).toBeNull()
+
+    // That notice hidden, the waiting one offers the key.
+    await user.click(within(missing).getByRole('button', { name: 'Скрыть подсказку' }))
     await user.click(
       await within(waiting).findByRole('button', { name: 'Ввести ключ восстановления' }),
     )

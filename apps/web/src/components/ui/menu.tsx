@@ -23,17 +23,26 @@ export interface MenuItemProps {
   readonly danger?: boolean
   /** Spoken name when the visible content (e.g. a lone emoji) is not enough. */
   readonly label?: string
+  /** E.g. `md:hidden` for an item whose button the header shows from that width on. */
+  readonly className?: string
   readonly children: ReactNode
 }
 
 const itemClass =
   'flex h-9 cursor-pointer items-center justify-between gap-2 rounded-field px-3 outline-none select-none'
 
-export const MenuItem = ({ onSelect, icon, danger = false, label, children }: MenuItemProps) => (
+export const MenuItem = ({
+  onSelect,
+  icon,
+  danger = false,
+  label,
+  className = '',
+  children,
+}: MenuItemProps) => (
   <Dropdown.Item
     onSelect={onSelect}
     aria-label={label}
-    className={`${itemClass} ${danger ? 'text-danger data-[highlighted]:bg-danger-soft' : 'data-[highlighted]:bg-field'}`}
+    className={`${itemClass} ${danger ? 'text-danger data-[highlighted]:bg-danger-soft' : 'data-[highlighted]:bg-field'} ${className}`}
   >
     <span>{children}</span>
     {icon}

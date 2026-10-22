@@ -39,7 +39,7 @@ const ApprovalProgress = ({
           ) : null}
         </>
       )}
-      <ApprovalEmoji emoji={view.emoji} />
+      <ApprovalEmoji emoji={view.emoji} align="start" />
       {view.confirmedHere || !approvals ? null : (
         <div className="flex flex-wrap gap-2">
           <Button

@@ -260,7 +260,9 @@ test('three people talk in an encrypted group, and one who leaves is left out', 
   const epochWithCarol = await epochOf(alice.page)
 
   // Carol leaves; the next message is encrypted for Alice's and Bob's devices only.
-  await carol.page.getByRole('button', { name: 'Покинуть группу' }).click()
+  // Group actions wait behind "more" until the screen is wide enough for them.
+  await carol.page.locator('header').getByRole('button', { name: 'Ещё' }).click()
+  await carol.page.getByRole('menuitem', { name: 'Покинуть группу' }).click()
   await carol.page
     .getByRole('dialog', { name: 'Покинуть группу' })
     .getByRole('button', { name: 'Покинуть группу' })

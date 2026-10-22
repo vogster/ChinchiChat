@@ -156,8 +156,13 @@ test('after a reset of keys, devices approved with the new key get into the conv
   const tablet = await openAs(browser)
   await signIn(tablet.page, aliceUser)
   await tablet.page.goto(conversation)
-  const waiting = waitingOf(tablet.page)
-  await waiting.getByRole('button', { name: 'Ввести ключ восстановления' }).click()
+  await expect(waitingOf(tablet.page)).toBeVisible()
+  // The notice about old messages hidden, the waiting one offers the key itself.
+  await tablet.page
+    .getByRole('status', { name: 'Старые сообщения недоступны' })
+    .getByRole('button', { name: 'Скрыть подсказку' })
+    .click()
+  await waitingOf(tablet.page).getByRole('button', { name: 'Ввести ключ восстановления' }).click()
   const enter = tablet.page.getByRole('dialog', { name: 'Ключ восстановления' })
   await enter.getByLabel('Ключ восстановления', { exact: true }).fill(newKey)
   await enter.getByRole('button', { name: 'Восстановить' }).click()

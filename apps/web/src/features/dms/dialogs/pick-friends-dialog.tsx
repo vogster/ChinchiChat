@@ -43,8 +43,9 @@ export const PickFriendsDialog = ({
   const { t } = useTranslation()
   const { data: relationships = [] } = useQuery(relationshipsQueryOptions(useApi()))
   const [picked, setPicked] = useState<readonly Snowflake[]>([])
-  const friends = relationships
-    .filter((r) => r.type === 'friend' && !excludeIds.includes(r.user.id))
+  const allFriends = relationships.filter((r) => r.type === 'friend')
+  const friends = allFriends
+    .filter((r) => !excludeIds.includes(r.user.id))
     .map((r) => r.user)
     .sort((a, b) => userName(a).localeCompare(userName(b)))
 
@@ -68,7 +69,9 @@ export const PickFriendsDialog = ({
         }}
       >
         {friends.length === 0 ? (
-          <p className="py-4 text-center text-sm text-muted">{t('dm.noFriends')}</p>
+          <p className="py-4 text-center text-sm text-muted">
+            {t(allFriends.length > 0 ? 'dm.allFriendsIn' : 'dm.noFriends')}
+          </p>
         ) : (
           <ul className="flex max-h-72 flex-col gap-0.5 overflow-y-auto">
             {friends.map((friend) => {

@@ -183,6 +183,20 @@ describe('group DMs', () => {
     expect(await screen.findByRole('heading', { name: 'Котики', level: 1 })).toBeVisible()
   })
 
+  it('says when every friend is in the group already', async () => {
+    const api = withFriends([
+      { user: testFriend, type: 'friend', since },
+      { user: carol, type: 'friend', since },
+    ])
+    const { user } = renderApp(GROUP_URL, { api })
+
+    await user.click(await screen.findByRole('button', { name: 'Добавить друзей' }))
+    const dialog = await screen.findByRole('dialog', { name: 'Добавить в группу' })
+
+    expect(await within(dialog).findByText('Все ваши друзья уже в группе')).toBeVisible()
+    expect(within(dialog).queryByText('Сначала добавьте друзей')).not.toBeInTheDocument()
+  })
+
   it('adds friends who are not in it yet', async () => {
     const api = withFriends([
       { user: testFriend, type: 'friend', since },
@@ -227,6 +241,17 @@ describe('group DMs', () => {
     const [, backdrop] = screen.getAllByRole('button', { name: 'Скрыть участников' })
     await user.click(backdrop as HTMLElement)
     expect(screen.getByRole('complementary', { name: 'Участники' })).not.toHaveClass('fixed')
+  })
+
+  it('keeps the group actions behind "more" too, for screens with no room for them', async () => {
+    const { user } = renderApp(GROUP_URL, { api: withFriends() })
+
+    await user.click(await screen.findByRole('button', { name: 'Ещё' }))
+    const menu = await screen.findByRole('menu')
+    expect(within(menu).getByRole('menuitem', { name: 'Уведомления беседы' })).toBeInTheDocument()
+    await user.click(within(menu).getByRole('menuitem', { name: 'Переименовать группу' }))
+
+    expect(await screen.findByRole('dialog', { name: 'Переименовать группу' })).toBeVisible()
   })
 
   it('has no members button in a DM of two', async () => {

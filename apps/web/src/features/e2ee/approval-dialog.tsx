@@ -6,13 +6,21 @@ import { Dialog } from '../../components/ui/dialog'
 import { useApprovals } from './use-approvals'
 
 /** The six emoji both devices show, large enough to compare at a glance. */
-export const ApprovalEmoji = ({ emoji }: { emoji: readonly string[] }) => {
+export const ApprovalEmoji = ({
+  emoji,
+  align = 'center',
+}: {
+  emoji: readonly string[]
+  /** `start` beside left-aligned text (the new device's notice). */
+  align?: 'center' | 'start'
+}) => {
   const { t } = useTranslation()
   return (
     <div
       role="group"
       aria-label={t('e2ee.approval.emojiLabel')}
-      className="flex justify-center gap-4 py-2 text-4xl"
+      // All six must show to be compared: on a phone the row wraps rather than run off the edge.
+      className={`flex flex-wrap gap-3 py-2 text-4xl sm:gap-4 ${align === 'center' ? 'justify-center' : 'justify-start'}`}
     >
       {emoji.map((item, index) => (
         // Emoji may repeat; their place is what tells them apart.
@@ -57,7 +65,8 @@ export const ApprovalDialog = () => {
         ) : (
           <p className="text-sm text-muted">{t('e2ee.approval.preparing')}</p>
         )}
-        <div className="flex gap-2">
+        {/* One under the other: side by side, the longer label wraps. Yes on top. */}
+        <div className="flex flex-col-reverse gap-2">
           <Button variant="secondary" onClick={() => void approvals.decline(view.approvalId)}>
             {t('e2ee.approval.no')}
           </Button>

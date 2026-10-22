@@ -1,17 +1,5 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import {
-  Bell,
-  Lock,
-  LogOut,
-  Pencil,
-  Phone,
-  Search,
-  ShieldAlert,
-  ShieldCheck,
-  Trash2,
-  UserPlus,
-  Users,
-} from 'lucide-react'
+import { Lock, Search, ShieldAlert, Users } from 'lucide-react'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
@@ -60,6 +48,7 @@ import { DeleteEncryptedDialog } from './dialogs/delete-encrypted-dialog'
 import { LeaveGroupDialog } from './dialogs/leave-group-dialog'
 import { RemoveDowngradedDialog } from './dialogs/remove-downgraded-dialog'
 import { RenameGroupDialog } from './dialogs/rename-group-dialog'
+import { DmHeaderActions } from './dm-header-actions'
 import { privateChannelName, userName } from './dm-names'
 import { DmSearchPanel } from './dm-search-panel'
 import { GroupMembersBackdrop, GroupMembersButtons, GroupMembersPanel } from './group-members-panel'
@@ -243,86 +232,24 @@ export const DmView = ({ channel }: { channel: PrivateChannel }) => {
             <Search aria-hidden className="size-5" />
           </button>
           <SearchBox onSearch={setSearch} open={searchOpen} />
-          <span className="flex shrink-0 gap-0.5">
-            {encryption ? (
-              <MissingHistoryButton ready={keysReady} className={headerButton} />
-            ) : null}
-            {encryption ? (
-              <button
-                type="button"
-                aria-label={t('e2ee.safety.title')}
-                title={t('e2ee.safety.title')}
-                onClick={() => setChecking(true)}
-                data-verified={allVerified}
-                className={`${headerButton} data-[verified=true]:text-secure-text`}
-              >
-                <ShieldCheck aria-hidden className="size-5" />
-              </button>
-            ) : null}
-            <button
-              type="button"
-              aria-label={t('notifications.dmButton')}
-              title={t('notifications.dmButton')}
-              aria-pressed={notifications}
-              onClick={() => setNotifications((value) => !value)}
-              className={headerButton}
-            >
-              <Bell aria-hidden className="size-5" />
-            </button>
-            {canDelete ? (
-              <button
-                type="button"
-                aria-label={t('dm.delete')}
-                title={t('dm.delete')}
-                onClick={() => setDialog('delete')}
-                className={`${headerButton} hover:bg-danger-soft hover:text-danger`}
-              >
-                <Trash2 aria-hidden className="size-5" />
-              </button>
-            ) : null}
-            {voiceEnabled && canTalk && !inCall ? (
-              <button
-                type="button"
-                aria-label={t('voice.call')}
-                title={t('voice.call')}
-                onClick={() => void voice.join(null, channel.id)}
-                className={headerButton}
-              >
-                <Phone aria-hidden className="size-5" />
-              </button>
-            ) : null}
-          </span>
-          {isGroup ? (
-            <span className="flex shrink-0 gap-0.5">
-              <button
-                type="button"
-                aria-label={t('dm.rename')}
-                title={t('dm.rename')}
-                onClick={() => setDialog('rename')}
-                className={headerButton}
-              >
-                <Pencil aria-hidden className="size-5" />
-              </button>
-              <button
-                type="button"
-                aria-label={t('dm.add')}
-                title={t('dm.add')}
-                onClick={() => setDialog('add')}
-                className={headerButton}
-              >
-                <UserPlus aria-hidden className="size-5" />
-              </button>
-              <button
-                type="button"
-                aria-label={t('dm.leave')}
-                title={t('dm.leave')}
-                onClick={() => setDialog('leave')}
-                className={`${headerButton} hover:bg-danger-soft hover:text-danger`}
-              >
-                <LogOut aria-hidden className="size-5" />
-              </button>
-            </span>
-          ) : null}
+          <DmHeaderActions
+            encrypted={Boolean(encryption)}
+            verified={allVerified}
+            group={isGroup}
+            canDelete={canDelete}
+            notifications={notifications}
+            onNotifications={() => setNotifications((value) => !value)}
+            onCheck={() => setChecking(true)}
+            onCall={
+              voiceEnabled && canTalk && !inCall ? () => void voice.join(null, channel.id) : null
+            }
+            onDialog={setDialog}
+            leading={
+              encryption ? (
+                <MissingHistoryButton ready={keysReady} className={headerButton} />
+              ) : null
+            }
+          />
         </PageHeader>
 
         {inCall || callStates.length > 0 ? (
