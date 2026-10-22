@@ -467,7 +467,7 @@
 - [x] Удаление зашифрованной беседы у всех участников (в группе — владельцем): сообщения, файлы и ключи уходят с сервера и с устройств; новая зашифрованная беседа с тем же человеком — новая; если просили зашифрованную, а сервер вернул обычную, она не открывается
 - [x] Файлы снова скачиваются в браузере (0.18.1): скачивание шло с cookie (`credentials: 'include'`), и после перенаправления на хранилище браузер отбрасывал ответ — хранилище не разрешает запросы с учётными данными
 - [ ] Единый дизайн диалогов — _отложено: [#50](https://github.com/vogster/ChinchiChat/issues/50)_
-- [ ] Разбить клиент шифрования `client.ts` на модули — _отложено: [#52](https://github.com/vogster/ChinchiChat/issues/52)_
+- [x] Разбить клиент шифрования `client.ts` на модули ([#52](https://github.com/vogster/ChinchiChat/issues/52)): `client.ts` только собирает части — `this-device` (регистрация, `ready`), `key-packages`, `device-directory` (списки устройств и ключи людей), `conversation-store` (состояние MLS, `sync`, `commit`, очередь под Web Lock), `conversation-members` (`reconcile`, `start`, `open`, `admit`), `encrypted-messages`, `backup-keeper`; типы — `client-types`
 
 ---
 
