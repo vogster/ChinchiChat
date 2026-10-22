@@ -90,6 +90,9 @@ const onMessageCreate = (queryClient: QueryClient, typing: TypingStore, message:
   countNewMessage(queryClient, message)
 }
 
+/** The caches that already had a gateway session. */
+const sessions = new WeakSet<QueryClient>()
+
 const onReady = (queryClient: QueryClient, ready: DispatchPayload<'READY'>) => {
   queryClient.setQueryData<Guild[]>(guildKeys.all, ready.guilds.map(summaryOf))
   for (const guild of ready.guilds) queryClient.setQueryData(guildKeys.detail(guild.id), guild)
@@ -112,6 +115,12 @@ const onReady = (queryClient: QueryClient, ready: DispatchPayload<'READY'>) => {
     // Mine, also while I am invisible.
     ...(ready.customStatus ? { [ready.user.id]: ready.customStatus } : {}),
   })
+  // A new session after an earlier one (not a resume): what happened while offline never
+  // comes. The open channel reloads now, the others when opened next; their pages stay until
+  // then. The first session of the page has nothing to catch up on.
+  if (sessions.has(queryClient))
+    void queryClient.invalidateQueries({ queryKey: messageKeys.channels })
+  sessions.add(queryClient)
 }
 
 /** Replies to `originalId` show its new snippet (or that it was deleted). */

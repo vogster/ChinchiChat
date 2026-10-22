@@ -7,6 +7,8 @@ import type { MentionCounts, Message, PresenceStatus, Snowflake } from '@chinchi
 import type { InfiniteData } from '@tanstack/react-query'
 
 export const PAGE_SIZE = 50
+/** How long a left channel's messages stay in the cache. */
+const MESSAGES_GC_TIME = 30 * 60_000
 
 /** A message as the client knows it; optimistic sends carry a local status until confirmed. */
 export type MessageItem = Message & {
@@ -27,6 +29,8 @@ export type MessageItem = Message & {
 export type MessagePages = InfiniteData<MessageItem[], Snowflake | undefined>
 
 export const messageKeys = {
+  /** Every channel's message pages. */
+  channels: ['messages'] as const,
   channel: (channelId: Snowflake) => ['messages', channelId] as const,
   readStates: ['readStates'] as const,
   mentionCounts: ['mentionCounts'] as const,
@@ -50,6 +54,9 @@ export const messagesQueryOptions = (api: ApiClient, channelId: Snowflake) =>
     getNextPageParam: (page) => (page.length === PAGE_SIZE ? page[0]?.id : undefined),
     // Kept fresh by the gateway; refetching would drop older pages the user scrolled to.
     staleTime: Infinity,
+    // Also while the channel is not open (the gateway updates it then too): coming back within
+    // half an hour shows it at once. A new gateway session marks it stale (see onReady).
+    gcTime: MESSAGES_GC_TIME,
   })
 
 /** channelId → last read message id. */

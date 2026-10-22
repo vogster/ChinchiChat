@@ -92,6 +92,38 @@ describe('READY', () => {
     expect(queryClient.getQueryData(messageKeys.readStates)).toEqual({ [CHANNEL]: '10' })
     expect(queryClient.getQueryData(messageKeys.mentionCounts)).toEqual({ [CHANNEL]: 2 })
   })
+
+  it('on a new session, marks cached message pages stale: events missed offline never come', () => {
+    const ready = {
+      sessionId: 's',
+      user: testUser,
+      guilds: [testGuild],
+      privateChannels: [],
+      voiceStates: [],
+      presences: [],
+      readStates: [],
+      notificationSettings: [],
+      mentionCounts: {},
+    }
+    queryClient.setQueryData(messageKeys.channel(CHANNEL), pages([message('10')], [message('5')]))
+
+    // The first session of the page: what is cached was loaded during it.
+    apply('READY', ready)
+    expect(queryClient.getQueryState(messageKeys.channel(CHANNEL))?.isInvalidated).toBe(false)
+
+    apply('READY', { ...ready, sessionId: 's2' })
+    expect(queryClient.getQueryState(messageKeys.channel(CHANNEL))?.isInvalidated).toBe(true)
+    // Kept until refetched: the older pages are not dropped.
+    expect(loaded()?.pages).toHaveLength(2)
+  })
+
+  it('leaves message pages alone on RESUMED: the gateway sends what was missed', () => {
+    queryClient.setQueryData(messageKeys.channel(CHANNEL), pages([message('10')]))
+
+    apply('RESUMED', {})
+
+    expect(queryClient.getQueryState(messageKeys.channel(CHANNEL))?.isInvalidated).toBe(false)
+  })
 })
 
 describe('messages', () => {
