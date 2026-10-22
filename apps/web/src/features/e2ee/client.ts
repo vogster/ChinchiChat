@@ -21,6 +21,7 @@ import { createDeviceAdditions } from './device-additions'
 import { createDeviceApproval } from './device-approval'
 import { createEncryptedMemory } from './encrypted-memory'
 import { createEncryptedReactions } from './encrypted-reactions'
+import { createGroupMembership } from './group-membership'
 import { createHistoryBackup } from './history-backup'
 import { createLocalSearch } from './local-search'
 import { createSafety } from './safety'
@@ -84,7 +85,16 @@ export interface E2eeApi {
 export interface EncryptedChannel {
   readonly id: string
   readonly memberIds: readonly string[]
+  /** A group (people come and go); by default, more than two members. */
+  readonly group?: boolean
 }
+
+const isGroup = (channel: EncryptedChannel) => channel.group ?? channel.memberIds.length > 2
+
+/** The people (user ids) with a device in the conversation. */
+const peopleIn = (conversation: Conversation) => [
+  ...new Set(members(conversation).map((m) => m.identity.userId)),
+]
 
 /** A message from the server: its id and MLS ciphertext (and the sender's nonce, for its author). */
 export interface CipherMessage {
@@ -462,6 +472,9 @@ export const createE2eeClient = ({ api, store, userId, deviceName }: E2eeClientO
     return device
   }
 
+  const encryptedMemory = createEncryptedMemory(store)
+  const membership = createGroupMembership(store)
+
   const loadState = async (channelId: string): Promise<StoredConversation> =>
     (await store.get<StoredConversation>(`conv:${channelId}`)) ?? {}
 
@@ -520,12 +533,20 @@ export const createE2eeClient = ({ api, store, userId, deviceName }: E2eeClientO
       last = handshake.id
       if (!conversation) {
         if (handshake.kind === 'welcome') conversation = await join(handshake)
+        if (conversation) await membership.begin(channelId, peopleIn(conversation))
         continue
       }
       // Commits made from an earlier epoch are already in (our own, or before we joined).
       if (handshake.kind !== 'commit' || handshake.epoch < Number(epoch(conversation))) continue
+      const before = conversation
       conversation = (await processIncoming(conversation, fromBase64(handshake.payload)))
         .conversation
+      const had = new Set(peopleIn(before))
+      const by = members(before).find((m) => m.identity.deviceId === handshake.senderDeviceId)
+      const fresh = peopleIn(conversation).filter((id) => !had.has(id))
+      if (fresh.length > 0) {
+        await membership.arrived(channelId, by?.identity.userId ?? null, fresh)
+      }
     }
     await persist(channelId, conversation, last)
     return {
@@ -584,8 +605,19 @@ export const createE2eeClient = ({ api, store, userId, deviceName }: E2eeClientO
       if (!(await commit(channel.id, before, made, Number(epoch(conversation)), keys))) return false
       conversation = made.conversation
     }
+    // A group takes in only people known here or added from here (see group-membership.ts).
+    const welcome = isGroup(channel)
+      ? await membership.settle(
+          channel.id,
+          channel.memberIds,
+          present.map((m) => m.userId),
+        )
+      : null
     const missing = [...expected].filter(
-      ([id]) => !present.some((m) => m.deviceId === id) && additions.allowed(channel.id, id),
+      ([id, owner]) =>
+        !present.some((m) => m.deviceId === id) &&
+        additions.allowed(channel.id, id) &&
+        (owner === userId || !welcome || welcome.has(owner)),
     )
     if (missing.length === 0) return true
     const claimed = (
@@ -663,7 +695,7 @@ export const createE2eeClient = ({ api, store, userId, deviceName }: E2eeClientO
             options,
           )
         : await removeMembers(fresh, [], options)
-    return commit(
+    const started = await commit(
       channel.id,
       null,
       made,
@@ -671,9 +703,10 @@ export const createE2eeClient = ({ api, store, userId, deviceName }: E2eeClientO
       keys,
       claimed.map((k) => ({ deviceId: k.deviceId, keyPackageId: k.keyPackageId })),
     )
+    // Who starts takes the members as listed then (as with a first key).
+    if (started) await membership.begin(channel.id, channel.memberIds)
+    return started
   }
-
-  const encryptedMemory = createEncryptedMemory(store)
 
   const open = (channel: EncryptedChannel): Promise<ConversationStatus> =>
     serial(channel.id, async () => {
@@ -696,6 +729,28 @@ export const createE2eeClient = ({ api, store, userId, deviceName }: E2eeClientO
   return {
     /** Conversations this device saw encrypted (a server can't quietly turn that off). */
     conversations: encryptedMemory,
+
+    /** People added to a group from this device: it takes them in (see group-membership.ts). */
+    invited: (channelId: string, userIds: readonly string[]) =>
+      membership.invite(channelId, userIds),
+
+    /**
+     * A group as this device sees it: who came in by a member's commit (to compare codes with),
+     * and who the server lists but is not in the encryption yet (messages don't reach them).
+     */
+    membership: async (channel: EncryptedChannel) => {
+      const conversation = await conversationOf(channel.id)
+      const inIt = new Set(conversation ? peopleIn(conversation) : [])
+      return {
+        notices: await membership.notices(channel.id),
+        pending:
+          conversation && isGroup(channel)
+            ? channel.memberIds.filter((id) => id !== userId && !inIt.has(id))
+            : [],
+      }
+    },
+
+    dismissNotice: (channelId: string, noticeId: string) => membership.dismiss(channelId, noticeId),
 
     /** Registers this device on first use and keeps its key packages topped up. */
     ready: async () => (await ready()).identity.deviceId,

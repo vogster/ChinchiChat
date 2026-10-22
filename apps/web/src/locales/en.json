@@ -1445,6 +1445,16 @@
     "save": "Save rules"
   },
   "e2ee": {
+    "members": {
+      "newTitle": "New people in the conversation",
+      "new": "New people in the conversation: {{names}}",
+      "by": "Added by {{name}}.",
+      "compare": "Compare safety codes with them before writing anything important.",
+      "check": "Compare codes",
+      "dismiss": "Got it",
+      "pendingTitle": "Not in the encrypted conversation yet",
+      "pending": "Not in the encrypted conversation yet: {{names}}. Messages don't reach them until whoever invited them takes them into the encryption."
+    },
     "downgrade": {
       "title": "The server turned off this conversation's encryption",
       "text": "This conversation was encrypted on this device, and now the server calls it an ordinary one. Sending is stopped: messages would reach the server in plain text. That only happens if the server was broken into or set up against you — tell the administrator and write nothing important here."

@@ -2,6 +2,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useNavigate, useParams } from '@tanstack/react-router'
 
 import { useApi } from '../../lib/api-context'
+import { useE2ee } from '../e2ee/e2ee-context'
 import { removePrivateChannel, upsertPrivateChannel } from './dm-cache'
 
 import type { PrivateChannel, Snowflake } from '@chinchi/shared'
@@ -11,6 +12,7 @@ export const useOpenDm = () => {
   const api = useApi()
   const queryClient = useQueryClient()
   const navigate = useNavigate()
+  const { client } = useE2ee()
 
   return useMutation({
     mutationFn: (
@@ -21,6 +23,13 @@ export const useOpenDm = () => {
         : api.dms.open((recipientIds as { ids: readonly Snowflake[] }).ids, { encrypted: true }),
     onSuccess: async ({ channel }) => {
       upsertPrivateChannel(queryClient, channel)
+      // This device starts the encrypted group with the people picked here (not just listed).
+      if (channel.encrypted && channel.type === 'group_dm') {
+        await client?.invited(
+          channel.id,
+          channel.recipients.map((r) => r.id),
+        )
+      }
       await navigate({ to: '/channels/@me/$channelId', params: { channelId: channel.id } })
     },
   })
@@ -35,12 +44,19 @@ export const useRenameGroup = (channelId: Snowflake) => {
   })
 }
 
-/** The gateway announces the new member list; no cache change needed here. */
+/**
+ * The gateway announces the new member list; no cache change needed here. In an encrypted group
+ * this device takes the people in: the others don't take in whom the server alone lists.
+ */
 export const useAddToGroup = (channelId: Snowflake) => {
   const api = useApi()
+  const { client } = useE2ee()
   return useMutation({
     mutationFn: async (userIds: readonly Snowflake[]) => {
-      for (const userId of userIds) await api.dms.addRecipient(channelId, userId)
+      for (const userId of userIds) {
+        await api.dms.addRecipient(channelId, userId)
+        await client?.invited(channelId, [userId])
+      }
     },
   })
 }

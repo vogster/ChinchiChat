@@ -67,7 +67,11 @@ describe('encrypted conversations', () => {
       ),
     ).toBeVisible()
     expect(screen.getByText(/Сервер не видит сообщений/)).toBeVisible()
-    expect(e2ee.open).toHaveBeenCalledWith({ id: encryptedDm.id, memberIds: [testUser.id, '200'] })
+    expect(e2ee.open).toHaveBeenCalledWith({
+      id: encryptedDm.id,
+      memberIds: [testUser.id, '200'],
+      group: false,
+    })
   })
 
   it('read again what this device could not once its keys change (approved elsewhere)', async () => {

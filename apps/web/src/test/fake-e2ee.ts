@@ -13,6 +13,7 @@ import type {
 import type { EncryptedFile } from '../features/e2ee/codec'
 import type { ApprovalView } from '../features/e2ee/device-approval'
 import type { E2eeClientFactory } from '../features/e2ee/e2ee-context'
+import type { MemberNotice } from '../features/e2ee/group-membership'
 import type { UseKeyResult } from '../features/e2ee/history-backup'
 import type { IndexedMessage } from '../features/e2ee/local-search'
 import type { SafetyStatus } from '../features/e2ee/safety'
@@ -66,6 +67,16 @@ export const createFakeE2ee = (status: ConversationStatus = 'ready') => {
       remember: vi.fn(async (_channelId: string) => undefined),
       wasEncrypted: vi.fn(async (_channelId: string) => false),
     },
+    invited: vi.fn(async (_channelId: string, _userIds: readonly string[]) => undefined),
+    membership: vi.fn(
+      async (
+        _channel: EncryptedChannel,
+      ): Promise<{ notices: MemberNotice[]; pending: string[] }> => ({
+        notices: [],
+        pending: [],
+      }),
+    ),
+    dismissNotice: vi.fn(async (_channelId: string, _noticeId: string) => undefined),
     forget: vi.fn(async () => undefined),
     open: vi.fn(async (_channel: EncryptedChannel) => status),
     send: vi.fn(

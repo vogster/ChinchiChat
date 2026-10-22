@@ -342,6 +342,66 @@ describe('e2ee client', () => {
     expect(commitCount(delivery)).toBe(settled)
   })
 
+  it('in a group, takes in no one the server slips into the members: nobody here added them', async () => {
+    const { client } = setup()
+    const CAROL = '3'
+    const MALLORY = '9'
+    const group = { id: '602', memberIds: [ALICE, BOB, CAROL] }
+    const alice = client(ALICE).client
+    const bob = client(BOB).client
+    const carol = client(CAROL).client
+    const mallory = client(MALLORY).client
+    await Promise.all([bob.ready(), carol.ready(), mallory.ready()])
+    await alice.open(group)
+    await bob.open(group)
+
+    // The server lists Mallory as a member; no one in the group added her.
+    const slipped = { ...group, memberIds: [ALICE, BOB, CAROL, MALLORY] }
+    await alice.open(slipped)
+    await bob.open(slipped)
+    const sent = await alice.send(slipped, 'Только для своих')
+
+    expect(await mallory.read(slipped, sent)).toBeNull()
+    expect(await carol.read(slipped, sent)).toMatchObject({ payload: { text: 'Только для своих' } })
+    expect((await bob.membership(slipped)).pending).toEqual([MALLORY])
+    expect((await bob.membership(slipped)).notices).toEqual([])
+  })
+
+  it('in a group, takes in whom this device added, and tells the others who added whom', async () => {
+    const { client } = setup()
+    const CAROL = '3'
+    const DAN = '4'
+    const group = { id: '603', memberIds: [ALICE, BOB, CAROL] }
+    const alice = client(ALICE).client
+    const bob = client(BOB).client
+    const carol = client(CAROL).client
+    const dan = client(DAN).client
+    await Promise.all([bob.ready(), carol.ready(), dan.ready()])
+    await alice.open(group)
+    await bob.open(group)
+
+    const withDan = { ...group, memberIds: [ALICE, BOB, CAROL, DAN] }
+    await alice.invited(group.id, [DAN])
+    await alice.open(withDan)
+    const sent = await alice.send(withDan, 'Привет, Дэн')
+
+    expect(await dan.read(withDan, sent)).toMatchObject({ payload: { text: 'Привет, Дэн' } })
+    await bob.open(withDan)
+    const { notices, pending } = await bob.membership(withDan)
+    expect(pending).toEqual([])
+    expect(notices).toEqual([{ id: expect.any(String), byUserId: ALICE, userIds: [DAN] }])
+    await bob.dismissNotice(withDan.id, notices[0]?.id ?? '')
+    expect((await bob.membership(withDan)).notices).toEqual([])
+    // A member's new device still goes in as before: Dan is one of them now.
+    const danPhone = client(DAN, 'Телефон').client
+    await danPhone.ready()
+    await letIn(bob, DAN)
+    await bob.open(withDan)
+    expect(await danPhone.read(withDan, await bob.send(withDan, 'Всем'))).toMatchObject({
+      payload: { text: 'Всем' },
+    })
+  })
+
   it('never encrypts for someone removed from a group, even before anyone reopens it', async () => {
     const { client } = setup()
     const CAROL = '3'

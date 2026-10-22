@@ -20,6 +20,7 @@ import { useApi } from '../../lib/api-context'
 import { useCurrentUser } from '../auth/use-auth-actions'
 import { BetaBadge } from '../e2ee/beta-badge'
 import { DowngradeNotice, EncryptionNotice, EncryptionStatus } from '../e2ee/encryption-notice'
+import { GroupNotices } from '../e2ee/group-notices'
 import { LocalSearchPanel } from '../e2ee/local-search-panel'
 import { MissingHistoryButton, RecoveryPrompt } from '../e2ee/recovery-prompt'
 import { SafetyDialog } from '../e2ee/safety-dialog'
@@ -388,6 +389,13 @@ export const DmView = ({ channel }: { channel: PrivateChannel }) => {
             </div>
           ) : null}
           {encryption ? <RecoveryPrompt ready={keysReady} /> : null}
+          {encryption?.group ? (
+            <GroupNotices
+              channel={encryption}
+              nameOf={(userId) => callPerson(userId).name}
+              onCheck={() => setChecking(true)}
+            />
+          ) : null}
           {encryption && me ? (
             <SafetyWarning
               safety={safety}
