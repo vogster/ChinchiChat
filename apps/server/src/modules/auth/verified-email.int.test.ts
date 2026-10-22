@@ -16,7 +16,7 @@ const { app, db, redis, close } = createTestApp({
 
 const call = (
   cookie: string | null,
-  method: 'GET' | 'POST' | 'PATCH',
+  method: 'GET' | 'POST' | 'PUT' | 'PATCH',
   url: string,
   payload?: object,
 ) =>
@@ -58,6 +58,14 @@ describe('requiring a confirmed email', () => {
     const bobId = (await call(bob, 'GET', '/users/@me')).json().data.user.id as string
     const dm = await call(alice, 'POST', '/users/@me/channels', { recipientIds: [bobId] })
     expect(dm.json().code).toBe('EMAIL_NOT_VERIFIED')
+    // By id rather than by name, the same: no friend request.
+    const byId = await call(alice, 'PUT', `/users/@me/relationships/${bobId}`, { type: 'friend' })
+    expect(byId.json().code).toBe('EMAIL_NOT_VERIFIED')
+    // Blocking reaches nobody: it stays open to everyone.
+    expect(
+      (await call(alice, 'PUT', `/users/@me/relationships/${bobId}`, { type: 'blocked' }))
+        .statusCode,
+    ).toBe(200)
     // Reading and the account itself still work.
     expect((await call(alice, 'GET', '/users/@me')).statusCode).toBe(200)
 
