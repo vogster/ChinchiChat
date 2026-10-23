@@ -1016,6 +1016,7 @@
     "disabled": "Voice is not set up on this Chinchi server",
     "panelLabel": "Voice connection",
     "connected": "In voice",
+    "goToCall": "Go to the call: {{name}}",
     "encrypted": "Call encrypted",
     "connecting": "Connecting…",
     "leave": "Disconnect",

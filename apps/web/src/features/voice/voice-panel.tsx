@@ -1,4 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
+import { Link } from '@tanstack/react-router'
 import { Lock, Monitor, MonitorOff, PhoneOff, Video, VideoOff } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
@@ -51,9 +52,25 @@ export const VoicePanel = () => {
           >
             {connected ? t('voice.connected') : t('voice.connecting')}
           </div>
-          <div className="truncate text-xs text-muted" title={where}>
-            {where}
-          </div>
+          {/* Back to where the call is (a DM, a server's voice channel), from anywhere. */}
+          {voice.channelId ? (
+            <Link
+              {...(voice.guildId
+                ? {
+                    to: '/channels/$guildId/$channelId' as const,
+                    params: { guildId: voice.guildId, channelId: voice.channelId },
+                  }
+                : {
+                    to: '/channels/@me/$channelId' as const,
+                    params: { channelId: voice.channelId },
+                  })}
+              aria-label={t('voice.goToCall', { name: where })}
+              title={t('voice.goToCall', { name: where })}
+              className="block truncate text-xs text-muted hover:text-text hover:underline"
+            >
+              {where}
+            </Link>
+          ) : null}
           {connected && voice.encrypted ? (
             <div className="flex items-center gap-1 text-xs text-secure-text">
               <Lock aria-hidden className="size-3 shrink-0" />

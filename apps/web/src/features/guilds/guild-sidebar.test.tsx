@@ -110,6 +110,9 @@ describe('voice channel card', () => {
     const bar = await screen.findByRole('region', { name: 'Голосовое подключение' })
     expect(await within(bar).findByText('В голосовом')).toBeVisible()
     expect(within(bar).getByText('Общий · Котики')).toBeVisible()
+    expect(
+      within(bar).getByRole('link', { name: 'Перейти к звонку: Общий · Котики' }),
+    ).toHaveAttribute('href', expect.stringMatching(/^\/channels\/500\/\d+$/))
     await user.click(within(bar).getByRole('button', { name: 'Отключиться' }))
     expect(screen.queryByRole('region', { name: 'Голосовое подключение' })).not.toBeInTheDocument()
   })

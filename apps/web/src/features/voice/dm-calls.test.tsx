@@ -51,6 +51,19 @@ describe('calls in DMs', () => {
     await waitFor(() => expect(panel).toHaveTextContent('Боб'))
   })
 
+  it('leads back to the conversation of the call from anywhere', async () => {
+    const api = withVoice()
+    const { user, router } = renderApp(DM_URL, { api })
+    await user.click(await screen.findByRole('button', { name: 'Позвонить' }))
+    await router.navigate({ to: '/' })
+
+    const panel = await screen.findByRole('region', { name: 'Голосовое подключение' })
+    const back = await within(panel).findByRole('link', { name: 'Перейти к звонку: Боб' })
+    await user.click(back)
+
+    await waitFor(() => expect(router.state.location.pathname).toBe(DM_URL))
+  })
+
   it('shows who is in the call and lets the user join it', async () => {
     const api = withVoice()
     const { user, gateway } = renderApp(DM_URL, { api })
