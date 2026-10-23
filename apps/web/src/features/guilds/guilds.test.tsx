@@ -141,6 +141,21 @@ describe('server menu', () => {
     )
   })
 
+  it('in the desktop app, links an invite to the server, not to the app’s own page', async () => {
+    const api = createFakeApi({ user: testUser })
+    const { user } = renderApp(GENERAL_URL, { api, mediaBase: 'https://chat.example.com' })
+
+    const menu = await openGuildMenu(user)
+    await user.click(within(menu).getByRole('menuitem', { name: 'Пригласить людей' }))
+
+    const dialog = await screen.findByRole('dialog', { name: 'Пригласить друзей на Котики' })
+    await waitFor(() =>
+      expect(within(dialog).getByLabelText('Ссылка-приглашение')).toHaveValue(
+        'https://chat.example.com/invite/AbCd1234',
+      ),
+    )
+  })
+
   it('lets the owner create a channel in a category', async () => {
     const api = createFakeApi({ user: testUser })
     const { user } = renderApp(GENERAL_URL, { api })

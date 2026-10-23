@@ -20,6 +20,13 @@ export const MediaBaseProvider = ({
 // eslint-disable-next-line react-refresh/only-export-components -- hook belongs with its provider
 export const useMediaBase = (): string | null => useContext(MediaBaseContext)
 
+/**
+ * Where links meant for other people point (invites): the instance, which in the desktop app is
+ * not the page's own address (`tauri.localhost`).
+ */
+// eslint-disable-next-line react-refresh/only-export-components -- hook belongs with its provider
+export const usePublicOrigin = (): string => useContext(MediaBaseContext) ?? window.location.origin
+
 /** Turns a server path (`/api/v1/avatars/…`) into something an `<img>` can load from here. */
 // eslint-disable-next-line react-refresh/only-export-components -- hook belongs with its provider
 export const useMediaUrl = (): MediaResolver => {

@@ -8,5 +8,5 @@ export const parseInviteCode = (input: string): string | null => {
   return FROM_URL.exec(value)?.[1] ?? null
 }
 
-export const inviteUrl = (code: string, origin: string = window.location.origin): string =>
-  `${origin}/invite/${code}`
+/** The link to share; `origin` is the instance (see usePublicOrigin). */
+export const inviteUrl = (code: string, origin: string): string => `${origin}/invite/${code}`

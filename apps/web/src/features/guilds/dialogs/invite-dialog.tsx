@@ -7,6 +7,7 @@ import { Button } from '../../../components/ui/button'
 import { Dialog } from '../../../components/ui/dialog'
 import { useApi } from '../../../lib/api-context'
 import { errorMessage } from '../../../lib/errors'
+import { usePublicOrigin } from '../../media/media-base'
 import { inviteUrl } from '../invite-link'
 
 import type { Channel, GuildDetail } from '@chinchi/shared'
@@ -32,7 +33,8 @@ export const InviteDialog = ({ guild, channel, onOpenChange }: InviteDialogProps
     retry: false,
   })
 
-  const url = invite.data ? inviteUrl(invite.data.code) : ''
+  const origin = usePublicOrigin()
+  const url = invite.data ? inviteUrl(invite.data.code, origin) : ''
 
   const copy = async () => {
     await navigator.clipboard.writeText(url)

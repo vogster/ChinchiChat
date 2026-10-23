@@ -7,6 +7,7 @@ import { Button } from '../../components/ui/button'
 import { Switch } from '../../components/ui/switch'
 import { useApi } from '../../lib/api-context'
 import { errorMessage } from '../../lib/errors'
+import { usePublicOrigin } from '../media/media-base'
 import { SettingsCard, SettingsSection } from '../settings/settings-section'
 
 import type { InstanceSettings, RegistrationMode } from '@chinchi/shared'
@@ -15,8 +16,8 @@ const settingsKey = ['admin', 'settings'] as const
 const invitesKey = ['admin', 'invites'] as const
 const MODES: readonly RegistrationMode[] = ['open', 'invite', 'closed']
 
-const inviteLink = (code: string) =>
-  `${window.location.origin}/register?invite=${encodeURIComponent(code)}`
+const inviteLink = (origin: string, code: string) =>
+  `${origin}/register?invite=${encodeURIComponent(code)}`
 
 const SettingsForm = ({ settings }: { settings: InstanceSettings }) => {
   const { t } = useTranslation()
@@ -102,6 +103,7 @@ const SettingsForm = ({ settings }: { settings: InstanceSettings }) => {
 const Invites = () => {
   const { t, i18n } = useTranslation()
   const api = useApi()
+  const origin = usePublicOrigin()
   const queryClient = useQueryClient()
   const { data: invites = [] } = useQuery({
     queryKey: invitesKey,
@@ -129,7 +131,7 @@ const Invites = () => {
         {invites.map((invite) => (
           <li key={invite.code} className="flex flex-wrap items-center gap-2 py-2">
             <div className="min-w-0 flex-1">
-              <p className="font-mono text-sm break-all">{inviteLink(invite.code)}</p>
+              <p className="font-mono text-sm break-all">{inviteLink(origin, invite.code)}</p>
               <p className="text-xs text-muted">
                 {t('admin.instance.uses', {
                   uses: invite.uses,
@@ -143,7 +145,7 @@ const Invites = () => {
             <Button
               variant="secondary"
               fullWidth={false}
-              onClick={() => void navigator.clipboard?.writeText(inviteLink(invite.code))}
+              onClick={() => void navigator.clipboard?.writeText(inviteLink(origin, invite.code))}
             >
               {t('admin.instance.copy')}
             </Button>

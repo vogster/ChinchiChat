@@ -110,6 +110,18 @@ describe('instance administration', () => {
     const invites = await screen.findByRole('list', { name: 'Приглашения' })
     expect(await within(invites).findByText(/register\?invite=Abcd2345Efgh6789/)).toBeVisible()
   })
+
+  it('in the desktop app, links invites to the server, not to the app’s own page', async () => {
+    const api = createFakeApi({ user: admin })
+    const { user } = renderApp('/?admin=instance', { api, mediaBase: 'https://chat.example.com' })
+
+    await user.click(await screen.findByRole('button', { name: 'Создать приглашение' }))
+
+    const invites = await screen.findByRole('list', { name: 'Приглашения' })
+    expect(
+      await within(invites).findByText('https://chat.example.com/register?invite=Abcd2345Efgh6789'),
+    ).toBeVisible()
+  })
 })
 
 describe('registering by invite', () => {
