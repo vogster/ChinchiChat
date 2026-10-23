@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import { Link } from '@tanstack/react-router'
-import { Lock, Monitor, MonitorOff, PhoneOff, Video, VideoOff } from 'lucide-react'
+import { ChevronRight, Lock, Monitor, MonitorOff, PhoneOff, Video, VideoOff } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
 import { useApi } from '../../lib/api-context'
@@ -66,9 +66,11 @@ export const VoicePanel = () => {
                   })}
               aria-label={t('voice.goToCall', { name: where })}
               title={t('voice.goToCall', { name: where })}
-              className="block truncate text-xs text-muted hover:text-text hover:underline"
+              className="group flex min-w-0 items-center gap-0.5 text-xs text-muted hover:text-text"
             >
-              {where}
+              <span className="truncate group-hover:underline">{where}</span>
+              {/* Shows it leads somewhere, also where there is no hover (phones). */}
+              <ChevronRight aria-hidden className="size-3.5 shrink-0" />
             </Link>
           ) : null}
           {connected && voice.encrypted ? (
