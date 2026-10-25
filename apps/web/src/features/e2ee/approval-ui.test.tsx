@@ -123,19 +123,28 @@ describe('approving a new device', () => {
     expect(
       await within(banner).findByText(/нажмите «Сравнить эмодзи здесь» в окне «Новый вход»/),
     ).toBeVisible()
+    // The emoji come up in a window, as on the other device.
     act(() => e2ee.approvals.emit([{ ...view, state: 'compare', emoji: EMOJI }]))
-    expect(within(banner).getByRole('group', { name: 'Эмодзи для сравнения' })).toHaveTextContent(
+    const dialog = await screen.findByRole('dialog', { name: 'Подтверждение входа' })
+    expect(within(dialog).getByRole('group', { name: 'Эмодзи для сравнения' })).toHaveTextContent(
       EMOJI.join(''),
     )
     // Here too the person compares and says yes: keys from whoever answered wait for it.
-    expect(banner).toHaveTextContent(/окна «Новый вход» там нет/)
-    await user.click(within(banner).getByRole('button', { name: 'Да, эмодзи совпадают' }))
+    expect(dialog).toHaveTextContent(/окна «Новый вход» там нет/)
+    await user.click(within(dialog).getByRole('button', { name: 'Да, эмодзи совпадают' }))
     expect(e2ee.approvals.confirm).toHaveBeenCalledWith('950')
     act(() =>
       e2ee.approvals.emit([{ ...view, state: 'compare', emoji: EMOJI, confirmedHere: true }]),
     )
-    expect(await within(banner).findByText(/нажмите там «Да»/)).toBeVisible()
-    expect(within(banner).queryByRole('button', { name: 'Да, эмодзи совпадают' })).toBeNull()
+    expect(await within(dialog).findByText(/нажмите там «Да»/)).toBeVisible()
+    expect(within(dialog).queryByRole('button', { name: 'Да, эмодзи совпадают' })).toBeNull()
+    // Closed now, it only hides: the banner keeps saying what is left.
+    await user.keyboard('{Escape}')
+    await waitFor(() =>
+      expect(screen.queryByRole('dialog', { name: 'Подтверждение входа' })).not.toBeInTheDocument(),
+    )
+    expect(within(banner).getByText(/нажмите там «Да»/)).toBeVisible()
+    expect(e2ee.approvals.decline).not.toHaveBeenCalled()
 
     e2ee.recovery.key.mockResolvedValue(TEST_RECOVERY_KEY)
     act(() => e2ee.approvals.emit([{ ...view, state: 'done', emoji: EMOJI }]))
@@ -164,17 +173,31 @@ describe('approving a new device', () => {
   it('on the new device: says no when the emoji differ, after the other device said yes', async () => {
     const { user, e2ee } = renderApp(DM_PATH, { api: withEncryptedDm() })
     e2ee.recovery.key.mockResolvedValue(null)
-    const banner = await screen.findByRole('status', { name: 'Старые сообщения недоступны' })
+    await screen.findByRole('status', { name: 'Старые сообщения недоступны' })
     const view = { approvalId: '950', role: 'new' as const, deviceName: null }
 
     act(() =>
       e2ee.approvals.emit([{ ...view, state: 'compare', emoji: EMOJI, approvedThere: true }]),
     )
-    expect(await within(banner).findByText(/На другом устройстве нажали «Да»/)).toBeVisible()
-    await user.click(within(banner).getByRole('button', { name: 'Нет, не совпадают' }))
+    const dialog = await screen.findByRole('dialog', { name: 'Подтверждение входа' })
+    expect(within(dialog).getByText(/На другом устройстве нажали «Да»/)).toBeVisible()
+    await user.click(within(dialog).getByRole('button', { name: 'Нет, не совпадают' }))
 
     expect(e2ee.approvals.decline).toHaveBeenCalledWith('950')
     expect(e2ee.approvals.confirm).not.toHaveBeenCalled()
+  })
+
+  it('on the new device: closing the emoji window before saying yes is a no', async () => {
+    const { user, e2ee } = renderApp(DM_PATH, { api: withEncryptedDm() })
+    e2ee.recovery.key.mockResolvedValue(null)
+    await screen.findByRole('status', { name: 'Старые сообщения недоступны' })
+    const view = { approvalId: '950', role: 'new' as const, deviceName: null }
+
+    act(() => e2ee.approvals.emit([{ ...view, state: 'compare', emoji: EMOJI }]))
+    await screen.findByRole('dialog', { name: 'Подтверждение входа' })
+    await user.keyboard('{Escape}')
+
+    expect(e2ee.approvals.decline).toHaveBeenCalledWith('950')
   })
 
   it('in another tab of the new device: the banner goes once the device is approved', async () => {

@@ -459,15 +459,19 @@ test('a new browser is approved by comparing emoji on the old one picked for it'
 
   // Both screens show the same six emoji; Alice says yes on the laptop.
   const onLaptop = dialog.getByRole('group', { name: 'Эмодзи для сравнения' })
-  const onPhone = banner.getByRole('group', { name: 'Эмодзи для сравнения' })
+  // On the phone, in a window too.
+  const confirm = phone.page.getByRole('dialog', { name: 'Подтверждение входа' })
+  const onPhone = confirm.getByRole('group', { name: 'Эмодзи для сравнения' })
   await expect(onLaptop).toBeVisible()
   await expect(onPhone).toBeVisible()
   expect(await onPhone.innerText()).toBe(await onLaptop.innerText())
   await dialog.getByRole('button', { name: 'Да, эмодзи совпадают' }).click()
   await expect(dialog).toBeHidden()
   // The phone takes the keys only once Alice says yes on it too.
-  await expect(banner).toContainText('На другом устройстве нажали «Да»')
-  await banner.getByRole('button', { name: 'Да, эмодзи совпадают' }).click()
+  await expect(confirm).toContainText('На другом устройстве нажали «Да»')
+  await confirm.getByRole('button', { name: 'Да, эмодзи совпадают' }).click()
+  // The window was hiding the banner from the accessibility tree: wait for it to go first.
+  await expect(confirm).toBeHidden()
 
   // The phone now reads the message from before it existed, and is vouched for.
   await expect(banner).toBeHidden()

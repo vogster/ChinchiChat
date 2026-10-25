@@ -6,21 +6,14 @@ import { Dialog } from '../../components/ui/dialog'
 import { useApprovals } from './use-approvals'
 
 /** The six emoji both devices show, large enough to compare at a glance. */
-export const ApprovalEmoji = ({
-  emoji,
-  align = 'center',
-}: {
-  emoji: readonly string[]
-  /** `start` beside left-aligned text (the new device's notice). */
-  align?: 'center' | 'start'
-}) => {
+export const ApprovalEmoji = ({ emoji }: { emoji: readonly string[] }) => {
   const { t } = useTranslation()
   return (
     <div
       role="group"
       aria-label={t('e2ee.approval.emojiLabel')}
       // All six must show to be compared: on a phone the row wraps rather than run off the edge.
-      className={`flex flex-wrap gap-3 py-2 text-4xl sm:gap-4 ${align === 'center' ? 'justify-center' : 'justify-start'}`}
+      className="flex flex-wrap justify-center gap-3 py-2 text-4xl sm:gap-4"
     >
       {emoji.map((item, index) => (
         // Emoji may repeat; their place is what tells them apart.

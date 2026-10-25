@@ -3,9 +3,9 @@ import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { Button } from '../../components/ui/button'
-import { ApprovalEmoji } from './approval-dialog'
 import { EncryptionGuideOnce } from './encryption-guide'
 import { useHasOtherDevices } from './my-devices'
+import { NewDeviceApprovalDialog } from './new-device-approval-dialog'
 import { EnterRecoveryKeyDialog, RecoveryKeyForm, SaveRecoveryKeyDialog } from './recovery-dialogs'
 import { useApprovals } from './use-approvals'
 import { useEncryptionGuideSeen } from './use-encryption-guide'
@@ -15,8 +15,9 @@ import { recoveryReminderSnoozed, snoozeRecoveryReminder, useRecovery } from './
 import type { ApprovalView, DeviceApprovals } from './device-approval'
 
 /**
- * What the banner says while another device is asked to approve this one. The person says here
- * too whether the emoji match: only then does this device take the keys it was sent.
+ * What the banner says while another device is asked to approve this one. The emoji to compare
+ * come up in a window; the person says there too whether they match, and only then does this
+ * device take the keys it was sent.
  */
 const ApprovalProgress = ({
   view,
@@ -29,37 +30,10 @@ const ApprovalProgress = ({
   if (view.state === 'declined') return <p>{t('e2ee.approval.declined')}</p>
   if (view.state !== 'compare' || !view.emoji) return <p>{t('e2ee.approval.waiting')}</p>
   return (
-    <div className="flex flex-col gap-2">
-      {view.confirmedHere ? (
-        <p>{t('e2ee.approval.waitingThere')}</p>
-      ) : (
-        <>
-          <p>{t('e2ee.approval.compareHere')}</p>
-          {view.approvedThere ? (
-            <p className="text-muted">{t('e2ee.approval.approvedThere')}</p>
-          ) : null}
-        </>
-      )}
-      <ApprovalEmoji emoji={view.emoji} align="start" />
-      {view.confirmedHere || !approvals ? null : (
-        <div className="flex flex-wrap gap-2">
-          <Button
-            variant="secure"
-            fullWidth={false}
-            onClick={() => void approvals.confirm(view.approvalId)}
-          >
-            {t('e2ee.approval.yes')}
-          </Button>
-          <Button
-            variant="secondary"
-            fullWidth={false}
-            onClick={() => void approvals.decline(view.approvalId)}
-          >
-            {t('e2ee.approval.differ')}
-          </Button>
-        </div>
-      )}
-    </div>
+    <>
+      <p>{t(view.confirmedHere ? 'e2ee.approval.waitingThere' : 'e2ee.approval.comparing')}</p>
+      {approvals ? <NewDeviceApprovalDialog view={view} approvals={approvals} /> : null}
+    </>
   )
 }
 

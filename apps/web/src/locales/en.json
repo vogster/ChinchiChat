@@ -1627,7 +1627,10 @@
       "approvedThere": "“Yes” was pressed on the other device. This device gets the keys only once you confirm here too.",
       "waitingThere": "Done. Now press “Yes” in the “New sign-in” window there if the emoji match.",
       "differ": "No, they differ",
-      "declined": "The sign-in wasn't approved. Try again or enter your recovery key."
+      "declined": "The sign-in wasn't approved. Try again or enter your recovery key.",
+      "newTitle": "Confirm sign-in",
+      "comparing": "Compare the emoji in the “Confirm sign-in” window with the “New sign-in” window on your other device.",
+      "ok": "Got it"
     },
     "unreadable_one": "{{count}} message was sent before this device joined and isn't available on it",
     "unreadable_other": "{{count}} messages were sent before this device joined and aren't available on it",
