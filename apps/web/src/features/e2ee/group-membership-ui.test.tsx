@@ -57,9 +57,7 @@ describe('who is in an encrypted group', () => {
 
     const waiting = await screen.findByRole('status', { name: 'Ещё не в зашифрованной беседе' })
     expect(waiting).toHaveTextContent('в участники их мог вписать сервер')
-    await user.click(
-      within(waiting).getByRole('button', { name: 'Добавить в шифрование: Мэллори' }),
-    )
+    await user.click(within(waiting).getByRole('button', { name: 'Впустить в беседу: Мэллори' }))
 
     await waitFor(() => expect(e2ee.invited).toHaveBeenCalledWith(group.id, [mallory.id]))
     // The conversation opens again at once, so the device is added now.
@@ -72,8 +70,8 @@ describe('who is in an encrypted group', () => {
     e2ee.invited.mockRejectedValue(new Error('offline'))
 
     const waiting = await screen.findByRole('status', { name: 'Ещё не в зашифрованной беседе' })
-    const takeIn = within(waiting).getByRole('button', { name: 'Добавить в шифрование: Дэн' })
-    expect(takeIn).toHaveTextContent('Добавить в шифрование: Дэн')
+    const takeIn = within(waiting).getByRole('button', { name: 'Впустить в беседу: Дэн' })
+    expect(takeIn).toHaveTextContent('Впустить в беседу: Дэн')
     await user.click(takeIn)
 
     expect(await within(waiting).findByRole('alert')).toBeVisible()

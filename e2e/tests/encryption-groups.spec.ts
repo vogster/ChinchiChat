@@ -79,7 +79,7 @@ test('a member takes in someone no device here added, and then they read along',
   await bob.page.reload()
   const waiting = bob.page.getByRole('status', { name: 'Ещё не в зашифрованной беседе' })
   await expect(waiting).toContainText(danUser.username)
-  await waiting.getByRole('button', { name: `Добавить в шифрование: ${danUser.username}` }).click()
+  await waiting.getByRole('button', { name: `Впустить в беседу: ${danUser.username}` }).click()
   await expect(waiting).toBeHidden()
 
   await say(bob.page, 'Дэн, теперь ты с нами')
