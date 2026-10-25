@@ -15,8 +15,12 @@ export interface ApprovalView {
   readonly role: 'new' | 'approver'
   /** On the approver: the new device's name. */
   readonly deviceName: string | null
-  /** waiting: for another device to answer; compare: emoji are up; done / declined: over. */
-  readonly state: 'waiting' | 'compare' | 'done' | 'declined'
+  /**
+   * asked (approver): a new sign-in, nothing sent until the person picks this device to compare
+   * on; waiting: for the other device; compare: emoji are up; elsewhere (approver): another of my
+   * devices answered first; done / declined: over.
+   */
+  readonly state: 'asked' | 'waiting' | 'compare' | 'elsewhere' | 'done' | 'declined'
   readonly emoji: readonly string[] | null
   /** On the new device: the person said here that the emoji match. */
   readonly confirmedHere?: boolean
@@ -43,8 +47,9 @@ interface Session {
 }
 
 /**
- * Approving a new device from an approved one. The new device commits to its key; an approved
- * device answers with its own; the new one reveals; both show emoji from the shared secret. The
+ * Approving a new device from an approved one. The new device commits to its key; every approved
+ * device asks the person, and the one they pick answers with its own (the server lets only one
+ * answer); the new one reveals; both show emoji from the shared secret. The
  * user says yes on the approver, which hands over the recovery key, and yes on the new device,
  * which only then takes the user key and history with it, like typing the key in. Both yeses
  * count: whoever answered the new device may be the server posing as an approved one (it relays
@@ -52,6 +57,10 @@ interface Session {
  */
 export const createDeviceApproval = ({ api, ready, crossSigning, backup }: DeviceApprovalDeps) => {
   const sessions = new Map<string, Session>()
+  /** Approvals this device has asked the person about (the gateway may repeat a request). */
+  const asked = new Set<string>()
+  /** Asked about, then answered elsewhere or over while this device was still looking it up. */
+  const gone = new Set<string>()
   const views = new Map<string, ApprovalView>()
   const listeners = new Set<() => void>()
   /** The same array until something changes (screens subscribe to it). */
@@ -116,43 +125,52 @@ export const createDeviceApproval = ({ api, ready, crossSigning, backup }: Devic
     }
   }
 
+  /** Closes this device's question: another device has it, or it is over. */
+  const forget = (approvalId: string) => {
+    sessions.delete(approvalId)
+    views.delete(approvalId)
+    notify()
+  }
+
   /** As an approved device that can vouch for others. */
   const asApprover = async (approval: DeviceApproval, here: string) => {
-    if (approval.state === 'requested' && !sessions.has(approval.id)) {
+    if (approval.state === 'requested') {
+      if (asked.has(approval.id)) return
+      asked.add(approval.id)
       if (!(await crossSigning.held()) || !(await backup.key())) return
-      const ephemeral = await createEphemeral()
-      sessions.set(approval.id, { ephemeral })
       // Fresh: the new device registered moments ago, after any list this client cached.
       const { devices } = await api.e2ee.myDevices()
       const name = devices.find((d) => d.id === approval.newDeviceId)?.name
+      if (gone.has(approval.id)) return
       views.set(approval.id, {
         approvalId: approval.id,
         role: 'approver',
         deviceName: name ?? null,
-        state: 'waiting',
+        state: 'asked',
         emoji: null,
       })
-      try {
-        await api.e2ee.approvals.accept(approval.id, {
-          deviceId: here,
-          publicKey: ephemeral.publicKey,
-        })
-      } catch (error) {
-        // Another of my devices answered first: it shows the emoji, this one steps back.
-        if (!(error instanceof ApiError && error.status === 409)) throw error
-        sessions.delete(approval.id)
-        views.delete(approval.id)
-      }
       notify()
       return
     }
+    const view = views.get(approval.id)
+    if (!view) {
+      if (asked.has(approval.id)) gone.add(approval.id)
+      return
+    }
+    if (view.state === 'elsewhere') return
     const session = sessions.get(approval.id)
-    if (!session) return
     // Another of my devices answered: its emoji are the ones to compare, not this one's.
     if (approval.approverDeviceId && approval.approverDeviceId !== here) {
-      sessions.delete(approval.id)
-      views.delete(approval.id)
-      notify()
+      if (!session) forget(approval.id)
+      else {
+        sessions.delete(approval.id)
+        show(approval.id, { state: 'elsewhere' })
+      }
+      return
+    }
+    if (!session) {
+      // Over before anyone picked this device: nothing to show here any more.
+      if (approval.state === 'completed' || approval.state === 'declined') forget(approval.id)
       return
     }
     if (approval.state === 'revealed' && approval.newKey && !session.secretKey) {
@@ -204,6 +222,31 @@ export const createDeviceApproval = ({ api, ready, crossSigning, backup }: Devic
         return
       }
       await asApprover(approval, here)
+    },
+
+    /**
+     * On an approved device: the person picked this one to compare emoji on. Only now does it
+     * answer the new device; if another answered first, it says so and steps back.
+     */
+    compareHere: async (approvalId: string): Promise<void> => {
+      const view = views.get(approvalId)
+      if (view?.role !== 'approver' || view.state !== 'asked' || sessions.has(approvalId)) return
+      const ephemeral = await createEphemeral()
+      sessions.set(approvalId, { ephemeral })
+      show(approvalId, { state: 'waiting' })
+      try {
+        await api.e2ee.approvals.accept(approvalId, {
+          deviceId: (await ready()).identity.deviceId,
+          publicKey: ephemeral.publicKey,
+        })
+      } catch (error) {
+        sessions.delete(approvalId)
+        if (!(error instanceof ApiError && error.status === 409)) {
+          show(approvalId, { state: 'asked' })
+          throw error
+        }
+        show(approvalId, { state: 'elsewhere' })
+      }
     },
 
     /**

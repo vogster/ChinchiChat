@@ -210,6 +210,7 @@ test('a new device says the emoji differ: it takes no keys, though the other sid
   await banner.getByRole('button', { name: 'Подтвердить с другого устройства' }).click()
   // Whoever answered said yes (here the laptop; it could as well be the server posing as one).
   const approve = laptop.page.getByRole('dialog', { name: 'Новый вход' })
+  await approve.getByRole('button', { name: 'Сравнить эмодзи здесь' }).click()
   await approve.getByRole('button', { name: 'Да, эмодзи совпадают' }).click()
   await expect(banner).toContainText('На другом устройстве нажали «Да»')
   await banner.getByRole('button', { name: 'Нет, не совпадают' }).click()
@@ -272,10 +273,11 @@ test('a device approved by emoji gets into a group nobody has open', async ({ br
   await phone.page.goto(group)
   const banner = phone.page.getByRole('status', { name: 'Старые сообщения недоступны' })
   await banner.getByRole('button', { name: 'Подтвердить с другого устройства' }).click()
+  const approve = laptop.page.getByRole('dialog', { name: 'Новый вход' })
+  await approve.getByRole('button', { name: 'Сравнить эмодзи здесь' }).click()
   // Yes on the phone first this time, then on the laptop.
   await banner.getByRole('button', { name: 'Да, эмодзи совпадают' }).click()
   await expect(banner).toContainText('нажмите там «Да»')
-  const approve = laptop.page.getByRole('dialog', { name: 'Новый вход' })
   await approve.getByRole('button', { name: 'Да, эмодзи совпадают' }).click()
   await expect(approve).toBeHidden()
 

@@ -43,6 +43,7 @@ export const createFakeE2ee = (status: ConversationStatus = 'ready') => {
     approvals: {
       request: vi.fn(async () => '950'),
       handle: vi.fn(async (_approval: DeviceApproval) => undefined),
+      compareHere: vi.fn(async (_approvalId: string) => undefined),
       confirm: vi.fn(async (_approvalId: string) => undefined),
       decline: vi.fn(async (_approvalId: string) => undefined),
       dismiss: vi.fn((approvalId: string) => {

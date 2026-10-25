@@ -41,9 +41,15 @@ describe('approving a new device', () => {
     await screen.findByRole('heading', { name: 'Друзья', level: 1 })
     const view = { approvalId: '950', role: 'approver' as const, deviceName: 'Телефон' }
 
-    act(() => e2ee.approvals.emit([{ ...view, state: 'waiting', emoji: null }]))
+    // Every approved device asks; nothing is sent until the person picks one.
+    act(() => e2ee.approvals.emit([{ ...view, state: 'asked', emoji: null }]))
     const dialog = await screen.findByRole('dialog', { name: 'Новый вход' })
     expect(dialog).toHaveTextContent('Новый вход: Телефон. Это вы?')
+    expect(within(dialog).queryByRole('button', { name: 'Да, эмодзи совпадают' })).toBeNull()
+    await user.click(within(dialog).getByRole('button', { name: 'Сравнить эмодзи здесь' }))
+    expect(e2ee.approvals.compareHere).toHaveBeenCalledWith('950')
+
+    act(() => e2ee.approvals.emit([{ ...view, state: 'waiting', emoji: null }]))
     expect(within(dialog).getByRole('button', { name: 'Да, эмодзи совпадают' })).toBeDisabled()
 
     act(() => e2ee.approvals.emit([{ ...view, state: 'compare', emoji: EMOJI }]))
@@ -62,6 +68,34 @@ describe('approving a new device', () => {
     )
   })
 
+  it('on an approved device: closing the question only hides it here', async () => {
+    const { user, e2ee } = renderApp('/', { api: withEncryptedDm() })
+    await screen.findByRole('heading', { name: 'Друзья', level: 1 })
+    const view = { approvalId: '950', role: 'approver' as const, deviceName: 'Телефон' }
+
+    act(() => e2ee.approvals.emit([{ ...view, state: 'asked', emoji: null }]))
+    await screen.findByRole('dialog', { name: 'Новый вход' })
+    await user.keyboard('{Escape}')
+
+    // Another device of mine may be the one to compare on: no "no" for all of them.
+    expect(e2ee.approvals.dismiss).toHaveBeenCalledWith('950')
+    expect(e2ee.approvals.decline).not.toHaveBeenCalled()
+  })
+
+  it('on an approved device: says so when another device answered first', async () => {
+    const { user, e2ee } = renderApp('/', { api: withEncryptedDm() })
+    await screen.findByRole('heading', { name: 'Друзья', level: 1 })
+    const view = { approvalId: '950', role: 'approver' as const, deviceName: 'Телефон' }
+
+    act(() => e2ee.approvals.emit([{ ...view, state: 'elsewhere', emoji: null }]))
+    const dialog = await screen.findByRole('dialog', { name: 'Новый вход' })
+    expect(dialog).toHaveTextContent('Уже подтверждают на другом вашем устройстве')
+    await user.click(within(dialog).getByRole('button', { name: 'Понятно' }))
+
+    expect(e2ee.approvals.dismiss).toHaveBeenCalledWith('950')
+    expect(e2ee.approvals.decline).not.toHaveBeenCalled()
+  })
+
   it('on the new device: asks another device, shows the same emoji, then gets the history', async () => {
     const { user, e2ee } = renderApp(DM_PATH, { api: withEncryptedDm() })
     e2ee.recovery.key.mockResolvedValue(null)
@@ -73,7 +107,9 @@ describe('approving a new device', () => {
     expect(e2ee.approvals.request).toHaveBeenCalled()
     const view = { approvalId: '950', role: 'new' as const, deviceName: null }
     act(() => e2ee.approvals.emit([{ ...view, state: 'waiting', emoji: null }]))
-    expect(await within(banner).findByText(/на другом своём устройстве/)).toBeVisible()
+    expect(
+      await within(banner).findByText(/нажмите «Сравнить эмодзи здесь» в окне «Новый вход»/),
+    ).toBeVisible()
     act(() => e2ee.approvals.emit([{ ...view, state: 'compare', emoji: EMOJI }]))
     expect(within(banner).getByRole('group', { name: 'Эмодзи для сравнения' })).toHaveTextContent(
       EMOJI.join(''),

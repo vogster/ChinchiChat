@@ -30,9 +30,26 @@ export const ApprovalEmoji = ({
   )
 }
 
+/** Before anything is sent: is this you, and is this the device to compare emoji on? */
+const Asked = ({ onCompare, onDecline }: { onCompare: () => void; onDecline: () => void }) => {
+  const { t } = useTranslation()
+  return (
+    <div className="flex flex-col gap-4">
+      <p className="text-sm text-muted">{t('e2ee.approval.askedHint')}</p>
+      <div className="flex flex-col-reverse gap-2">
+        <Button variant="secondary" onClick={onDecline}>
+          {t('e2ee.approval.no')}
+        </Button>
+        <Button onClick={onCompare}>{t('e2ee.approval.compareHereButton')}</Button>
+      </div>
+    </div>
+  )
+}
+
 /**
- * On an approved device, anywhere in the app: "New sign-in: Phone. Is this you?" with the emoji
- * to compare. Yes hands the new device its keys; no stops it.
+ * On every approved device, anywhere in the app: "New sign-in: Phone. Is this you?". The person
+ * picks the device in front of them to compare emoji on; only that one answers the new device,
+ * and the others close. Yes hands the new device its keys; no stops it.
  */
 export const ApprovalDialog = () => {
   const { t } = useTranslation()
@@ -47,37 +64,58 @@ export const ApprovalDialog = () => {
   }, [view, approvals])
 
   if (!view || !approvals || view.state === 'done' || view.state === 'declined') return null
+  const { approvalId, state } = view
+  // Until this device is picked (or once another one was), closing only hides it here.
+  const local = state === 'asked' || state === 'elsewhere'
   return (
     <Dialog
       open
-      onOpenChange={(open) => !open && void approvals.decline(view.approvalId)}
+      onOpenChange={(open) => {
+        if (open) return
+        if (local) approvals.dismiss(approvalId)
+        else void approvals.decline(approvalId)
+      }}
       title={t('e2ee.approval.title')}
       description={t('e2ee.approval.question', {
         device: view.deviceName ?? t('settings.sessions.unknownDevice'),
       })}
     >
-      <div className="flex flex-col gap-4">
-        {view.emoji ? (
-          <>
-            <ApprovalEmoji emoji={view.emoji} />
-            <p className="text-sm text-muted">{t('e2ee.approval.compareHint')}</p>
-          </>
-        ) : (
-          <p className="text-sm text-muted">{t('e2ee.approval.preparing')}</p>
-        )}
-        {/* One under the other: side by side, the longer label wraps. Yes on top. */}
-        <div className="flex flex-col-reverse gap-2">
-          <Button variant="secondary" onClick={() => void approvals.decline(view.approvalId)}>
-            {t('e2ee.approval.no')}
-          </Button>
-          <Button
-            disabled={view.state !== 'compare'}
-            onClick={() => void approvals.confirm(view.approvalId)}
-          >
-            {t('e2ee.approval.yes')}
+      {state === 'asked' ? (
+        <Asked
+          onCompare={() => void approvals.compareHere(approvalId)}
+          onDecline={() => void approvals.decline(approvalId)}
+        />
+      ) : state === 'elsewhere' ? (
+        <div className="flex flex-col gap-4">
+          <p className="text-sm text-muted">{t('e2ee.approval.elsewhere')}</p>
+          <Button variant="secondary" onClick={() => approvals.dismiss(approvalId)}>
+            {t('e2ee.approval.elsewhereOk')}
           </Button>
         </div>
-      </div>
+      ) : (
+        <div className="flex flex-col gap-4">
+          {view.emoji ? (
+            <>
+              <ApprovalEmoji emoji={view.emoji} />
+              <p className="text-sm text-muted">{t('e2ee.approval.compareHint')}</p>
+            </>
+          ) : (
+            <p className="text-sm text-muted">{t('e2ee.approval.preparing')}</p>
+          )}
+          {/* One under the other: side by side, the longer label wraps. Yes on top. */}
+          <div className="flex flex-col-reverse gap-2">
+            <Button variant="secondary" onClick={() => void approvals.decline(approvalId)}>
+              {t('e2ee.approval.no')}
+            </Button>
+            <Button
+              disabled={state !== 'compare'}
+              onClick={() => void approvals.confirm(approvalId)}
+            >
+              {t('e2ee.approval.yes')}
+            </Button>
+          </div>
+        </div>
+      )}
     </Dialog>
   )
 }

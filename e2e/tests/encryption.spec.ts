@@ -372,7 +372,9 @@ test('a new browser gets the old messages back with the recovery key', async ({ 
   await bob.context.close()
 })
 
-test('a new browser is approved from an old one by comparing emoji', async ({ browser }) => {
+test('a new browser is approved by comparing emoji on the old one picked for it', async ({
+  browser,
+}) => {
   const laptop = await openAs(browser)
   const bob = await openAs(browser)
   const aliceUser = newUser()
@@ -388,7 +390,7 @@ test('a new browser is approved from an old one by comparing emoji', async ({ br
     .first()
     .click()
   await laptop.page.getByRole('button', { name: 'Зашифрованная беседа' }).click()
-  await saveRecoveryKey(laptop.page)
+  const recoveryKey = await saveRecoveryKey(laptop.page)
   const composer = laptop.page.getByRole('textbox', { name: `Написать @${bobUser.username}` })
   await composer.fill('Встречаемся у фонтана')
   await composer.press('Enter')
@@ -418,24 +420,44 @@ test('a new browser is approved from an old one by comparing emoji', async ({ br
   await expect.poll(backedUp).not.toBe(withoutReaction)
   await laptop.page.goto('/')
 
-  // Alice signs in on her phone; the laptop stays open.
-  const phone = await openAs(browser)
-  await phone.page.goto('/login')
-  await phone.page
-    .getByLabel('Имя пользователя или email', { exact: true })
-    .fill(aliceUser.username)
-  await phone.page.getByLabel('Пароль', { exact: true }).fill(aliceUser.password)
-  await phone.page.getByRole('button', { name: 'Войти', exact: true }).click()
-  await phone.page
-    .getByRole('complementary', { name: 'Личные сообщения' })
-    .getByRole('link', { name: /зашифрованная беседа/ })
-    .click()
-  const banner = phone.page.getByRole('status', { name: 'Старые сообщения недоступны' })
+  /** Alice signs in on another browser and opens the conversation with Bob there. */
+  const signInAgain = async () => {
+    const device = await openAs(browser)
+    await device.page.goto('/login')
+    await device.page
+      .getByLabel('Имя пользователя или email', { exact: true })
+      .fill(aliceUser.username)
+    await device.page.getByLabel('Пароль', { exact: true }).fill(aliceUser.password)
+    await device.page.getByRole('button', { name: 'Войти', exact: true }).click()
+    await device.page
+      .getByRole('complementary', { name: 'Личные сообщения' })
+      .getByRole('link', { name: /зашифрованная беседа/ })
+      .click()
+    const notice = device.page.getByRole('status', { name: 'Старые сообщения недоступны' })
+    return { ...device, banner: notice }
+  }
+  // A tablet, approved with the recovery key: Alice now has two devices that can vouch.
+  const tablet = await signInAgain()
+  await tablet.banner.getByRole('button', { name: 'Ввести ключ восстановления' }).click()
+  await tablet.banner.getByLabel('Ключ восстановления', { exact: true }).fill(recoveryKey)
+  await tablet.banner.getByRole('button', { name: 'Восстановить' }).click()
+  await expect(tablet.banner).toBeHidden()
+  await tablet.page.goto('/')
+
+  // Alice signs in on her phone; the laptop and the tablet stay open.
+  const phone = await signInAgain()
+  const banner = phone.banner
   await banner.getByRole('button', { name: 'Подтвердить с другого устройства' }).click()
 
-  // Both screens show the same six emoji; Alice says yes on the laptop.
+  // Both old devices ask; Alice picks the laptop, and the tablet's window closes.
   const dialog = laptop.page.getByRole('dialog', { name: 'Новый вход' })
+  const onTablet = tablet.page.getByRole('dialog', { name: 'Новый вход' })
   await expect(dialog).toContainText('Это вы?')
+  await expect(onTablet).toContainText('Это вы?')
+  await dialog.getByRole('button', { name: 'Сравнить эмодзи здесь' }).click()
+  await expect(onTablet).toBeHidden()
+
+  // Both screens show the same six emoji; Alice says yes on the laptop.
   const onLaptop = dialog.getByRole('group', { name: 'Эмодзи для сравнения' })
   const onPhone = banner.getByRole('group', { name: 'Эмодзи для сравнения' })
   await expect(onLaptop).toBeVisible()
@@ -465,9 +487,9 @@ test('a new browser is approved from an old one by comparing emoji', async ({ br
     }
     return data.devices.map((device) => Boolean(device.userSignature))
   })
-  expect(signed).toEqual([true, true])
+  expect(signed).toEqual([true, true, true])
 
-  await Promise.all([laptop.context.close(), phone.context.close(), bob.context.close()])
+  await Promise.all([laptop, tablet, phone, bob].map(({ context }) => context.close()))
 })
 
 test('an unapproved device joins only when the other person lets it in by its code', async ({
