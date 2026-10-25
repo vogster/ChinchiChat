@@ -1539,11 +1539,14 @@
     "opening": "Setting up encryption on this device…",
     "waiting": "To read and write here, connect it in one of these ways:",
     "waitingWays": {
-      "device": "approve the sign-in on another of your devices where you are already signed in;",
-      "recovery": "enter your recovery key;",
+      "device": "approve the sign-in on another of your devices: if it is in the conversation, it lets this one in by itself;",
+      "recovery": "enter your recovery key: it brings back old messages and approves the device, and someone already in the conversation lets it in;",
       "code": "read the code below to the other person: once they compare it, they let this device in.",
       "codeGroup": "read the code below to any member of the group: once they compare it, they let this device in."
     },
+    "waitingAlone": "You have no other devices, so only the other person can let this device in: ask them to open the conversation and compare the code below. If you reset your keys, they need to accept your new key first.",
+    "waitingAloneGroup": "You have no other devices, so only another member can let this device in: ask someone in the group to open the conversation and compare the code below. If you reset your keys, they need to accept your new key first.",
+    "waitingAloneRecovery": "Your recovery key brings back old messages but does not let this device into the conversation.",
     "waitingTitle": "This device is not connected to the conversation yet",
     "failed": "Couldn't set up encryption. Reload the page or try again later.",
     "fileDecrypting": "Decrypting…",

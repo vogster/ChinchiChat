@@ -7,7 +7,7 @@ import { openMessageMenu } from '../../test/message-menu'
 import { renderApp } from '../../test/render-app'
 
 import type { ReadMessage } from './client'
-import type { PrivateChannel } from '@chinchi/shared'
+import type { Device, PrivateChannel } from '@chinchi/shared'
 
 const encryptedDm: PrivateChannel = {
   id: '802',
@@ -19,6 +19,16 @@ const encryptedDm: PrivateChannel = {
   encrypted: true,
 }
 const URL = `/channels/@me/${encryptedDm.id}`
+
+const myDevice = (id: string, revokedAt: string | null = null): Device => ({
+  id,
+  userId: testUser.id,
+  name: `Устройство ${id}`,
+  signaturePublicKey: 'a2V5',
+  createdAt: '2026-10-01T10:00:00.000Z',
+  revokedAt,
+  userSignature: null,
+})
 
 const withEncryptedDm = () => {
   const api = createFakeApi({ user: testUser })
@@ -260,17 +270,45 @@ describe('encrypted conversations', () => {
   })
 
   it('wait until another device lets this one in', async () => {
-    const { e2ee } = renderApp(URL, { api: withEncryptedDm(), e2eeStatus: 'waiting' })
+    const api = withEncryptedDm()
+    // The fake e2ee client says this browser is device 700; 702 is gone.
+    api.e2ee.myDevices.mockResolvedValue({
+      devices: [myDevice('700'), myDevice('701'), myDevice('702', '2026-10-05T10:00:00.000Z')],
+    })
+    const { e2ee } = renderApp(URL, { api, e2eeStatus: 'waiting' })
 
     const waiting = await screen.findByRole('status', {
       name: 'Это устройство пока не подключено к беседе',
     })
-    expect(waiting).toHaveTextContent(/подтвердите вход на другом своём устройстве/)
+    expect(
+      await within(waiting).findByText(/подтвердите вход на другом своём устройстве/),
+    ).toBeVisible()
+    // The recovery key brings back history; letting in is up to a device in the conversation.
+    expect(waiting).toHaveTextContent(/впустит его в беседу тот, кто уже в ней/)
     expect(waiting).toHaveTextContent(/назовите код ниже собеседнику/)
     // Its code, for the other person to compare before letting it in.
     expect(await within(waiting).findByText('70315 28446 03918 77512')).toBeVisible()
     expect(screen.queryByRole('textbox', { name: 'Написать @Боб' })).toBeNull()
     expect(e2ee.open).toHaveBeenCalled()
+  })
+
+  it('with no other device of mine, say only the other person can let this one in', async () => {
+    const api = withEncryptedDm()
+    api.e2ee.myDevices.mockResolvedValue({
+      devices: [myDevice('700'), myDevice('702', '2026-10-05T10:00:00.000Z')],
+    })
+    renderApp(URL, { api, e2eeStatus: 'waiting' })
+
+    const waiting = await screen.findByRole('status', {
+      name: 'Это устройство пока не подключено к беседе',
+    })
+    expect(
+      await within(waiting).findByText(/впустить это устройство может только собеседник/),
+    ).toBeVisible()
+    expect(waiting).toHaveTextContent(/сначала ему нужно принять ваш новый ключ/)
+    expect(waiting).toHaveTextContent(/в беседу не впустит/)
+    expect(waiting).not.toHaveTextContent(/другом своём устройстве/)
+    expect(await within(waiting).findByText('70315 28446 03918 77512')).toBeVisible()
   })
 
   it('take the recovery key right in the waiting notice', async () => {
@@ -311,7 +349,12 @@ describe('encrypted conversations', () => {
     const waiting = await screen.findByRole('status', {
       name: 'Это устройство пока не подключено к беседе',
     })
-    expect(waiting).toHaveTextContent(/любому участнику группы/)
+    // No other device of mine here: someone in the group lets this one in.
+    expect(
+      await within(waiting).findByText(
+        /может только другой участник: попросите кого-нибудь из группы/,
+      ),
+    ).toBeVisible()
   })
 
   it('are marked in the DM list', async () => {

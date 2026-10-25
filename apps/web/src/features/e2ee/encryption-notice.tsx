@@ -1,11 +1,15 @@
+import { useQuery } from '@tanstack/react-query'
 import { Lock, ShieldAlert } from 'lucide-react'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { Button } from '../../components/ui/button'
+import { useApi } from '../../lib/api-context'
 import { BetaBadge } from './beta-badge'
 import { DeviceCodeText } from './device-code'
+import { useThisDeviceId } from './e2ee-context'
 import { EncryptionGuideButton } from './encryption-guide'
+import { myDevicesQueryOptions } from './my-devices'
 import { EnterRecoveryKeyDialog } from './recovery-dialogs'
 import { useThisDeviceCode } from './use-device-code'
 import { useMissingHistoryHint } from './use-missing-history-hint'
@@ -38,14 +42,27 @@ export const EncryptionNotice = () => {
 }
 
 /**
+ * Whether I have another device that could let this one in: false when every other one is gone
+ * (signed out, keys deleted), null while the list loads.
+ */
+const useOtherDevices = (): boolean | null => {
+  const { data } = useQuery(myDevicesQueryOptions(useApi()))
+  const thisDevice = useThisDeviceId()
+  if (!data || !thisDevice) return null
+  return data.some((device) => device.id !== thisDevice && device.revokedAt === null)
+}
+
+/**
  * In place of the composer while no one has let this device in: how it gets in, and its code
- * for the other person to compare before letting it in.
+ * for the other person to compare before letting it in. With no other device of mine, only the
+ * other people can do it: the notice says so rather than send me to a device I don't have.
  */
 const WaitingToBeLetIn = ({ group }: { group: boolean }) => {
   const { t } = useTranslation()
   const code = useThisDeviceCode()
   const recovery = useRecovery()
   const missingHint = useMissingHistoryHint()
+  const alone = useOtherDevices() === false
   const [entering, setEntering] = useState(false)
   return (
     <div
@@ -56,12 +73,21 @@ const WaitingToBeLetIn = ({ group }: { group: boolean }) => {
       <Lock aria-hidden className="mt-0.5 size-4 shrink-0 text-secure-text" />
       <div className="flex min-w-0 flex-col gap-1">
         <p className="font-medium text-body">{t('e2ee.waitingTitle')}</p>
-        <p>{t('e2ee.waiting')}</p>
-        <ul className="list-disc pl-5">
-          <li>{t('e2ee.waitingWays.device')}</li>
-          <li>{t('e2ee.waitingWays.recovery')}</li>
-          <li>{t(group ? 'e2ee.waitingWays.codeGroup' : 'e2ee.waitingWays.code')}</li>
-        </ul>
+        {alone ? (
+          <>
+            <p>{t(group ? 'e2ee.waitingAloneGroup' : 'e2ee.waitingAlone')}</p>
+            <p>{t('e2ee.waitingAloneRecovery')}</p>
+          </>
+        ) : (
+          <>
+            <p>{t('e2ee.waiting')}</p>
+            <ul className="list-disc pl-5">
+              <li>{t('e2ee.waitingWays.device')}</li>
+              <li>{t('e2ee.waitingWays.recovery')}</li>
+              <li>{t(group ? 'e2ee.waitingWays.codeGroup' : 'e2ee.waitingWays.code')}</li>
+            </ul>
+          </>
+        )}
         {code ? (
           <p>
             {t('e2ee.device.code')} <DeviceCodeText code={code} className="text-body" />

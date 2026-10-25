@@ -9,9 +9,9 @@ import { errorMessage } from '../../lib/errors'
 import { formatRelativeTime } from '../../lib/relative-time'
 import { DeviceCodeText } from '../e2ee/device-code'
 import { useThisDeviceId } from '../e2ee/e2ee-context'
+import { myDevicesKey, myDevicesQueryOptions } from '../e2ee/my-devices'
 import { useDeviceCode } from '../e2ee/use-device-code'
 
-const devicesKey = ['e2eeDevices'] as const
 /** A device's code next to its name: read it out to someone who is letting the device in. */
 const CodeOf = ({ signaturePublicKey }: { signaturePublicKey: string }) => {
   const { t } = useTranslation()
@@ -31,14 +31,11 @@ export const EncryptionDevices = () => {
   const { t, i18n } = useTranslation()
   const api = useApi()
   const queryClient = useQueryClient()
-  const { data: devices = [] } = useQuery({
-    queryKey: devicesKey,
-    queryFn: async () => (await api.e2ee.myDevices()).devices,
-  })
+  const { data: devices = [] } = useQuery(myDevicesQueryOptions(api))
   const thisDevice = useThisDeviceId()
   const remove = useMutation({
     mutationFn: (deviceId: string) => api.e2ee.deleteDevice(deviceId),
-    onSettled: () => queryClient.invalidateQueries({ queryKey: devicesKey, exact: true }),
+    onSettled: () => queryClient.invalidateQueries({ queryKey: myDevicesKey, exact: true }),
   })
   const active = devices.filter((device) => !device.revokedAt)
 
