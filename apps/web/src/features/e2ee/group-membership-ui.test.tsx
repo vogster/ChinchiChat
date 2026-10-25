@@ -51,6 +51,35 @@ describe('who is in an encrypted group', () => {
     await waitFor(() => expect(e2ee.dismissNotice).toHaveBeenCalledWith(group.id, 'n1'))
   })
 
+  it('lets a member take in someone nobody here added, warning when not to', async () => {
+    const { e2ee, user } = renderApp(URL_PATH, { api: withGroup() })
+    e2ee.membership.mockResolvedValue({ notices: [], pending: [mallory.id] })
+
+    const waiting = await screen.findByRole('status', { name: 'Ещё не в зашифрованной беседе' })
+    expect(waiting).toHaveTextContent('в участники их мог вписать сервер')
+    await user.click(
+      within(waiting).getByRole('button', { name: 'Добавить в шифрование: Мэллори' }),
+    )
+
+    await waitFor(() => expect(e2ee.invited).toHaveBeenCalledWith(group.id, [mallory.id]))
+    // The conversation opens again at once, so the device is added now.
+    await waitFor(() => expect(e2ee.open.mock.calls.length).toBeGreaterThan(1))
+  })
+
+  it('says so when taking someone in fails, naming each person when there are several', async () => {
+    const { e2ee, user } = renderApp(URL_PATH, { api: withGroup() })
+    e2ee.membership.mockResolvedValue({ notices: [], pending: [dan.id, mallory.id] })
+    e2ee.invited.mockRejectedValue(new Error('offline'))
+
+    const waiting = await screen.findByRole('status', { name: 'Ещё не в зашифрованной беседе' })
+    const takeIn = within(waiting).getByRole('button', { name: 'Добавить в шифрование: Дэн' })
+    expect(takeIn).toHaveTextContent('Добавить в шифрование: Дэн')
+    await user.click(takeIn)
+
+    expect(await within(waiting).findByRole('alert')).toBeVisible()
+    expect(takeIn).toBeEnabled()
+  })
+
   it('remembers the people added from here: this device takes them in', async () => {
     const api = withGroup()
     const erin = { id: '110', username: 'erin', displayName: null, avatarUrl: null }

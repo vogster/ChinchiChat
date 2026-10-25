@@ -1481,7 +1481,10 @@
       "check": "Compare codes",
       "dismiss": "Got it",
       "pendingTitle": "Not in the encrypted conversation yet",
-      "pending": "Not in the encrypted conversation yet: {{names}}. Messages don't reach them until whoever invited them takes them into the encryption."
+      "pending": "Not in the encrypted conversation yet: {{names}}. Messages don't reach them: no device in the conversation has taken them into the encryption — say, the device of whoever invited them was removed.",
+      "takeInHint": "Take them in only if you know they were invited: the server could have listed them as members.",
+      "takeIn": "Take into encryption",
+      "takeInOne": "Take into encryption: {{name}}"
     },
     "downgrade": {
       "listState": "encryption turned off by the server",

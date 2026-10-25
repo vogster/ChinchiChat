@@ -367,6 +367,33 @@ describe('e2ee client', () => {
     expect((await bob.membership(slipped)).notices).toEqual([])
   })
 
+  it('in a group, any member can take in someone pending: the device that added them is gone', async () => {
+    const { client } = setup()
+    const CAROL = '3'
+    const DAN = '4'
+    const group = { id: '603', memberIds: [ALICE, BOB, CAROL] }
+    const alice = client(ALICE).client
+    const bob = client(BOB).client
+    const carol = client(CAROL).client
+    const dan = client(DAN).client
+    await Promise.all([bob.ready(), carol.ready(), dan.ready()])
+    await alice.open(group)
+    await bob.open(group)
+
+    // Dan was added from a device that no longer exists: nobody here takes him in by itself.
+    const grown = { ...group, memberIds: [ALICE, BOB, CAROL, DAN] }
+    await alice.open(grown)
+    expect((await bob.membership(grown)).pending).toEqual([DAN])
+
+    // Bob knows Dan was added on purpose and takes him in.
+    await bob.invited(grown.id, [DAN])
+    await bob.open(grown)
+    const sent = await alice.send(grown, 'Теперь и Дэну')
+
+    expect(await dan.read(grown, sent)).toMatchObject({ payload: { text: 'Теперь и Дэну' } })
+    expect((await bob.membership(grown)).pending).toEqual([])
+  })
+
   it('takes in no one the server slips into a DM, labelled as a DM or not', async () => {
     const { client } = setup()
     const MALLORY = '9'

@@ -1,9 +1,10 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { Hourglass, UserPlus } from 'lucide-react'
+import { UserPlus } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
 import { Button } from '../../components/ui/button'
 import { useE2ee } from './e2ee-context'
+import { PendingMembers } from './pending-members'
 
 import type { EncryptedChannel } from './client'
 
@@ -19,7 +20,7 @@ export interface GroupNoticesProps {
 /**
  * Who came into an encrypted group by a member's commit (compare codes with them before
  * anything important), and who the server lists but is not in the encryption yet: messages
- * don't reach them until whoever added them takes them in.
+ * don't reach them until a member takes them in.
  */
 export const GroupNotices = ({ channel, nameOf, onCheck }: GroupNoticesProps) => {
   const { t } = useTranslation()
@@ -34,6 +35,14 @@ export const GroupNotices = ({ channel, nameOf, onCheck }: GroupNoticesProps) =>
 
   const dismiss = async (noticeId: string) => {
     await client?.dismissNotice(channel.id, noticeId)
+    await queryClient.invalidateQueries({ queryKey: ['e2ee', 'membership', channel.id] })
+  }
+
+  // Opening the conversation again adds their devices now, not on the next message.
+  const takeIn = async (userId: string) => {
+    if (!client) return
+    await client.invited(channel.id, [userId])
+    await client.open(channel)
     await queryClient.invalidateQueries({ queryKey: ['e2ee', 'membership', channel.id] })
   }
 
@@ -69,14 +78,7 @@ export const GroupNotices = ({ channel, nameOf, onCheck }: GroupNoticesProps) =>
         </div>
       ))}
       {data.pending.length > 0 ? (
-        <p
-          role="status"
-          aria-label={t('e2ee.members.pendingTitle')}
-          className="mx-4 mt-2 flex items-center gap-3 rounded-full bg-field py-2.5 pr-4 pl-3 text-[13px] text-muted"
-        >
-          <Hourglass aria-hidden className="size-4 shrink-0" />
-          {t('e2ee.members.pending', { names: data.pending.map(nameOf).join(', ') })}
-        </p>
+        <PendingMembers userIds={data.pending} nameOf={nameOf} onTakeIn={takeIn} />
       ) : null}
     </>
   )
