@@ -5,7 +5,7 @@ import { createFakeApi, testApproval, testFriend, testUser } from '../../test/fa
 import { TEST_RECOVERY_KEY } from '../../test/fake-e2ee'
 import { renderApp } from '../../test/render-app'
 
-import type { PrivateChannel } from '@chinchi/shared'
+import type { Device, PrivateChannel } from '@chinchi/shared'
 
 const encryptedDm: PrivateChannel = {
   id: '802',
@@ -18,9 +18,22 @@ const encryptedDm: PrivateChannel = {
 }
 const DM_PATH = `/channels/@me/${encryptedDm.id}`
 const EMOJI = ['🐶', '🐱', '🦁', '🐴']
-const withEncryptedDm = () => {
+const myDevice = (id: string): Device => ({
+  id,
+  userId: testUser.id,
+  name: `Устройство ${id}`,
+  signaturePublicKey: 'a2V5',
+  createdAt: '2026-10-01T10:00:00.000Z',
+  revokedAt: null,
+  userSignature: null,
+})
+const withEncryptedDm = ({ otherDevice = true } = {}) => {
   const api = createFakeApi({ user: testUser })
   api.dms.list.mockResolvedValue({ channels: [encryptedDm] })
+  // The fake e2ee client says this browser is device 700.
+  api.e2ee.myDevices.mockResolvedValue({
+    devices: otherDevice ? [myDevice('700'), myDevice('701')] : [myDevice('700')],
+  })
   return api
 }
 
@@ -130,6 +143,21 @@ describe('approving a new device', () => {
       expect(
         screen.queryByRole('status', { name: 'Старые сообщения недоступны' }),
       ).not.toBeInTheDocument(),
+    )
+  })
+
+  it('on the new device: offers only the recovery key when no other device of mine is left', async () => {
+    const { e2ee } = renderApp(DM_PATH, { api: withEncryptedDm({ otherDevice: false }) })
+    e2ee.recovery.key.mockResolvedValue(null)
+
+    const banner = await screen.findByRole('status', { name: 'Старые сообщения недоступны' })
+    expect(
+      await within(banner).findByRole('button', { name: 'Ввести ключ восстановления' }),
+    ).toBeVisible()
+    await waitFor(() =>
+      expect(
+        within(banner).queryByRole('button', { name: 'Подтвердить с другого устройства' }),
+      ).toBeNull(),
     )
   })
 

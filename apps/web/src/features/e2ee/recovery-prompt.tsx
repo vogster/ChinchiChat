@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next'
 import { Button } from '../../components/ui/button'
 import { ApprovalEmoji } from './approval-dialog'
 import { EncryptionGuideOnce } from './encryption-guide'
+import { useHasOtherDevices } from './my-devices'
 import { EnterRecoveryKeyDialog, RecoveryKeyForm, SaveRecoveryKeyDialog } from './recovery-dialogs'
 import { useApprovals } from './use-approvals'
 import { useEncryptionGuideSeen } from './use-encryption-guide'
@@ -77,6 +78,8 @@ export const RecoveryPrompt = ({ ready }: { ready: boolean }) => {
   const approval = views.find((view) => view.role === 'new')
   const { refresh } = recovery
   const [guideSeen] = useEncryptionGuideSeen()
+  // No other device of mine to approve this one from: only the recovery key is left.
+  const alone = useHasOtherDevices() === false
 
   // Approved from another device: the keys are here now.
   useEffect(() => {
@@ -133,7 +136,7 @@ export const RecoveryPrompt = ({ ready }: { ready: boolean }) => {
           />
         ) : (
           <div className="flex flex-wrap gap-2">
-            {asking || !approvals ? null : (
+            {asking || alone || !approvals ? null : (
               <Button variant="secure" fullWidth={false} onClick={() => void approvals.request()}>
                 {t('e2ee.approval.request')}
               </Button>
