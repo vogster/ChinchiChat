@@ -46,6 +46,7 @@ export const createFakeE2ee = (status: ConversationStatus = 'ready') => {
       compareHere: vi.fn(async (_approvalId: string) => undefined),
       confirm: vi.fn(async (_approvalId: string) => undefined),
       decline: vi.fn(async (_approvalId: string) => undefined),
+      cancel: vi.fn(async (_approvalId: string) => undefined),
       dismiss: vi.fn((approvalId: string) => {
         approvalViews = approvalViews.filter((view) => view.approvalId !== approvalId)
         for (const listener of approvalListeners) listener()

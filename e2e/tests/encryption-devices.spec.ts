@@ -273,8 +273,15 @@ test('a device approved by emoji gets into a group nobody has open', async ({ br
   await signIn(phone.page, aliceUser)
   await phone.page.goto(group)
   const banner = phone.page.getByRole('status', { name: 'Старые сообщения недоступны' })
-  await banner.getByRole('button', { name: 'Подтвердить с другого устройства' }).click()
+  const request = banner.getByRole('button', { name: 'Подтвердить с другого устройства' })
+  await request.click()
   const approve = laptop.page.getByRole('dialog', { name: 'Новый вход' })
+  // Closed on the laptop without an answer: the phone stops asking and asks again.
+  await expect(approve).toBeVisible()
+  await laptop.page.keyboard.press('Escape')
+  await expect(approve).toBeHidden()
+  await banner.getByRole('button', { name: 'Отменить' }).click()
+  await request.click()
   await approve.getByRole('button', { name: 'Сравнить эмодзи здесь' }).click()
   // Yes on the phone first this time, then on the laptop.
   const confirm = phone.page.getByRole('dialog', { name: 'Подтверждение входа' })

@@ -118,6 +118,16 @@ export const RecoveryPrompt = ({ ready }: { ready: boolean }) => {
             <Button variant="secondary" fullWidth={false} onClick={() => setEntering(true)}>
               {t('e2ee.recovery.enter')}
             </Button>
+            {/* No device picked to compare on yet: the request can be dropped and made again. */}
+            {approval?.state === 'waiting' && approvals ? (
+              <Button
+                variant="secondary"
+                fullWidth={false}
+                onClick={() => void approvals.cancel(approval.approvalId)}
+              >
+                {t('e2ee.approval.cancel')}
+              </Button>
+            ) : null}
           </div>
         )}
       </div>

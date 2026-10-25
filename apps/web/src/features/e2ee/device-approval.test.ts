@@ -196,6 +196,50 @@ describe('approving a new device from an old one', () => {
     expect(laptop.approvals.views()[0]?.state).toBe('elsewhere')
   })
 
+  it('closes the question in another tab of the device picked to compare on', async () => {
+    const { delivery, pump, compareOn } = setup()
+    // Two tabs of one browser: one device, one store.
+    const store = createMemoryStore()
+    const tab = () =>
+      createE2eeClient({ api: delivery.apiFor(ALICE), store, userId: ALICE, deviceName: 'Ноутбук' })
+    const tab1 = tab()
+    await tab1.ready()
+    const tab2 = tab()
+    await tab2.ready()
+    const phone = createE2eeClient({
+      api: delivery.apiFor(ALICE),
+      store: createMemoryStore(),
+      userId: ALICE,
+      deviceName: 'Телефон',
+    })
+    await phone.ready()
+
+    await phone.approvals.request()
+    await pump(tab1, tab2, phone)
+    expect(tab2.approvals.views()[0]?.state).toBe('asked')
+    await compareOn(tab1, tab2, phone)
+    expect(tab1.approvals.views()[0]?.state).toBe('compare')
+    expect(tab2.approvals.views()).toEqual([])
+  })
+
+  it('lets the new device stop asking: the old devices close the question', async () => {
+    const { delivery, client, pump } = setup()
+    const laptop = client(ALICE, 'Ноутбук')
+    await laptop.ready()
+    const phone = client(ALICE, 'Телефон')
+    await phone.ready()
+
+    await phone.approvals.request()
+    await pump(laptop, phone)
+    // Nobody picked a device to compare on (the window was closed everywhere, say).
+    await phone.approvals.cancel(phone.approvals.views()[0]?.approvalId as string)
+    await pump(laptop, phone)
+
+    expect(phone.approvals.views()).toEqual([])
+    expect(laptop.approvals.views()).toEqual([])
+    expect(delivery.approvalEvents.at(-1)?.state).toBe('declined')
+  })
+
   it('stops when the old device says no', async () => {
     const { delivery, client, pump } = setup()
     const laptop = client(ALICE, 'Ноутбук')

@@ -155,6 +155,23 @@ describe('approving a new device', () => {
     )
   })
 
+  it('on the new device: stops asking and goes back to the start', async () => {
+    const { user, e2ee } = renderApp(DM_PATH, { api: withEncryptedDm() })
+    e2ee.recovery.key.mockResolvedValue(null)
+    const banner = await screen.findByRole('status', { name: 'Старые сообщения недоступны' })
+    const view = { approvalId: '950', role: 'new' as const, deviceName: null }
+
+    // No device picked to compare on (the window was closed everywhere, say).
+    act(() => e2ee.approvals.emit([{ ...view, state: 'waiting', emoji: null }]))
+    await user.click(await within(banner).findByRole('button', { name: 'Отменить' }))
+    expect(e2ee.approvals.cancel).toHaveBeenCalledWith('950')
+
+    act(() => e2ee.approvals.emit([]))
+    expect(
+      await within(banner).findByRole('button', { name: 'Подтвердить с другого устройства' }),
+    ).toBeVisible()
+  })
+
   it('on the new device: offers only the recovery key when no other device of mine is left', async () => {
     const { e2ee } = renderApp(DM_PATH, { api: withEncryptedDm({ otherDevice: false }) })
     e2ee.recovery.key.mockResolvedValue(null)

@@ -159,18 +159,16 @@ export const createDeviceApproval = ({ api, ready, crossSigning, backup }: Devic
     }
     if (view.state === 'elsewhere') return
     const session = sessions.get(approval.id)
-    // Another of my devices answered: its emoji are the ones to compare, not this one's.
-    if (approval.approverDeviceId && approval.approverDeviceId !== here) {
-      if (!session) forget(approval.id)
-      else {
-        sessions.delete(approval.id)
-        show(approval.id, { state: 'elsewhere' })
-      }
+    if (!session) {
+      // Not picked here: anything after the request means a device answered (another tab of
+      // this one, too) or it is over, so the question goes.
+      forget(approval.id)
       return
     }
-    if (!session) {
-      // Over before anyone picked this device: nothing to show here any more.
-      if (approval.state === 'completed' || approval.state === 'declined') forget(approval.id)
+    // Picked here, but another of my devices answered: its emoji are the ones to compare.
+    if (approval.approverDeviceId && approval.approverDeviceId !== here) {
+      sessions.delete(approval.id)
+      show(approval.id, { state: 'elsewhere' })
       return
     }
     if (approval.state === 'revealed' && approval.newKey && !session.secretKey) {
@@ -280,6 +278,22 @@ export const createDeviceApproval = ({ api, ready, crossSigning, backup }: Devic
         await api.e2ee.approvals.decline(approvalId)
       } catch (error) {
         // Already completed by the other side: what it sent is simply never opened here.
+        if (!(error instanceof ApiError && error.status === 409)) throw error
+      }
+    },
+
+    /**
+     * New device: stops asking (no device was picked to compare on, or the person changed their
+     * mind) and goes back to the start; the old devices close the question.
+     */
+    cancel: async (approvalId: string): Promise<void> => {
+      sessions.delete(approvalId)
+      views.delete(approvalId)
+      notify()
+      try {
+        await api.e2ee.approvals.decline(approvalId)
+      } catch (error) {
+        // Already over (completed or expired): nothing left to stop.
         if (!(error instanceof ApiError && error.status === 409)) throw error
       }
     },
